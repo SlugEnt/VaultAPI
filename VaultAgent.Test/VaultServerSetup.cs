@@ -7,7 +7,7 @@ using System.Net;
 using System.IO;
 using NUnit.Framework;
 using System.Reflection;
-
+using System;
 namespace VaultAgentTests
 {
 	/// <summary>
@@ -16,6 +16,7 @@ namespace VaultAgentTests
 	public static class VaultServerRef
 	{
 		public static string rootToken;
+		public static System.Uri vaultURI;
 		public static string ipAddress;
 		public static string vaultFolder;
 		public static string unSealKey;
@@ -39,8 +40,9 @@ namespace VaultAgentTests
 		[OneTimeSetUp]
 		public void StartVaultServer() {
 
-			VaultServerRef.rootToken = Guid.NewGuid().ToString(); 
-			VaultServerRef.ipAddress = $"127.0.0.1:{ GetRandomUnusedPort() }"; 
+			VaultServerRef.rootToken = Guid.NewGuid().ToString();
+			VaultServerRef.ipAddress = $"127.0.0.1:{ GetRandomUnusedPort() }";
+			VaultServerRef.vaultURI  =  new Uri("http://" + VaultServerRef.ipAddress);
 			VaultServerRef.vaultFolder = GetTestsPath() + "\\Utility";
 
 
