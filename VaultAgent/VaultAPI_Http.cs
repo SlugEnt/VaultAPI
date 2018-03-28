@@ -16,6 +16,7 @@ namespace VaultAgent
 		private Uri vaultIPAddress;
 		private string accessToken;
 		private HttpClient httpClt;
+		
 
 
 
@@ -57,16 +58,48 @@ namespace VaultAgent
 
 
 
-		public async Task<Dictionary<string, object>> PostAsyncReturnDictionary(string APIPath, Dictionary<string, string> inputVars) {
+
+		public async Task<VaultDataReturn> PostAsyncReturnDictionary(string APIPath, Dictionary<string, string> inputVars) {
 			string jsonResponse = await PostAsync(APIPath, inputVars);
 			try {
-				Dictionary<string, object> answers = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonResponse);
-				return answers;
+
+				//Dictionary<string, object> answers = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonResponse);
+
+				//Dictionary<string, object> data;
+				//if (answers.ContainsKey("data")) {
+				//	string val =  answers["data"].ToString();
+				//	data = JsonConvert.DeserializeObject<Dictionary<string, object>>(val);
+				//}
+				//else { 
+				//	data = null;
+				//}
+
+				// Build the return object.
+
+
+				//VaultDataReturn vdr = new VaultDataReturn(answers);
+				VaultDataReturn vdr = new VaultDataReturn(jsonResponse);
+				return vdr;
 			}
 			catch (Exception e) {
 
 				return null;
 			}
 		}
+
+
+
+
+		//public async Task<Dictionary<string, object>> PostAsyncReturnDictionary(string APIPath, Dictionary<string, string> inputVars) {
+		//	string jsonResponse = await PostAsync(APIPath, inputVars);
+		//	try {
+		//		Dictionary<string, object> answers = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonResponse);
+		//		return answers;
+		//	}
+		//	catch (Exception e) {
+
+		//		return null;
+		//	}
+		//}
 	}
 }

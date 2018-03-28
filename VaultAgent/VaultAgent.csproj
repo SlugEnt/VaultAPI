@@ -73,6 +73,7 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VaultAPI_Http.cs" />
+    <Compile Include="VaultDataReturn.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
