@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using VaultAgent;
+using VaultAgent.Models;
+using Newtonsoft.Json;
 
 namespace VaultClient
 {
@@ -45,36 +47,62 @@ namespace VaultClient
 
 			VaultDataReturn vdr = await VH.PostAsyncReturnDictionary(path, content);
 			Console.WriteLine("Response Return:");
-			Console.WriteLine("JSON = {0}", vdr.GetResponseAsJSON());
+			Console.WriteLine("JSON = {0}", vdr.GetResponsePackageAsJSON());
 
 
 			Console.WriteLine("Response Data:");
-			Console.WriteLine("JSON = {0}", vdr.GetDataAsJSON());
+			Console.WriteLine("JSON = {0}", vdr.GetDataPackageAsJSON());
 
 			
 	
 			Dictionary<string, object> RespDict;
 			Dictionary<string, object> DataDict;
 
+			try {
 
-			//VaultDataReturn vdr2 = await VH.PostAsyncReturnDictionary(path, content);
-			Console.WriteLine("Response Return Dictionary:");
-			foreach (KeyValuePair<string, object> item in vdr.GetResponseAsDictionary()) {
-				try {
-					Console.WriteLine("KEy = {0}       Value = {1}", item.Key, item.Value.ToString());
+
+
+				//VaultDataReturn vdr2 = await VH.PostAsyncReturnDictionary(path, content);
+				Console.WriteLine("Response Return Dictionary:");
+				foreach (KeyValuePair<string, object> item in vdr.GetResponsePackageAsDictionary()) {
+					try {
+						Console.WriteLine("KEy = {0}       Value = {1}", item.Key, item.Value.ToString());
+					}
+					catch (Exception e) { }
 				}
-				catch (Exception e) { }
+
+				Console.WriteLine("Response Data:");
+				foreach (KeyValuePair<string, object> item in vdr.GetDataPackageAsDictionary()) {
+					try {
+						Console.WriteLine("KEy = {0}       Value = {1}", item.Key, item.Value.ToString());
+					}
+					catch (Exception e) { }
+				}
+
+				// Test vault Exists methods
+				if (vdr.DoesDataFieldExist("xyz")) {
+					Console.WriteLine("Field Exists");
+				}
+				else { Console.WriteLine("xyz Field Not Found");  }
+				
+			//	Console.WriteLine(" Looking for Lease field: {0}", vdr.GetResponsePackageFieldAsJSON("lease"));
+
+
+
+				// Now see if we can build an object.
+				string JsonA = vdr.GetDataPackageAsJSON();
+				TokenInfo t = JsonConvert.DeserializeObject<TokenInfo>(JsonA);
+				Console.WriteLine("Token is orphan? {0}", t.IsOrphan);
+				Console.WriteLine("Token has parent? {0}", t.HasParent);
+				Console.WriteLine("Token is renewable? {0}", t.IsRenewable);
+
+				Console.WriteLine("Token Creation Date: {0}", t.CreationTime_AsDateTime);
+			}
+			catch (Exception e) {
+				Console.WriteLine("Error detected - {0}", e.Message);
 			}
 
-			Console.WriteLine("Response Data:");
-			foreach (KeyValuePair<string, object> item in vdr.GetDataAsDictionary()) {
-				try {
-					Console.WriteLine("KEy = {0}       Value = {1}", item.Key, item.Value.ToString());
-				}
-				catch (Exception e) { }
-			}
-
-
+				
 				Console.ReadKey();
 
 		}

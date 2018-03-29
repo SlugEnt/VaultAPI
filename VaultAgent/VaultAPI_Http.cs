@@ -62,21 +62,6 @@ namespace VaultAgent
 		public async Task<VaultDataReturn> PostAsyncReturnDictionary(string APIPath, Dictionary<string, string> inputVars) {
 			string jsonResponse = await PostAsync(APIPath, inputVars);
 			try {
-
-				//Dictionary<string, object> answers = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonResponse);
-
-				//Dictionary<string, object> data;
-				//if (answers.ContainsKey("data")) {
-				//	string val =  answers["data"].ToString();
-				//	data = JsonConvert.DeserializeObject<Dictionary<string, object>>(val);
-				//}
-				//else { 
-				//	data = null;
-				//}
-
-				// Build the return object.
-
-
 				//VaultDataReturn vdr = new VaultDataReturn(answers);
 				VaultDataReturn vdr = new VaultDataReturn(jsonResponse);
 				return vdr;

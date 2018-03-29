@@ -71,9 +71,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Models\TokenInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VaultAPI_Http.cs" />
     <Compile Include="VaultDataReturn.cs" />
+    <Compile Include="VaultException.cs" />
+    <Compile Include="VaultUtilityFX.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
