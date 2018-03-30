@@ -55,23 +55,20 @@ namespace VaultAgent
 		}
 
 
+		public async Task<VaultDataResponseObject> GetAsync(string APIPath) {
+			string jsonResponse="";
 
-
-
-		/*
-		public async Task<VaultDataResponseObject> PostAsyncReturnDictionary(string APIPath, Dictionary<string, string> inputVars) {
-			string jsonResponse = await PostAsync(APIPath, inputVars);
-			try {
-				//VaultDataResponseObject vdr = new VaultDataResponseObject(answers);
-				VaultDataResponseObject vdr = new VaultDataResponseObject(jsonResponse);
-				return vdr;
+			var response = await httpClt.GetAsync(APIPath);
+			if (response.IsSuccessStatusCode) {
+				jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 			}
-			catch (Exception e) {
+			else { HandleVaultErrors(response.StatusCode); }
 
-				return null;
-			}
+			VaultDataResponseObject vdr = new VaultDataResponseObject(jsonResponse, response.StatusCode);
+			return vdr;
+
 		}
-		*/
+
 
 
 
@@ -94,16 +91,6 @@ namespace VaultAgent
 		}
 
 
-		//public async Task<Dictionary<string, object>> PostAsyncReturnDictionary(string APIPath, Dictionary<string, string> inputVars) {
-		//	string jsonResponse = await PostAsync(APIPath, inputVars);
-		//	try {
-		//		Dictionary<string, object> answers = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonResponse);
-		//		return answers;
-		//	}
-		//	catch (Exception e) {
 
-		//		return null;
-		//	}
-		//}
 	}
 }

@@ -190,6 +190,15 @@ namespace VaultAgent
 
 
 
+		/// <summary>
+		/// Converts the JSON Data value into the specific C# Class object.
+		/// </summary>
+		/// <typeparam name="T">The object class to convert the JSON into.</typeparam>
+		/// <returns>An instance of the object class requested, with the values from the JSON Data object.</returns>
+		public T GetVaultTypedObject<T>() {
+			return JsonConvert.DeserializeObject<T>(GetDataPackageAsJSON());
+
+		}
 
 	}
 }
