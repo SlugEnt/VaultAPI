@@ -12,13 +12,10 @@ namespace VaultAgent
 
 	public class VaultAPI_Http
 	{
-
 		private Uri vaultIPAddress;
 		private string accessToken;
 		private HttpClient httpClt;
 		
-
-
 
 		/// <summary>
 		/// Constructor.
@@ -39,7 +36,7 @@ namespace VaultAgent
 
 
 
-		public async Task<string> PostAsync(string APIPath, Dictionary<string, string> inputVars) {
+		public async Task<VaultDataResponseObject> PostAsync(string APIPath, Dictionary<string, string> inputVars) {
 			string inputVarsJSON = JsonConvert.SerializeObject(inputVars, Formatting.None);
 
 			HttpContent contentBody = new StringContent(inputVarsJSON);
@@ -51,19 +48,22 @@ namespace VaultAgent
 			if (response.IsSuccessStatusCode) {
 				jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 			}
+			else { HandleVaultErrors(response.StatusCode);  }
 
-			return jsonResponse;
+			VaultDataResponseObject vdr = new VaultDataResponseObject(jsonResponse, response.StatusCode);
+			return vdr;
 		}
 
 
 
 
 
-		public async Task<VaultDataReturn> PostAsyncReturnDictionary(string APIPath, Dictionary<string, string> inputVars) {
+		/*
+		public async Task<VaultDataResponseObject> PostAsyncReturnDictionary(string APIPath, Dictionary<string, string> inputVars) {
 			string jsonResponse = await PostAsync(APIPath, inputVars);
 			try {
-				//VaultDataReturn vdr = new VaultDataReturn(answers);
-				VaultDataReturn vdr = new VaultDataReturn(jsonResponse);
+				//VaultDataResponseObject vdr = new VaultDataResponseObject(answers);
+				VaultDataResponseObject vdr = new VaultDataResponseObject(jsonResponse);
 				return vdr;
 			}
 			catch (Exception e) {
@@ -71,8 +71,27 @@ namespace VaultAgent
 				return null;
 			}
 		}
+		*/
 
 
+
+		protected void HandleVaultErrors (System.Net.HttpStatusCode responseCode) {
+			switch ((int) responseCode) {
+				case 400:
+					throw new VaultInvalidDataException();
+				case 403:
+					throw new VaultForbiddenException();
+				case 404:
+					throw new VaultInvalidPathException();
+				case 429:
+					throw new VaultStandbyNodesErrorException();
+				case 500:
+					throw new VaultInternalErrorException();
+				case 503:
+					throw new VaultSealedException ();
+			
+			}
+		}
 
 
 		//public async Task<Dictionary<string, object>> PostAsyncReturnDictionary(string APIPath, Dictionary<string, string> inputVars) {

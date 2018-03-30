@@ -10,12 +10,13 @@ using System.Threading.Tasks;
 
 namespace VaultAgent
 {
-	public class VaultDataReturn {
+	public class VaultDataResponseObject {
 		private string responseJSON;		// Raw JSON data that was provided by called API.
 		private string responseData;		// This is populated the first time we are asked for this data from the Raw JSON.
 		private Dictionary<string, object> responseJSONDict;
 		private Dictionary<string, object> responseDataDict;
 
+		public int httpStatusCode { get; }			// The status code returned from the Vault API.
 
 
 
@@ -24,8 +25,9 @@ namespace VaultAgent
 		/// Constructor.  Accepts a single JSON string, which should be the entire JSON body returned by the Vault API.
 		/// </summary>
 		/// <param name="JSONresponse">The JSON string returned by the called Vault API.</param>
-		public VaultDataReturn (string JSONresponse) {
+		public VaultDataResponseObject (string JSONresponse, System.Net.HttpStatusCode statusCode) {
 			responseJSON = JSONresponse;
+			httpStatusCode = (int) statusCode;
 		}
 
 

@@ -8,6 +8,9 @@ using System.IO;
 using NUnit.Framework;
 using System.Reflection;
 using System;
+using VaultAgent;
+
+
 namespace VaultAgentTests
 {
 	/// <summary>
@@ -20,6 +23,7 @@ namespace VaultAgentTests
 		public static string ipAddress;
 		public static string vaultFolder;
 		public static string unSealKey;
+		public static int ipPort;
 	}
 
 
@@ -41,8 +45,9 @@ namespace VaultAgentTests
 		public void StartVaultServer() {
 
 			VaultServerRef.rootToken = Guid.NewGuid().ToString();
-			VaultServerRef.ipAddress = $"127.0.0.1:{ GetRandomUnusedPort() }";
-			VaultServerRef.vaultURI  =  new Uri("http://" + VaultServerRef.ipAddress);
+			VaultServerRef.ipPort = GetRandomUnusedPort();
+			VaultServerRef.ipAddress = "127.0.0.1";
+			VaultServerRef.vaultURI  =  new Uri("http://" + VaultServerRef.ipAddress + ":" +  VaultServerRef.ipPort);
 			VaultServerRef.vaultFolder = GetTestsPath() + "\\Utility";
 
 
@@ -51,7 +56,7 @@ namespace VaultAgentTests
 				"server",
 				"-dev",
 				$"-dev-root-token-id={VaultServerRef.rootToken}",
-				$"-dev-listen-address={VaultServerRef.ipAddress}"
+				$"-dev-listen-address={VaultServerRef.ipAddress}:{VaultServerRef.ipPort}"
 			});
 
 

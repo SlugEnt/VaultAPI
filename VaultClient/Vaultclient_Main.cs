@@ -20,8 +20,9 @@ namespace VaultClient
 
 			// USe remote Vault server
 			if (2 == 2) {
-				rootToken = "956ac20d-3516-cdd3-61fc-b50bc5763453";
-				lookupToken = "7d13922b-7844-85d9-fbb8-6cc8bed270f2";
+				//rootToken = "956ac20d-3516-cdd3-61fc-b50bc5763453";
+				rootToken = "19490709-7966-bd0c-8a72-3f4724283c1e";
+						lookupToken = "7d13922b-7844-85d9-fbb8-6cc8bed270f2";
 				ip = "192.168.1.86";
 				port = 8200;
 			}
@@ -34,6 +35,14 @@ namespace VaultClient
 			}
 
 
+			// Transit Backend
+			VaultClient_TransitBackend transit = new VaultClient_TransitBackend(rootToken, ip, port);
+			await transit.Run();
+			Console.WriteLine("Finished");
+			Console.ReadKey();
+
+			return;
+
 			string path = "v1/auth/token/lookup";
 
 			// JSON the input variables
@@ -41,11 +50,11 @@ namespace VaultClient
 			content.Add("token", lookupToken);
 
 			VaultAPI_Http VH = new VaultAPI_Http(ip, port, rootToken);
-			string ans = await VH.PostAsync(path, content);
+			VaultDataResponseObject vdro  = await VH.PostAsync(path, content);
 
-			Console.WriteLine(ans);
+			Console.WriteLine(vdro.GetDataPackageAsJSON());
 
-			VaultDataReturn vdr = await VH.PostAsyncReturnDictionary(path, content);
+			VaultDataResponseObject vdr = await VH.PostAsync(path, content);
 			Console.WriteLine("Response Return:");
 			Console.WriteLine("JSON = {0}", vdr.GetResponsePackageAsJSON());
 
@@ -62,7 +71,7 @@ namespace VaultClient
 
 
 
-				//VaultDataReturn vdr2 = await VH.PostAsyncReturnDictionary(path, content);
+				//VaultDataResponseObject vdr2 = await VH.PostAsyncReturnDictionary(path, content);
 				Console.WriteLine("Response Return Dictionary:");
 				foreach (KeyValuePair<string, object> item in vdr.GetResponsePackageAsDictionary()) {
 					try {
