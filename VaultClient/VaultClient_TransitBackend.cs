@@ -23,7 +23,19 @@ namespace VaultClient
 			try {
 				Console.WriteLine("Running thru Vault TransitBackend exercises.");
 
-				await Run_ListKeys();
+
+				List<string> transitKeys = await Run_ListKeys();
+				//await Run_ReadKey("keyTestABC5");
+
+				foreach (string key in transitKeys) {
+					TransitKeyInfo TKI = await TB.ReadEncryptionKey(key);
+					Console.WriteLine("Key info for:  {0}",TKI.Name);
+					Console.WriteLine("  Supports:  Deriv:{0}  Converg:{1}", TKI.SupportsDerivation, TKI.EnableConvergentEncryption);
+				}
+
+
+				string eKey = "KeyTestABC2";
+				await Run_EncryptData(eKey);
 
 //				await Run_ReadKey();
 
@@ -34,18 +46,47 @@ namespace VaultClient
 
 			catch (Exception e) {
 				Console.WriteLine("Errors - {0}", e.Message);
+				Console.WriteLine(" Full Exception is:");
+				Console.WriteLine(e.ToString());
+
 			}
 		}
 
-		public async Task Run_ListKeys() {
-			List<string> keys = await TB.ListEncryptionKeys();
+
+
+		public async Task Run_EncryptData (string key) {
+			try {
+
+
+				string a = "abcDEF123$%^";
+
+				List<string> response = await TB.Encrypt(key, a);
+				Console.WriteLine("Encrypt Data Routine:");
+				Console.WriteLine(" encrypted: {0} to {1}", a, response.ToString());
+
+			}
+			catch (Exception e) {
+				Console.WriteLine("Errors - {0}", e.Message);
+				Console.WriteLine(e.ToString());
+			}
 		}
 
 
-		public async Task Run_ReadKey () {
+
+		public async Task<List<string>> Run_ListKeys() {
+			Console.WriteLine("List Transit Encryption Keys");
+			List<string> keys = await TB.ListEncryptionKeys();
+			foreach (string key in keys) {
+				Console.WriteLine("Key: {0}", key);
+			}
+			return keys;
+		}
+
+
+		public async Task Run_ReadKey (string key) {
 			// Read an Encryption Key.
 			//VaultDataResponseObject vdro = await TB.ReadEncryptionKey("KeyTestABC6");
-			TransitKeyInfo TKI = await TB.ReadEncryptionKey("KeyTestABC6");
+			TransitKeyInfo TKI = await TB.ReadEncryptionKey(key);
 			Console.WriteLine("Encryption Key Read:");
 			Console.ReadKey();
 		}

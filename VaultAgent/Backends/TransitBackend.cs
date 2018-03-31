@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VaultAgent.Models;
 using VaultAgent;
+using System.Text;
 
 namespace VaultAgent.Backends
 {
@@ -12,10 +13,11 @@ namespace VaultAgent.Backends
 	{
 		TokenInfo transitToken;		
 		private VaultAPI_Http vaultHTTP;
-		string transitPath = "/v1/transit/keys/";
+		string transitPath = "/v1/transit/";
 		Uri vaultTransitPath;
 
-
+		const string pathKeys = "keys/";
+		const string pathEncrypt = "encrypt/";
 
 		// ==============================================================================================================================================
 		/// <summary>
@@ -45,9 +47,9 @@ namespace VaultAgent.Backends
 		/// <returns>True if the key is successfully cresated.</returns>
 		public async Task<bool> CreateEncryptionKey(string keyName, Dictionary<string,string> createParams) {
 			// The keyname forms the last part of the path
-			string path = vaultTransitPath + keyName;
+			string path = vaultTransitPath + pathKeys + keyName;
 
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, createParams);
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "CreateEncryptionKey", createParams);
 			if (vdro.httpStatusCode == 204) { return true; }
 			else { return false; }
 		}
@@ -67,7 +69,7 @@ namespace VaultAgent.Backends
 		/// is set to.</returns>
 		public async Task<bool> CreateEncryptionKey(string keyName, bool canBeExported = false, bool allowPlainTextBackup = false, EnumTransitKeyType keyType = EnumTransitKeyType.aes256) {
 			// The keyname forms the last part of the path
-			string path = vaultTransitPath + keyName;
+			string path = vaultTransitPath + pathKeys + keyName;
 
 			string keyTypeV;
 
@@ -111,9 +113,9 @@ namespace VaultAgent.Backends
 		// ==============================================================================================================================================
 		public async Task<TransitKeyInfo> ReadEncryptionKey(String keyName) {
 			// The keyname forms the last part of the path
-			string path = vaultTransitPath + keyName;
+			string path = vaultTransitPath + pathKeys + keyName;
 
-			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path);
+			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "ReadEncryptionKey");
 			TransitKeyInfo TKI = vdro.GetVaultTypedObject<TransitKeyInfo>();
 			return TKI;
 		}
@@ -123,29 +125,69 @@ namespace VaultAgent.Backends
 
 		// ==============================================================================================================================================
 		public async Task<List<string>> ListEncryptionKeys() {
-			string path = vaultTransitPath.ToString();
+			string path = vaultTransitPath + pathKeys;
 
 			// Setup List Parameter
 			Dictionary<string, string> sendParams = new Dictionary<string, string>();
 			sendParams.Add("list", "true");
 
-
-			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path,sendParams);
+			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "ListEncryptionKeys", sendParams);
 
 			string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
 
-
-
-			List<string> keys = vdro.ConvertJSON<List<string>>(js); //   .GetVaultTypedObject<List<string>>();
+			List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js); 
 			return keys;
 		}
 
 
 
 
+		/// <summary>
+		/// Internal routine that makes the actual Vault API call using the passed in Parameters as input values.
+		/// </summary>
+		/// <param name="keyName">The encryption key to use to encrypt data.</param>
+		/// <param name="contentParams">Dictionary of string value pairs representing all the input parameters to be sent along with the request to the Vault API.</param>
+		/// <returns>A List of the encrypted value(s). </returns>
+		protected async Task<List<string>> EncryptToVault (string keyName, Dictionary<string,string> contentParams) {
+			string path = vaultTransitPath + pathEncrypt + keyName;
+
+			// Call Vault API.
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "EncryptToVault", contentParams );
+			if (vdro.httpStatusCode == 200) {
+				string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "data");
+				List<string> data = VaultUtilityFX.ConvertJSON<List<string>>(js);
+				return data;
+			}
+			else {	return null; }
+		}
+
+
+
+
+
 		// ==============================================================================================================================================
-		public string Encrypt(string keyName, string data) {
-			throw new System.NotImplementedException();
+		/// <summary>
+		/// Calls the Vault Encryption API.  
+		///  - This version only supports a single data element for encryption at a time.  See the EncryptBulk method for enabling encrypting more than
+		///  one value during a single API call.  
+		///  - It always encrypts with the latest version of the key, unless you have specified the KeyVersion parameter > 0.
+		/// </summary>
+		/// <param name="keyName">The name of the encryption key to use to encrypt the data.</param>
+		/// <param name="rawStringData">The data to be encrypted in string format.  This should not be base64 encoded.  This routine takes care of that for you.</param>
+		/// <param name="keyDerivationContext"></param>
+		/// <param name="keyVersion">Version of the key that should be used to encrypt the data.  The default (0) is the latest version of the key.</param>
+		/// <returns></returns>
+		public async Task<List<string>> Encrypt(string keyName, string rawStringData, string keyDerivationContext = "", int keyVersion = 0) {
+			// Setup Post Parameters in body.
+			Dictionary<string, string> contentParams = new Dictionary<string, string>();
+
+			// Base64 Encode Data
+			contentParams.Add("plaintext", VaultUtilityFX.Base64EncodeAscii(rawStringData));
+
+			if (keyDerivationContext != "") { contentParams.Add("context", VaultUtilityFX.Base64EncodeAscii(keyDerivationContext));	}
+			if (keyVersion > 0 ) { contentParams.Add("key_version", keyVersion.ToString()); }
+
+			return await EncryptToVault(keyName, contentParams);
 		}
 
 
@@ -179,6 +221,11 @@ namespace VaultAgent.Backends
 			throw new System.NotImplementedException();
 		}
 
+
+
+		public bool Delete (string keyName) {
+			throw new System.NotImplementedException();
+		}
 
 	}
 }

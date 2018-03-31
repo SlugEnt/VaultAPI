@@ -59,7 +59,7 @@ namespace VaultAgentTests
 			try {
 				VaultAPI_Http VH = new VaultAPI_Http(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
 
-				VaultDataResponseObject vdr = await VH.PostAsync(path, content);
+				VaultDataResponseObject vdr = await VH.PostAsync(path, "TokenInfoTest" ,content);
 
 				string sJSON = vdr.GetResponsePackageAsJSON();
 

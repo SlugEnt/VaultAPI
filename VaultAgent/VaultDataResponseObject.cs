@@ -209,9 +209,9 @@ namespace VaultAgent
 		}
 
 
-		public T ConvertJSON<T>(string json) {
-			return JsonConvert.DeserializeObject<T>(json);
-		}
+
+
+
 
 	}
 }
