@@ -175,16 +175,25 @@ namespace VaultAgent
 		/// <param name="json">The JSON string to parse</param>
 		/// <param name="fieldName">The specific field or subfield you want JSON for in dot notation.  field.subfield.subsubfield....</param>
 		/// <returns>JSON representation of the specified field.</returns>
-		private string GetJSONPropertyValue (string json, string fieldName) {
+		public string GetJSONPropertyValue (string json, string fieldName) {
 			JToken token = JObject.Parse(json);
 
-			foreach (string queryComponent in fieldName.Split('.')) {
-				token = token[queryComponent];
+			try {
+
+
+				foreach (string queryComponent in fieldName.Split('.')) {
+					token = token[queryComponent];
+				}
+
+				if (token == null) {
+					string msg = "Field " + fieldName + " not found.";
+					throw new VaultFieldNotFoundException(msg);
+				}
 			}
 
-			if (token == null) {
-				string msg = "Field " + fieldName + " not found.";
-				throw new VaultFieldNotFoundException (msg);  }
+			catch (Exception e) {
+				throw new MissingFieldException("GetJSONPropertyValue method unable to find the field: " + fieldName);
+			}
 			return token.ToString();
 		}
 
@@ -197,7 +206,11 @@ namespace VaultAgent
 		/// <returns>An instance of the object class requested, with the values from the JSON Data object.</returns>
 		public T GetVaultTypedObject<T>() {
 			return JsonConvert.DeserializeObject<T>(GetDataPackageAsJSON());
+		}
 
+
+		public T ConvertJSON<T>(string json) {
+			return JsonConvert.DeserializeObject<T>(json);
 		}
 
 	}

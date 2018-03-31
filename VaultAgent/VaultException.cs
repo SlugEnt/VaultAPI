@@ -12,8 +12,8 @@ namespace VaultAgent
 		private const string defaultMsg = "Unable to find the requested field.";
 
 		public VaultFieldNotFoundException() : base(defaultMsg) { }
-		public VaultFieldNotFoundException(string message) : base(message) { }
-		public VaultFieldNotFoundException(string message, System.Exception innerException) : base(message, innerException) { }
+		public VaultFieldNotFoundException(string message) : base(defaultMsg + message) { }
+		public VaultFieldNotFoundException(string message, System.Exception innerException) : base(defaultMsg + message, innerException) { }
 		protected VaultFieldNotFoundException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) { }
 	}
 
@@ -25,8 +25,8 @@ namespace VaultAgent
 		private const string defaultMsg = "Invalid or missing data was supplied.";
 
 		public VaultInvalidDataException() : base(defaultMsg) { }
-		public VaultInvalidDataException(string message) : base(message) { }
-		public VaultInvalidDataException(string message, System.Exception innerException) : base(message, innerException) { }
+		public VaultInvalidDataException(string message) : base(defaultMsg + message) { }
+		public VaultInvalidDataException(string message, System.Exception innerException) : base(defaultMsg + message, innerException) { }
 		protected VaultInvalidDataException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) { }
 	}
 
@@ -37,8 +37,8 @@ namespace VaultAgent
 		private const string defaultMsg = "Authentication details are either incorrect, permission to access feature is denied or a CORS request failure occurred. ";
 
 		public VaultForbiddenException() : base(defaultMsg) { }
-		public VaultForbiddenException(string message) : base(message) { }
-		public VaultForbiddenException(string message, System.Exception innerException) : base(message, innerException) { }
+		public VaultForbiddenException(string message) : base(defaultMsg + message) { }
+		public VaultForbiddenException(string message, System.Exception innerException) : base(defaultMsg + message, innerException) { }
 		protected VaultForbiddenException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) { }
 	}
 
@@ -50,8 +50,8 @@ namespace VaultAgent
 		private const string defaultMsg = "Permission Denied to the the path specified.  In some cases this can also mean a path does not exist.";
 
 		public VaultInvalidPathException() : base(defaultMsg) { }
-		public VaultInvalidPathException(string message) : base(message) { }
-		public VaultInvalidPathException(string message, System.Exception innerException) : base(message, innerException) { }
+		public VaultInvalidPathException(string message) : base(defaultMsg + message) { }
+		public VaultInvalidPathException(string message, System.Exception innerException) : base(defaultMsg + message, innerException) { }
 		protected VaultInvalidPathException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) { }
 	}
 
@@ -64,8 +64,8 @@ namespace VaultAgent
 		private const string defaultMsg = "Internal Vault Error Occured.  Try Again at later time.";
 
 		public VaultInternalErrorException() : base(defaultMsg) { }
-		public VaultInternalErrorException(string message) : base(message) { }
-		public VaultInternalErrorException(string message, System.Exception innerException) : base(message, innerException) { }
+		public VaultInternalErrorException(string message) : base(defaultMsg + message) { }
+		public VaultInternalErrorException(string message, System.Exception innerException) : base(defaultMsg + message, innerException) { }
 		protected VaultInternalErrorException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) { }
 	}
 
@@ -77,8 +77,8 @@ namespace VaultAgent
 		private const string defaultMsg = "Standby Vault nodes are in a warning state.";
 
 		public VaultStandbyNodesErrorException() : base(defaultMsg) { }
-		public VaultStandbyNodesErrorException(string message) : base(message) { }
-		public VaultStandbyNodesErrorException(string message, System.Exception innerException) : base(message, innerException) { }
+		public VaultStandbyNodesErrorException(string message) : base(defaultMsg + message) { }
+		public VaultStandbyNodesErrorException(string message, System.Exception innerException) : base(defaultMsg + message, innerException) { }
 		protected VaultStandbyNodesErrorException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) { }
 	}
 
@@ -94,8 +94,8 @@ namespace VaultAgent
 		private const string defaultMsg = "The vault is sealed.  It must be unsealed in order to be accessible to programs.  Only Vault Admins can do this.  Vault Server may also be down.";
 		
 		public VaultSealedException() : base(defaultMsg) { }
-		public VaultSealedException(string message) : base(message) { }
-		public VaultSealedException(string message, System.Exception innerException) : base(message, innerException) { }
+		public VaultSealedException(string message) : base(defaultMsg + message) { }
+		public VaultSealedException(string message, System.Exception innerException) : base(defaultMsg + message, innerException) { }
 		protected VaultSealedException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) { }
 
 		public VaultSealedException(Exception inner) : base("") { }

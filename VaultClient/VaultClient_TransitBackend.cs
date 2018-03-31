@@ -23,7 +23,9 @@ namespace VaultClient
 			try {
 				Console.WriteLine("Running thru Vault TransitBackend exercises.");
 
-				await Run_ReadKey();
+				await Run_ListKeys();
+
+//				await Run_ReadKey();
 
 
 				// Create an Encryption Key:
@@ -33,6 +35,10 @@ namespace VaultClient
 			catch (Exception e) {
 				Console.WriteLine("Errors - {0}", e.Message);
 			}
+		}
+
+		public async Task Run_ListKeys() {
+			List<string> keys = await TB.ListEncryptionKeys();
 		}
 
 

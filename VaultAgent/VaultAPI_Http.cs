@@ -48,21 +48,38 @@ namespace VaultAgent
 			if (response.IsSuccessStatusCode) {
 				jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 			}
-			else { HandleVaultErrors(response.StatusCode);  }
+			else { HandleVaultErrors(response.StatusCode, response.ReasonPhrase,APIPath);  }
 
 			VaultDataResponseObject vdr = new VaultDataResponseObject(jsonResponse, response.StatusCode);
 			return vdr;
 		}
 
 
-		public async Task<VaultDataResponseObject> GetAsync(string APIPath) {
+		public async Task<VaultDataResponseObject> GetAsync(string APIPath, Dictionary<string, string> sendParameters = null) {
 			string jsonResponse="";
+			string httpParameters = "";
 
-			var response = await httpClt.GetAsync(APIPath);
+
+			// Determine if we need to send parameters
+			if (sendParameters != null) {
+				foreach (KeyValuePair<string,string> item in sendParameters) {
+					httpParameters += item.Key + "=" + item.Value + "&";
+				}
+				// Remove trailing &
+				httpParameters = httpParameters.TrimEnd('&');
+
+				// Add initial "?"
+				httpParameters = "?" + httpParameters;
+			}
+
+			string fullURI = APIPath + httpParameters;
+			
+
+			var response = await httpClt.GetAsync(fullURI);
 			if (response.IsSuccessStatusCode) {
 				jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 			}
-			else { HandleVaultErrors(response.StatusCode); }
+			else { HandleVaultErrors(response.StatusCode, response.ReasonPhrase,fullURI); }
 
 			VaultDataResponseObject vdr = new VaultDataResponseObject(jsonResponse, response.StatusCode);
 			return vdr;
@@ -72,25 +89,27 @@ namespace VaultAgent
 
 
 
-		protected void HandleVaultErrors (System.Net.HttpStatusCode responseCode) {
+		protected void HandleVaultErrors (System.Net.HttpStatusCode responseCode, string HttpMsg, string vaultHttpPath) {
+			string exceptionMsg;
+			exceptionMsg = "[" + vaultHttpPath + "] HttpStatusCode: " + responseCode.ToString();
+			
 			switch ((int) responseCode) {
 				case 400:
-					throw new VaultInvalidDataException();
+					throw new VaultInvalidDataException(exceptionMsg);
 				case 403:
-					throw new VaultForbiddenException();
+					throw new VaultForbiddenException(exceptionMsg);
 				case 404:
-					throw new VaultInvalidPathException();
+					throw new VaultInvalidPathException(exceptionMsg);
 				case 429:
-					throw new VaultStandbyNodesErrorException();
+					throw new VaultStandbyNodesErrorException(exceptionMsg);
 				case 500:
-					throw new VaultInternalErrorException();
+					throw new VaultInternalErrorException(exceptionMsg);
 				case 503:
-					throw new VaultSealedException ();
-			
+					throw new VaultSealedException (exceptionMsg);
+				default:
+					string customMsg = exceptionMsg + HttpMsg;
+					throw new System.Exception(customMsg);
 			}
 		}
-
-
-
 	}
 }

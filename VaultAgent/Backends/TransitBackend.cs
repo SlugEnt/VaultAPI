@@ -122,6 +122,28 @@ namespace VaultAgent.Backends
 
 
 		// ==============================================================================================================================================
+		public async Task<List<string>> ListEncryptionKeys() {
+			string path = vaultTransitPath.ToString();
+
+			// Setup List Parameter
+			Dictionary<string, string> sendParams = new Dictionary<string, string>();
+			sendParams.Add("list", "true");
+
+
+			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path,sendParams);
+
+			string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
+
+
+
+			List<string> keys = vdro.ConvertJSON<List<string>>(js); //   .GetVaultTypedObject<List<string>>();
+			return keys;
+		}
+
+
+
+
+		// ==============================================================================================================================================
 		public string Encrypt(string keyName, string data) {
 			throw new System.NotImplementedException();
 		}
