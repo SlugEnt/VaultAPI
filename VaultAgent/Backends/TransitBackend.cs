@@ -148,14 +148,15 @@ namespace VaultAgent.Backends
 		/// <param name="keyName">The encryption key to use to encrypt data.</param>
 		/// <param name="contentParams">Dictionary of string value pairs representing all the input parameters to be sent along with the request to the Vault API.</param>
 		/// <returns>A List of the encrypted value(s). </returns>
-		protected async Task<List<string>> EncryptToVault (string keyName, Dictionary<string,string> contentParams) {
+		protected async Task<List<TransitEncryptionResults>> EncryptToVault (string keyName, Dictionary<string,string> contentParams) {
 			string path = vaultTransitPath + pathEncrypt + keyName;
 
 			// Call Vault API.
 			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "EncryptToVault", contentParams );
 			if (vdro.httpStatusCode == 200) {
-				string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "data");
-				List<string> data = VaultUtilityFX.ConvertJSON<List<string>>(js);
+				string js = "[" + vdro.GetDataPackageAsJSON() + "]";
+				List<TransitEncryptionResults> data =  VaultUtilityFX.ConvertJSON<List<TransitEncryptionResults>>(js);
+				//List<TransitEncryptionResults> data = VaultUtilityFX.ConvertJSON<List<TransitEncryptionResults>>(js);
 				return data;
 			}
 			else {	return null; }
@@ -177,7 +178,7 @@ namespace VaultAgent.Backends
 		/// <param name="keyDerivationContext"></param>
 		/// <param name="keyVersion">Version of the key that should be used to encrypt the data.  The default (0) is the latest version of the key.</param>
 		/// <returns></returns>
-		public async Task<List<string>> Encrypt(string keyName, string rawStringData, string keyDerivationContext = "", int keyVersion = 0) {
+		public async Task<List<TransitEncryptionResults>> Encrypt(string keyName, string rawStringData, string keyDerivationContext = "", int keyVersion = 0) {
 			// Setup Post Parameters in body.
 			Dictionary<string, string> contentParams = new Dictionary<string, string>();
 

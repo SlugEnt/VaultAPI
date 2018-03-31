@@ -60,7 +60,7 @@ namespace VaultAgent.Models
 		public string KDF { get; set; }
 
 		[JsonProperty("keys")]
-		public Dictionary<int,string> Keys { get; set; }
+		public Dictionary<int,object> Keys { get; set; }
 
 	}
 

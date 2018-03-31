@@ -34,14 +34,14 @@ namespace VaultClient
 				}
 
 
-				string eKey = "KeyTestABC2";
+				string eKey = "KeyTestABC7";
 				await Run_EncryptData(eKey);
 
 //				await Run_ReadKey();
 
 
 				// Create an Encryption Key:
-//				Run_CreateKey();
+				//Run_CreateKey("keyA");
 			}
 
 			catch (Exception e) {
@@ -60,9 +60,10 @@ namespace VaultClient
 
 				string a = "abcDEF123$%^";
 
-				List<string> response = await TB.Encrypt(key, a);
+				List<TransitEncryptionResults> response = await TB.Encrypt(key, a);
 				Console.WriteLine("Encrypt Data Routine:");
-				Console.WriteLine(" encrypted: {0} to {1}", a, response.ToString());
+				
+				//Console.WriteLine(" encrypted: {0} to {1}", a, response[0].Ciphers);
 
 			}
 			catch (Exception e) {
@@ -94,11 +95,11 @@ namespace VaultClient
 
 
 
-		public async Task Run_CreateKey () {
+		public async Task Run_CreateKey (string key) {
 			// Load parameters to Create an Encryption Key.
 			Dictionary<string, string> vaultParams = new Dictionary<string, string>();
 			vaultParams.Add("type", "aes256-gcm96");
-			vaultParams.Add("derived", "true");
+			//vaultParams.Add("derived", "true");
 			vaultParams.Add("exportable", "false");
 			vaultParams.Add("allow_plaintext_backup", "true");
 
