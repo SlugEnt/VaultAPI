@@ -47,7 +47,8 @@ namespace VaultAgent
 		/// with your own JSON string of parameters by setting the inputParamsJSON</param>
 		/// <param name="inputParamsJSON">JSON string of the parameters you want to put in the body of the HTTP call.  This is used to override the inputParams Dictionary.</param>
 		/// <returns>VaultDataResponseObject with the results of the call.</returns>
-		public async Task<VaultDataResponseObject> PostAsync(string APIPath, string callingRoutineName, Dictionary<string, string> inputParams = null, string inputParamsJSON = null) {
+		public async Task<VaultDataResponseObject> PostAsync(string APIPath, string callingRoutineName, Dictionary<string, string> inputParams = null, string inputParamsJSON = "") {
+			
 			if (inputParams != null) {
 				inputParamsJSON = JsonConvert.SerializeObject(inputParams, Formatting.None);
 			}
@@ -106,6 +107,14 @@ namespace VaultAgent
 
 
 
+
+		/// <summary>
+		/// Processes errors returned by calls to the Vault API.
+		/// </summary>
+		/// <param name="response">The actual HttpResponseMessage returned by the HTTP call.</param>
+		/// <param name="vaultHttpPath">The path that we tried to run on the Vault API.</param>
+		/// <param name="callingRoutineName">The name of the routine that was making the Vault API Call.</param>
+		/// <returns>A thrown exception with a custom message detailing the errors returned by the vault API.  </returns>
 		protected async Task HandleVaultErrors (HttpResponseMessage response, string vaultHttpPath, string callingRoutineName) {
 			// See if Response Body Contains an Errors object.
 			string jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -143,32 +152,8 @@ namespace VaultAgent
 			}
 		}
 
-/*
-		protected void HandleVaultErrors (System.Net.HttpStatusCode responseCode, string HttpMsg, string vaultHttpPath) {
-			string exceptionMsg;
-			int status = (int)responseCode;
 
-			exceptionMsg = "[" + vaultHttpPath + "] HttpStatusCode: " + status;
-			
-			switch ((int) responseCode) {
-				case 400:
-					throw new VaultInvalidDataException(exceptionMsg);
-				case 403:
-					throw new VaultForbiddenException(exceptionMsg);
-				case 404:
-					throw new VaultInvalidPathException(exceptionMsg);
-				case 429:
-					throw new VaultStandbyNodesErrorException(exceptionMsg);
-				case 500:
-					throw new VaultInternalErrorException(exceptionMsg);
-				case 503:
-					throw new VaultSealedException (exceptionMsg);
-				default:
-					string customMsg = exceptionMsg + HttpMsg;
-					throw new System.Exception(customMsg);
-			}
-		}
-		*/
+
 
 
 		// =========================================================================================================================

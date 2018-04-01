@@ -38,7 +38,8 @@ namespace VaultClient
 			// Transit Backend
 			VaultClient_TransitBackend transit = new VaultClient_TransitBackend(rootToken, ip, port);
 			await transit.Run();
-			Console.WriteLine("Finished");
+			Console.WriteLine("Finished with all sample runs.");
+			Console.WriteLine("  -- Press any key to exit program.");
 			Console.ReadKey();
 
 			return;

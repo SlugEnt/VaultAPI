@@ -17,7 +17,7 @@ namespace VaultAgent
 		private Dictionary<string, object> responseDataDict;
 
 		public int httpStatusCode { get; }			// The status code returned from the Vault API.
-
+		public bool Success { get; }
 
 
 		// =========================================================================================================================
@@ -25,9 +25,16 @@ namespace VaultAgent
 		/// Constructor.  Accepts a single JSON string, which should be the entire JSON body returned by the Vault API.
 		/// </summary>
 		/// <param name="JSONresponse">The JSON string returned by the called Vault API.</param>
-		public VaultDataResponseObject (string JSONresponse, System.Net.HttpStatusCode statusCode) {
+		public VaultDataResponseObject(string JSONresponse, System.Net.HttpStatusCode statusCode) {
 			responseJSON = JSONresponse;
-			httpStatusCode = (int) statusCode;
+			httpStatusCode = (int)statusCode;
+
+
+			// Vault at this time only returns 2 successful codes:
+			//  200 - Success with data returned.
+			//  204 - Success with no data returned.
+			if (httpStatusCode <= 204) { Success = true; }
+			else { Success = false; }
 		}
 
 

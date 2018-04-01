@@ -150,18 +150,14 @@ namespace VaultAgent.Backends
 		/// <param name="keyName">The encryption key to use to encrypt data.</param>
 		/// <param name="contentParams">Dictionary of string value pairs representing all the input parameters to be sent along with the request to the Vault API.</param>
 		/// <returns>A List of the encrypted value(s). </returns>
-		protected async Task<TransitEncryptionResultsSingle> EncryptToVault (string keyName, Dictionary<string,string> contentParams) {
+		protected async Task<TransitEncryptedItem> EncryptToVault (string keyName, Dictionary<string,string> contentParams) {
 			string path = vaultTransitPath + pathEncrypt + keyName;
 
 			// Call Vault API.
 			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "EncryptToVault", contentParams );
 			if (vdro.httpStatusCode == 200) {
-
-				//string js = "{\"data\": " + vdro.GetDataPackageAsJSON() + "}";
 				string js =  vdro.GetDataPackageAsJSON() ;
-				//string js = "[" + vdro.GetDataPackageAsJSON() + "]";
-				TransitEncryptionResultsSingle data =  VaultUtilityFX.ConvertJSON<TransitEncryptionResultsSingle>(js);
-				//List<TransitEncryptionResults> data = VaultUtilityFX.ConvertJSON<List<TransitEncryptionResults>>(js);
+				TransitEncryptedItem data =  VaultUtilityFX.ConvertJSON<TransitEncryptedItem>(js);
 				return data;
 			}
 			else {	return null; }
@@ -183,7 +179,7 @@ namespace VaultAgent.Backends
 		/// <param name="keyDerivationContext"></param>
 		/// <param name="keyVersion">Version of the key that should be used to encrypt the data.  The default (0) is the latest version of the key.</param>
 		/// <returns></returns>
-		public async Task<TransitEncryptionResultsSingle> Encrypt(string keyName, string rawStringData, string keyDerivationContext = "", int keyVersion = 0) {
+		public async Task<TransitEncryptedItem> Encrypt(string keyName, string rawStringData, string keyDerivationContext = "", int keyVersion = 0) {
 			// Setup Post Parameters in body.
 			Dictionary<string, string> contentParams = new Dictionary<string, string>();
 
@@ -253,7 +249,7 @@ namespace VaultAgent.Backends
 
 
 		// ==============================================================================================================================================
-		public async Task<TransitDecryptionResultSingle> Decrypt(string keyName, string encryptedData, string keyDerivationContext = "") {
+		public async Task<TransitDecryptedItem> Decrypt(string keyName, string encryptedData, string keyDerivationContext = "") {
 			string path = vaultTransitPath + pathDecrypt + keyName;
 
 
@@ -269,7 +265,7 @@ namespace VaultAgent.Backends
 			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "Decrypt", contentParams);
 			if (vdro.httpStatusCode == 200) {
 				string js = vdro.GetDataPackageAsJSON();
-				TransitDecryptionResultSingle data = VaultUtilityFX.ConvertJSON<TransitDecryptionResultSingle>(js);
+				TransitDecryptedItem data = VaultUtilityFX.ConvertJSON<TransitDecryptedItem>(js);
 				return data;
 			}
 
@@ -282,8 +278,22 @@ namespace VaultAgent.Backends
 
 
 		// ==============================================================================================================================================
-		public bool RotateEncryptionKey (string keyName) {
-			throw new System.NotImplementedException();
+		/// <summary>
+		/// Rotates the specified key.  All new encrypt operations will now use the new encryption key.  
+		/// </summary>
+		/// <param name="keyName">The name of the encryption ket to rotate.</param>
+		/// <returns>True if successfull.  Will thrown an error with the reason if unsuccesful.  </returns>
+		public async Task<bool> RotateKey (string keyName) {
+			string path = vaultTransitPath + pathKeys + keyName + "/rotate";
+
+			// Call Vault API.
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "RotateKey");
+			if (!vdro.Success) {
+				// This should not be able to happen.  If it errored, it should have been handled in the PostAsync call.  
+				throw new VaultUnexpectedCodePathException("Unexpected response in RotateKey");
+				}
+
+			return true;
 		}
 
 

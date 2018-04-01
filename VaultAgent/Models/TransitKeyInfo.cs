@@ -62,6 +62,9 @@ namespace VaultAgent.Models
 		[JsonProperty("keys")]
 		public Dictionary<int,object> Keys { get; set; }
 
+		public override string ToString() {
+			return $"Key Name: { Name} | Version: {LatestVersionNum} | Type: {EncryptionMethod} | Supports Derivation: {SupportsDerivation} | Number of Keys: {Keys.Count}";
+		}
 	}
 
 

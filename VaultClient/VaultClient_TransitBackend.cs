@@ -19,15 +19,19 @@ namespace VaultClient
 
 		}
 
-		public async Task Run() {
+		public async Task Run(bool runRotateTest = false) {
 			try {
 				Console.WriteLine("Running thru Vault TransitBackend exercises.");
 				string eKey = "KeyTestABC7";
 
-				/*
-								List<string> transitKeys = await Run_ListKeys();
-								//await Run_ReadKey("keyTestABC5");
-								Console.WriteLine("Following are the Encryption Keys currently in Transit Backend");
+				// List Keys
+				List<string> transitKeys = await Run_ListKeys();
+
+				// Read a key
+				await Run_ReadKey(eKey);
+
+/*
+				Console.WriteLine("Following are the Encryption Keys currently in Transit Backend");
 
 								foreach (string key in transitKeys) {
 									TransitKeyInfo TKI = await TB.ReadEncryptionKey(key);
@@ -35,17 +39,17 @@ namespace VaultClient
 									Console.WriteLine("  Supports:  Deriv:{0}  Converg:{1}", TKI.SupportsDerivation, TKI.EnableConvergentEncryption);
 								}
 
+	*/
 
-								// Encrypt Single Item
-								Console.WriteLine("Encrypting a single item.");
-
-								await Run_EncryptData(eKey);
-				*/
-
+				// Encrypt Single Item
+				Console.WriteLine("Encrypting a single item.");
+				await Run_EncryptData(eKey);
 
 
-				Console.WriteLine("Encrypting bulk Items");
+
 				// Encrypt Bulk Items
+				Console.WriteLine("Encrypting bulk Items");
+				
 				List<TransitBulkEncryptItem> bulkEnc = new List<TransitBulkEncryptItem>();
 				bulkEnc.Add(new TransitBulkEncryptItem("ABC"));
 				bulkEnc.Add(new TransitBulkEncryptItem("DEF"));
@@ -55,22 +59,29 @@ namespace VaultClient
 
 				TransitEncryptionResultsBulk results = await TB.EncryptBulk(eKey, bulkEnc);
 				int sentCnt = bulkEnc.Count;
-				int recvCnt = results.Ciphers.Count;
+				int recvCnt = results.EncryptedValues.Count;
 				if (sentCnt == recvCnt) { Console.WriteLine("  - Bulk Encryption completed.  Sent and recived items count same!  SUCCESS!"); }
 
 
-				foreach (TransitEncryptionResultsSingle encrypted in results.Ciphers) {
-					TransitDecryptionResultSingle decrypted = await TB.Decrypt(eKey, encrypted.Ciphertext );
+				foreach (TransitEncryptedItem encrypted in results.EncryptedValues) {
+					TransitDecryptedItem decrypted = await TB.Decrypt(eKey, encrypted.EncryptedValue );
 					Console.WriteLine("  - Decrypted Value = {0}", decrypted.DecryptedValue);
 				}
-				
+
+
+				// Rotate the Key.
+				if (runRotateTest) {
+					Console.WriteLine("Rotating the Key.");
+					bool rotateAnswer = await TB.RotateKey(eKey);
+					if (rotateAnswer) { Console.WriteLine("  - Key rotation successful."); }
+				}
+
 //				await Run_ReadKey();
 
 
 				// Create an Encryption Key:
 				//Run_CreateKey("keyA");
 			}
-
 			catch (Exception e) {
 				Console.WriteLine("Errors - {0}", e.Message);
 				Console.WriteLine(" Full Exception is:");
@@ -83,14 +94,12 @@ namespace VaultClient
 
 		public async Task Run_EncryptData (string key) {
 			try {
-
-
 				string a = "abcDEF123$%^";
 
-				TransitEncryptionResultsSingle response = await TB.Encrypt(key, a);
+				TransitEncryptedItem response = await TB.Encrypt(key, a);
 				Console.WriteLine("Encrypt Data Routine:");
 				
-				//Console.WriteLine(" encrypted: {0} to {1}", a, response[0].Ciphers);
+				Console.WriteLine(" encrypted: {0} to {1}", a, response.EncryptedValue);
 
 			}
 			catch (Exception e) {
@@ -113,10 +122,10 @@ namespace VaultClient
 
 		public async Task Run_ReadKey (string key) {
 			// Read an Encryption Key.
-			//VaultDataResponseObject vdro = await TB.ReadEncryptionKey("KeyTestABC6");
 			TransitKeyInfo TKI = await TB.ReadEncryptionKey(key);
 			Console.WriteLine("Encryption Key Read:");
-			Console.ReadKey();
+			Console.WriteLine("  - {0}", TKI.ToString());
+		
 		}
 
 
