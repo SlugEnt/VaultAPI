@@ -22,6 +22,14 @@ namespace VaultAgent
 		}
 
 
+		public static string Base64DecodeAscii (string textToDecode) {
+			byte[] decoded = Convert.FromBase64String(textToDecode);
+			return ASCIIEncoding.ASCII.GetString(decoded);
+		}
+
+
+
+
 		/// <summary>
 		/// This function accepts a JSON string and will convert it into a strongly typed C# class object.  
 		/// Especially useful for converting JSON objects that are sub arrays or sub lists into C# Lists or Dictionaries.

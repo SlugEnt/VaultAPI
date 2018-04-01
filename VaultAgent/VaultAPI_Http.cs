@@ -38,10 +38,22 @@ namespace VaultAgent
 
 
 
-		public async Task<VaultDataResponseObject> PostAsync(string APIPath, string callingRoutineName, Dictionary<string, string> inputVars) {
-			string inputVarsJSON = JsonConvert.SerializeObject(inputVars, Formatting.None);
+		/// <summary>
+		/// Calls the HTTP Post method, to send data to the Vault API server.  
+		/// </summary>
+		/// <param name="APIPath">The path to call on the Vault server.</param>
+		/// <param name="callingRoutineName">String name of the routine that called this method.  Used for debugging and logging purposes only.</param>
+		/// <param name="inputParams">A Dictionary of key value pairs of parameters that should be sent in the body of the HTTP Call.  Should set to null if overriding 
+		/// with your own JSON string of parameters by setting the inputParamsJSON</param>
+		/// <param name="inputParamsJSON">JSON string of the parameters you want to put in the body of the HTTP call.  This is used to override the inputParams Dictionary.</param>
+		/// <returns>VaultDataResponseObject with the results of the call.</returns>
+		public async Task<VaultDataResponseObject> PostAsync(string APIPath, string callingRoutineName, Dictionary<string, string> inputParams = null, string inputParamsJSON = null) {
+			if (inputParams != null) {
+				inputParamsJSON = JsonConvert.SerializeObject(inputParams, Formatting.None);
+			}
 
-			HttpContent contentBody = new StringContent(inputVarsJSON);
+
+			HttpContent contentBody = new StringContent(inputParamsJSON);
 			contentBody.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
 			string jsonResponse = "";
@@ -56,6 +68,9 @@ namespace VaultAgent
 			VaultDataResponseObject vdr = new VaultDataResponseObject(jsonResponse, response.StatusCode);
 			return vdr;
 		}
+
+
+
 
 
 		public async Task<VaultDataResponseObject> GetAsync(string APIPath, string callingRoutineName, Dictionary<string, string> sendParameters = null) {

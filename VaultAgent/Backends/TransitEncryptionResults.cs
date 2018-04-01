@@ -7,22 +7,36 @@ using Newtonsoft.Json;
 
 namespace VaultAgent.Backends
 {
-	public class TransitEncryptionResults
-	{
-		
+	public class TransitEncryptionResultsSingle { 
 		[JsonProperty("ciphertext")]
-		[JsonConverter(typeof(JSONSingleOrArrayConverter<string>))]
-		public List<string> Ciphers { get; set; }
-
-		/*
-		[JsonProperty("")]
-		public string x { get; set; }
-
-		[JsonProperty("")]
-		public string x { get; set; }
-
-	*/
+		public string Ciphertext { get; set; }
+	}
 
 
+
+	public class TransitEncryptionResultsBulk
+	{
+		[JsonProperty("batch_results")]
+		public List<TransitEncryptionResultsSingle> Ciphers { get; set; }
+	}
+
+
+	public class TransitDecryptionResultSingle
+	{
+		private string decrypted;
+
+		[JsonProperty("plaintext")]
+		public string DecryptedValue { 
+			get { return decrypted; }
+			set { decrypted = VaultUtilityFX.Base64DecodeAscii(value); }
+		}
+	}
+
+
+	public class TransitDecryptionResultsBulk
+	{
+		[JsonProperty("batch_results")]
+		public List<TransitDecryptionResultSingle> DecryptedValues { get; set; }
 	}
 }
+

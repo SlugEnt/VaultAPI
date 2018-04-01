@@ -100,4 +100,18 @@ namespace VaultAgent
 
 		public VaultSealedException(Exception inner) : base("") { }
 	}
+
+
+
+
+	[Serializable]
+	public class VaultUnexpectedCodePathException : Exception
+	{
+		private const string defaultMsg = "A piece of the code that was not expected to be run, was reached.";
+
+		public VaultUnexpectedCodePathException() : base(defaultMsg) { }
+		public VaultUnexpectedCodePathException(string message) : base(defaultMsg + message) { }
+		public VaultUnexpectedCodePathException(string message, System.Exception innerException) : base(defaultMsg + message, innerException) { }
+		protected VaultUnexpectedCodePathException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) { }
+	}
 }
