@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using VaultAgent;
 using VaultAgent.Models;
 using Newtonsoft.Json;
+using VaultAgent.Backends.System;
+using VaultAgent.Backends;
 
 namespace VaultClient
 {
@@ -34,9 +36,15 @@ namespace VaultClient
 				port = 8200;
 			}
 
+			// System Backend
+			string transitDB = "transit";
+
+			//VaultSystemBackend VSB = new VaultSystemBackend(ip, port, rootToken);
+			//bool rc = await VSB.SysMountEnable(transitDB, ("transit test DB -" + transitDB), EnumBackendTypes.Transit);
+
 
 			// Transit Backend
-			VaultClient_TransitBackend transit = new VaultClient_TransitBackend(rootToken, ip, port);
+			VaultClient_TransitBackend transit = new VaultClient_TransitBackend(rootToken, ip, port,transitDB);
 			await transit.Run();
 			Console.WriteLine("Finished with all sample runs.");
 			Console.WriteLine("  -- Press any key to exit program.");

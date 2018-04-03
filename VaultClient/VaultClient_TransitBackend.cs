@@ -5,6 +5,8 @@ using VaultAgent.Backends;
 using System.Threading.Tasks;
 using VaultAgent;
 using VaultAgent.Models;
+using VaultAgent.Backends.Transit.Models;
+using VaultAgent.Backends.Transit;
 
 
 namespace VaultClient
@@ -14,8 +16,8 @@ namespace VaultClient
 		TransitBackend TB;
 		
 
-		public VaultClient_TransitBackend (string token, string ip, int port) {
-			TB = new TransitBackend(ip, port, token);
+		public VaultClient_TransitBackend (string token, string ip, int port, string db) {
+			TB = new TransitBackend(ip, port, token,db);
 
 		}
 

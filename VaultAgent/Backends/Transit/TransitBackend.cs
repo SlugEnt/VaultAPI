@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VaultAgent.Models;
-using VaultAgent;
-using System.Text;
 using Newtonsoft.Json;
+using VaultAgent.Backends.Transit.Models;
 
 namespace VaultAgent.Backends
 {
@@ -14,7 +11,7 @@ namespace VaultAgent.Backends
 	{
 		TokenInfo transitToken;		
 		private VaultAPI_Http vaultHTTP;
-		string transitPath = "/v1/transit/";
+		string transitPath = "/v1/transit/";	
 		Uri vaultTransitPath;
 
 		const string pathKeys = "keys/";
@@ -28,11 +25,13 @@ namespace VaultAgent.Backends
 		/// <param name="vaultIP">The IP address of the Vault Server.</param>
 		/// <param name="port">The network port the Vault server listens on.</param>
 		/// <param name="Token">The token used to authenticate with.</param>
-		public TransitBackend (string vaultIP, int port, string Token) {
+		/// <param name="backendMountName">The name of the transit backend to mount.  For example for a mount at /mine/transitA use mine/transitA as value.</param>
+		public TransitBackend (string vaultIP, int port, string Token, string backendMountName="transit") {
 			vaultHTTP = new VaultAPI_Http(vaultIP, port, Token);
 			transitToken = new TokenInfo();
 			transitToken.Id = Token;
 
+			transitPath = "/v1/" + backendMountName + "/";
 			vaultTransitPath = new Uri("http://" + vaultIP + ":" + port + transitPath);
 		}
 
@@ -46,7 +45,7 @@ namespace VaultAgent.Backends
 		/// <param name="keyName">This is the actual name of the encryption key.</param>
 		/// <param name="createParams">A Dictionary in the Dictionary [string,string] format.  You must have supplied the values for the dictionary
 		/// in the calling routing.  The Key should match the Vault API keyname and the Value should be the value in the format vault is expecting.</param>
-		/// <returns>True if the key is successfully cresated.</returns>
+		/// <returns>True if the key is successfully created.</returns>
 		public async Task<bool> CreateEncryptionKey(string keyName, Dictionary<string,string> createParams) {
 			// The keyname forms the last part of the path
 			string path = vaultTransitPath + pathKeys + keyName;
@@ -55,6 +54,7 @@ namespace VaultAgent.Backends
 			if (vdro.httpStatusCode == 204) { return true; }
 			else { return false; }
 		}
+
 
 
 		// ==============================================================================================================================================
@@ -100,8 +100,6 @@ namespace VaultAgent.Backends
 			}
 
 
-			//Dictionary<string, string> createParams = new Dictionary<string, string>();
-			
 			Dictionary<string, string> createParams = new Dictionary<string,string>();
 			createParams.Add("exportable", canBeExported ? "true" : "false");
 			createParams.Add("allow_plaintext_backup", allowPlainTextBackup ? "true" : "false");
@@ -309,13 +307,13 @@ namespace VaultAgent.Backends
 		/// new encryption key.</param>
 		/// <returns>The data element encrypted with the latest version of the encryption key.</returns>
 		public string ReEncrypt (string keyName, string encryptedData) {
-			throw new System.NotImplementedException();
+			throw new NotImplementedException();
 		}
 
 
 
 		public bool Delete (string keyName) {
-			throw new System.NotImplementedException();
+			throw new NotImplementedException();
 		}
 
 	}

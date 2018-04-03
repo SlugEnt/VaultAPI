@@ -21,13 +21,13 @@ namespace VaultAgent.Models
 		public string EncryptionMethod { get; set; }
 
 		[JsonProperty("latest_version")]
-		public string  LatestVersionNum {get;set;} 
+		public int  LatestVersionNum {get;set;} 
 
 		[JsonProperty("min_decryption_version")]
-		public string MinDecryptionVersion  {get;set;}
+		public int MinDecryptionVersion  {get;set;}
 
 		[JsonProperty("min_encryption_version")]
-		public string  MinEncryptionVersion {get;set;}
+		public int  MinEncryptionVersion {get;set;}
 
 		[JsonProperty("supports_decryption")]
 		public bool SupportsDecryption  {get;set;}

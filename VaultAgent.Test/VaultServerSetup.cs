@@ -44,8 +44,10 @@ namespace VaultAgentTests
 		[OneTimeSetUp]
 		public void StartVaultServer() {
 
-			VaultServerRef.rootToken = Guid.NewGuid().ToString();
+			//VaultServerRef.rootToken = Guid.NewGuid().ToString();
+			VaultServerRef.rootToken = "testing";
 			VaultServerRef.ipPort = GetRandomUnusedPort();
+			//VaultServerRef.ipPort = 54678;
 			VaultServerRef.ipAddress = "127.0.0.1";
 			VaultServerRef.vaultURI  =  new Uri("http://" + VaultServerRef.ipAddress + ":" +  VaultServerRef.ipPort);
 			VaultServerRef.vaultFolder = GetTestsPath() + "\\Utility";

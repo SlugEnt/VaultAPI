@@ -5,12 +5,14 @@ using VaultAgent;
 using VaultAgent.Models;
 using System;
 using System.Threading.Tasks;
-
+using VaultAgent.Backends;
+using VaultAgent.Backends.System;
 
 namespace VaultAgentTests
 {
     public class VaultSysTests
     {
+
 
         [SetUp]
         public async Task Setup()
@@ -21,7 +23,7 @@ namespace VaultAgentTests
 
 
         [Test]
-        public async Task VaultSetupTest()
+        public void VaultSetupTest()
         {
 			// Make sure we have a root token and an ip address.
 			Assert.AreNotEqual(VaultServerRef.rootToken, "");
@@ -69,6 +71,15 @@ namespace VaultAgentTests
 
 			//Console.WriteLine("JSON = {0}", vdr.GetDataPackageAsJSON());
 
+		}
+
+
+		[Test]
+		public async Task CanEnableTransitBackend () {
+			// Utilize System Backend to mount a new Transit Engine at transit_B
+			VaultSystemBackend VSB = new VaultSystemBackend(VaultServerRef.ipAddress,VaultServerRef.ipPort, VaultServerRef.rootToken);
+			bool rc = await VSB.SysMountEnable("transit_b", "transit B test backend", EnumBackendTypes.Transit);
+			Assert.AreEqual(true, rc);
 		}
 	}
 }

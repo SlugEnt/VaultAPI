@@ -71,13 +71,18 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Backends\EnumTransitKeyType.cs" />
+    <Compile Include="Backends\System\EnumBackendTypes.cs" />
+    <Compile Include="Backends\System\VaultSystemBackend.cs" />
+    <Compile Include="Backends\Transit\EnumTransitKeyType.cs" />
     <Compile Include="Backends\JSONSingleOrArrayConverter.cs" />
-    <Compile Include="Backends\TransitBackend.cs" />
-    <Compile Include="Backends\TransitBulkEncryptItem.cs" />
-    <Compile Include="Backends\Transit_JSON_Models.cs" />
+    <Compile Include="Backends\Transit\Models\TransitDecryptedItem.cs" />
+    <Compile Include="Backends\Transit\Models\TransitDecryptionResultsBulk.cs" />
+    <Compile Include="Backends\Transit\Models\TransitEncryptedItem.cs" />
+    <Compile Include="Backends\Transit\Models\TransitEncryptionResultsBulk.cs" />
+    <Compile Include="Backends\Transit\TransitBackend.cs" />
+    <Compile Include="Backends\Transit\Models\TransitBulkEncryptItem.cs" />
     <Compile Include="Models\TokenInfo.cs" />
-    <Compile Include="Models\TransitKeyInfo.cs" />
+    <Compile Include="Backends\Transit\Models\TransitKeyInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VaultAPI_Http.cs" />
     <Compile Include="VaultDataResponseObject.cs" />
