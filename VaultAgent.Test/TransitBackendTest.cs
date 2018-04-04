@@ -178,14 +178,32 @@ namespace VaultAgentTests
 		}
 
 
+		
 
 
-		public async Task Transit_ReEncrypt_Test () {
+		[Test, Order(300)]
+		// Test that Reencrypt results in same original un-encrypted value.  
+		public async Task ValidateReEncryption_ResultsInSameOriginalValue () {
 			try {
-				
-			}
-			catch (Exception e) { }
+				string valA = Guid.NewGuid().ToString();
+				string key = "ZabcZ";
 
+				// Create key, validate the version and then encrypt some data with that key.
+				Assert.True(await TB.CreateEncryptionKey(key, true, true, EnumTransitKeyType.aes256));
+				TransitEncryptedItem encA = await TB.Encrypt(key, valA);
+				TransitKeyInfo tkiA = await TB.ReadEncryptionKey(key);
+
+				// Rotate Key, Read value of key version, Re-Encrypt data.  Decrypt Data.
+				Assert.True(await TB.RotateKey(key));
+				TransitKeyInfo tkiB = await TB.ReadEncryptionKey(key);
+				TransitEncryptedItem encB = await TB.ReEncrypt(key, encA.EncryptedValue);
+				TransitDecryptedItem decB = await TB.Decrypt(key, encB.EncryptedValue);
+
+				// Validate Results.  Key version incremented by 1.
+				Assert.AreEqual(tkiA.LatestVersionNum + 1, tkiB.LatestVersionNum);
+				Assert.AreEqual(valA, decB.DecryptedValue);
+				}
+			catch (Exception e) { }
 		}
 	}
 }

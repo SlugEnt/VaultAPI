@@ -21,7 +21,7 @@ namespace VaultClient
 
 		}
 
-		public async Task Run(bool runRotateTest = false) {
+		public async Task Run(bool runRotateTest = false, bool runRekeyTest = true) {
 			try {
 				Console.WriteLine("Running thru Vault TransitBackend exercises.");
 				string eKey = "KeyTestABC7";
@@ -78,7 +78,12 @@ namespace VaultClient
 					if (rotateAnswer) { Console.WriteLine("  - Key rotation successful."); }
 				}
 
-//				await Run_ReadKey();
+				if (runRekeyTest) {
+					Console.WriteLine("Rencrypting a key.");
+					await Run_ReEncrypt(eKey);
+				}
+
+				//				await Run_ReadKey();
 
 
 				// Create an Encryption Key:
@@ -131,6 +136,36 @@ namespace VaultClient
 		}
 
 
+		public async Task Run_ReEncrypt (string key) {
+			Console.WriteLine("Running Re-Encrypt Data Process:");
+			string a = "abcDEF123$%^";
+
+			TransitKeyInfo TKIA = await TB.ReadEncryptionKey(key);
+			Console.WriteLine("  -- Encryption Key Current Version is {0}", TKIA.LatestVersionNum);
+
+			TransitEncryptedItem response = await TB.Encrypt(key, a);
+			bool success = await TB.RotateKey(key);
+			if (!success) {
+				Console.WriteLine("  -- Failed to rotate the key.  Stopping the Re-Encryption test.");
+				return;
+			}
+			TransitKeyInfo TKIB = await TB.ReadEncryptionKey(key);
+			Console.WriteLine("  -- Encryption Key New Version is {0}", TKIB.LatestVersionNum);
+
+			TransitEncryptedItem response2 = await TB.ReEncrypt(key, response.EncryptedValue);
+			if (response2 != null) {
+				Console.WriteLine("  -- Reencryption completed.");
+
+				// Now validate by decrypting original value and new value.  Should be same.
+				TransitDecryptedItem decryptA = await TB.Decrypt(key, response.EncryptedValue);
+				TransitDecryptedItem decryptB = await TB.Decrypt(key, response2.EncryptedValue);
+				if (a == decryptB.DecryptedValue) {	Console.WriteLine("  -- ReEncryption successfull.  Original Data = {0} and after re-encrypt value = {1}", a, decryptB.DecryptedValue); }
+				else { Console.WriteLine("  -- ReEncryption FAILED.  Original value = {0}, re-Encryption value = {1}.", a, decryptB.DecryptedValue); }
+
+			}
+
+			Console.WriteLine(" encrypted: {0} to {1}", a, response.EncryptedValue);
+		}
 
 
 		public async Task Run_CreateKey (string key) {

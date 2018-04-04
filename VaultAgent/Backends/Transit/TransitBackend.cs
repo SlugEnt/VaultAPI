@@ -305,9 +305,29 @@ namespace VaultAgent.Backends
 		/// <param name="keyName">The Encryption key to use to decrypt and re-encrypt the data</param>
 		/// <param name="encryptedData">The currently encrypted data element that you want to have upgraded with the 
 		/// new encryption key.</param>
-		/// <returns>The data element encrypted with the latest version of the encryption key.</returns>
-		public string ReEncrypt (string keyName, string encryptedData) {
-			throw new NotImplementedException();
+		/// <param name="keyDerivationContext">The context used for key derivation if the key supports that key derivation.</param>
+		/// <param name="keyVersion">Version of the key to use.  Defaults to current version (0).</param>
+		/// <returns>The data element encrypted with the version of the key specified.  (Default is latest version of the key).  Returns null if operation failed.</returns>
+		public async Task<TransitEncryptedItem> ReEncrypt (string keyName, string encryptedData, string keyDerivationContext = "", int keyVersion = 0) {
+			string path = vaultTransitPath + "rewrap/" + keyName;
+	
+
+			// Setup Post Parameters in body.
+			Dictionary<string, string> contentParams = new Dictionary<string, string>();
+
+			// Build the parameter list.
+			contentParams.Add("ciphertext", encryptedData);
+			if (keyDerivationContext != "") { contentParams.Add("context", VaultUtilityFX.Base64EncodeAscii(keyDerivationContext)); }
+			if (keyVersion > 0) { contentParams.Add("key_version", keyVersion.ToString()); }
+
+
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "ReEncrypt", contentParams);
+			if (vdro.httpStatusCode == 200) {
+				string js = vdro.GetDataPackageAsJSON();
+				TransitEncryptedItem data = VaultUtilityFX.ConvertJSON<TransitEncryptedItem>(js);
+				return data;
+			}
+			else { return null; }
 		}
 
 
