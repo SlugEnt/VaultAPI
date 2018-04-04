@@ -71,6 +71,26 @@ namespace VaultClient
 				}
 
 
+				// Test Bulk Decryption
+				List<TransitBulkItemToDecrypt> bulkDecrypt = new List<TransitBulkItemToDecrypt>();
+				foreach (TransitEncryptedItem encrypted in results.EncryptedValues) {
+					bulkDecrypt.Add(new TransitBulkItemToDecrypt(encrypted.EncryptedValue));
+				}
+
+
+				// Now decrypt.
+				TransitDecryptionResultsBulk resDecrypt = await TB.DecryptBulk(eKey, bulkDecrypt);
+				int sentCntD = bulkDecrypt.Count;
+				int recvCntD = resDecrypt.DecryptedValues.Count;
+				if (sentCntD == recvCntD) { Console.WriteLine("  - Bulk Decryption completed.  Sent and recived items count same!  SUCCESS!"); }
+
+				// Print results:
+				foreach(TransitDecryptedItem decrypted in resDecrypt.DecryptedValues) {
+					Console.WriteLine("  Bulk Decryption result: {0}", decrypted.DecryptedValue);
+				}
+
+
+
 				// Rotate the Key.
 				if (runRotateTest) {
 					Console.WriteLine("Rotating the Key.");

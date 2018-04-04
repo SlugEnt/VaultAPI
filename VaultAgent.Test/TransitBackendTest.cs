@@ -180,10 +180,9 @@ namespace VaultAgentTests
 
 		
 
-
 		[Test, Order(300)]
 		// Test that Reencrypt results in same original un-encrypted value.  
-		public async Task ValidateReEncryption_ResultsInSameOriginalValue () {
+		public async Task EB_ValidateReEncryption_ResultsInSameOriginalValue () {
 			try {
 				string valA = Guid.NewGuid().ToString();
 				string key = "ZabcZ";

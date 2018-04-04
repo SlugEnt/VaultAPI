@@ -275,24 +275,23 @@ namespace VaultAgent.Backends
 
 		// ==============================================================================================================================================
 		/// <summary>
-		/// Encrypts multiple items at one time.  It is expected that the caller has maintained an order list of the items to encrypt.  The encrypted 
+		/// Decrypts multiple items at one time.  It is expected that the caller has maintained an order list of the items to decrypt.  The decrypted 
 		/// results will be returned to the caller in a List in the exact same order they were sent.  
 		/// </summary>
-		/// <param name="keyName">The encryption key to use to encrypt the values.</param>
-		/// <param name="bulkItems">The list of items to be encrypted.  Note that you may supply both the item to be encrypted and optionally the context 
+		/// <param name="keyName">The encryption key to use to decrypt the values.</param>
+		/// <param name="bulkItems">The list of items to be decrypted.  Note that you may supply both the item to be decrypted and optionally the context 
 		/// that goes along with it, if using contextual encryption.</param>
-		/// <param name="keyVersion">Optional numberic value of the key to use to encrypt the data with.  If not specified it defaults to the latest version 
+		/// <param name="keyVersion">Optional numberic value of the key to use to deecrypt the data with.  If not specified it defaults to the latest version 
 		/// of the encryption key.</param>
-		/// <returns>TransitEncryptionResultsBulk which is a list or the encrypted values.</returns>
-		public async Task<TransitEncryptionResultsBulk> DecryptBulk(string keyName, List<TransitBulkItemToEncrypt> bulkItems, int keyVersion = 0) {
-			string path = vaultTransitPath + pathEncrypt + keyName;
+		/// <returns>TransitEncryptionResultsBulk which is a list or the deecrypted values.</returns>
+		public async Task<TransitDecryptionResultsBulk> DecryptBulk(string keyName, List<TransitBulkItemToDecrypt> bulkItems, int keyVersion = 0) {
+			string path = vaultTransitPath + "decrypt/" + keyName;
 
 
 			// Build the Posting Parameters as JSON.  We need to manually create in here as we also need to custom append the 
 			// keys to be encrypted into the body.
 			Dictionary<string, string> contentParams = new Dictionary<string, string>();
 			if (keyVersion > 0) { contentParams.Add("key_version", keyVersion.ToString()); }
-			//if (keyDerivationContext != "") { contentParams.Add("context", VaultUtilityFX.Base64EncodeAscii(keyDerivationContext)); }
 
 			string inputVarsJSON = JsonConvert.SerializeObject(contentParams, Formatting.None);
 
@@ -312,12 +311,12 @@ namespace VaultAgent.Backends
 
 
 			// Call Vault API.
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "EncryptBulk", null, bulkJSON);
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "DecryptBulk", null, bulkJSON);
 
 
 			// Pull out the results and send back.  
 			string js = vdro.GetDataPackageAsJSON();
-			TransitEncryptionResultsBulk bulkData = VaultUtilityFX.ConvertJSON<TransitEncryptionResultsBulk>(js);
+			TransitDecryptionResultsBulk bulkData = VaultUtilityFX.ConvertJSON<TransitDecryptionResultsBulk>(js);
 			return bulkData;
 		}
 
