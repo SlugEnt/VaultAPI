@@ -38,7 +38,7 @@ namespace VaultAgentTests
 
 
 		[Test, Order(1)]
-		public async Task AA_CreateAndEnable_TransitA_Backend_() {
+		public async Task Transit_CreateAndMountCustomTransitBackend() {
 			// Create a Transit Backend Mount for this series of tests.
 			VSB = new VaultSystemBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
 
@@ -63,7 +63,7 @@ namespace VaultAgentTests
 
 
 		[Test, Order(20)]
-		public async Task BA_CreateEncryptionKey_encKeyA_WithNewKeyName_ShouldPassTest() {
+		public async Task Transit_CreateEncryptionKey() {
 			try {
 				// Try with parameters values.
 				bool rc = await TB.CreateEncryptionKey(encKeyA, true, true, EnumTransitKeyType.rsa4096);
@@ -74,7 +74,7 @@ namespace VaultAgentTests
 	
 
 		[Test, Order(30)]
-		public async Task BB_ValidateEncryptionKey_encKeyA_wasCreated() {
+		public async Task Transit_ReadEncryptionKeyInfo() {
 			try {
 				TransitKeyInfo TKI = await TB.ReadEncryptionKey(encKeyA);
 				Assert.AreEqual(encKeyA, TKI.Name);
@@ -89,7 +89,7 @@ namespace VaultAgentTests
 
 
 		[Test, Order(40)]
-		public async Task CA_ListEncryptionKeys_ShouldReturnAllKeys() {
+		public async Task Transit_ListEncryptionKeys_ShouldReturnAllKeys() {
 			try {
 				// Depending on what's already happened, we cannot be sure of how many keys might be in the backend.
 				// so we will grab initial list.  Then add 3 keys.  Then re-grab and make sure the 3 new keys are listed
@@ -132,7 +132,7 @@ namespace VaultAgentTests
 
 
 		[Test, Order (100)]
-		public async Task DA_ValidateBasicEncryptDecryptWork () {
+		public async Task Transit_EncrypDecryptData_ResultsInSameValue () {
 			try {
 				// Get a random value to encrypt.
 				string toEncrypt = Guid.NewGuid().ToString();
@@ -159,7 +159,7 @@ namespace VaultAgentTests
 
 
 		[Test, Order (200)]
-		public async Task EA_ValidateRotateEncryptionKeyWorks () {
+		public async Task Transit_RotateKey () {
 			try {
 				string encKey = Guid.NewGuid().ToString();
 
@@ -182,7 +182,7 @@ namespace VaultAgentTests
 
 		[Test, Order(300)]
 		// Test that Reencrypt results in same original un-encrypted value.  
-		public async Task EB_ValidateReEncryption_ResultsInSameOriginalValue () {
+		public async Task Transit_Rencryption_Results_InDecryptedValue_SameAsStartingValue () {
 			try {
 				string valA = Guid.NewGuid().ToString();
 				string key = "ZabcZ";
@@ -204,5 +204,94 @@ namespace VaultAgentTests
 				}
 			catch (Exception e) { }
 		}
+
+
+		[Test, Order (1000)]
+		public async Task Transit_BulkEncryptionDecryptionWorks () {
+			// Create key, validate the version and then encrypt some data with that key.
+			string key = "YabcY";
+			bool fa = await TB.CreateEncryptionKey(key, true, true, EnumTransitKeyType.aes256);
+			Assert.True(fa);
+
+			// Confirm key is new:
+			TransitKeyInfo TKI = await TB.ReadEncryptionKey(key);
+			Assert.AreEqual(TKI.LatestVersionNum, 1);
+
+
+			// Step A.
+			string valueA = "ABC";
+			string valueB = "def";
+			string valueC = "1234567890";
+			string valueD = Guid.NewGuid().ToString();
+			string valueE = "123456ABCDEFZYXWVU0987654321aaabbbcccddd";
+
+
+			// Step B.
+			// Encrypt several items in bulk.
+			List<TransitBulkItemToEncrypt> bulkEnc = new List<TransitBulkItemToEncrypt>();
+			bulkEnc.Add(new TransitBulkItemToEncrypt(valueA));
+			bulkEnc.Add(new TransitBulkItemToEncrypt(valueB));
+			bulkEnc.Add(new TransitBulkItemToEncrypt(valueC));
+			bulkEnc.Add(new TransitBulkItemToEncrypt(valueD));
+			bulkEnc.Add(new TransitBulkItemToEncrypt(valueE));
+
+			TransitEncryptionResultsBulk bulkEncResponse = await TB.EncryptBulk(key, bulkEnc);
+			int sentCnt = bulkEnc.Count;
+			int recvCnt = bulkEncResponse.EncryptedValues.Count;
+			Assert.AreEqual(sentCnt, recvCnt);
+
+
+			// Step C
+			// Decrypt in Bulk these Same Items.
+			List<TransitBulkItemToDecrypt> bulkDecrypt = new List<TransitBulkItemToDecrypt>();
+			foreach (TransitEncryptedItem item in bulkEncResponse.EncryptedValues) {
+				bulkDecrypt.Add(new TransitBulkItemToDecrypt(item.EncryptedValue));
+			}
+
+			TransitDecryptionResultsBulk bulkDecResponse = await TB.DecryptBulk(key, bulkDecrypt);
+			Assert.AreEqual(recvCnt, bulkDecResponse.DecryptedValues.Count);
+			Assert.AreEqual(valueA, bulkDecResponse.DecryptedValues[0].DecryptedValue);
+			Assert.AreEqual(valueB, bulkDecResponse.DecryptedValues[1].DecryptedValue);
+			Assert.AreEqual(valueC, bulkDecResponse.DecryptedValues[2].DecryptedValue);
+			Assert.AreEqual(valueD, bulkDecResponse.DecryptedValues[3].DecryptedValue);
+			Assert.AreEqual(valueE, bulkDecResponse.DecryptedValues[4].DecryptedValue);
+
+
+			// Step D
+			// Rotate Key.
+			Assert.AreEqual(true,( await TB.RotateKey(key)));
+			TransitKeyInfo TKI2 = await TB.ReadEncryptionKey(key);
+			Assert.AreEqual(TKI2.LatestVersionNum, 2);
+
+
+			// Step E.
+			// Re-encrypt in bulk.
+			List<TransitBulkItemToDecrypt> bulkRewrap = new List<TransitBulkItemToDecrypt>();
+			foreach (TransitEncryptedItem encItem in bulkEncResponse.EncryptedValues) {
+				bulkRewrap.Add(new TransitBulkItemToDecrypt(encItem.EncryptedValue));
+			}
+
+			TransitEncryptionResultsBulk rewrapResponse = await TB.ReEncryptBulk(key, bulkRewrap);
+			Assert.AreEqual(bulkEnc.Count, rewrapResponse.EncryptedValues.Count);
+
+
+			// Step F.
+			// Decrypt once again in bulk.  
+			List<TransitBulkItemToDecrypt> bulkDecrypt2 = new List<TransitBulkItemToDecrypt>();
+			foreach (TransitEncryptedItem item in rewrapResponse.EncryptedValues) {
+				bulkDecrypt2.Add(new TransitBulkItemToDecrypt(item.EncryptedValue));
+			}
+
+			TransitDecryptionResultsBulk bulkDecResponse2 = await TB.DecryptBulk(key, bulkDecrypt2);
+			Assert.AreEqual(recvCnt, bulkDecResponse2.DecryptedValues.Count);
+			Assert.AreEqual(valueA, bulkDecResponse2.DecryptedValues[0].DecryptedValue);
+			Assert.AreEqual(valueB, bulkDecResponse2.DecryptedValues[1].DecryptedValue)	;
+			Assert.AreEqual(valueC, bulkDecResponse2.DecryptedValues[2].DecryptedValue);
+			Assert.AreEqual(valueD, bulkDecResponse2.DecryptedValues[3].DecryptedValue);
+			Assert.AreEqual(valueE, bulkDecResponse2.DecryptedValues[4].DecryptedValue);
+
+
+		}
+
 	}
 }

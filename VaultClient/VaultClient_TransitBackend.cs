@@ -103,6 +103,16 @@ namespace VaultClient
 					await Run_ReEncrypt(eKey);
 				}
 
+
+				// Test Bulk Rewrap.
+				TransitEncryptionResultsBulk bulkRewrap = await TB.ReEncryptBulk(eKey, bulkDecrypt);
+				foreach(TransitEncryptedItem encrypted in bulkRewrap.EncryptedValues) {
+					// Decrypt the value:
+					TransitDecryptedItem tdiA = await TB.Decrypt(eKey, encrypted.EncryptedValue);
+					Console.WriteLine("  - Decrypted value from bulk Rewrap = {0}", tdiA.DecryptedValue);
+				}
+
+
 				//				await Run_ReadKey();
 
 

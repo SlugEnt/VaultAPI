@@ -380,6 +380,54 @@ namespace VaultAgent.Backends
 
 
 
+		// ==============================================================================================================================================
+		/// <summary>
+		/// Perform a re-encryption of multiple items at one time.  It is expected that the caller has maintained an order list separate from this list of the items 
+		/// that need to be re-encrypted with newer encryption key. The encrypted results will be returned to the caller in a List in the exact same order they were sent.  
+		/// </summary>
+		/// <param name="keyName">The encryption key to use to encrypt the values.</param>
+		/// <param name="bulkItems">The list of items that are currently encrypted that need to be re-encrypted with newer key.  If it is a derived context item then
+		/// you need to make sure you supply the context along with each encrypted item.
+		/// <param name="keyVersion">Optional numeric value of the key version to use to encrypt the data with.  If not specified it defaults to the latest version 
+		/// of the encryption key.</param>
+		/// <returns>TransitEncryptionResultsBulk - which is a list or the encrypted values.</returns>
+		public async Task<TransitEncryptionResultsBulk> ReEncryptBulk(string keyName, List<TransitBulkItemToDecrypt> bulkItems, int keyVersion = 0) {
+			string path = vaultTransitPath + "rewrap/" + keyName;
+
+
+			// Build the Posting Parameters as JSON.  We need to manually create in here as we also need to custom append the 
+			// keys to be encrypted into the body.
+			Dictionary<string, string> contentParams = new Dictionary<string, string>();
+			if (keyVersion > 0) { contentParams.Add("key_version", keyVersion.ToString()); }
+
+			string inputVarsJSON = JsonConvert.SerializeObject(contentParams, Formatting.None);
+
+
+			// Build entire JSON Body:  Input Params + Bulk Items List.
+			string bulkJSON = JsonConvert.SerializeObject(new
+			{
+				batch_input = bulkItems
+			}, Formatting.None);
+
+
+			// Combine the 2 JSON's
+			if (contentParams.Count > 0) {
+				string newVarsJSON = inputVarsJSON.Substring(1, inputVarsJSON.Length - 2) + ",";
+				bulkJSON = bulkJSON.Insert(1, newVarsJSON);
+			}
+
+
+			// Call Vault API.
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "ReEncryptBulk", null, bulkJSON);
+
+
+			// Pull out the results and send back.  
+			string js = vdro.GetDataPackageAsJSON();
+			TransitEncryptionResultsBulk bulkData = VaultUtilityFX.ConvertJSON<TransitEncryptionResultsBulk>(js);
+			return bulkData;
+		}
+
+
 		public bool Delete (string keyName) {
 			throw new NotImplementedException();
 		}
