@@ -52,12 +52,12 @@ namespace VaultClient
 				// Encrypt Bulk Items
 				Console.WriteLine("Encrypting bulk Items");
 				
-				List<TransitBulkEncryptItem> bulkEnc = new List<TransitBulkEncryptItem>();
-				bulkEnc.Add(new TransitBulkEncryptItem("ABC"));
-				bulkEnc.Add(new TransitBulkEncryptItem("DEF"));
-				bulkEnc.Add(new TransitBulkEncryptItem("GHI"));
-				bulkEnc.Add(new TransitBulkEncryptItem("JKL"));
-				bulkEnc.Add(new TransitBulkEncryptItem("MNO"));
+				List<TransitBulkItemToEncrypt> bulkEnc = new List<TransitBulkItemToEncrypt>();
+				bulkEnc.Add(new TransitBulkItemToEncrypt("ABC"));
+				bulkEnc.Add(new TransitBulkItemToEncrypt("DEF"));
+				bulkEnc.Add(new TransitBulkItemToEncrypt("GHI"));
+				bulkEnc.Add(new TransitBulkItemToEncrypt("JKL"));
+				bulkEnc.Add(new TransitBulkItemToEncrypt("MNO"));
 
 				TransitEncryptionResultsBulk results = await TB.EncryptBulk(eKey, bulkEnc);
 				int sentCnt = bulkEnc.Count;

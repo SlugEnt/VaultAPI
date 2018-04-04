@@ -205,7 +205,7 @@ namespace VaultAgent.Backends
 		/// <param name="keyVersion">Optional numberic value of the key to use to encrypt the data with.  If not specified it defaults to the latest version 
 		/// of the encryption key.</param>
 		/// <returns>TransitEncryptionResultsBulk which is a list or the encrypted values.</returns>
-		public async Task<TransitEncryptionResultsBulk> EncryptBulk(string keyName, List<TransitBulkEncryptItem> bulkItems, int keyVersion = 0) {
+		public async Task<TransitEncryptionResultsBulk> EncryptBulk(string keyName, List<TransitBulkItemToEncrypt> bulkItems, int keyVersion = 0) {
 			string path = vaultTransitPath + pathEncrypt + keyName;
 
 
@@ -271,6 +271,55 @@ namespace VaultAgent.Backends
 			throw new VaultUnexpectedCodePathException("TransitBackEnd-Decrypt");
 		}
 
+
+
+		// ==============================================================================================================================================
+		/// <summary>
+		/// Encrypts multiple items at one time.  It is expected that the caller has maintained an order list of the items to encrypt.  The encrypted 
+		/// results will be returned to the caller in a List in the exact same order they were sent.  
+		/// </summary>
+		/// <param name="keyName">The encryption key to use to encrypt the values.</param>
+		/// <param name="bulkItems">The list of items to be encrypted.  Note that you may supply both the item to be encrypted and optionally the context 
+		/// that goes along with it, if using contextual encryption.</param>
+		/// <param name="keyVersion">Optional numberic value of the key to use to encrypt the data with.  If not specified it defaults to the latest version 
+		/// of the encryption key.</param>
+		/// <returns>TransitEncryptionResultsBulk which is a list or the encrypted values.</returns>
+		public async Task<TransitEncryptionResultsBulk> DecryptBulk(string keyName, List<TransitBulkItemToEncrypt> bulkItems, int keyVersion = 0) {
+			string path = vaultTransitPath + pathEncrypt + keyName;
+
+
+			// Build the Posting Parameters as JSON.  We need to manually create in here as we also need to custom append the 
+			// keys to be encrypted into the body.
+			Dictionary<string, string> contentParams = new Dictionary<string, string>();
+			if (keyVersion > 0) { contentParams.Add("key_version", keyVersion.ToString()); }
+			//if (keyDerivationContext != "") { contentParams.Add("context", VaultUtilityFX.Base64EncodeAscii(keyDerivationContext)); }
+
+			string inputVarsJSON = JsonConvert.SerializeObject(contentParams, Formatting.None);
+
+
+			// Build entire JSON Body:  Input Params + Bulk Items List.
+			string bulkJSON = JsonConvert.SerializeObject(new
+			{
+				batch_input = bulkItems
+			}, Formatting.None);
+
+
+			// Combine the 2 JSON's
+			if (contentParams.Count > 0) {
+				string newVarsJSON = inputVarsJSON.Substring(1, inputVarsJSON.Length - 2) + ",";
+				bulkJSON = bulkJSON.Insert(1, newVarsJSON);
+			}
+
+
+			// Call Vault API.
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "EncryptBulk", null, bulkJSON);
+
+
+			// Pull out the results and send back.  
+			string js = vdro.GetDataPackageAsJSON();
+			TransitEncryptionResultsBulk bulkData = VaultUtilityFX.ConvertJSON<TransitEncryptionResultsBulk>(js);
+			return bulkData;
+		}
 
 
 
