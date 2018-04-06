@@ -18,7 +18,7 @@ namespace VaultAgent.Models
 		public string Name { get; set; }
 
 		[JsonProperty("type")]
-		public string EncryptionMethod { get; set; }
+		public string Type { get; set; }
 
 		[JsonProperty("latest_version")]
 		public int  LatestVersionNum {get;set;} 
@@ -45,7 +45,7 @@ namespace VaultAgent.Models
 		public bool AllowsPlainTextBackup  {get;set;}
 
 		[JsonProperty("convergent_encryption")]
-		public bool EnableConvergentEncryption { get; set; }
+		public bool SupportsConvergentEncryption { get; set; }
 
 		[JsonProperty("deletion_allowed")]
 		public bool CanDelete { get; set; }
@@ -62,8 +62,10 @@ namespace VaultAgent.Models
 		[JsonProperty("keys")]
 		public Dictionary<int,object> Keys { get; set; }
 
+		public string EncryptionMethod  { get { return Type; } }
+
 		public override string ToString() {
-			return $"Key Name: { Name} | Version: {LatestVersionNum} | Type: {EncryptionMethod} | Supports Derivation: {SupportsDerivation} | Number of Keys: {Keys.Count}";
+			return $"Key Name: { Name} | Version: {LatestVersionNum} | Type: {Type} | Supports Derivation: {SupportsDerivation} | Number of Keys: {Keys.Count}";
 		}
 	}
 

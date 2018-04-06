@@ -24,6 +24,10 @@ namespace VaultClient
 		public async Task Run(bool runRotateTest = false, bool runRekeyTest = true) {
 			try {
 				Console.WriteLine("Running thru Vault TransitBackend exercises.");
+
+				await Run_DeleteKey();
+
+
 				string eKey = "KeyTestABC7";
 
 				// List Keys
@@ -47,6 +51,8 @@ namespace VaultClient
 				Console.WriteLine("Encrypting a single item.");
 				await Run_EncryptData(eKey);
 
+
+				
 
 
 				// Encrypt Bulk Items
@@ -129,6 +135,33 @@ namespace VaultClient
 
 
 
+		public async Task Run_DeleteKey () {
+
+			// Create a new key.
+			string newKey = Guid.NewGuid().ToString();
+			await Run_CreateKey(newKey);
+
+			// Change it to be deletable.
+			Dictionary<string, string> delParams = new Dictionary<string, string>();
+			delParams.Add("deletion_allowed", "true");
+			await TB.UpdateKey(newKey, delParams);
+
+			// Now Delete it.
+			bool rc = await TB.DeleteKey(newKey);
+			if (rc == true) { Console.WriteLine("  -- Key deleted successfully."); }
+
+			// Now create a key, but do not enable deletion mode. 
+			try {
+				string newKey2 = Guid.NewGuid().ToString();
+				await Run_CreateKey(newKey2);
+				bool rc2 = await TB.DeleteKey(newKey2);
+			}
+			catch (Exception e) { Console.WriteLine(" Errors - {0}", e.Message); }
+		}
+
+
+
+
 		public async Task Run_EncryptData (string key) {
 			try {
 				string a = "abcDEF123$%^";
@@ -208,11 +241,11 @@ namespace VaultClient
 
 
 			// Try with parameters we built above. 
-			bool rc = await TB.CreateEncryptionKey("KeyTestABC6", vaultParams);
-			if (rc == true) { Console.WriteLine("Success - Encryption Key written.  It may now be used to encrypt data."); }
+			// bool rc = await TB.CreateEncryptionKey("KeyTestABC6", vaultParams);
+			//if (rc == true) { Console.WriteLine("Success - Encryption Key written.  It may now be used to encrypt data."); }
 
 			// Try with parameters values.
-			rc = await TB.CreateEncryptionKey("KeyTestABC7", true, true, EnumTransitKeyType.rsa4096);
+			bool rc = await TB.CreateEncryptionKey(key, true, true, EnumTransitKeyType.rsa4096);
 			if (rc == true) { Console.WriteLine("Success - Encryption Key written.  It may now be used to encrypt data."); }
 
 

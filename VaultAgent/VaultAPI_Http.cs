@@ -109,6 +109,32 @@ namespace VaultAgent
 
 
 		/// <summary>
+		/// Performs an HTTP Delete operation.
+		/// </summary>
+		/// <param name="APIPath">The Vault path to call to perform a deletion on.</param>
+		/// <param name="callingRoutineName">Routine that called this function</param>
+		/// <returns>VaultDateResponseObject of the results of the operation.</returns>
+		public async Task<VaultDataResponseObject> DeleteAsync(string APIPath, string callingRoutineName) {
+			string jsonResponse = "";
+			string httpParameters = "";
+
+			string fullURI = APIPath + httpParameters;
+			var response = await httpClt.DeleteAsync(fullURI);
+
+
+			if (response.IsSuccessStatusCode) {			
+				jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+			}
+			else { await HandleVaultErrors(response, fullURI, callingRoutineName); }
+
+			VaultDataResponseObject vdr = new VaultDataResponseObject(jsonResponse, response.StatusCode);
+			return vdr;
+		}
+
+
+
+
+		/// <summary>
 		/// Processes errors returned by calls to the Vault API.
 		/// </summary>
 		/// <param name="response">The actual HttpResponseMessage returned by the HTTP call.</param>

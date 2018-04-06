@@ -38,24 +38,6 @@ namespace VaultAgent.Backends
 
 
 
-		// ==============================================================================================================================================
-		/// <summary>
-		/// Creates an Encryptyion key with the specified name.  This one allows greater latitude in defining the parameters.
-		/// </summary>
-		/// <param name="keyName">This is the actual name of the encryption key.</param>
-		/// <param name="createParams">A Dictionary in the Dictionary [string,string] format.  You must have supplied the values for the dictionary
-		/// in the calling routing.  The Key should match the Vault API keyname and the Value should be the value in the format vault is expecting.</param>
-		/// <returns>True if the key is successfully created.</returns>
-		public async Task<bool> CreateEncryptionKey(string keyName, Dictionary<string,string> createParams) {
-			// The keyname forms the last part of the path
-			string path = vaultTransitPath + pathKeys + keyName;
-
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "CreateEncryptionKey", createParams);
-			if (vdro.httpStatusCode == 204) { return true; }
-			else { return false; }
-		}
-
-
 
 		// ==============================================================================================================================================
 		/// <summary>
@@ -67,12 +49,15 @@ namespace VaultAgent.Backends
 		/// <param name="canBeExported">Boolean:  If you want to be able to export the key then set this to True.</param>
 		/// <param name="allowPlainTextBackup">Boolean.  If you want to be able to perform a plain text backup of the key, set to True.</param>
 		/// <param name="keyType">The type of encryption key to use.  Best choices are one of the RSA keys or the AES key.</param>
+		/// <param name="enableKeyDerivation">Enables Key Derivation.  Key derivtion requires that an encryption context must be supplied with each encrypt operation.</param>
+		/// <param name="enableConvergentEncryption">Enables Convergent Encryption.  Convergent encryption means that the same plaintext value will aloways result in the
+		/// same encrypted ciphertext.</param>
 		/// <returns>True if successful.  However, it could also mean the key already exists, in which case the parameters you set here may not be what the key 
 		/// is set to.</returns>
-		public async Task<bool> CreateEncryptionKey(string keyName, bool canBeExported = false, bool allowPlainTextBackup = false, EnumTransitKeyType keyType = EnumTransitKeyType.aes256) {
+		public async Task<bool> CreateEncryptionKey(string keyName, bool canBeExported = false, bool allowPlainTextBackup = false, 
+													EnumTransitKeyType keyType = EnumTransitKeyType.aes256, bool enableKeyDerivation = false, bool enableConvergentEncryption = false) {
 			// The keyname forms the last part of the path
 			string path = vaultTransitPath + pathKeys + keyName;
-
 			string keyTypeV;
 
 			switch (keyType) {
@@ -99,19 +84,53 @@ namespace VaultAgent.Backends
 					break;
 			}
 
-
 			Dictionary<string, string> createParams = new Dictionary<string,string>();
 			createParams.Add("exportable", canBeExported ? "true" : "false");
 			createParams.Add("allow_plaintext_backup", allowPlainTextBackup ? "true" : "false");
 			createParams.Add("type", keyTypeV);
 
+			// Convergent encryption requires KeyDerivation.
+			createParams.Add("convergent_encryption", enableConvergentEncryption ? "true" : "false");
+			if (enableConvergentEncryption) { enableKeyDerivation = true; }
+			createParams.Add("derived", enableKeyDerivation ? "true" : "false");
+
+			// Validate:
+			if (enableKeyDerivation) {
+				if ((keyType == EnumTransitKeyType.rsa2048) || (keyType == EnumTransitKeyType.rsa4096) || (keyType == EnumTransitKeyType.ecdsa)) {
+					throw new ArgumentOutOfRangeException("keyType", ("Specified keyType: " + keyTypeV + " does not support contextual encryption."));
+				}
+			}
+
 			return await CreateEncryptionKey(keyName, createParams);
 		}
 
 
-		
+
+
+
 		// ==============================================================================================================================================
-		public async Task<TransitKeyInfo> ReadEncryptionKey(String keyName) {
+		/// <summary>
+		/// Creates an Encryptyion key with the specified name.  This one allows greater latitude in defining the parameters.  But there is no parameter
+		/// validation or checking to make sure names are correct or values are correct.  It is recommended to use the one with command line parameters.
+		/// </summary>
+		/// <param name="keyName">This is the actual name of the encryption key.</param>
+		/// <param name="createParams">A Dictionary in the Dictionary [string,string] format.  You must have supplied the values for the dictionary
+		/// in the calling routing.  The Key should match the Vault API keyname and the Value should be the value in the format vault is expecting.</param>
+		/// <returns>True if the key is successfully created.</returns>
+		public async Task<bool> CreateEncryptionKey(string keyName, Dictionary<string, string> createParams) {
+			// The keyname forms the last part of the path
+			string path = vaultTransitPath + pathKeys + keyName;
+
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "CreateEncryptionKey", createParams);
+			if (vdro.httpStatusCode == 204) { return true; }
+			else { return false; }
+		}
+
+
+
+
+		// ==============================================================================================================================================
+		public async Task<TransitKeyInfo> ReadEncryptionKey(string keyName) {
 			// The keyname forms the last part of the path
 			string path = vaultTransitPath + pathKeys + keyName;
 
@@ -119,6 +138,26 @@ namespace VaultAgent.Backends
 			TransitKeyInfo TKI = vdro.GetVaultTypedObject<TransitKeyInfo>();
 			return TKI;
 		}
+
+
+
+
+		/// <summary>
+		/// Returns true or false if a given key exists.
+		/// </summary>
+		/// <param name="keyName">Name of the key you want to validate if it exists.</param>
+		/// <returns>True if key exists.  False if it does not.</returns>
+		public async Task<bool>IfExists (string keyName) {
+			try {
+				TransitKeyInfo TKI = await ReadEncryptionKey(keyName);
+				if (TKI != null) { return true; }
+				else { return false; }
+			}
+			catch (VaultInvalidPathException e) {
+				return false;
+			}
+		}
+
 
 
 
@@ -428,8 +467,54 @@ namespace VaultAgent.Backends
 		}
 
 
-		public bool Delete (string keyName) {
-			throw new NotImplementedException();
+
+
+		public async Task<TransitKeyInfo> UpdateKey(string keyName,  Dictionary<string,string> inputParams) {
+			string path = vaultTransitPath + "keys/" + keyName + "/config";
+
+			Dictionary<string, string> contentParams = new Dictionary<string, string>();
+			foreach (KeyValuePair<string,string> item in inputParams) {
+				if (item.Key.ToLower() == "min_decryption_version") { contentParams.Add(item.Key,item.Value); }
+				else if (item.Key.ToLower() == "min_encryption_version") { contentParams.Add(item.Key, item.Value); }
+				else if (item.Key.ToLower() == "deletion_allowed") { contentParams.Add(item.Key, item.Value); }
+				else if (item.Key.ToLower() == "exportable") { contentParams.Add(item.Key, item.Value); }
+				else if (item.Key.ToLower() == "allow_plaintext_backup") { contentParams.Add(item.Key, item.Value); }
+				else {
+					throw new ArgumentException("Must supply a valid Key Config Parameter of min_decryption_version,min_encryption_version,deletion_allowed,exportable or allow_plaintext_backup", item.Key);
+				}
+			}  // Foreach KeyValuePair
+
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "UpdateKey", contentParams);
+
+			if (vdro.Success) {
+				// Read the key and return.
+				return await ReadEncryptionKey(keyName);
+			}
+			else { return null; }
+		}
+
+
+
+
+		/// <summary>
+		/// Deletes the given key.
+		/// </summary>
+		/// <param name="keyName">The key to delete.</param>
+		/// <returns>True if deletion successful.  False if the key does not allow deletion because its deletion_allowed config parameters is not set to true.
+		/// It will throw an error if you do not have permission to the key or the key cannot be found. </returns>
+		public async Task<bool> DeleteKey (string keyName) {
+			string path = vaultTransitPath + "keys/" + keyName;
+
+			try {
+				VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "DeleteKey");
+				if (vdro.Success) { return true; }
+				else { return false; }
+			}
+			catch (VaultInvalidDataException e) {
+				// Means the key is not enabled for deletion.
+				return false;
+			}
+			catch (Exception e) { throw e; }
 		}
 
 	}
