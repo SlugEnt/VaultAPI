@@ -28,6 +28,11 @@ namespace VaultClient
 				await Run_DeleteKey();
 
 
+				// Test hashing 
+
+				string value = await TB.ComputeHash("abcdefXYZ12", EnumHashAlgorithm.sha2_512);
+				
+
 				string eKey = "KeyTestABC7";
 
 				// List Keys

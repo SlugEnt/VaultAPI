@@ -9,6 +9,7 @@ using VaultAgentTests;
 using VaultAgent.Backends.Transit.Models;
 using VaultAgent.Backends;
 using VaultAgent.Backends.System;
+using VaultAgent.Backends.Transit;
 
 namespace VaultAgentTests
 {
@@ -966,8 +967,54 @@ namespace VaultAgentTests
 
 			// G.  Restore the key
 			Assert.False(await TB.RestoreKey(key, tbri));
-
 		}
+
+
+
+		[Test, Order (2102)]
+		// Generate random bytes.  Bytes are base64 encoded and then decoded before we receive.  We get straight bytes.
+		public async Task Transit_GenerateRandomBytes_Base64() {
+			await Transit_Init();
+
+			string value = await TB.GenerateRandomBytes(10);
+			Assert.AreEqual(10, value.Length);
+		}
+
+
+		[Test, Order(2102)]
+		// Generate random bytes.  string should be hexidecimal
+		public async Task Transit_GenerateRandomBytes_Hex() {
+			await Transit_Init();
+
+			string value = await TB.GenerateRandomBytes(15,true);
+			Assert.AreNotEqual("", value);
+		}
+
+
+
+
+		[Test, Order(2103)]
+		// Compute the hash of a string.  
+		public async Task Transit_ComputeHash_Base64() {
+			await Transit_Init();
+			 
+			string value = await TB.ComputeHash("abcdefXYZ12",EnumHashAlgorithm.sha2_512);
+			Assert.AreNotEqual("", value);
+		}
+
+
+
+		[Test, Order(2103)]
+		// Generate random bytes.  string should be hexidecimal
+		public async Task Transit_ComputeHash_Hex() {
+			await Transit_Init();
+
+			string value = await TB.ComputeHash("abcdefXYZ",VaultAgent.Backends.Transit.EnumHashAlgorithm.sha2_384,true);
+			Assert.AreNotEqual("", value);
+		}
+
+
+
 
 	}
 }

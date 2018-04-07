@@ -73,6 +73,7 @@
   <ItemGroup>
     <Compile Include="Backends\System\EnumBackendTypes.cs" />
     <Compile Include="Backends\System\VaultSystemBackend.cs" />
+    <Compile Include="Backends\Transit\EnumHashAlgorithm.cs" />
     <Compile Include="Backends\Transit\EnumTransitKeyType.cs" />
     <Compile Include="Backends\JSONSingleOrArrayConverter.cs" />
     <Compile Include="Backends\Transit\Models\TransitBackupRestoreItem.cs" />

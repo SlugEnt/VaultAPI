@@ -4,10 +4,12 @@ using System.Threading.Tasks;
 using VaultAgent.Models;
 using Newtonsoft.Json;
 using VaultAgent.Backends.Transit.Models;
+using VaultAgent.Backends.Transit;
 
 namespace VaultAgent.Backends
 {
-	public class TransitBackend {
+	public class TransitBackend
+	{
 		TokenInfo transitToken;
 		private VaultAPI_Http vaultHTTP;
 		string transitPath = "/v1/transit/";
@@ -564,14 +566,14 @@ namespace VaultAgent.Backends
 			// Build parameters 
 			Dictionary<string, string> contentParams = new Dictionary<string, string>();
 			contentParams.Add("bits", bits.ToString());
-			if (context !="") { contentParams.Add("context", VaultUtilityFX.Base64EncodeAscii(context)); }
+			if (context != "") { contentParams.Add("context", VaultUtilityFX.Base64EncodeAscii(context)); }
 
 
 			string path = vaultTransitPath + "datakey/" + sType + "/" + keyName;
 
 
 			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "GenerateDataKey", contentParams);
-			
+
 			// Pull out the results and send back.  
 			string js = vdro.GetDataPackageAsJSON();
 			TransitDataKey TDK = VaultUtilityFX.ConvertJSON<TransitDataKey>(js);
@@ -589,7 +591,7 @@ namespace VaultAgent.Backends
 		/// </summary>
 		/// <param name="keyName">Name of the encryption key to backup.</param>
 		/// <returns>TransitBackupRestoreItem containing the full backup of the key.</returns>
-		public async Task<TransitBackupRestoreItem> BackupKey (string keyName) {
+		public async Task<TransitBackupRestoreItem> BackupKey(string keyName) {
 			string path = vaultTransitPath + "backup/" + keyName;
 
 			try {
@@ -603,10 +605,10 @@ namespace VaultAgent.Backends
 			}
 			catch (VaultInternalErrorException e) {
 				string errMsg = "";
-				if (e.Message.Contains ("exporting is disallowed")) {
+				if (e.Message.Contains("exporting is disallowed")) {
 					errMsg = "Key is not exportable.  Must be exportable to be backed up.";
 				}
-				else if (e.Message.Contains ("plaintext backup is disallowed on the policy")) {
+				else if (e.Message.Contains("plaintext backup is disallowed on the policy")) {
 					errMsg = "Key has PlainTextBackup disabled.  Backup not possible.";
 				}
 				else { throw e; }
@@ -626,7 +628,7 @@ namespace VaultAgent.Backends
 		/// <param name="keyName">Name of encryption key that should be restored.</param>
 		/// <param name="tbri">TransitBackupRestoreItem containing the backup value.</param>
 		/// <returns>True if success.</returns>
-		public async Task<bool> RestoreKey (string keyName, TransitBackupRestoreItem tbri) {
+		public async Task<bool> RestoreKey(string keyName, TransitBackupRestoreItem tbri) {
 			string path = vaultTransitPath + "restore/" + keyName;
 
 			// Setup Post Parameters in body.
@@ -643,6 +645,84 @@ namespace VaultAgent.Backends
 				else { throw e; }
 			}
 		}
+
+
+
+		/// <summary>
+		/// Generates random bytes.  Can return data as string or Hexidecimal.  Note, Vault native function returns Base64-encoded.  This routine
+		/// decodes it before returning to you.
+		/// </summary>
+		/// <param name="numBytes">Number of bytes you need.</param>
+		/// <param name="hexOutputFormat">true if you want hexidecimal values, False if you want ascii</param>
+		/// <returns></returns>
+		public async Task<string> GenerateRandomBytes(int numBytes, bool hexOutputFormat = false) {
+			string path = vaultTransitPath + "random/" + numBytes.ToString();
+
+			// Setup Post Parameters in body.
+			Dictionary<string, string> contentParams = new Dictionary<string, string>();
+			string encodeFormat = "base64";
+			if (hexOutputFormat) { encodeFormat = "hex"; }
+
+			contentParams.Add("format", encodeFormat);
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "GenerateRandomBytes", contentParams);
+			if (vdro.Success) {
+				string bytes = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "random_bytes");
+				if (hexOutputFormat) { return bytes; }
+				else { return VaultUtilityFX.Base64DecodeAscii(bytes); }
+			}
+			return "";
+		}
+
+
+
+		public async Task<string> ComputeHash(string input, EnumHashAlgorithm hash, bool hexOutputFormat = false) {
+			string path = vaultTransitPath + "hash";
+
+			string hashStr = "";
+			switch (hash) {
+				case EnumHashAlgorithm.sha2_224:
+					hashStr = "sha2-224";
+					break;
+				case EnumHashAlgorithm.sha2_256:
+					hashStr = "sha2-256";
+					break;
+				case EnumHashAlgorithm.sha2_384:
+					hashStr = "sha2-384";
+					break;
+				case EnumHashAlgorithm.sha2_512:
+					hashStr = "sha2-512";
+					break;
+			}
+
+			// Setup Post Parameters in body.
+			Dictionary<string, string> contentParams = new Dictionary<string, string>();
+			string encodeFormat = "base64";
+			if (hexOutputFormat) { encodeFormat = "hex"; }
+			contentParams.Add("format", encodeFormat);
+			contentParams.Add("algorithm", hashStr);
+
+			string inputBase64 = VaultUtilityFX.Base64EncodeAscii(input);
+
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "ComputeHash", contentParams);
+			if (vdro.Success) {
+				return vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "sum");
+			}
+			return "";
+		}
+
+		public void GenerateHMAC () {
+			throw new NotImplementedException();
+		}
+
+		public void SignData () {
+			throw new NotImplementedException();
+		}
+
+		public void VerifySignedData() {
+			throw new NotImplementedException();
+		}
+
+
 	}
 }
 
