@@ -157,6 +157,12 @@ namespace VaultClient
 				bool rc2 = await TB.DeleteKey(newKey2);
 			}
 			catch (Exception e) { Console.WriteLine(" Errors - {0}", e.Message); }
+
+			// Finally delete a non-existent key.
+			try {
+				TB.DeleteKey("gggggpgg");
+			}
+			catch (Exception e) { }
 		}
 
 

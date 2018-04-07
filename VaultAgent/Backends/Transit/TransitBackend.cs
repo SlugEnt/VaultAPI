@@ -286,6 +286,14 @@ namespace VaultAgent.Backends
 
 
 		// ==============================================================================================================================================
+		/// <summary>
+		/// Decrypts a single encrypted value.  If the keys supports convergent or derived encryption then you must supply the keyDerivationContext param.
+		/// </summary>
+		/// <param name="keyName">Name of the encryption key to use to decrypt.</param>
+		/// <param name="encryptedData">The encrypted value that you wish to have decrypted.</param>
+		/// <param name="keyDerivationContext">The context value that is required to delete a convergent encrypted item.</param>
+		/// <returns>TransitDecryptedItem if the value was able to be successfully decrypted.
+		/// Throws <VaultInvalidDataException> if unable to decrypt the item due to bad key or context value.</VaultInvalidDataException></returns>
 		public async Task<TransitDecryptedItem> Decrypt(string keyName, string encryptedData, string keyDerivationContext = "") {
 			string path = vaultTransitPath + pathDecrypt + keyName;
 
@@ -309,6 +317,7 @@ namespace VaultAgent.Backends
 			// This code should never get hit.  
 			throw new VaultUnexpectedCodePathException("TransitBackEnd-Decrypt");
 		}
+
 
 
 
@@ -390,8 +399,7 @@ namespace VaultAgent.Backends
 		/// of upgrading the encryption for an element without have to call Decrypt and then Encrypt separately.
 		/// </summary>
 		/// <param name="keyName">The Encryption key to use to decrypt and re-encrypt the data</param>
-		/// <param name="encryptedData">The currently encrypted data element that you want to have upgraded with the 
-		/// new encryption key.</param>
+		/// <param name="encryptedData">The currently encrypted data element that you want to have upgraded with the new encryption key.</param>
 		/// <param name="keyDerivationContext">The context used for key derivation if the key supports that key derivation.</param>
 		/// <param name="keyVersion">Version of the key to use.  Defaults to current version (0).</param>
 		/// <returns>The data element encrypted with the version of the key specified.  (Default is latest version of the key).  Returns null if operation failed.</returns>
@@ -500,8 +508,9 @@ namespace VaultAgent.Backends
 		/// Deletes the given key.
 		/// </summary>
 		/// <param name="keyName">The key to delete.</param>
-		/// <returns>True if deletion successful.  False if the key does not allow deletion because its deletion_allowed config parameters is not set to true.
-		/// It will throw an error if you do not have permission to the key or the key cannot be found. </returns>
+		/// <returns>True if deletion successful.
+		/// False if the key does not allow deletion because its deletion_allowed config parameters is not set to true.
+		/// Throws VaultInvalidDataException with message of "could not delete policy; not found.</returns>
 		public async Task<bool> DeleteKey (string keyName) {
 			string path = vaultTransitPath + "keys/" + keyName;
 
@@ -511,8 +520,13 @@ namespace VaultAgent.Backends
 				else { return false; }
 			}
 			catch (VaultInvalidDataException e) {
-				// Means the key is not enabled for deletion.
-				return false;
+				// Search for the error message - it indicates whether it is key could not be found or deletion not allowed.
+				if (e.Message.Contains("could not delete policy; not found")) { throw e; }
+
+				if (e.Message.Contains ("deletion is not allowed for this policy")) { return false; }
+
+				// not sure - rethrow error.
+				throw e;
 			}
 			catch (Exception e) { throw e; }
 		}

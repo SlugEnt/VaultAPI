@@ -399,6 +399,93 @@ namespace VaultAgentTests
 
 
 
+		[Test, Order(105)]
+		// Test decrypting a convergent encrypted value with an invalid context.  Should throw error.
+		public async Task Transit_DerivedEncryptDecrypt_WithBadContextFails() {
+			await Transit_Init();
+			randomKeyNum++;
+			string key = keyPrefix + randomKeyNum.ToString();
+
+			// Create encryption Key.
+			Assert.AreEqual(true, await TB.CreateEncryptionKey(key, true, true, EnumTransitKeyType.aes256, true));
+
+			// Get a random value to encrypt.
+			string toEncrypt = "123456abcdefzyx";
+
+			// Set the "Context" value for derived encryption.
+			string toContext = "ZYXabc";
+
+			// Now encrypt with that key.
+			TransitEncryptedItem response = await TB.Encrypt(key, toEncrypt, toContext);
+			Assert.IsNotEmpty(response.EncryptedValue);
+
+			// Now decrypt it, but pass invalid context.
+			Assert.That(() => TB.Decrypt(key, response.EncryptedValue, "zyxabc"),
+				Throws.Exception
+					.TypeOf<VaultInvalidDataException>()
+					.With.Property("Message")
+					.Contains("unable to decrypt"));
+		}
+
+
+
+		[Test, Order(105)]
+		// Tests that when using convergent encryption the same encryption string value is produced for the same context key.
+		public async Task Transit_ConvergentEncryption_ProducesEncryptionSameEncryptionValue () {
+			await Transit_Init();
+			randomKeyNum++;
+			string key = keyPrefix + randomKeyNum.ToString();
+
+			// Create encryption Key.
+			Assert.AreEqual(true, await TB.CreateEncryptionKey(key, true, true, EnumTransitKeyType.aes256, true,true));
+
+			// Get a random value to encrypt.
+			string toEncrypt = "ABCXYXZ";
+
+			// Set the "Context" value for derived encryption.
+			string toContext = "ZYXabc";
+
+			// Now encrypt with that key.
+			TransitEncryptedItem response = await TB.Encrypt(key, toEncrypt, toContext);
+			Assert.IsNotEmpty(response.EncryptedValue);
+
+			// Now encrypt another item with same unencrypted value and same context.  Should produce same results.
+			TransitEncryptedItem response2 = await TB.Encrypt(key, toEncrypt, toContext);
+			Assert.IsNotEmpty(response.EncryptedValue);
+			Assert.AreEqual(response.EncryptedValue, response2.EncryptedValue);
+		}
+
+
+
+		[Test, Order(105)]
+		// Tests that when using derivation encryption the same encryption string value is unique even with same context key.
+		public async Task Transit_KeyDerivationEncryption_ProducesEncryptionWithDifferentValue() {
+			await Transit_Init();
+			randomKeyNum++;
+			string key = keyPrefix + randomKeyNum.ToString();
+
+			// Create encryption Key.
+			Assert.AreEqual(true, await TB.CreateEncryptionKey(key, true, true, EnumTransitKeyType.aes256, true, false));
+
+			// Get a random value to encrypt.
+			string toEncrypt = "ABCXYXZ";
+
+			// Set the "Context" value for derived encryption.
+			string toContext = "ZYXabc";
+
+			// Now encrypt with that key.
+			TransitEncryptedItem response = await TB.Encrypt(key, toEncrypt, toContext);
+			Assert.IsNotEmpty(response.EncryptedValue);
+
+			// Now encrypt another item with same unencrypted value and same context.  Should produce same results.
+			TransitEncryptedItem response2 = await TB.Encrypt(key, toEncrypt, toContext);
+			Assert.IsNotEmpty(response.EncryptedValue);
+			Assert.AreNotEqual(response.EncryptedValue, response2.EncryptedValue);
+		}
+
+
+
+
 		[Test, Order (200)]
 		public async Task Transit_RotateKey () {
 			try {
@@ -447,7 +534,10 @@ namespace VaultAgentTests
 		}
 
 
+
+
 		[Test, Order(400)]
+		// Test key deletion for a key that has not been enabled for deletion.  Should return false.
 		public async Task Transit_DeleteKey_NotEnabledForDelete_Fails () {
 			await Transit_Init();
 			randomKeyNum++;
@@ -456,13 +546,13 @@ namespace VaultAgentTests
 			// Create key then delete
 			Assert.True(await TB.CreateEncryptionKey(key, true, true, EnumTransitKeyType.aes256));
 			Assert.AreEqual(false, await TB.DeleteKey(key));
-
-			// See if key exists.
-			//Assert.AreEqual(false, await TB.IfExists(key));
 		}
 
 
+
+
 		[Test, Order(400)]
+		// Test that key deletion exists for a valid key that is enabled for deletion.  Should return true.
 		public async Task Transit_DeleteKey_EnabledForDelete_Success() {
 			await Transit_Init();
 			randomKeyNum++;
@@ -484,9 +574,22 @@ namespace VaultAgentTests
 		}
 
 
+
+
 		[Test, Order(400)]
+		// Test key deletion for a key that does not exist.  Should throw an exception.
 		public async Task Transit_DeleteKey_BadKeyValue_ThrowsException() {
-			Assert.AreEqual(true, false);
+			await Transit_Init();
+			randomKeyNum++;
+			string key = keyPrefix + randomKeyNum.ToString();
+
+			// We don't create it however, so it will fail.
+			// Delete the key.
+			Assert.That(() => TB.DeleteKey(key),
+				Throws.Exception
+					.TypeOf<VaultInvalidDataException>()
+					.With.Property("Message")
+					.Contains("could not delete policy; not found"));
 		}
 
 
@@ -576,6 +679,102 @@ namespace VaultAgentTests
 			Assert.AreEqual(valueE, bulkDecResponse2.DecryptedValues[4].DecryptedValue);
 		}
 
+
+
+		[Test, Order(1000)]
+		public async Task Transit_BulkEncryptionDecryptionContextual_Works() {
+			// Create key, validate the version and then encrypt some data with that key.
+			await Transit_Init();
+			randomKeyNum++;
+			string key = keyPrefix + randomKeyNum.ToString();
+
+			// Create key.
+			bool fa = await TB.CreateEncryptionKey(key, true, true, EnumTransitKeyType.aes256,true);
+			Assert.True(fa);
+
+			// Confirm key is new:
+			TransitKeyInfo TKI = await TB.ReadEncryptionKey(key);
+			Assert.AreEqual(TKI.LatestVersionNum, 1);
+
+			// Confirm it supports key derivation.
+			Assert.AreEqual(true, TKI.SupportsDerivation);
+
+
+			// Step A.  Build list of items to encrypt along with contextual encryption value.
+			List<KeyValuePair<string, string>> items = new List<KeyValuePair<string, string>>();
+			items.Add(new KeyValuePair<string, string>("abc", "123"));
+			items.Add(new KeyValuePair<string, string>("ZYX", "argue"));
+			items.Add(new KeyValuePair<string, string>("45332092214", "20180623"));
+
+
+			// Step B.
+			// Encrypt several items in bulk.  Storing both the item to encrypt and contextual encryption value.
+			List<TransitBulkItemToEncrypt> bulkEnc = new List<TransitBulkItemToEncrypt>();
+			foreach (KeyValuePair<string,string> item in items) {
+				bulkEnc.Add(new TransitBulkItemToEncrypt(item.Key, item.Value));
+			}
+
+			// Encrypt.
+			TransitEncryptionResultsBulk bulkEncResponse = await TB.EncryptBulk(key, bulkEnc);
+			int sentCnt = bulkEnc.Count;
+			int recvCnt = bulkEncResponse.EncryptedValues.Count;
+
+			// It's critical that items received = items sent.
+			Assert.AreEqual(sentCnt, recvCnt);
+
+
+			// Step C
+			// Decrypt in Bulk these Same Items.  We need to send the encrypted item as well as the original context value that was used to encrypt
+			// that specific item.
+			List<TransitBulkItemToDecrypt> bulkDecrypt = new List<TransitBulkItemToDecrypt>();
+			for (int i = 0; i < recvCnt; i++) {
+				bulkDecrypt.Add(new TransitBulkItemToDecrypt(bulkEncResponse.EncryptedValues[i].EncryptedValue, items[i].Value));
+			}
+
+			TransitDecryptionResultsBulk bulkDecResponse = await TB.DecryptBulk(key, bulkDecrypt);
+
+			// Validate.
+			Assert.AreEqual(recvCnt, bulkDecResponse.DecryptedValues.Count);
+			for (int i=0; i< recvCnt;i++) {
+				Assert.AreEqual(items[i].Key, bulkDecResponse.DecryptedValues[i].DecryptedValue);
+			}
+
+
+			// Step D
+			// Rotate Key.
+			Assert.AreEqual(true, (await TB.RotateKey(key)));
+			TransitKeyInfo TKI2 = await TB.ReadEncryptionKey(key);
+			Assert.AreEqual(TKI2.LatestVersionNum, 2);
+
+
+			// Step E.
+			// Re-encrypt in bulk.
+			List<TransitBulkItemToDecrypt> bulkRewrap = new List<TransitBulkItemToDecrypt>();
+			foreach (KeyValuePair<string, string> item in items) {
+				bulkRewrap.Add(new TransitBulkItemToDecrypt(item.Key, item.Value));
+			}
+
+			TransitEncryptionResultsBulk rewrapResponse = await TB.ReEncryptBulk(key, bulkRewrap);
+			Assert.AreEqual(bulkEnc.Count, rewrapResponse.EncryptedValues.Count);
+
+
+			// Step F.
+			// Decrypt once again in bulk.  
+			List<TransitBulkItemToDecrypt> bulkDecrypt2 = new List<TransitBulkItemToDecrypt>();
+			for (int i = 0; i < recvCnt; i++) {
+				bulkDecrypt2.Add(new TransitBulkItemToDecrypt(bulkEncResponse.EncryptedValues[i].EncryptedValue, items[i].Value));
+			}
+
+
+			TransitDecryptionResultsBulk bulkDecResponse2 = await TB.DecryptBulk(key, bulkDecrypt2);
+
+
+			// Validate.
+			Assert.AreEqual(recvCnt, bulkDecResponse2.DecryptedValues.Count);
+			for (int i = 0; i < recvCnt; i++) {
+				Assert.AreEqual(items[i].Key, bulkDecResponse2.DecryptedValues[i].DecryptedValue);
+			}
+		}
 
 
 	}
