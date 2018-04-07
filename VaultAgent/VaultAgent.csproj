@@ -75,6 +75,7 @@
     <Compile Include="Backends\System\VaultSystemBackend.cs" />
     <Compile Include="Backends\Transit\EnumTransitKeyType.cs" />
     <Compile Include="Backends\JSONSingleOrArrayConverter.cs" />
+    <Compile Include="Backends\Transit\Models\TransitBackupRestoreItem.cs" />
     <Compile Include="Backends\Transit\Models\TransitBulkItemToDecrypt.cs" />
     <Compile Include="Backends\Transit\Models\TransitConstants.cs" />
     <Compile Include="Backends\Transit\Models\TransitDataKey.cs" />

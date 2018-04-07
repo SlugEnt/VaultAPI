@@ -817,5 +817,157 @@ namespace VaultAgentTests
 
 
 
+		[Test, Order (2100)]
+		// Test that we can backup a key that is enabled for backup.
+		public async Task Transit_BackupKey_Success () {
+			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256, true);
+
+			// Allow Backup.
+			Dictionary<string, string> keyconfig = new Dictionary<string, string>();
+			keyconfig.Add(TransitConstants.KeyConfig_Allow_Backup, "true");
+
+			TransitKeyInfo tki = await TB.UpdateKey(key, keyconfig);
+
+			// Back it up.
+			TransitBackupRestoreItem tbri = await TB.BackupKey(key);
+			Assert.True(tbri.Success);
+			Assert.AreNotEqual(null, tbri.KeyBackup);
+		}
+
+
+
+		[Test, Order(2100)]
+		// Test that we get an error when trying to backup a key that cannot be backed up.
+		public async Task Transit_BackupKey_FailsWhenNotEnabledForBackup_ThrowsError() {
+			// Cannot use the Transit_InitWithKey function.  It sets Backup to true and once set that value cannot be changed.
+			await Transit_Init();
+			randomKeyNum++;
+			string key = keyPrefix + randomKeyNum.ToString();
+
+			// Create key.
+			bool rc = await TB.CreateEncryptionKey(key, true,false, EnumTransitKeyType.aes256);
+			Assert.True(rc);
+
+
+			// Back it up.
+			TransitBackupRestoreItem tbri = await TB.BackupKey(key);
+			Assert.False(tbri.Success);
+			Assert.True(tbri.ErrorMsg.Contains("PlainTextBackup disabled"));	
+		}
+
+
+
+
+		[Test, Order(2100)]
+		// Test that we get an error when trying to backup a key that cannot be backed up.
+		public async Task Transit_BackupKey_FailsWhenNotExportable_ThrowsError() {
+			// Cannot use the Transit_InitWithKey function.  It sets Backup to true and once set that value cannot be changed.
+			await Transit_Init();
+			randomKeyNum++;
+			string key = keyPrefix + randomKeyNum.ToString();
+
+			// Create key.
+			bool rc = await TB.CreateEncryptionKey(key,false, true, EnumTransitKeyType.aes256);
+			Assert.True(rc);
+
+
+			// Back it up.
+			TransitBackupRestoreItem tbri = await TB.BackupKey(key);
+			Assert.False(tbri.Success);
+			Assert.True(tbri.ErrorMsg.Contains("Key is not exportable"));
+		}
+
+
+
+		[Test, Order(2101)]
+		// Performs a complex set of operations to ensure a backup and restore of a key is successful. Including rotating the key
+		// encrypting with the key, etc.
+		public async Task Transit_RestoreKey_Success () {
+			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256);
+
+			// A.  Enable deletion of the key.
+			Dictionary<string, string> keyconfig = new Dictionary<string, string>();
+			keyconfig.Add(TransitConstants.KeyConfig_DeleteAllowed, "true");
+
+			TransitKeyInfo tki = await TB.UpdateKey(key, keyconfig);
+			Assert.True(tki.CanDelete);
+
+			
+			// B.  Rotate the key a few times.
+			await TB.RotateKey(key);
+			await TB.RotateKey(key);
+			await TB.RotateKey(key);
+
+
+			// C.  Encrypt a piece of data.
+			string encryptedValue = "ABCzyx123";
+			TransitEncryptedItem encItem = await TB.Encrypt(key, encryptedValue);
+
+			// D.  Rotate Keys a few more times.
+			await TB.RotateKey(key);
+			await TB.RotateKey(key);
+			await TB.RotateKey(key);
+
+
+			tki = await TB.ReadEncryptionKey(key);
+			Assert.AreEqual(tki.Name, key);
+
+
+			// E.  Back it up.
+			TransitBackupRestoreItem tbri = await TB.BackupKey(key);
+			Assert.True(tbri.Success);
+			Assert.AreNotEqual(null, tbri.KeyBackup);
+
+
+			// F.  Delete key.
+			Assert.True(await TB.DeleteKey(key));
+
+
+			// G.  Restore the key
+			Assert.True(await TB.RestoreKey(key, tbri));
+
+
+			// H.  Decrypt an item with restored key.
+			TransitDecryptedItem decItem = await TB.Decrypt(key, encItem.EncryptedValue);
+			Assert.AreEqual(encryptedValue, decItem.DecryptedValue);
+
+
+			// I.  Validate the restore.
+			TransitKeyInfo tkiRestore = await TB.ReadEncryptionKey(key);
+			Assert.AreEqual(tki.Type, tkiRestore.Type);
+			Assert.AreEqual(tki.LatestVersionNum, tkiRestore.LatestVersionNum);
+			Assert.AreEqual(tki.Name, tkiRestore.Name);
+			Assert.AreEqual(tki.Keys.Count, tkiRestore.Keys.Count);
+		}
+
+
+
+		[Test, Order(2101)]
+		// Performs a complex set of operations to ensure a backup and restore of a key is successful. Including rotating the key
+		// encrypting with the key, etc.
+		public async Task Transit_RestoreKey_KeyAlreadyExists() {
+			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256);
+
+			// E.  Back it up.
+			TransitBackupRestoreItem tbri = await TB.BackupKey(key);
+			Assert.True(tbri.Success);
+			Assert.AreNotEqual(null, tbri.KeyBackup);
+
+
+			// B.  Rotate the key a few times so we know the keys are different.
+			await TB.RotateKey(key);
+			await TB.RotateKey(key);
+
+
+			// Read key, prior to restore.
+			TransitKeyInfo tki = await TB.ReadEncryptionKey(key);
+			Assert.AreEqual(tki.Name, key);
+
+
+			// G.  Restore the key
+			Assert.False(await TB.RestoreKey(key, tbri));
+
+		}
+
 	}
 }

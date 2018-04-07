@@ -478,6 +478,7 @@ namespace VaultAgent.Backends
 
 		/// <summary>
 		/// Updates the configuration settings for the given key.  Use the TransitConstants KeyConfig... values for input to the inputParams Dictionary.
+		/// Note: If PlainTextBackup or exportable are already True, you cannot set them to false.
 		/// </summary>
 		/// <param name="keyName">The encryption key to update configuration settings for.</param>
 		/// <param name="inputParams">Dictionary of KeyValue string pairs that contain Vault config values and the value you want that config value to have.</param>
@@ -576,5 +577,72 @@ namespace VaultAgent.Backends
 			TransitDataKey TDK = VaultUtilityFX.ConvertJSON<TransitDataKey>(js);
 			return TDK;
 		}
+
+
+
+
+		/// <summary>
+		/// Returns a plaintext backup of the requested key.  Backups contains all configuration data and all keys of all versions along with the 
+		/// HMAC key.  The TransitBackupRestoreItem can be used with the RestoreKey method to restore the given key.  Callers should check the 
+		/// TransitBackupRestoreItem Success flag to determine if it worked and ErrorMsg to identify any errors if it did not.  The 2 most common
+		/// errors are: Export is disabled and PlainTextBackup is disabled.  These need to be enabled on the key prior to backing up. 
+		/// </summary>
+		/// <param name="keyName">Name of the encryption key to backup.</param>
+		/// <returns>TransitBackupRestoreItem containing the full backup of the key.</returns>
+		public async Task<TransitBackupRestoreItem> BackupKey (string keyName) {
+			string path = vaultTransitPath + "backup/" + keyName;
+
+			try {
+				VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "BackupKey");
+
+				// Pull out the results and send back.  
+				string js = vdro.GetDataPackageAsJSON();
+				TransitBackupRestoreItem tbri = VaultUtilityFX.ConvertJSON<TransitBackupRestoreItem>(js);
+				if (tbri.KeyBackup != null) { tbri.Success = true; }
+				return tbri;
+			}
+			catch (VaultInternalErrorException e) {
+				string errMsg = "";
+				if (e.Message.Contains ("exporting is disallowed")) {
+					errMsg = "Key is not exportable.  Must be exportable to be backed up.";
+				}
+				else if (e.Message.Contains ("plaintext backup is disallowed on the policy")) {
+					errMsg = "Key has PlainTextBackup disabled.  Backup not possible.";
+				}
+				else { throw e; }
+
+				TransitBackupRestoreItem tbri = new TransitBackupRestoreItem();
+				tbri.Success = false;
+				tbri.ErrorMsg = errMsg;
+				return tbri;
+			}
+		}
+
+
+
+		/// <summary>
+		/// Restores the given key to the Vault.
+		/// </summary>
+		/// <param name="keyName">Name of encryption key that should be restored.</param>
+		/// <param name="tbri">TransitBackupRestoreItem containing the backup value.</param>
+		/// <returns>True if success.</returns>
+		public async Task<bool> RestoreKey (string keyName, TransitBackupRestoreItem tbri) {
+			string path = vaultTransitPath + "restore/" + keyName;
+
+			// Setup Post Parameters in body.
+			Dictionary<string, string> contentParams = new Dictionary<string, string>();
+
+			try {
+				// Build the parameter list.
+				contentParams.Add("backup", tbri.KeyBackup);
+				VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "RestoreKey", contentParams);
+				return vdro.Success;
+			}
+			catch (VaultInternalErrorException e) {
+				if (e.Message.Contains("already exists")) { return false; }
+				else { throw e; }
+			}
+		}
 	}
 }
+
