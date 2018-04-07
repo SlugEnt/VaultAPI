@@ -207,7 +207,7 @@ namespace VaultAgent
 
 
 		/// <summary>
-		/// Converts the JSON Data value into the specific C# Class object.
+		/// Returns a T object with the corresponding values from the JSON Data Object that is a subset of the JSON Response object returned from Vault.
 		/// </summary>
 		/// <typeparam name="T">The object class to convert the JSON into.</typeparam>
 		/// <returns>An instance of the object class requested, with the values from the JSON Data object.</returns>
@@ -216,8 +216,14 @@ namespace VaultAgent
 		}
 
 
-
-
+		/// <summary>
+		/// Populates a T object with the corresponding values from the JSON Response object Vault gave us.
+		/// </summary>
+		/// <typeparam name="T">The object type to fill from the JSON.</typeparam>
+		/// <returns>T - Object filled with values from JSON.</returns>
+		public T GetVaultTypedObjectFromResponse<T>() {
+			return JsonConvert.DeserializeObject<T>(GetResponsePackageAsJSON());
+		}
 
 
 	}

@@ -25,110 +25,27 @@ namespace VaultClient
 			try {
 				Console.WriteLine("Running thru Vault TransitBackend exercises.");
 
-				await Run_DeleteKey();
+				string eKey = Guid.NewGuid().ToString();
 
+				// Create an Encryption Key:
+				//Run_CreateKey("keyA");
 
-				// Test hashing 
+				//await Run_DeleteKey();
 
-				string value = await TB.ComputeHash("abcdefXYZ12", EnumHashAlgorithm.sha2_512);
+				//await Run_BulkOps();
+
 				
-
-				string eKey = "KeyTestABC7";
-
 				// List Keys
 				List<string> transitKeys = await Run_ListKeys();
 
 				// Read a key
 				await Run_ReadKey(eKey);
 
-/*
-				Console.WriteLine("Following are the Encryption Keys currently in Transit Backend");
-
-								foreach (string key in transitKeys) {
-									TransitKeyInfo TKI = await TB.ReadEncryptionKey(key);
-									Console.WriteLine("Key info for:  {0}",TKI.Name);
-									Console.WriteLine("  Supports:  Deriv:{0}  Converg:{1}", TKI.SupportsDerivation, TKI.EnableConvergentEncryption);
-								}
-
-	*/
 
 				// Encrypt Single Item
 				Console.WriteLine("Encrypting a single item.");
 				await Run_EncryptData(eKey);
 
-
-				
-
-
-				// Encrypt Bulk Items
-				Console.WriteLine("Encrypting bulk Items");
-				
-				List<TransitBulkItemToEncrypt> bulkEnc = new List<TransitBulkItemToEncrypt>();
-				bulkEnc.Add(new TransitBulkItemToEncrypt("ABC"));
-				bulkEnc.Add(new TransitBulkItemToEncrypt("DEF"));
-				bulkEnc.Add(new TransitBulkItemToEncrypt("GHI"));
-				bulkEnc.Add(new TransitBulkItemToEncrypt("JKL"));
-				bulkEnc.Add(new TransitBulkItemToEncrypt("MNO"));
-
-				TransitEncryptionResultsBulk results = await TB.EncryptBulk(eKey, bulkEnc);
-				int sentCnt = bulkEnc.Count;
-				int recvCnt = results.EncryptedValues.Count;
-				if (sentCnt == recvCnt) { Console.WriteLine("  - Bulk Encryption completed.  Sent and recived items count same!  SUCCESS!"); }
-
-
-				foreach (TransitEncryptedItem encrypted in results.EncryptedValues) {
-					TransitDecryptedItem decrypted = await TB.Decrypt(eKey, encrypted.EncryptedValue );
-					Console.WriteLine("  - Decrypted Value = {0}", decrypted.DecryptedValue);
-				}
-
-
-				// Test Bulk Decryption
-				List<TransitBulkItemToDecrypt> bulkDecrypt = new List<TransitBulkItemToDecrypt>();
-				foreach (TransitEncryptedItem encrypted in results.EncryptedValues) {
-					bulkDecrypt.Add(new TransitBulkItemToDecrypt(encrypted.EncryptedValue));
-				}
-
-
-				// Now decrypt.
-				TransitDecryptionResultsBulk resDecrypt = await TB.DecryptBulk(eKey, bulkDecrypt);
-				int sentCntD = bulkDecrypt.Count;
-				int recvCntD = resDecrypt.DecryptedValues.Count;
-				if (sentCntD == recvCntD) { Console.WriteLine("  - Bulk Decryption completed.  Sent and recived items count same!  SUCCESS!"); }
-
-				// Print results:
-				foreach(TransitDecryptedItem decrypted in resDecrypt.DecryptedValues) {
-					Console.WriteLine("  Bulk Decryption result: {0}", decrypted.DecryptedValue);
-				}
-
-
-
-				// Rotate the Key.
-				if (runRotateTest) {
-					Console.WriteLine("Rotating the Key.");
-					bool rotateAnswer = await TB.RotateKey(eKey);
-					if (rotateAnswer) { Console.WriteLine("  - Key rotation successful."); }
-				}
-
-				if (runRekeyTest) {
-					Console.WriteLine("Rencrypting a key.");
-					await Run_ReEncrypt(eKey);
-				}
-
-
-				// Test Bulk Rewrap.
-				TransitEncryptionResultsBulk bulkRewrap = await TB.ReEncryptBulk(eKey, bulkDecrypt);
-				foreach(TransitEncryptedItem encrypted in bulkRewrap.EncryptedValues) {
-					// Decrypt the value:
-					TransitDecryptedItem tdiA = await TB.Decrypt(eKey, encrypted.EncryptedValue);
-					Console.WriteLine("  - Decrypted value from bulk Rewrap = {0}", tdiA.DecryptedValue);
-				}
-
-
-				//				await Run_ReadKey();
-
-
-				// Create an Encryption Key:
-				//Run_CreateKey("keyA");
 			}
 			catch (Exception e) {
 				Console.WriteLine("Errors - {0}", e.Message);
@@ -260,6 +177,74 @@ namespace VaultClient
 			if (rc == true) { Console.WriteLine("Success - Encryption Key written.  It may now be used to encrypt data."); }
 
 
+		}
+
+
+		public async Task Run_BulkOps () {
+			string eKey = Guid.NewGuid().ToString();
+
+			// Encrypt Bulk Items
+			Console.WriteLine("Encrypting bulk Items");
+
+			List<TransitBulkItemToEncrypt> bulkEnc = new List<TransitBulkItemToEncrypt>();
+			bulkEnc.Add(new TransitBulkItemToEncrypt("ABC"));
+			bulkEnc.Add(new TransitBulkItemToEncrypt("DEF"));
+			bulkEnc.Add(new TransitBulkItemToEncrypt("GHI"));
+			bulkEnc.Add(new TransitBulkItemToEncrypt("JKL"));
+			bulkEnc.Add(new TransitBulkItemToEncrypt("MNO"));
+
+			TransitEncryptionResultsBulk results = await TB.EncryptBulk(eKey, bulkEnc);
+			int sentCnt = bulkEnc.Count;
+			int recvCnt = results.EncryptedValues.Count;
+			if (sentCnt == recvCnt) { Console.WriteLine("  - Bulk Encryption completed.  Sent and recived items count same!  SUCCESS!"); }
+
+
+			foreach (TransitEncryptedItem encrypted in results.EncryptedValues) {
+				TransitDecryptedItem decrypted = await TB.Decrypt(eKey, encrypted.EncryptedValue);
+				Console.WriteLine("  - Decrypted Value = {0}", decrypted.DecryptedValue);
+			}
+
+
+			// Test Bulk Decryption
+			List<TransitBulkItemToDecrypt> bulkDecrypt = new List<TransitBulkItemToDecrypt>();
+			foreach (TransitEncryptedItem encrypted in results.EncryptedValues) {
+				bulkDecrypt.Add(new TransitBulkItemToDecrypt(encrypted.EncryptedValue));
+			}
+
+
+			// Now decrypt.
+			TransitDecryptionResultsBulk resDecrypt = await TB.DecryptBulk(eKey, bulkDecrypt);
+			int sentCntD = bulkDecrypt.Count;
+			int recvCntD = resDecrypt.DecryptedValues.Count;
+			if (sentCntD == recvCntD) { Console.WriteLine("  - Bulk Decryption completed.  Sent and recived items count same!  SUCCESS!"); }
+
+			// Print results:
+			foreach (TransitDecryptedItem decrypted in resDecrypt.DecryptedValues) {
+				Console.WriteLine("  Bulk Decryption result: {0}", decrypted.DecryptedValue);
+			}
+
+
+
+			// Rotate the Key.
+//			if (runRotateTest) {
+				Console.WriteLine("Rotating the Key.");
+				bool rotateAnswer = await TB.RotateKey(eKey);
+				if (rotateAnswer) { Console.WriteLine("  - Key rotation successful."); }
+//			}
+
+//			if (runRekeyTest) {
+				Console.WriteLine("Rencrypting a key.");
+				await Run_ReEncrypt(eKey);
+//			}
+
+
+			// Test Bulk Rewrap.
+			TransitEncryptionResultsBulk bulkRewrap = await TB.ReEncryptBulk(eKey, bulkDecrypt);
+			foreach (TransitEncryptedItem encrypted in bulkRewrap.EncryptedValues) {
+				// Decrypt the value:
+				TransitDecryptedItem tdiA = await TB.Decrypt(eKey, encrypted.EncryptedValue);
+				Console.WriteLine("  - Decrypted value from bulk Rewrap = {0}", tdiA.DecryptedValue);
+			}
 		}
 	}
 }

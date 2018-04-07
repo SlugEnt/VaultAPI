@@ -24,16 +24,9 @@ namespace VaultAgentTests
 		// Encryption keys we will generally use throughout tests.
 		string encKeyA = "Test_A";
 		string encKeyB = "Test_B";
-		string encKeyC = "Test_C";
 
 		// Transit Backend we will generally use throughout tests.
 		string transitBE_A = "transitA";
-		string transitBE_B = "transitB";
-		string transitBE_C = "transitC";
-
-		string transitBE_A_Path;
-		string transitBE_B_Path;
-		string transitBE_C_Path;
 
 
 		// Used to ensure we have a random key.

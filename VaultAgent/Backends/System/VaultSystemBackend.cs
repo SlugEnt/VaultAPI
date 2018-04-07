@@ -54,9 +54,26 @@ namespace VaultAgent.Backends.System
 					typeName = "transit";		
 					break;
 				case EnumBackendTypes.Secret:
-					throw new NotImplementedException("Secret Backend not implemented yet.");
+					typeName = "kv";
+					break;
+				case EnumBackendTypes.AWS:
+					typeName = "aws";
+					throw new NotImplementedException();
+				case EnumBackendTypes.CubbyHole:
+					typeName = "cubbyhole";
+					throw new NotImplementedException();
+				case EnumBackendTypes.Generic:
+					typeName = "generic";
+					throw new NotImplementedException();
+				case EnumBackendTypes.PKI:
+					typeName = "pki";
+					throw new NotImplementedException();
+				case EnumBackendTypes.SSH:
+					typeName = "ssh";
+					throw new NotImplementedException();
 
 			}
+
 			createParams.Add("type", typeName);
 			createParams.Add("description", description);
 
