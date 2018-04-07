@@ -77,6 +77,7 @@
     <Compile Include="Backends\JSONSingleOrArrayConverter.cs" />
     <Compile Include="Backends\Transit\Models\TransitBulkItemToDecrypt.cs" />
     <Compile Include="Backends\Transit\Models\TransitConstants.cs" />
+    <Compile Include="Backends\Transit\Models\TransitDataKey.cs" />
     <Compile Include="Backends\Transit\Models\TransitDecryptedItem.cs" />
     <Compile Include="Backends\Transit\Models\TransitDecryptionResultsBulk.cs" />
     <Compile Include="Backends\Transit\Models\TransitEncryptedItem.cs" />

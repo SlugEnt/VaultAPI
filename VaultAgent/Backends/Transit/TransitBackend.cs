@@ -7,11 +7,10 @@ using VaultAgent.Backends.Transit.Models;
 
 namespace VaultAgent.Backends
 {
-	public class TransitBackend
-	{
-		TokenInfo transitToken;		
+	public class TransitBackend {
+		TokenInfo transitToken;
 		private VaultAPI_Http vaultHTTP;
-		string transitPath = "/v1/transit/";	
+		string transitPath = "/v1/transit/";
 		Uri vaultTransitPath;
 
 		const string pathKeys = "keys/";
@@ -26,7 +25,7 @@ namespace VaultAgent.Backends
 		/// <param name="port">The network port the Vault server listens on.</param>
 		/// <param name="Token">The token used to authenticate with.</param>
 		/// <param name="backendMountName">The name of the transit backend to mount.  For example for a mount at /mine/transitA use mine/transitA as value.</param>
-		public TransitBackend (string vaultIP, int port, string Token, string backendMountName="transit") {
+		public TransitBackend(string vaultIP, int port, string Token, string backendMountName = "transit") {
 			vaultHTTP = new VaultAPI_Http(vaultIP, port, Token);
 			transitToken = new TokenInfo();
 			transitToken.Id = Token;
@@ -54,7 +53,7 @@ namespace VaultAgent.Backends
 		/// same encrypted ciphertext.</param>
 		/// <returns>True if successful.  However, it could also mean the key already exists, in which case the parameters you set here may not be what the key 
 		/// is set to.</returns>
-		public async Task<bool> CreateEncryptionKey(string keyName, bool canBeExported = false, bool allowPlainTextBackup = false, 
+		public async Task<bool> CreateEncryptionKey(string keyName, bool canBeExported = false, bool allowPlainTextBackup = false,
 													EnumTransitKeyType keyType = EnumTransitKeyType.aes256, bool enableKeyDerivation = false, bool enableConvergentEncryption = false) {
 			// The keyname forms the last part of the path
 			string path = vaultTransitPath + pathKeys + keyName;
@@ -84,7 +83,7 @@ namespace VaultAgent.Backends
 					break;
 			}
 
-			Dictionary<string, string> createParams = new Dictionary<string,string>();
+			Dictionary<string, string> createParams = new Dictionary<string, string>();
 			createParams.Add("exportable", canBeExported ? "true" : "false");
 			createParams.Add("allow_plaintext_backup", allowPlainTextBackup ? "true" : "false");
 			createParams.Add("type", keyTypeV);
@@ -147,7 +146,7 @@ namespace VaultAgent.Backends
 		/// </summary>
 		/// <param name="keyName">Name of the key you want to validate if it exists.</param>
 		/// <returns>True if key exists.  False if it does not.</returns>
-		public async Task<bool>IfExists (string keyName) {
+		public async Task<bool> IfExists(string keyName) {
 			try {
 				TransitKeyInfo TKI = await ReadEncryptionKey(keyName);
 				if (TKI != null) { return true; }
@@ -174,7 +173,7 @@ namespace VaultAgent.Backends
 
 			string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
 
-			List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js); 
+			List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js);
 			return keys;
 		}
 
@@ -187,17 +186,17 @@ namespace VaultAgent.Backends
 		/// <param name="keyName">The encryption key to use to encrypt data.</param>
 		/// <param name="contentParams">Dictionary of string value pairs representing all the input parameters to be sent along with the request to the Vault API.</param>
 		/// <returns>A List of the encrypted value(s). </returns>
-		protected async Task<TransitEncryptedItem> EncryptToVault (string keyName, Dictionary<string,string> contentParams) {
+		protected async Task<TransitEncryptedItem> EncryptToVault(string keyName, Dictionary<string, string> contentParams) {
 			string path = vaultTransitPath + pathEncrypt + keyName;
 
 			// Call Vault API.
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "EncryptToVault", contentParams );
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "EncryptToVault", contentParams);
 			if (vdro.httpStatusCode == 200) {
-				string js =  vdro.GetDataPackageAsJSON() ;
-				TransitEncryptedItem data =  VaultUtilityFX.ConvertJSON<TransitEncryptedItem>(js);
+				string js = vdro.GetDataPackageAsJSON();
+				TransitEncryptedItem data = VaultUtilityFX.ConvertJSON<TransitEncryptedItem>(js);
 				return data;
 			}
-			else {	return null; }
+			else { return null; }
 		}
 
 
@@ -223,8 +222,8 @@ namespace VaultAgent.Backends
 			// Base64 Encode Data
 			contentParams.Add("plaintext", VaultUtilityFX.Base64EncodeAscii(rawStringData));
 
-			if (keyDerivationContext != "") { contentParams.Add("context", VaultUtilityFX.Base64EncodeAscii(keyDerivationContext));	}
-			if (keyVersion > 0 ) { contentParams.Add("key_version", keyVersion.ToString()); }
+			if (keyDerivationContext != "") { contentParams.Add("context", VaultUtilityFX.Base64EncodeAscii(keyDerivationContext)); }
+			if (keyVersion > 0) { contentParams.Add("key_version", keyVersion.ToString()); }
 
 			return await EncryptToVault(keyName, contentParams);
 		}
@@ -251,7 +250,7 @@ namespace VaultAgent.Backends
 			// Build the Posting Parameters as JSON.  We need to manually create in here as we also need to custom append the 
 			// keys to be encrypted into the body.
 			Dictionary<string, string> contentParams = new Dictionary<string, string>();
-			if (keyVersion > 0)	{ contentParams.Add("key_version", keyVersion.ToString()); }
+			if (keyVersion > 0) { contentParams.Add("key_version", keyVersion.ToString()); }
 			//if (keyDerivationContext != "") { contentParams.Add("context", VaultUtilityFX.Base64EncodeAscii(keyDerivationContext)); }
 
 			string inputVarsJSON = JsonConvert.SerializeObject(contentParams, Formatting.None);
@@ -269,7 +268,7 @@ namespace VaultAgent.Backends
 				string newVarsJSON = inputVarsJSON.Substring(1, inputVarsJSON.Length - 2) + ",";
 				bulkJSON = bulkJSON.Insert(1, newVarsJSON);
 			}
-			
+
 
 			// Call Vault API.
 			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "EncryptBulk", null, bulkJSON);
@@ -377,7 +376,7 @@ namespace VaultAgent.Backends
 		/// </summary>
 		/// <param name="keyName">The name of the encryption ket to rotate.</param>
 		/// <returns>True if successfull.  Will thrown an error with the reason if unsuccesful.  </returns>
-		public async Task<bool> RotateKey (string keyName) {
+		public async Task<bool> RotateKey(string keyName) {
 			string path = vaultTransitPath + pathKeys + keyName + "/rotate";
 
 			// Call Vault API.
@@ -385,7 +384,7 @@ namespace VaultAgent.Backends
 			if (!vdro.Success) {
 				// This should not be able to happen.  If it errored, it should have been handled in the PostAsync call.  
 				throw new VaultUnexpectedCodePathException("Unexpected response in RotateKey");
-				}
+			}
 
 			return true;
 		}
@@ -403,9 +402,9 @@ namespace VaultAgent.Backends
 		/// <param name="keyDerivationContext">The context used for key derivation if the key supports that key derivation.</param>
 		/// <param name="keyVersion">Version of the key to use.  Defaults to current version (0).</param>
 		/// <returns>The data element encrypted with the version of the key specified.  (Default is latest version of the key).  Returns null if operation failed.</returns>
-		public async Task<TransitEncryptedItem> ReEncrypt (string keyName, string encryptedData, string keyDerivationContext = "", int keyVersion = 0) {
+		public async Task<TransitEncryptedItem> ReEncrypt(string keyName, string encryptedData, string keyDerivationContext = "", int keyVersion = 0) {
 			string path = vaultTransitPath + "rewrap/" + keyName;
-	
+
 
 			// Setup Post Parameters in body.
 			Dictionary<string, string> contentParams = new Dictionary<string, string>();
@@ -477,12 +476,18 @@ namespace VaultAgent.Backends
 
 
 
-		public async Task<TransitKeyInfo> UpdateKey(string keyName,  Dictionary<string,string> inputParams) {
+		/// <summary>
+		/// Updates the configuration settings for the given key.  Use the TransitConstants KeyConfig... values for input to the inputParams Dictionary.
+		/// </summary>
+		/// <param name="keyName">The encryption key to update configuration settings for.</param>
+		/// <param name="inputParams">Dictionary of KeyValue string pairs that contain Vault config values and the value you want that config value to have.</param>
+		/// <returns>TransitKeyInfo object with the current settings after Update.</returns>
+		public async Task<TransitKeyInfo> UpdateKey(string keyName, Dictionary<string, string> inputParams) {
 			string path = vaultTransitPath + "keys/" + keyName + "/config";
 
 			Dictionary<string, string> contentParams = new Dictionary<string, string>();
-			foreach (KeyValuePair<string,string> item in inputParams) {
-				if (item.Key.ToLower() == "min_decryption_version") { contentParams.Add(item.Key,item.Value); }
+			foreach (KeyValuePair<string, string> item in inputParams) {
+				if (item.Key.ToLower() == "min_decryption_version") { contentParams.Add(item.Key, item.Value); }
 				else if (item.Key.ToLower() == "min_encryption_version") { contentParams.Add(item.Key, item.Value); }
 				else if (item.Key.ToLower() == "deletion_allowed") { contentParams.Add(item.Key, item.Value); }
 				else if (item.Key.ToLower() == "exportable") { contentParams.Add(item.Key, item.Value); }
@@ -511,7 +516,7 @@ namespace VaultAgent.Backends
 		/// <returns>True if deletion successful.
 		/// False if the key does not allow deletion because its deletion_allowed config parameters is not set to true.
 		/// Throws VaultInvalidDataException with message of "could not delete policy; not found.</returns>
-		public async Task<bool> DeleteKey (string keyName) {
+		public async Task<bool> DeleteKey(string keyName) {
 			string path = vaultTransitPath + "keys/" + keyName;
 
 			try {
@@ -523,7 +528,7 @@ namespace VaultAgent.Backends
 				// Search for the error message - it indicates whether it is key could not be found or deletion not allowed.
 				if (e.Message.Contains("could not delete policy; not found")) { throw e; }
 
-				if (e.Message.Contains ("deletion is not allowed for this policy")) { return false; }
+				if (e.Message.Contains("deletion is not allowed for this policy")) { return false; }
 
 				// not sure - rethrow error.
 				throw e;
@@ -531,5 +536,45 @@ namespace VaultAgent.Backends
 			catch (Exception e) { throw e; }
 		}
 
+
+
+		public async Task<object> ExportKey(string keyName) {
+			throw new NotImplementedException();
+		}
+
+
+
+		/// <summary>
+		/// Throws VaultInvalidDataException for a number of errors, including not supplying context for keys that require it.
+		/// </summary>
+		/// <param name="keyName">Name of the key that should be used to create this Data Key.</param>
+		/// <param name="returnCipherAndPlainText">Boolean:  If true, the key returned will contain both the plaintext and cipher text for the key.  IF false, just the cipher is returned.</param>
+		/// <param name="context">Optional:  the context value to encrypt with.  Required if Key supports convergent or Derived Encryption.</param>
+		/// <param name="bits">128, 256 or 512.  Number of bits the key should have.</param>
+		/// <returns></returns>
+		public async Task<TransitDataKey> GenerateDataKey(string keyName, bool returnCipherAndPlainText = false, string context = "", int bits = 256) {
+			string sType = "";
+			if (returnCipherAndPlainText) { sType = "plaintext"; }
+			else { sType = "wrapped"; }
+
+			if ((bits != 128) && (bits != 256) && (bits != 512)) { throw new ArgumentOutOfRangeException("bits", "Bits value can only be 128, 256 or 512."); }
+
+
+			// Build parameters 
+			Dictionary<string, string> contentParams = new Dictionary<string, string>();
+			contentParams.Add("bits", bits.ToString());
+			if (context !="") { contentParams.Add("context", VaultUtilityFX.Base64EncodeAscii(context)); }
+
+
+			string path = vaultTransitPath + "datakey/" + sType + "/" + keyName;
+
+
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "GenerateDataKey", contentParams);
+			
+			// Pull out the results and send back.  
+			string js = vdro.GetDataPackageAsJSON();
+			TransitDataKey TDK = VaultUtilityFX.ConvertJSON<TransitDataKey>(js);
+			return TDK;
+		}
 	}
 }
