@@ -58,7 +58,7 @@ namespace VaultAgentTests
 			string secretName = secretPrefix + randomSecretNum.ToString();
 
 			val.Path = secretName;
-			Assert.True(await SB.CreateSecretAndReturn(val));
+			Assert.True(await SB.CreateOrUpdateSecretAndReturn(val));
 
 			return secretName;
 		}
@@ -87,7 +87,7 @@ namespace VaultAgentTests
 			A.Attributes.Add("conn", "db1-Myconn");
 			A.Attributes.Add("user", "dbuserAdmin");
 
-			Assert.True(await SB.CreateSecretAndReturn(A));
+			Assert.True(await SB.CreateOrUpdateSecretAndReturn(A));
 		}
 
 
@@ -102,7 +102,7 @@ namespace VaultAgentTests
 			string secretName = "Test/B/mysecret";
 			A.Path = secretName;
 
-			Assert.True(await SB.CreateSecretAndReturn(A));
+			Assert.True(await SB.CreateOrUpdateSecretAndReturn(A));
 		}
 
 
@@ -112,7 +112,7 @@ namespace VaultAgentTests
 		public async Task Secret_CreateSecret_FromJustSecretName_ReturnsTrue() {
 			await Secret_Init();		
 			string secretName = "Test/C/mysecret";
-			Assert.True(await SB.CreateSecretAndReturn(secretName));
+			Assert.True(await SB.CreateOrUpdateSecretAndReturn(secretName));
 		}
 
 
@@ -123,7 +123,7 @@ namespace VaultAgentTests
 			await Secret_Init();
 
 			String secretName = "Test/D/myothersec";
-			Secret B = await SB.CreateSecret(secretName);
+			Secret B = await SB.CreateOrUpdateSecret(secretName);
 			Assert.NotNull(B);
 			Assert.AreEqual(secretName, B.Path);
 		}
@@ -138,12 +138,66 @@ namespace VaultAgentTests
 
 			String secretName = "Test/E/myothersec";
 			Secret A = new Secret(secretName);
-			Secret B = await SB.CreateSecret(A);
+			Secret B = await SB.CreateOrUpdateSecret(A);
 			Assert.NotNull(B);
 			Assert.AreEqual(secretName, B.Path);
 		}
 
 
+
+
+		[Test, Order (100)]
+		public async Task Secret_CreateSecret_Success () {
+			await Secret_Init();
+
+			String secretName = "Test/F/bkbk";
+			Secret A = new Secret(secretName);
+
+			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("user", "FredFlinstone");
+			KeyValuePair<string, string> kv2 = new KeyValuePair<string, string>("house", "rubbles");
+			A.Attributes.Add(kv1.Key, kv1.Value);
+			A.Attributes.Add(kv2.Key, kv2.Value);
+
+			Secret secret = await SB.CreateSecret(A);
+			Assert.NotNull(secret);
+
+			// 3 because all secrets saved to Vault have a TTL value that is added as an attribute.
+			Assert.AreEqual(3, secret.Attributes.Count);
+		}
+
+
+
+		// Tests if Create Secret returns null if the secret already exists.  Prevents overwriting it.
+		[Test, Order(100)]
+		public async Task Secret_CreateSecret_ExistingSecret_ReturnsNull () {
+			await Secret_Init();
+
+			String secretName = "Test/F/hhyhyk";
+			Secret A = new Secret(secretName);
+
+			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("user", "FredFlinstone");
+			KeyValuePair<string, string> kv2 = new KeyValuePair<string, string>("house", "rubbles");
+			A.Attributes.Add(kv1.Key, kv1.Value);
+			A.Attributes.Add(kv2.Key, kv2.Value);
+
+			Secret secret = await SB.CreateSecret(A);
+			Assert.NotNull(secret);
+
+			// Now try to create it again.  Should fail.
+			Secret secret2 = await SB.CreateSecret(A);
+			Assert.Null(secret2);
+		}
+
+
+
+
+		// Read a secret that does not exist.  Should return null.
+		[Test,Order(200)]
+		public async Task Secret_ReadSecret_SecretDoesNotExist_ReturnsNull () {
+			await Secret_Init();
+
+			Assert.Null(await SB.ReadSecret(Guid.NewGuid().ToString()));
+		}
 
 
 
@@ -186,17 +240,208 @@ namespace VaultAgentTests
 		}
 
 
+
+		// IfExists should return false when no secret exists.
+		[Test, Order(250)]
+		public async Task Secret_IfExists_IfNoSecret_ShouldReturnFalse () {
+			await Secret_Init();
+
+			string secret = Guid.NewGuid().ToString();
+			Secret A = new Secret(secret);
+
+			Assert.False(await SB.IfExists(A));
+		}
+
+
+
+
+		// IfExists should return true when a secret exists.
+		[Test, Order(250)]
+		public async Task Secret_IfExists_SecretExists_ShouldReturnTrue() {
+			// Create a Secret.
+			Secret A = new Secret();
+			A.Path = await Secret_Init_Create(A);
+
+			Assert.True(await SB.IfExists(A));
+		}
+
+
+
+
+
+		// IfExists should return false when no secret exists.
+		[Test, Order(250)]
+		public async Task Secret_IfExists_IfNoSecretSecretPath_ShouldReturnFalse() {
+			await Secret_Init();
+
+			string secret = Guid.NewGuid().ToString();
+
+			Assert.False(await SB.IfExists(secret));
+		}
+
+
+
+
+		// IfExists should return true when a secret exists.
+		[Test, Order(250)]
+		public async Task Secret_IfExists_SecretExistsSecretPath_ShouldReturnTrue() {
+			// Create a Secret.
+			Secret A = new Secret();
+			A.Path = await Secret_Init_Create(A);
+
+			Assert.True(await SB.IfExists(A.Path));
+		}
+
+
+
+
+
 		[Test, Order(300)]
-		public async Task Secret_ListKeys_DeepList_ListsAllKeys() {
+		public async Task Secret_ListSecrets_NoSubSecrets_Success () {
+			Secret A = new Secret();
+			A.Path = await Secret_Init_Create(A);
+
+			List<string> secrets = await SB.ListSecrets(A.Path);
+			Assert.AreEqual(0, secrets.Count);
+		}
+
+
+
+
+		// List sub secrets.
+		[Test, Order(300)]
+		public async Task Secret_ListSecrets_WithSubSecrets_Success() {
+			await Secret_Init();
+
 			// Create a generic seceret object.
 			Secret z = new Secret();
-			z.Path = "Test/Level";
-			for (int i=1;i < 5;i++) {
-				z.Path = z.Path + "/Level" + i.ToString();
-				Assert.True(await SB.CreateSecretAndReturn(z));
-			}
+			try {
 
+
+				// Create 2 secrets each with 2 sub secrets.
+				string startPath = "Test/Level";
+				z.Path = startPath;
+				for (int i = 1; i < 3; i++) {
+					z.Path = startPath + "/Level" + i.ToString();
+					Assert.True(await SB.CreateOrUpdateSecretAndReturn(z));
+					}
 			
+				// Now list those secrets
+				List<string> secrets = await SB.ListSecrets(startPath);
+				Assert.AreEqual(2, secrets.Count);
+			}
+			catch (Exception e) { Console.WriteLine("Error - {0}", e.Message); }
+		}
+
+
+
+
+		// Same as prior test.  Only we pass a Secret object instead of a secret Path.
+		[Test, Order(300)]
+		public async Task Secret_ListSecrets_WithSubSecretsPassingSecretObject_Success() {
+			await Secret_Init();
+
+			// Create a generic seceret object.
+			Secret z = new Secret();
+			try {
+
+
+				// Create 2 secrets each with 2 sub secrets.
+				string startPath = "Test/Level";
+				z.Path = startPath;
+				for (int i = 1; i < 3; i++) {
+					z.Path = startPath + "/Level" + i.ToString();
+					Assert.True(await SB.CreateOrUpdateSecretAndReturn(z));
+				}
+
+				// Now list those secrets
+				z.Path = startPath;
+				List<string> secrets = await SB.ListSecrets(z);
+				Assert.AreEqual(2, secrets.Count);
+			}
+			catch (Exception e) { Console.WriteLine("Error - {0}", e.Message); }
+		}
+
+
+
+		// List secrets that have multiple sub secrets.
+		[Test, Order(300)]
+		public async Task Secret_ListSecrets_WithSubSubSecrets_Success () {
+			await Secret_Init();
+
+			// Create a generic seceret object.
+			Secret z = new Secret();
+			Secret y = new Secret();
+			try {
+
+
+				// Create 2 secrets each with 2 sub secrets.
+				string startPath = "Test/Level";
+				z.Path = startPath;
+				for (int i = 1; i < 3; i++) {
+					z.Path = startPath + "/Level" + i.ToString();
+					Assert.True(await SB.CreateOrUpdateSecretAndReturn(z));
+					for (int j = 1; j < 3; j++) {
+						y.Path = z.Path + "/SubLevel" + j.ToString();
+						Assert.True(await SB.CreateOrUpdateSecretAndReturn(y));
+					}
+				}
+
+				// Now list those secrets
+				List<string> secrets = await SB.ListSecrets(startPath);
+				Assert.AreEqual(4, secrets.Count);
+			}
+			catch (Exception e) { Console.WriteLine("Error - {0}", e.Message); }
+		}
+
+
+
+		[Test, Order(400)]
+		public async Task Secret_UpdateSecret_Success () {
+			Secret A = new Secret();
+			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("test", "testValue");
+			KeyValuePair<string, string> kv2 = new KeyValuePair<string, string>("abc", "123e");
+			KeyValuePair<string, string> kv3 = new KeyValuePair<string, string>("ZYX", "88g8g9dfkj df");
+			A.Attributes.Add(kv1.Key, kv1.Value);
+			A.Attributes.Add(kv2.Key, kv2.Value);
+			A.Attributes.Add(kv3.Key, kv3.Value);
+			A.Path = await Secret_Init_Create(A);
+
+			Secret A2 = await SB.ReadSecret(A);
+			Assert.AreEqual(A.Path, A2.Path);
+			Assert.AreEqual(A.Attributes.Count + 1, A2.Attributes.Count);
+
+			// Now lets change some values.
+			A2.Attributes[kv1.Key] = kv1.Key;
+			A2.Attributes[kv2.Key] = kv2.Key;
+			A2.Attributes[kv3.Key] = kv3.Key;
+
+			Secret B = await SB.UpdateSecret(A2);
+			Assert.NotNull(B);
+			Assert.AreEqual(A2.Attributes.Count, B.Attributes.Count);
+			Assert.AreEqual(kv1.Key, B.Attributes[kv1.Key]);
+			Assert.AreEqual(kv2.Key, B.Attributes[kv2.Key]);
+			Assert.AreEqual(kv3.Key, B.Attributes[kv3.Key]);
+		}
+
+
+
+		[Test, Order(800)]
+		public async Task Secret_DeleteSecret_SpecifyingPath_Success() {
+			// Create a Secret that has attributes.
+			Secret A = new Secret();
+			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("test", "testValue");
+			KeyValuePair<string, string> kv2 = new KeyValuePair<string, string>("abc", "123e");
+			KeyValuePair<string, string> kv3 = new KeyValuePair<string, string>("ZYX", "88g8g9dfkj df");
+			A.Attributes.Add(kv1.Key, kv1.Value);
+			A.Attributes.Add(kv2.Key, kv2.Value);
+			A.Attributes.Add(kv3.Key, kv3.Value);
+			A.Path = await Secret_Init_Create(A);
+
+			Assert.True(await SB.DeleteSecret(A.Path));
+
+			// Try to read the secret.
+			Assert.Null(await SB.ReadSecret(A));
 		}
 	}
 
