@@ -103,5 +103,40 @@ namespace VaultAgentTests
 			VP.PolicyPaths.Add(vpi);
 			bool rc = await vsb.SysPoliciesACLCreate(VP);
 		}
+
+
+		[Test, Order(1001)]
+		public async Task SystemBE_CanCreateAPolicy_WithMultipleVaultPolicyItems() {
+			SystemTestInit();
+
+			// Create multiple Vault Policy Path Items
+
+			VaultPolicyPath vpi1 = new VaultPolicyPath("secret/TestA");
+			vpi1.DeleteAllowed = true;
+			vpi1.ReadAllowed = true;
+			vpi1.CreateAllowed = true;
+
+			VaultPolicyPath vpi2 = new VaultPolicyPath("secret/TestB");
+			vpi2.ListAllowed = true;
+
+			VaultPolicyPath vpi3 = new VaultPolicyPath("secret/TestC");
+			vpi3.ListAllowed = true;
+			vpi3.DeleteAllowed = true;
+			vpi3.ReadAllowed = true;
+			vpi3.SudoAllowed = true;
+
+			VaultPolicyPath vpi4 = new VaultPolicyPath("secret/TestD");
+			vpi4.DeleteAllowed = true;
+
+
+			// Create a Vault Policy Item and add the policy paths.
+			VaultPolicy VP = new VaultPolicy("TestingABCD");
+			VP.PolicyPaths.Add(vpi1);
+			VP.PolicyPaths.Add(vpi2);
+			VP.PolicyPaths.Add(vpi3);
+			VP.PolicyPaths.Add(vpi4);
+
+			Assert.True(await vsb.SysPoliciesACLCreate(VP));
+		}
 	}
 }
