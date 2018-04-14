@@ -396,6 +396,7 @@ namespace VaultAgentTests
 
 
 
+
 		[Test, Order(400)]
 		public async Task Secret_UpdateSecret_Success () {
 			Secret A = new Secret();
@@ -442,6 +443,58 @@ namespace VaultAgentTests
 
 			// Try to read the secret.
 			Assert.Null(await SB.ReadSecret(A));
+		}
+
+
+
+
+		// Should delete the secret from Vault AND the secret object.
+		[Test, Order(800)]
+		public async Task Secret_DeleteSecret_FromSecretObject_Success() {
+			// Create a Secret that has attributes.
+			Secret A = new Secret();
+			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("test", "testValue");
+			KeyValuePair<string, string> kv2 = new KeyValuePair<string, string>("abc", "123e");
+			KeyValuePair<string, string> kv3 = new KeyValuePair<string, string>("ZYX", "88g8g9dfkj df");
+			A.Attributes.Add(kv1.Key, kv1.Value);
+			A.Attributes.Add(kv2.Key, kv2.Value);
+			A.Attributes.Add(kv3.Key, kv3.Value);
+			A.Path = await Secret_Init_Create(A);
+
+			// Store path for later use.
+			string thePath = A.Path;
+
+			// Now delete secret.  Should return True AND set secret to NULL.
+			Assert.True(await SB.DeleteSecret(A));
+			Assert.AreEqual("", A.Path);
+			Assert.AreEqual(0, A.Attributes.Count);
+
+
+			// Try to read the secret.
+			Assert.Null(await SB.ReadSecret(thePath));
+		}
+
+
+
+		[Test,Order(800)]
+		public async Task Secret_DeleteSecret_ShouldFailIfNoPermission () {
+			throw new NotImplementedException();
+		}
+
+
+
+		[Test, Order(900)]
+		public async Task TestSomething() {
+			Secret A = new Secret("hello/world");
+			int cntA1 = A.Attributes.Count;
+			DoSomething(A);
+			int cntA2 = A.Attributes.Count;
+			if (cntA1 > cntA2) { return; }
+		}
+
+		public async Task DoSomething (Secret secret) {
+			secret.Attributes.Add("yep", "check");
+
 		}
 	}
 

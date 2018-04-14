@@ -36,14 +36,23 @@ namespace VaultClient
 				port = 8200;
 			}
 
-			// System Backend
-			string transitDB = "transit";
 
-			//VaultSystemBackend VSB = new VaultSystemBackend(ip, port, rootToken);
-			//bool rc = await VSB.SysMountEnable(transitDB, ("transit test DB -" + transitDB), EnumBackendTypes.Transit);
+			// System Backend
+			VaultSystemBackend VSB = new VaultSystemBackend(ip, port, rootToken);
+			VaultPolicyItem vpi = new VaultPolicyItem("secret/TestA");
+			vpi.DeleteAllowed = true;
+			vpi.ReadAllowed = true;
+			vpi.CreateAllowed = true;
+			var rc = await VSB.SysPoliciesACLCreate("testingA", vpi);
+
+
 
 
 			// Transit Backend
+			// Enable a new transit Backend.
+			//bool rc = await VSB.SysMountEnable(transitDB, ("transit test DB -" + transitDB), EnumBackendTypes.Transit);
+
+			string transitDB = "transit";
 			VaultClient_TransitBackend transit = new VaultClient_TransitBackend(rootToken, ip, port,transitDB);
 			await transit.Run();
 			Console.WriteLine("Finished with all sample runs.");

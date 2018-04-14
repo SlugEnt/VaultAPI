@@ -195,9 +195,7 @@ namespace VaultAgent.Backends.Secret
 		/// <param name="secret"></param>
 		/// <returns></returns>
 		public async Task<bool> IfExists (Secret secret) {
-			Secret exists = await ReadSecret(secret.Path);
-			if (exists != null) { return true; }
-			else { return false; }
+			return (await IfExists(secret.Path));
 		}
 
 
@@ -263,13 +261,39 @@ namespace VaultAgent.Backends.Secret
 
 
 
-		public async Task<bool> DeleteSecret (string secretPath) {
+		/// <summary>
+		/// Deletes the Vault secret at the path specified.  Returns True AND sets the vault path to nothing and deletes the Secret's attributes, if successful.  
+		/// Returns False and does not delete the Secret object if it failed to delete for some reason.  
+		/// </summary>
+		/// <param name="secret">True for success.  False otherwise.</param>
+		/// <returns></returns>
+		public async Task<bool> DeleteSecret (Secret secret) {
+			if ((await DeleteSecret(secret.Path))) {
+				secret.Path = "";
+				secret.Attributes.Clear();
+				return true;
+			}
+			else { return false; }
+		}
+
+
+
+
+		/// <summary>
+		/// Deletes the Vault secret at the secret path specified.  Returns true for success, false otherwise.
+		/// </summary>
+		/// <param name="secretPath">The path to the Vault secret to permanently delete.</param>
+		/// <returns>True for success, False otherwise.</returns>
+		public async Task<bool> DeleteSecret(string secretPath) {
 			string path = vaultSecretPath + secretPath;
 
 			VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "DeleteSecret");
 			if (vdro.Success) { return true; }
 			else { return false; }
 		}
+
+
+
 	}
 
 }

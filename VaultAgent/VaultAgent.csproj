@@ -74,6 +74,7 @@
     <Compile Include="Backends\Secret\Secret.cs" />
     <Compile Include="Backends\Secret\SecretBackend.cs" />
     <Compile Include="Backends\System\EnumBackendTypes.cs" />
+    <Compile Include="Backends\System\VaultPolicyItem.cs" />
     <Compile Include="Backends\System\VaultSystemBackend.cs" />
     <Compile Include="Backends\Transit\EnumHashAlgorithm.cs" />
     <Compile Include="Backends\Transit\EnumTransitKeyType.cs" />
