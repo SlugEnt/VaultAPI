@@ -1,7 +1,7 @@
 ﻿
 namespace VaultAgent.Backends.System
 {
-	public class VaultPolicyItem
+	public class VaultPolicyPath
 	{
 		private bool createAllowed = false;
 		private bool readAllowed = false;
@@ -14,10 +14,17 @@ namespace VaultAgent.Backends.System
 
 
 		/// <summary>
-		/// All VaultPolicyItem objects are initialized in denied = True state.
+		/// All VaultPolicyPath objects are initialized in denied = True state.
 		/// </summary>
-		public VaultPolicyItem (string path) { Path = path; }
+		public VaultPolicyPath (string path) {
+			Path = path;
+		}
 
+
+
+		/// <summary>
+		/// The path to the object being protected by this policy.
+		/// </summary>
 		public string Path { get; set; }
 
 		public bool CreateAllowed {

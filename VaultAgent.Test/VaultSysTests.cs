@@ -12,6 +12,8 @@ namespace VaultAgentTests
 {
     public class VaultSysTests
     {
+		// Used for testing so we do not need to create the backend everytime.
+		VaultSystemBackend vsb;
 
 
         [SetUp]
@@ -20,6 +22,10 @@ namespace VaultAgentTests
 
 		}
 
+
+		public void SystemTestInit() {
+			vsb = new VaultSystemBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+		}
 
 
         [Test]
@@ -74,12 +80,28 @@ namespace VaultAgentTests
 		}
 
 
+
 		[Test]
-		public async Task CanEnableTransitBackend () {
+		public async Task SystemBE_CanEnableTransitBackend () {
 			// Utilize System Backend to mount a new Transit Engine at transit_B
 			VaultSystemBackend VSB = new VaultSystemBackend(VaultServerRef.ipAddress,VaultServerRef.ipPort, VaultServerRef.rootToken);
 			bool rc = await VSB.SysMountEnable("transit_b", "transit B test backend", EnumBackendTypes.Transit);
 			Assert.AreEqual(true, rc);
+		}
+
+
+		[Test, Order(1001)]
+		public async Task SystemBE_CanCreateAPolicy_WithSingleVaultPolicyItem () {
+			SystemTestInit();
+
+			// Create a Vault Policy Path Item
+			VaultPolicyPath vpi = new VaultPolicyPath("secret/TestA");
+			vpi.DeleteAllowed = true;
+
+			// Create a Vault Policy Item
+			VaultPolicy VP = new VaultPolicy("TestingABC");
+			VP.PolicyPaths.Add(vpi);
+			bool rc = await vsb.SysPoliciesACLCreate(VP);
 		}
 	}
 }

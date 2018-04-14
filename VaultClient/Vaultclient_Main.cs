@@ -39,11 +39,31 @@ namespace VaultClient
 
 			// System Backend
 			VaultSystemBackend VSB = new VaultSystemBackend(ip, port, rootToken);
-			VaultPolicyItem vpi = new VaultPolicyItem("secret/TestA");
+			VaultPolicy VP = new VaultPolicy("TestingABC");
+
+
+
+			VaultPolicyPath vpi = new VaultPolicyPath("secret/TestA");
 			vpi.DeleteAllowed = true;
 			vpi.ReadAllowed = true;
 			vpi.CreateAllowed = true;
-			var rc = await VSB.SysPoliciesACLCreate("testingA", vpi);
+			VP.PolicyPaths.Add(vpi);
+
+
+			VaultPolicyPath vpi2 = new VaultPolicyPath("secret/TestB");
+			vpi2.ListAllowed = true;
+			VP.PolicyPaths.Add(vpi2);
+
+
+			VaultPolicyPath vpi3 = new VaultPolicyPath("secret/TestC");
+			vpi3.ListAllowed = true;
+			vpi3.DeleteAllowed = true;
+			vpi3.ReadAllowed = true;
+			vpi3.SudoAllowed = true;
+			VP.PolicyPaths.Add(vpi3);
+
+
+			var rc = await VSB.SysPoliciesACLCreate(VP);
 
 
 

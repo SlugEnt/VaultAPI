@@ -132,36 +132,67 @@ namespace VaultAgent.Backends.System
 		}
 
 
-		public async Task<bool> SysPoliciesACLCreate(string policyName, VaultPolicyItem policyItem) {
+
+		private string BuildPolicyPathJSON (VaultPolicyPath policyPath) {
+			StringBuilder jsonSB = new StringBuilder();
+
+			jsonSB.Append("\"policy\": ");
+			jsonSB.Append("\"path \\\"" + policyPath.Path);
+			jsonSB.Append("\\\" { capabilities = [");
+
+			if (policyPath.Denied) { jsonSB.Append("\"deny\""); }
+			else {
+				if (policyPath.CreateAllowed) { jsonSB.Append("\\\"create\\\","); }
+				if (policyPath.ReadAllowed) { jsonSB.Append("\\\"read\\\","); }
+				if (policyPath.DeleteAllowed) { jsonSB.Append("\\\"delete\\\","); }
+				if (policyPath.ListAllowed) { jsonSB.Append("\\\"list\\\","); }
+				if (policyPath.RootAllowed) { jsonSB.Append("\\\"root\\\","); }
+				if (policyPath.SudoAllowed) { jsonSB.Append("\\\"sudo\\\","); }
+				if (policyPath.UpdateAllowed) { jsonSB.Append("\\\"update\\\","); }
+
+				// Remove last comma if there.
+				if (jsonSB.Length > 1) {
+					char val = jsonSB[jsonSB.Length - 1];
+					if (val.ToString() == ",") { jsonSB.Length -= 1; }
+				}
+				
+				// Close out this path enty.
+				jsonSB.Append("]}\" ");
+			}
+
+
+			return jsonSB.ToString();
+		}
+
+
+
+		public async Task<bool> SysPoliciesACLCreate(VaultPolicy policyItem) {
 			// Build Path
-			string path = vaultSysPath + "policies/acl/" + policyName;
+			string path = vaultSysPath + "policies/acl/" + policyItem.Name;
+
+			int count = policyItem.PolicyPaths.Count;
+
+			// If no policy paths defined, then return - nothing to do.
+			if (count == 0) { return false; }
 
 
 			// Build the JSON - Lots of string escaping, etc.  fun!
 			StringBuilder jsonSB = new StringBuilder();
-			jsonSB.Append("{\"policy\": \"path \\\"");
-			jsonSB.Append(policyItem.Path);
-			jsonSB.Append("\\\" { capabilities = [");
 
-			if (policyItem.Denied) { jsonSB.Append("\"deny\""); }
-			else {
-				if (policyItem.CreateAllowed) { jsonSB.Append("\\\"create\\\","); }
-				if (policyItem.ReadAllowed) { jsonSB.Append("\\\"read\\\","); }
-				if (policyItem.DeleteAllowed) { jsonSB.Append("\\\"delete\\\","); }
-				if (policyItem.ListAllowed) { jsonSB.Append("\\\"list\\\","); }
-				if (policyItem.RootAllowed) { jsonSB.Append("\\\"root\\\","); }
-				if (policyItem.SudoAllowed) { jsonSB.Append("\\\"sudo\\\","); }
-				if (policyItem.UpdateAllowed) { jsonSB.Append("\\\"update\\\","); }
+
+			// Build the header for JSON Policy.
+			jsonSB.Append("{");
+
+			int itemCtr = 0;
+			foreach (VaultPolicyPath item in policyItem.PolicyPaths) {
+				jsonSB.Append(BuildPolicyPathJSON(item));
+				itemCtr++;
+				if (itemCtr < count) { jsonSB.Append(","); }
 			}
 
-			// Remove last comma if there is one.
-			if (jsonSB.Length > 1) { 
-				char val = jsonSB[jsonSB.Length - 1];
-				if (val.ToString() == ",") { jsonSB.Length -= 1; }
-			}
 
 			// Now finish out the string by closing it down.
-			jsonSB.Append("]}\"}");
+			jsonSB.Append("}");
 
 			string json = jsonSB.ToString();
 
@@ -170,16 +201,19 @@ namespace VaultAgent.Backends.System
 				return true;
 			}
 			else { return false; }
-
-
-			throw new NotImplementedException("SysPolicies ACL Update Not implemented Yet");
 		}
 
-		public async Task<bool> SysPoliciesACLUpdate (string policyName) {
-			// Build Path
-			string path = vaultSysPath + "policies/acl/" + policyName;
-			
-			throw new NotImplementedException("SysPolicies ACL Update Not implemented Yet");
+
+
+
+		/// <summary>
+		/// Updates a given policy.  Is merely a wrapper for SysPoliciesACLCreate since Vault has no update function.
+		/// </summary>
+		/// <param name="policyName">The name of the policy to update.</param>
+		/// <param name="policyItem">The VaultPolicyPath object that should be updated in Vault.</param>
+		/// <returns></returns>
+		public async Task<bool> SysPoliciesACLUpdate (VaultPolicy policyItem) {
+			return await SysPoliciesACLCreate(policyItem);
 		}
 
 
