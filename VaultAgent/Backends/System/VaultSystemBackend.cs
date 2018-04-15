@@ -124,20 +124,14 @@ namespace VaultAgent.Backends.System
 			throw new NotImplementedException("SysPolicies ACL List Not implemented Yet");
 		}
 
-		public async Task<bool> SysPoliciesACLRead (string policyName) {
-			// Build Path
-			string path = vaultSysPath + "policies/acl" + policyName;
-
-			throw new NotImplementedException("SysPolicies ACL Read Not implemented Yet");
-		}
 
 
 
 		private string BuildPolicyPathJSON (VaultPolicyPath policyPath) {
 			StringBuilder jsonSB = new StringBuilder();
 
-			jsonSB.Append("\"policy\": ");
-			jsonSB.Append("\"path \\\"" + policyPath.Path);
+
+			jsonSB.Append("path \\\"" + policyPath.Path);
 			jsonSB.Append("\\\" { capabilities = [");
 
 			if (policyPath.Denied) { jsonSB.Append("\"deny\""); }
@@ -157,7 +151,8 @@ namespace VaultAgent.Backends.System
 				}
 				
 				// Close out this path enty.
-				jsonSB.Append("]}\" ");
+				jsonSB.Append("]} ");
+
 			}
 
 
@@ -181,17 +176,15 @@ namespace VaultAgent.Backends.System
 
 
 			// Build the header for JSON Policy.
-			jsonSB.Append("{");
+			jsonSB.Append("{\"policy\": \"");
 
-			int itemCtr = 0;
 			foreach (VaultPolicyPath item in policyItem.PolicyPaths) {
 				jsonSB.Append(BuildPolicyPathJSON(item));
-				itemCtr++;
-				if (itemCtr < count) { jsonSB.Append(","); }
 			}
 
 
-			// Now finish out the string by closing it down.
+			// Issue the policy documents closing quote and then end the JSON.
+			jsonSB.Append("\"");
 			jsonSB.Append("}");
 
 			string json = jsonSB.ToString();
@@ -217,13 +210,30 @@ namespace VaultAgent.Backends.System
 		}
 
 
+
+
+		public async Task<bool> SysPoliciesACLRead(string policyName) {
+			// Build Path
+			string path = vaultSysPath + "policies/acl/" + policyName;
+
+
+			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "SysPoliciesACLRead");
+
+			TransitKeyInfo TKI = vdro.GetVaultTypedObject<TransitKeyInfo>();
+			return true;
+		}
+
+
+
+
+
 		public async Task<bool> SysPoliciesACLDelete(string policyName) {
 			// Build Path
 			string path = vaultSysPath + "policies/acl/" + policyName;
 
 			throw new NotImplementedException("SysPolicies ACL Update Not implemented Yet");
 		}
-		#endregion
+#endregion
 
 	}
 	// ==============================================================================================================================================

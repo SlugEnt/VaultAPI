@@ -24,7 +24,7 @@ namespace VaultClient
 			if (2 == 2) {
 				//rootToken = "956ac20d-3516-cdd3-61fc-b50bc5763453";
 				rootToken = "19490709-7966-bd0c-8a72-3f4724283c1e";
-						lookupToken = "7d13922b-7844-85d9-fbb8-6cc8bed270f2";
+				lookupToken = "7d13922b-7844-85d9-fbb8-6cc8bed270f2";
 				ip = "192.168.1.86";
 				port = 8200;
 			}
@@ -37,34 +37,12 @@ namespace VaultClient
 			}
 
 
-			// System Backend
-			VaultSystemBackend VSB = new VaultSystemBackend(ip, port, rootToken);
-			VaultPolicy VP = new VaultPolicy("TestingABC");
 
+			// System Backend Examples:
+			VaultClient_SystemBackend sysBE = new VaultClient_SystemBackend(rootToken, ip, port);
+			await sysBE.Run();
 
-
-			VaultPolicyPath vpi = new VaultPolicyPath("secret/TestA");
-			vpi.DeleteAllowed = true;
-			vpi.ReadAllowed = true;
-			vpi.CreateAllowed = true;
-			VP.PolicyPaths.Add(vpi);
-
-
-			VaultPolicyPath vpi2 = new VaultPolicyPath("secret/TestB");
-			vpi2.ListAllowed = true;
-			VP.PolicyPaths.Add(vpi2);
-
-
-			VaultPolicyPath vpi3 = new VaultPolicyPath("secret/TestC");
-			vpi3.ListAllowed = true;
-			vpi3.DeleteAllowed = true;
-			vpi3.ReadAllowed = true;
-			vpi3.SudoAllowed = true;
-			VP.PolicyPaths.Add(vpi3);
-
-
-			var rc = await VSB.SysPoliciesACLCreate(VP);
-
+			return;
 
 
 
