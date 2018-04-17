@@ -128,7 +128,7 @@ namespace VaultAgent
 		/// <param name="fieldName">Field you wish to retrieve.</param>
 		/// <returns>The field as JSON, both the field name and data.</returns>
 		public string GetDataPackageFieldAsJSON (string fieldName) {
-			return GetJSONPropertyValue(this.responseData, fieldName);
+			return GetJSONPropertyValue(GetDataPackageAsJSON(), fieldName);
 		}
 
 
