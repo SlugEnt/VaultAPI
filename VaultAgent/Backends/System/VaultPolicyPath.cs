@@ -95,10 +95,7 @@ namespace VaultAgent.Backends.System
 		{
 			get { return denied; }
 			set {
-				// If no change do nothing.
-				if (denied == value) { return; }
-
-				if (denied) {
+				if (value == true) {
 					createAllowed = false;
 					readAllowed = false;
 					updateAllowed = false;

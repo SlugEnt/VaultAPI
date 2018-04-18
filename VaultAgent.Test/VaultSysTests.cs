@@ -90,6 +90,99 @@ namespace VaultAgentTests
 		}
 
 
+
+		[Test, Order(200)]
+		public void SystemBE_VaultPolicyPath_InitialFields_AreCorrect () {
+			VaultPolicyPath vpp = new VaultPolicyPath("ABC");
+
+			Assert.False(vpp.CreateAllowed,"Create Not False");
+			Assert.False(vpp.DeleteAllowed, "Delete Not False");
+			Assert.False(vpp.ListAllowed, "List Not False");
+			Assert.False(vpp.ReadAllowed, "Read Not False");
+			Assert.False(vpp.RootAllowed, "Root Not False");
+			Assert.False(vpp.SudoAllowed, "Sudo Not False");
+			Assert.False(vpp.UpdateAllowed, "Update Not False");
+
+			// Denied is true initially.
+			Assert.True(vpp.Denied, "Denied Not True");
+		}
+
+
+
+		[Test, Order(200)]
+		// Test that setting capabilities to true works.
+		public void SystemBE_VaultPolicyPath_SettingTrueToFieldsWorks () {
+			VaultPolicyPath vpp = new VaultPolicyPath("ABC");
+			vpp.CreateAllowed = true;
+			Assert.True(vpp.CreateAllowed, "Create Allowed was not True");
+			Assert.False(vpp.Denied, "Denied should have been set to false on Create true");
+
+			VaultPolicyPath vpp2 = new VaultPolicyPath("ABC");
+			vpp2.DeleteAllowed = true;
+			Assert.True(vpp2.DeleteAllowed, "Delete Allowed was not True");
+			Assert.False(vpp.Denied, "Denied should have been set to false on Delete true");
+
+			VaultPolicyPath vpp3 = new VaultPolicyPath("ABC");
+			vpp3.Denied = true;
+			Assert.True(vpp3.Denied, "Denied was not True after explicitly setting it");
+
+			VaultPolicyPath vpp4 = new VaultPolicyPath("ABC");
+			vpp4.ListAllowed = true;
+			Assert.True(vpp4.ListAllowed, "List Allowed was not True");
+			Assert.False(vpp.Denied, "Denied should have been set to false on list true");
+
+			VaultPolicyPath vpp5 = new VaultPolicyPath("ABC");
+			vpp5.ReadAllowed = true;
+			Assert.True(vpp5.ReadAllowed, "Read Allowed was not True");
+			Assert.False(vpp.Denied, "Denied should have been set to false on read true");
+
+			VaultPolicyPath vpp6 = new VaultPolicyPath("ABC");
+			vpp6.RootAllowed = true;
+			Assert.True(vpp6.RootAllowed, "Root Allowed was not True");
+			Assert.False(vpp.Denied, "Denied should have been set to false on root true");
+
+			VaultPolicyPath vpp7 = new VaultPolicyPath("ABC");
+			vpp7.SudoAllowed = true;
+			Assert.True(vpp7.SudoAllowed, "SUDO Allowed was not True");
+			Assert.False(vpp.Denied, "Denied should have been set to false on sudo true");
+
+			VaultPolicyPath vpp8 = new VaultPolicyPath("ABC");
+			vpp8.UpdateAllowed = true;
+			Assert.True(vpp8.UpdateAllowed, "Update Allowed was not True");
+			Assert.False(vpp.Denied, "Denied should have been set to false on update true");
+		}
+
+
+
+		[Test, Order(200)]
+		public void SystemBE_VaultPolicyPath_SetDenied_SetsEverythingElseToFalse () {
+			VaultPolicyPath vpp = new VaultPolicyPath("ABC");
+			vpp.CreateAllowed = true;
+			vpp.ReadAllowed = true;
+			vpp.UpdateAllowed = true;
+			
+
+			Assert.True(vpp.CreateAllowed, "Create Allowed was not True");
+			Assert.True(vpp.ReadAllowed, "Read Allowed was not True");
+			Assert.True(vpp.UpdateAllowed, "Update Allowed was not True");
+
+			// Now set Denied.  Make sure the above are false.
+			vpp.Denied = true;
+			Assert.False(vpp.CreateAllowed, "Create Allowed was not set to False");
+			Assert.False(vpp.ReadAllowed, "Read Allowed was not set to False");
+			Assert.False(vpp.UpdateAllowed, "Update Allowed was not set to False");
+		}
+
+
+
+		[Test, Order(200)]
+		public void SystemBE_VaultPolicyPath_ConstructorSetsPath () {
+			VaultPolicyPath vpp = new VaultPolicyPath("ABC");
+			Assert.AreEqual("ABC", vpp.Path);
+		}
+
+
+
 		[Test, Order(1001)]
 		public async Task SystemBE_CanCreateAPolicy_WithSingleVaultPolicyItem () {
 			SystemTestInit();
@@ -141,18 +234,18 @@ namespace VaultAgentTests
 		}
 
 
+
 		[Test, Order(2000)]
 		public async Task SystemBE_Policy_CanReadSinglePathPolicy () {
 			SystemTestInit();
+
+			VaultPolicy VP = new VaultPolicy("Test2000A");
 
 			VaultPolicyPath vpi3 = new VaultPolicyPath("secret/Test2000A");
 			vpi3.ListAllowed = true;
 			vpi3.DeleteAllowed = true;
 			vpi3.ReadAllowed = true;
 			vpi3.SudoAllowed = true;
-
-			// Create a Vault Policy Item and add the policy paths.
-			VaultPolicy VP = new VaultPolicy("Test2000A");
 			VP.PolicyPaths.Add(vpi3);
 
 			Assert.True(await vsb.SysPoliciesACLCreate(VP));
@@ -166,6 +259,71 @@ namespace VaultAgentTests
 			Assert.AreEqual(vpi3.DeleteAllowed, vpNew.PolicyPaths[0].DeleteAllowed);
 			Assert.AreEqual(vpi3.ReadAllowed, vpNew.PolicyPaths[0].ReadAllowed);
 			Assert.AreEqual(vpi3.SudoAllowed, vpNew.PolicyPaths[0].SudoAllowed);
+		}
+
+
+
+
+		[Test, Order(2000)]
+		public async Task SystemBE_Policy_CanReadMultiplePathPolicy() {
+			SystemTestInit();
+
+			// Create a Vault Policy Item and add the policy paths.
+			VaultPolicy VP = new VaultPolicy("Test2000B");
+
+
+			string path1 = "secret/Test2000B1";
+			VaultPolicyPath vpi1 = new VaultPolicyPath(path1);
+			vpi1.ListAllowed = true;
+			vpi1.DeleteAllowed = true;
+			vpi1.ReadAllowed = true;
+			vpi1.SudoAllowed = true;
+			VP.PolicyPaths.Add(vpi1);
+
+			// 2nd policy path
+			string path2 = "secret/Test2000B2";
+			VaultPolicyPath vpi2 = new VaultPolicyPath(path2);
+			vpi2.Denied = true;
+			VP.PolicyPaths.Add(vpi2);
+
+
+			// 3rd policy path
+			string path3 = "secret/Test2000B3";
+			VaultPolicyPath vpi3 = new VaultPolicyPath(path3);
+			vpi3.ListAllowed = true;
+			vpi3.ReadAllowed = true;
+			vpi3.UpdateAllowed = true;
+			VP.PolicyPaths.Add(vpi3);
+
+			Assert.True(await vsb.SysPoliciesACLCreate(VP));
+
+
+			// Now lets read it back. 
+			VaultPolicy vpNew = await vsb.SysPoliciesACLRead("Test2000B");
+
+			Assert.AreEqual(3, vpNew.PolicyPaths.Count);
+			foreach (VaultPolicyPath item in vpNew.PolicyPaths) {
+				if (item.Path == path1) {
+					Assert.AreEqual(vpi1.ListAllowed, item.ListAllowed);
+					Assert.AreEqual(vpi1.DeleteAllowed, item.DeleteAllowed);
+					Assert.AreEqual(vpi1.ReadAllowed, item.ReadAllowed);
+					Assert.AreEqual(vpi1.SudoAllowed, item.SudoAllowed);
+				}
+				else if (item.Path == path2) {
+					Assert.AreEqual(vpi2.Denied, item.Denied);
+				}
+				else if (item.Path == path3) {
+					Assert.AreEqual(vpi3.ListAllowed, item.ListAllowed);
+					Assert.AreEqual(vpi3.ReadAllowed, item.ReadAllowed);
+					Assert.AreEqual(vpi3.UpdateAllowed, item.UpdateAllowed);
+					Assert.AreEqual(vpi3.CreateAllowed, false);
+					Assert.AreEqual(vpi3.DeleteAllowed, false);
+					Assert.AreEqual(vpi3.SudoAllowed, false);
+					Assert.AreEqual(vpi3.Denied, false);
+				}
+				// If here, something is wrong.
+				else { Assert.True(false, "invalid path returned of {0}",item.Path); }
+			}
 		}
 	}
 }

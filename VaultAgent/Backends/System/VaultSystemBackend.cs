@@ -134,7 +134,7 @@ namespace VaultAgent.Backends.System
 			jsonSB.Append("path \\\"" + policyPath.Path);
 			jsonSB.Append("\\\" { capabilities = [");
 
-			if (policyPath.Denied) { jsonSB.Append("\"deny\""); }
+			if (policyPath.Denied) { jsonSB.Append("\\\"deny\\\""); }
 			else {
 				if (policyPath.CreateAllowed) { jsonSB.Append("\\\"create\\\","); }
 				if (policyPath.ReadAllowed) { jsonSB.Append("\\\"read\\\","); }
@@ -149,11 +149,12 @@ namespace VaultAgent.Backends.System
 					char val = jsonSB[jsonSB.Length - 1];
 					if (val.ToString() == ",") { jsonSB.Length -= 1; }
 				}
-				
-				// Close out this path enty.
-				jsonSB.Append("]} ");
-
 			}
+			
+			// Close out this path enty.
+			jsonSB.Append("]} ");
+
+			
 
 
 			return jsonSB.ToString();
@@ -189,7 +190,7 @@ namespace VaultAgent.Backends.System
 
 			string json = jsonSB.ToString();
 
-			VaultDataResponseObject vdro = await vaultHTTP.PutAsync(path, "CreateOrUpdateSecret", null, json);
+			VaultDataResponseObject vdro = await vaultHTTP.PutAsync(path, "SysPoliciesACLCreate", null, json);
 			if (vdro.Success) {
 				return true;
 			}
