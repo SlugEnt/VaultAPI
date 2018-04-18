@@ -105,6 +105,7 @@ namespace VaultAgentTests
 		}
 
 
+
 		[Test, Order(1001)]
 		public async Task SystemBE_CanCreateAPolicy_WithMultipleVaultPolicyItems() {
 			SystemTestInit();
@@ -137,6 +138,34 @@ namespace VaultAgentTests
 			VP.PolicyPaths.Add(vpi4);
 
 			Assert.True(await vsb.SysPoliciesACLCreate(VP));
+		}
+
+
+		[Test, Order(2000)]
+		public async Task SystemBE_Policy_CanReadSinglePathPolicy () {
+			SystemTestInit();
+
+			VaultPolicyPath vpi3 = new VaultPolicyPath("secret/Test2000A");
+			vpi3.ListAllowed = true;
+			vpi3.DeleteAllowed = true;
+			vpi3.ReadAllowed = true;
+			vpi3.SudoAllowed = true;
+
+			// Create a Vault Policy Item and add the policy paths.
+			VaultPolicy VP = new VaultPolicy("Test2000A");
+			VP.PolicyPaths.Add(vpi3);
+
+			Assert.True(await vsb.SysPoliciesACLCreate(VP));
+
+
+			// Now lets read it back. 
+			VaultPolicy vpNew = await vsb.SysPoliciesACLRead("Test2000A");
+
+			Assert.AreEqual(1, vpNew.PolicyPaths.Count);
+			Assert.AreEqual(vpi3.ListAllowed, vpNew.PolicyPaths[0].ListAllowed);
+			Assert.AreEqual(vpi3.DeleteAllowed, vpNew.PolicyPaths[0].DeleteAllowed);
+			Assert.AreEqual(vpi3.ReadAllowed, vpNew.PolicyPaths[0].ReadAllowed);
+			Assert.AreEqual(vpi3.SudoAllowed, vpNew.PolicyPaths[0].SudoAllowed);
 		}
 	}
 }

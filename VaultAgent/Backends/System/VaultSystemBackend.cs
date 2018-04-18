@@ -212,19 +212,182 @@ namespace VaultAgent.Backends.System
 
 
 
-		public async Task<bool> SysPoliciesACLRead(string policyName) {
+		/// <summary>
+		/// Reads the Vault policy with the given name.
+		/// </summary>
+		/// <param name="policyName">Name of the policy to retrieve.</param>
+		/// <returns>A VaultPolicy object with the values read from Vault.</returns>
+		public async Task<VaultPolicy> SysPoliciesACLRead(string policyName) {
 			// Build Path
 			string path = vaultSysPath + "policies/acl/" + policyName;
 
 
 			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "SysPoliciesACLRead");
+			vdro.GetDataPackageAsDictionary();
 
-			TransitKeyInfo TKI = vdro.GetVaultTypedObject<TransitKeyInfo>();
-			return true;
+
+
+			// Now we need to cleanup the returned data and then parse it.
+			// Strings we need to replace in the received text.  Must be replaced in this order!
+			Dictionary<string, string> replaceStrings = new Dictionary<string, string>() {
+				{ "\r\n",""},
+				{ "\\", ""},
+				{ "\"","" },
+				{ "path ", " |PATH| " },
+				{ "{ capabilities = ", " { |CAPA| " },
+				{ "[", " [ " },						// Mark start of an array.
+				{ "]", " ] " }						// Mark end of an array.
+
+			};
+
+
+			string val = vdro.GetDataPackageFieldAsJSON("policy");
+
+
+			StringBuilder sb = new StringBuilder(val, val.Length * 2);
+			foreach (string k in replaceStrings.Keys) {
+				sb.Replace(k, replaceStrings[k]);
+			}
+
+
+			// Create a policy object and load the paths
+			VaultPolicy vp = new VaultPolicy(policyName);
+
+
+			// Now we need to parse the Paths.  
+			ParseACLPaths(sb.ToString(), vp);
+			return vp;
 		}
 
 
 
+
+		/// <summary>
+		/// Internal routine that processes the returned string from Vault and parses it into a VaultPolicy object.
+		/// </summary>
+		/// <param name="data">The string data returned by Vault.</param>
+		/// <param name="vp">VaultPolicy object that should be filled in with the values from Vault.</param>
+		/// <returns>True if successful.</returns>
+		private bool ParseACLPaths (string data, VaultPolicy vp) {
+			string[] strDelimiters = { " ", "," };
+			string[] pathObjects = data.Split(strDelimiters, StringSplitOptions.RemoveEmptyEntries);
+
+			bool starting = true;
+			const string sPATH = "|PATH|";
+			const string sCAPA = "|CAPA|";
+			const string sLISTSTART = "{";
+			const string sLISTEND = "}";
+			const string sARRAYSTART = "[";
+			const string sARRAYEND = "]";
+
+			const short iSTARTING = 0;
+			const short iPATHLIST = 1;
+			const short iPATHOPTIONS = 2;
+			const short iCAP = 200;
+
+			List<string> keyWords = new List<string>() { 
+				sPATH,
+				sCAPA,
+				sLISTSTART,
+				sLISTEND,
+				sARRAYSTART,
+				sARRAYEND
+			};
+
+
+
+//			List<VaultPolicyPath> vpp = new List<VaultPolicyPath>();
+			VaultPolicyPath newPathObj = new VaultPolicyPath("");
+
+			short iStep = iSTARTING;
+
+			// Now process thru the data elements.
+			for (int i=0; i < pathObjects.Length; i++) { 
+				switch (iStep) {
+					case iSTARTING:
+						// PATH must be first value if starting.
+						if (pathObjects[i] == sPATH) {
+							iStep++;
+							starting = true;
+
+							// Make sure the next item is not a keyword.
+							i++;
+							if (keyWords.Contains(pathObjects[i])) {
+								throw new FormatException("Found path keyword, but no value supplied for path NAME");
+							}
+							else {
+								newPathObj = new VaultPolicyPath(pathObjects[i]);
+								vp.PolicyPaths.Add(newPathObj);
+								//vpp.Add(newPathObj);
+							}
+						}
+						else {
+							string err = string.Join("", "First element must be the PATH identifier.  Found: ", pathObjects[i].ToString(), " instead.");
+							throw new FormatException(err);
+						}
+						break;
+					case iPATHLIST:
+						// We should be looking for the iPATH List identifier - {
+						if ((pathObjects[i] == sLISTSTART) && (starting)) {
+							starting = false;
+
+							// Now see what type of parameter the next item is.
+							i++;
+							switch (pathObjects[i]) {
+								case sCAPA:
+									// It's a capabilities type.  Now add items until we reach the end of the capabilities list.
+									iStep=iCAP;
+									// The next item should be opening array.
+									if(pathObjects[++i] != sARRAYSTART) { throw new FormatException("Found the capabilities identifier, but did not find the opening array symbol - ["); }
+									break;
+							}  // END switch pathObjects[i]
+						} // END if sLISTSTART && starting
+						break;
+					case iCAP:
+						if (pathObjects[i] == sLISTSTART) {	iStep++; }
+						else if (pathObjects[i] == sARRAYEND) {
+							// Done with the capabilities.  
+							iStep = iPATHOPTIONS;
+						}
+						else {
+							// It must be a valid capability...Confirm.
+							switch (pathObjects[i]) {
+								case "create":
+									newPathObj.CreateAllowed = true;
+									break;
+								case "read":
+									newPathObj.ReadAllowed = true;
+									break;
+								case "update":
+									newPathObj.UpdateAllowed = true;
+									break;
+								case "delete":
+									newPathObj.DeleteAllowed = true;
+									break;
+								case "list":
+									newPathObj.ListAllowed = true;
+									break;
+								case "sudo":
+									newPathObj.SudoAllowed = true;
+									break;
+								case "deny":
+									newPathObj.Denied = true;
+									break;
+							}
+						}
+						break;
+					// Search for PATH options
+					case iPATHOPTIONS:
+						if (pathObjects[i] == sLISTEND) {
+							// Done with this path object.
+							iStep = iSTARTING;
+						}
+						break;
+				}  // END SWITCH istep
+			}  // END of for loop.
+
+			return true;
+		}  // END of method.
 
 
 		public async Task<bool> SysPoliciesACLDelete(string policyName) {

@@ -14,7 +14,7 @@ namespace VaultClient
 
 
 		public async Task Run() {
-			await PolicyCreateExamples();
+	//		await PolicyCreateExamples();
 			await PolicyReadExamples();
 			
 
@@ -22,8 +22,8 @@ namespace VaultClient
 
 
 		private async Task PolicyReadExamples () {
-			bool rc;
-			rc = await VSB.SysPoliciesACLRead("TestingABC");
+			VaultPolicy vp;
+			vp = await VSB.SysPoliciesACLRead("TestingABC");
 		}
 
 
