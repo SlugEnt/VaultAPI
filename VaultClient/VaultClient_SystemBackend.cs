@@ -1,5 +1,7 @@
 ﻿using System.Threading.Tasks;
 using VaultAgent.Backends.System;
+using System.Collections.Generic;
+using System;
 
 namespace VaultClient
 {
@@ -16,8 +18,8 @@ namespace VaultClient
 		public async Task Run() {
 	//		await PolicyCreateExamples();
 			await PolicyReadExamples();
-			
-
+			await PolicyListExamples();
+			await PolicyDeleteExamples();
 		}
 
 
@@ -25,6 +27,8 @@ namespace VaultClient
 			VaultPolicy vp;
 			vp = await VSB.SysPoliciesACLRead("TestingABC");
 		}
+
+
 
 
 		private async Task PolicyCreateExamples () {
@@ -58,6 +62,20 @@ namespace VaultClient
 
 
 
+		}
+
+
+		private async Task PolicyListExamples () {
+			List<string> policies = await VSB.SysPoliciesACLList();
+
+			foreach (string policy in policies) {
+				Console.WriteLine("Policy: {0}",policy);
+			}
+		}
+
+
+		private async Task PolicyDeleteExamples () {
+			bool rc = await VSB.SysPoliciesACLDelete("n");
 		}
 	}
 }

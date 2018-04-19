@@ -117,12 +117,43 @@ namespace VaultAgent.Backends.System
 		#endregion
 
 		#region SysPolicies
+		/// <summary>
+		/// Returns a list of all ACL Policies.
+		/// </summary>
+		/// <returns>List[string] of all ACL policies by name.</returns>
 		public async Task<List<string>> SysPoliciesACLList() {
 			// Build Path
 			string path = vaultSysPath + "policies/acl";
 
-			throw new NotImplementedException("SysPolicies ACL List Not implemented Yet");
+			// Setup List Parameters
+			Dictionary<string, string> sendParams = new Dictionary<string, string>();
+			sendParams.Add("list", "true");
+
+			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "SysPoliciesACLList", sendParams);
+
+			string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
+
+			List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js);
+			return keys;
 		}
+
+
+
+		public async Task<bool> SysPoliciesACLDelete (string policyName) {
+			// Build Path
+			string path = vaultSysPath + "policies/acl/" + policyName;
+
+
+			try {
+				VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "SysPoliciesACLDelete");
+				if (vdro.Success) { return true; }
+				else { return false; }
+			}
+			catch (VaultInvalidPathException e) { return false; }
+			catch (Exception e) { throw e; }
+
+		}
+
 
 
 
@@ -391,12 +422,6 @@ namespace VaultAgent.Backends.System
 		}  // END of method.
 
 
-		public async Task<bool> SysPoliciesACLDelete(string policyName) {
-			// Build Path
-			string path = vaultSysPath + "policies/acl/" + policyName;
-
-			throw new NotImplementedException("SysPolicies ACL Update Not implemented Yet");
-		}
 #endregion
 
 	}

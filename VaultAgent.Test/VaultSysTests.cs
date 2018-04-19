@@ -265,6 +265,7 @@ namespace VaultAgentTests
 
 
 		[Test, Order(2000)]
+		// Can read a policy that has multiple paths attached to it.
 		public async Task SystemBE_Policy_CanReadMultiplePathPolicy() {
 			SystemTestInit();
 
@@ -324,6 +325,57 @@ namespace VaultAgentTests
 				// If here, something is wrong.
 				else { Assert.True(false, "invalid path returned of {0}",item.Path); }
 			}
+		}
+
+
+
+
+		[Test, Order(9100)]
+		public async Task SystemBE_Policy_ListReturnsPolicies () {
+			SystemTestInit();
+
+			// Ensure there is at least one policy saved.
+			VaultPolicy VP = new VaultPolicy("listPolicyA");
+			VaultPolicyPath vpi = new VaultPolicyPath("secret/listpol2000A");
+			vpi.ListAllowed = true;
+			VP.PolicyPaths.Add(vpi);
+
+			Assert.True(await vsb.SysPoliciesACLCreate(VP));
+
+			// Now get a list of policies.
+			List<string> polList = await vsb.SysPoliciesACLList();
+			Assert.True(polList.Count > 0);
+		}
+
+
+
+
+		[Test, Order(9999)]
+		// Providing a valid policy name results in returning true.
+		public async Task SystemBE_Policy_CanDelete_ValidPolicyName () {
+			SystemTestInit();
+
+			// Create a policy to delete
+			VaultPolicy VP = new VaultPolicy("deletePolicyA");
+			VaultPolicyPath vpi = new VaultPolicyPath("secret/Test2000A");
+			vpi.ListAllowed = true;
+			VP.PolicyPaths.Add(vpi);
+
+			Assert.True(await vsb.SysPoliciesACLCreate(VP));
+
+			// Now delete it.
+			Assert.True(await vsb.SysPoliciesACLDelete(VP.Name));
+		}
+
+
+
+		
+		[Test, Order(9999)]
+		// Providing an invalid policy name returns false.
+		public async Task SystemBE_Policy_Delete_InvalidPolicyName_ReturnsTrue () {
+			SystemTestInit();
+
+			Assert.True(await vsb.SysPoliciesACLDelete("invalidName"));
 		}
 	}
 }

@@ -42,6 +42,7 @@ namespace VaultClient
 			VaultClient_SystemBackend sysBE = new VaultClient_SystemBackend(rootToken, ip, port);
 			await sysBE.Run();
 
+			Console.ReadKey();
 			return;
 
 
@@ -128,7 +129,7 @@ namespace VaultClient
 			}
 
 				
-				Console.ReadKey();
+
 
 		}
 	}
