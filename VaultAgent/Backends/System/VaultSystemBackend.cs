@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Text;
+using System.IO;
+
 using VaultAgent.Models;
 using Newtonsoft.Json;
 
@@ -135,6 +137,28 @@ namespace VaultAgent.Backends.System
 			VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "AuthDisable");
 			if (vdro.Success) { return true; }
 			else { return false; }
+		}
+
+
+		public async Task<Dictionary<string,AuthMethod>> AuthListAll () {
+			string path = vaultSysPath + "auth";
+
+			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "AuthListAll");
+			if (vdro.Success) {
+				string js = vdro.GetDataPackageAsJSON();
+				//string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "");
+
+				string json = vdro.GetDataPackageAsJSON();
+				Dictionary<string, AuthMethod> methods = JsonConvert.DeserializeObject<Dictionary<string, AuthMethod>>(json);
+
+				// We need to place the dictionary key into each objects path value. 
+				foreach (KeyValuePair<string,AuthMethod> kv in methods) {
+					kv.Value.Path = kv.Key;
+				}
+
+				return methods;
+			}
+			throw new ApplicationException("SecretBackend:ListSecrets  Arrived at unexpected code block.");
 		}
 		#endregion
 

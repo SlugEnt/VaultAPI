@@ -27,12 +27,17 @@ namespace VaultClient
 
 
 		private async Task AuthEnableExample () {
+			// 
+			await VSB.AuthListAll();
+
 			AuthConfig ac = new AuthConfig();
 			ac.DefaultLeaseTTL = "120";
 			ac.MaxLeaseTTL = "240";
 
 			bool rc = await VSB.AuthEnable("authT3", "Terminator T2", EnumAuthMethods.AppRole, ac);
 			rc = await VSB.AuthDisable ("authT3");
+
+
 		}
 
 

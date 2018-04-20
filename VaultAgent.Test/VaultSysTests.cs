@@ -390,6 +390,33 @@ namespace VaultAgentTests
 
 			Assert.True(await vsb.AuthEnable(c, "test", auth, null));
 		}
+
+
+
+		[Test,Order(2100)]
+		public async Task SystemBE_Auth_Enable_ConfigOptions () {
+			SystemTestInit();
+
+			AuthConfig ac = new AuthConfig();
+			ac.DefaultLeaseTTL = "120";
+			ac.MaxLeaseTTL = "240";
+
+			Assert.True(await vsb.AuthEnable("tst2100A", "test", EnumAuthMethods.AppRole, ac));
+		}
+
+
+		[Test,Order(2101)]
+		public async Task SystemBE_Auth_Disable_Works () {
+			SystemTestInit();
+
+			AuthConfig ac = new AuthConfig();
+			ac.DefaultLeaseTTL = "120";
+			ac.MaxLeaseTTL = "240";
+
+			string name = "tst2101A";
+			Assert.True(await vsb.AuthEnable(name, "test", EnumAuthMethods.AppRole, ac));
+			Assert.True(await vsb.AuthDisable(name));
+		}
 		#endregion
 	}
 }

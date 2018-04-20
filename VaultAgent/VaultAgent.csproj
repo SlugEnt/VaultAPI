@@ -76,6 +76,7 @@
     <Compile Include="Backends\Secret\Secret.cs" />
     <Compile Include="Backends\Secret\SecretBackend.cs" />
     <Compile Include="Backends\System\AuthConfig.cs" />
+    <Compile Include="Backends\System\AuthMethod.cs" />
     <Compile Include="Backends\System\EnumAuthMethods.cs" />
     <Compile Include="Backends\System\EnumBackendTypes.cs" />
     <Compile Include="Backends\System\VaultPolicy.cs" />
