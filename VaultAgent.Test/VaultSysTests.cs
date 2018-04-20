@@ -90,8 +90,8 @@ namespace VaultAgentTests
 		}
 
 
-
-		[Test, Order(200)]
+		#region Policy_Tests
+		[Test, Order(2000)]
 		public void SystemBE_VaultPolicyPath_InitialFields_AreCorrect () {
 			VaultPolicyPath vpp = new VaultPolicyPath("ABC");
 
@@ -109,7 +109,7 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(200)]
+		[Test, Order(2000)]
 		// Test that setting capabilities to true works.
 		public void SystemBE_VaultPolicyPath_SettingTrueToFieldsWorks () {
 			VaultPolicyPath vpp = new VaultPolicyPath("ABC");
@@ -154,7 +154,7 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(200)]
+		[Test, Order(2000)]
 		public void SystemBE_VaultPolicyPath_SetDenied_SetsEverythingElseToFalse () {
 			VaultPolicyPath vpp = new VaultPolicyPath("ABC");
 			vpp.CreateAllowed = true;
@@ -175,7 +175,7 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(200)]
+		[Test, Order(2000)]
 		public void SystemBE_VaultPolicyPath_ConstructorSetsPath () {
 			VaultPolicyPath vpp = new VaultPolicyPath("ABC");
 			Assert.AreEqual("ABC", vpp.Path);
@@ -183,7 +183,7 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(1001)]
+		[Test, Order(2001)]
 		public async Task SystemBE_CanCreateAPolicy_WithSingleVaultPolicyItem () {
 			SystemTestInit();
 
@@ -199,7 +199,7 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(1001)]
+		[Test, Order(2001)]
 		public async Task SystemBE_CanCreateAPolicy_WithMultipleVaultPolicyItems() {
 			SystemTestInit();
 
@@ -235,7 +235,7 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(2000)]
+		[Test, Order(2002)]
 		public async Task SystemBE_Policy_CanReadSinglePathPolicy () {
 			SystemTestInit();
 
@@ -264,7 +264,7 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(2000)]
+		[Test, Order(2002)]
 		// Can read a policy that has multiple paths attached to it.
 		public async Task SystemBE_Policy_CanReadMultiplePathPolicy() {
 			SystemTestInit();
@@ -330,7 +330,7 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(9100)]
+		[Test, Order(2010)]
 		public async Task SystemBE_Policy_ListReturnsPolicies () {
 			SystemTestInit();
 
@@ -350,7 +350,7 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(9999)]
+		[Test, Order(2099)]
 		// Providing a valid policy name results in returning true.
 		public async Task SystemBE_Policy_CanDelete_ValidPolicyName () {
 			SystemTestInit();
@@ -370,12 +370,26 @@ namespace VaultAgentTests
 
 
 		
-		[Test, Order(9999)]
+		[Test, Order(2099)]
 		// Providing an invalid policy name returns false.
 		public async Task SystemBE_Policy_Delete_InvalidPolicyName_ReturnsTrue () {
 			SystemTestInit();
 
 			Assert.True(await vsb.SysPoliciesACLDelete("invalidName"));
 		}
+		#endregion
+
+
+		#region Auth_Tests
+		[Test,Order(2100)]
+		// Test that we can enable an authentication method with the provided name and no config options.
+		public async Task SystemBE_Auth_Enable_NoConfigOptions_Works ([Range((int)EnumAuthMethods.AppRole,(int)EnumAuthMethods.UsernamePassword)] EnumAuthMethods auth) {
+			SystemTestInit();
+			string a = Guid.NewGuid().ToString();
+			string c = a.Substring(0, 5);
+
+			Assert.True(await vsb.AuthEnable(c, "test", auth, null));
+		}
+		#endregion
 	}
 }

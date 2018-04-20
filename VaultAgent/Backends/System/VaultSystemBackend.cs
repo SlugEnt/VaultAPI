@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Text;
 using VaultAgent.Models;
-
+using Newtonsoft.Json;
 
 namespace VaultAgent.Backends.System
 {
@@ -36,6 +36,108 @@ namespace VaultAgent.Backends.System
 
 			vaultSysPath = new Uri("http://" + vaultIP + ":" + port + sysPath);
 		}
+
+
+
+		#region SysAuths
+		/// <summary>
+		/// Enables the provided Authentication backend.
+		/// </summary>
+		/// <param name="authPath">The path that the new authorization backend should be found at.  Do not provide leading or trailing slashes.</param>
+		/// <param name="description">A brief description of the authorization path.</param>
+		/// <param name="type">The type of authorization backend to create.</param>
+		/// <param name="config">AuthConfig object of optional values.  Null is valid if there are no defaults you want provided.</param>
+		/// <param name="plugin_name"></param>
+		/// <returns></returns>
+		public async Task<bool> AuthEnable (string authName, string description, EnumAuthMethods authType, AuthConfig config, string plugin_name="") {
+			string path = vaultSysPath + "auth/" + authName;
+
+
+
+			// Determine the Type string.
+			string sAuthType="";
+			switch (authType) {
+				case EnumAuthMethods.AppRole:
+					sAuthType = "approle";	break;
+				case EnumAuthMethods.AWS:
+					sAuthType = "aws"; break;
+				case EnumAuthMethods.GoogleCloud:
+					sAuthType = "gcp"; break;
+				case EnumAuthMethods.Kubernetes:
+					sAuthType = "kubernetes"; break;
+				case EnumAuthMethods.GitHub:
+					sAuthType = "github"; break;
+				case EnumAuthMethods.LDAP:
+					sAuthType = "ldap"; break;
+				case EnumAuthMethods.Okta:
+					sAuthType = "okta"; break;
+				case EnumAuthMethods.Radius:
+					sAuthType = "radius"; break;
+				case EnumAuthMethods.TLSCertificates:
+					sAuthType = "cert"; break;
+				case EnumAuthMethods.UsernamePassword:
+					sAuthType = "userpass"; break;
+// Vault .1		case EnumAuthMethods.Azure:
+// Vault .1			sAuthType = "azure"; break;
+//				case EnumAuthMethods.Tokens:
+//					sAuthType = "auth"; break;
+
+
+			}
+
+			Dictionary<string, string> contentParams = new Dictionary<string, string>();
+			contentParams.Add("path", authName);
+			contentParams.Add("description", description);
+			contentParams.Add("type", sAuthType);
+			contentParams.Add("plugin_name", plugin_name);
+
+			string contentJSON = JsonConvert.SerializeObject(contentParams, Formatting.None);
+
+			
+			StringBuilder jsonConfig;
+			string json = "";
+			if (config != null) {
+				jsonConfig = new StringBuilder(JsonConvert.SerializeObject(config));
+				jsonConfig.Insert(0, "\"config\":");
+
+				// Combine the 2 JSON's, by stripping trailing closing brace from the content param JSON string.
+				StringBuilder jsonParams = new StringBuilder(contentJSON, (contentJSON.Length + jsonConfig.Length + 20));
+				jsonParams.Remove(jsonParams.Length - 1, 1);
+				jsonParams.Append(",");
+
+				// Remove the opening brace.
+				jsonParams.Append(jsonConfig);
+				jsonParams.Append("}");
+
+				json = jsonParams.ToString();
+			}
+			else { json = contentJSON; }
+
+
+			
+			//string json = contentJSON;
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "VaultSystemBackend:AuthEnable", null,json);
+			if (vdro.Success) { return true; }
+			return false;
+		}
+
+
+
+
+		/// <summary>
+		/// Disables the authentication method at the given path.
+		/// </summary>
+		/// <param name="authName"></param>
+		/// <returns></returns>
+		public async Task<bool> AuthDisable(string authName) {
+			string path = vaultSysPath + "auth/" + authName;
+
+			VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "AuthDisable");
+			if (vdro.Success) { return true; }
+			else { return false; }
+		}
+		#endregion
+
 
 
 

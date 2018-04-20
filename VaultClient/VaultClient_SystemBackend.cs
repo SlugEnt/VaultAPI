@@ -16,11 +16,26 @@ namespace VaultClient
 
 
 		public async Task Run() {
+			await AuthEnableExample();
+			return;
 	//		await PolicyCreateExamples();
 			await PolicyReadExamples();
 			await PolicyListExamples();
 			await PolicyDeleteExamples();
 		}
+
+
+
+		private async Task AuthEnableExample () {
+			AuthConfig ac = new AuthConfig();
+			ac.DefaultLeaseTTL = "120";
+			ac.MaxLeaseTTL = "240";
+
+			bool rc = await VSB.AuthEnable("authT3", "Terminator T2", EnumAuthMethods.AppRole, ac);
+			rc = await VSB.AuthDisable ("authT3");
+		}
+
+
 
 
 		private async Task PolicyReadExamples () {

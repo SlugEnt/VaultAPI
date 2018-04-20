@@ -36,14 +36,21 @@ namespace VaultClient
 				port = 8200;
 			}
 
-
-
 			// System Backend Examples:
 			VaultClient_SystemBackend sysBE = new VaultClient_SystemBackend(rootToken, ip, port);
 			await sysBE.Run();
 
+
+			VaultClient_AppRoleBackend roleBE = new VaultClient_AppRoleBackend(rootToken, ip, port);
+			await roleBE.Run();
+
+
 			Console.ReadKey();
 			return;
+
+
+
+
 
 
 
