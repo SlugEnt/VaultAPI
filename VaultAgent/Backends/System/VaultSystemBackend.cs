@@ -57,41 +57,12 @@ namespace VaultAgent.Backends.System
 
 
 			// Determine the Type string.
-			string sAuthType="";
-			switch (authType) {
-				case EnumAuthMethods.AppRole:
-					sAuthType = "approle";	break;
-				case EnumAuthMethods.AWS:
-					sAuthType = "aws"; break;
-				case EnumAuthMethods.GoogleCloud:
-					sAuthType = "gcp"; break;
-				case EnumAuthMethods.Kubernetes:
-					sAuthType = "kubernetes"; break;
-				case EnumAuthMethods.GitHub:
-					sAuthType = "github"; break;
-				case EnumAuthMethods.LDAP:
-					sAuthType = "ldap"; break;
-				case EnumAuthMethods.Okta:
-					sAuthType = "okta"; break;
-				case EnumAuthMethods.Radius:
-					sAuthType = "radius"; break;
-				case EnumAuthMethods.TLSCertificates:
-					sAuthType = "cert"; break;
-				case EnumAuthMethods.UsernamePassword:
-					sAuthType = "userpass"; break;
-// Vault .1		case EnumAuthMethods.Azure:
-// Vault .1			sAuthType = "azure"; break;
-//				case EnumAuthMethods.Tokens:
-//					sAuthType = "auth"; break;
-
-
-			}
+			string sAuthType = AuthMethodEnumConverters.EnumAuthMethodsToString(authType);
 
 			Dictionary<string, string> contentParams = new Dictionary<string, string>();
 			contentParams.Add("path", authName);
 			contentParams.Add("description", description);
 			contentParams.Add("type", sAuthType);
-			contentParams.Add("plugin_name", plugin_name);
 
 			string contentJSON = JsonConvert.SerializeObject(contentParams, Formatting.None);
 
@@ -138,6 +109,8 @@ namespace VaultAgent.Backends.System
 			if (vdro.Success) { return true; }
 			else { return false; }
 		}
+
+
 
 
 		public async Task<Dictionary<string,AuthMethod>> AuthListAll () {

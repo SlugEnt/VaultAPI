@@ -13,6 +13,9 @@ namespace VaultAgent.Backends.System
 	/// </summary>
 	public class AuthConfig
 	{
+		/// <summary>
+		/// Number of seconds for token lease if numeric value, or Vault Time Element if number/string combo, ie, 12m is 12 minutes.
+		/// </summary>
 		[JsonProperty("default_lease_ttl")]
 		public string DefaultLeaseTTL { get; set; } = "3600";
 

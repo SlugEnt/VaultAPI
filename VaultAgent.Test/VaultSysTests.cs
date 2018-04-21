@@ -382,6 +382,54 @@ namespace VaultAgentTests
 
 		#region Auth_Tests
 		[Test,Order(2100)]
+		public async Task SystemBE_AuthEnumConverterToString () {
+			SystemTestInit();
+
+			EnumAuthMethods i = EnumAuthMethods.AppRole;
+			string s = AuthMethodEnumConverters.EnumAuthMethodsToString(i);
+		}
+
+
+
+		// Make sure the enum to string converters are working correctly.
+		[TestCase(EnumAuthMethods.AppRole,"approle")]
+		[TestCase(EnumAuthMethods.AWS, "aws")]
+		[TestCase(EnumAuthMethods.GoogleCloud, "gcp")]
+		[TestCase(EnumAuthMethods.GitHub, "github")]
+		[TestCase(EnumAuthMethods.Kubernetes, "kubernetes")]
+		[TestCase(EnumAuthMethods.LDAP, "ldap")]
+		[TestCase(EnumAuthMethods.Okta, "okta")]
+		[TestCase(EnumAuthMethods.Radius, "radius")]
+		[TestCase(EnumAuthMethods.TLSCertificates, "cert")]
+		[TestCase(EnumAuthMethods.UsernamePassword, "userpass")]
+		public void SystemBE_AuthMethod_ConstructViaString (EnumAuthMethods i,string val) {
+			AuthMethod am = new AuthMethod(val);
+			Assert.AreEqual(i, am.Type);
+		}
+
+
+
+		[TestCase(EnumAuthMethods.AppRole, "approle")]
+		[TestCase(EnumAuthMethods.AWS, "aws")]
+		[TestCase(EnumAuthMethods.GoogleCloud, "gcp")]
+		[TestCase(EnumAuthMethods.GitHub, "github")]
+		[TestCase(EnumAuthMethods.Kubernetes, "kubernetes")]
+		[TestCase(EnumAuthMethods.LDAP, "ldap")]
+		[TestCase(EnumAuthMethods.Okta, "okta")]
+		[TestCase(EnumAuthMethods.Radius, "radius")]
+		[TestCase(EnumAuthMethods.TLSCertificates, "cert")]
+		[TestCase(EnumAuthMethods.UsernamePassword, "userpass")]
+
+		public void SystemBE_AuthMethod_ConstructViaEnum (EnumAuthMethods i, string val) {
+			AuthMethod am = new AuthMethod(i);
+			Assert.AreEqual(am.TypeAsString,val);
+		}
+
+
+
+
+
+		[Test,Order(2110)]
 		// Test that we can enable an authentication method with the provided name and no config options.
 		public async Task SystemBE_Auth_Enable_NoConfigOptions_Works ([Range((int)EnumAuthMethods.AppRole,(int)EnumAuthMethods.UsernamePassword)] EnumAuthMethods auth) {
 			SystemTestInit();
@@ -393,7 +441,7 @@ namespace VaultAgentTests
 
 
 
-		[Test,Order(2100)]
+		[Test,Order(2110)]
 		public async Task SystemBE_Auth_Enable_ConfigOptions () {
 			SystemTestInit();
 
@@ -405,7 +453,7 @@ namespace VaultAgentTests
 		}
 
 
-		[Test,Order(2101)]
+		[Test,Order(2111)]
 		public async Task SystemBE_Auth_Disable_Works () {
 			SystemTestInit();
 
@@ -419,4 +467,5 @@ namespace VaultAgentTests
 		}
 		#endregion
 	}
+
 }
