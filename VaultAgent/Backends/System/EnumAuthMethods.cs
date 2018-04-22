@@ -40,6 +40,8 @@ namespace VaultAgent.Backends.System
 			switch (method) {
 				case EnumAuthMethods.AppRole:
 					return "approle";
+				case EnumAuthMethods.Token:
+					return "token";
 				case EnumAuthMethods.AWS:
 					return "aws";
 				case EnumAuthMethods.GoogleCloud:
@@ -58,8 +60,6 @@ namespace VaultAgent.Backends.System
 					return "cert";
 				case EnumAuthMethods.UsernamePassword:
 					return "userpass";
-				case EnumAuthMethods.Token:
-					return "token";
 				// Vault .1		case EnumAuthMethods.Azure:
 				// Vault .1			sAuthType = "azure"; break;
 				//				case EnumAuthMethods.Tokens:

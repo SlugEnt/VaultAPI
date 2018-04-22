@@ -51,26 +51,21 @@ namespace VaultAgent.Backends.System
 		/// <param name="config">AuthConfig object of optional values.  Null is valid if there are no defaults you want provided.</param>
 		/// <param name="plugin_name"></param>
 		/// <returns></returns>
-		public async Task<bool> AuthEnable (string authName, string description, EnumAuthMethods authType, AuthConfig config, string plugin_name="") {
-			string path = vaultSysPath + "auth/" + authName;
-
-
-
-			// Determine the Type string.
-			string sAuthType = AuthMethodEnumConverters.EnumAuthMethodsToString(authType);
+		public async Task<bool> AuthEnable (AuthMethod am) {
+			string path = vaultSysPath + "auth/" + am.Name;
 
 			Dictionary<string, string> contentParams = new Dictionary<string, string>();
-			contentParams.Add("path", authName);
-			contentParams.Add("description", description);
-			contentParams.Add("type", sAuthType);
+			contentParams.Add("path", am.Path);
+			contentParams.Add("description", am.Description);
+			contentParams.Add("type", am.TypeAsString);
 
 			string contentJSON = JsonConvert.SerializeObject(contentParams, Formatting.None);
 
 			
 			StringBuilder jsonConfig;
 			string json = "";
-			if (config != null) {
-				jsonConfig = new StringBuilder(JsonConvert.SerializeObject(config));
+			if (am.Config != null) {
+				jsonConfig = new StringBuilder(JsonConvert.SerializeObject(am.Config));
 				jsonConfig.Insert(0, "\"config\":");
 
 				// Combine the 2 JSON's, by stripping trailing closing brace from the content param JSON string.
@@ -112,7 +107,17 @@ namespace VaultAgent.Backends.System
 
 
 
+		// Disables the given authentication method 
+		public async Task<bool> AuthDisable (AuthMethod am) {
+			return await AuthDisable(am.Path);
+		}
 
+
+
+		/// <summary>
+		/// Lists all authentication methods in the current Vault System.
+		/// </summary>
+		/// <returns>Dictionary\<string,AuthMethod> containing all Authentication Methods</string></returns>
 		public async Task<Dictionary<string,AuthMethod>> AuthListAll () {
 			string path = vaultSysPath + "auth";
 

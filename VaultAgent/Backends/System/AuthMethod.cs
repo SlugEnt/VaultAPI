@@ -12,30 +12,99 @@ namespace VaultAgent.Backends.System
 		// _typeEnum is always considered the key identifier for this object.
 		private EnumAuthMethods _typeEnum;
 		private string _type;
+		private string _name;
+		private string _path;
 		
 
 		[JsonConstructor]
 		/// <summary>
-		/// Constructor for AuthMethod.  This is the only method that accepts 
+		/// Constructor for AuthMethod.  This is the only method that accepts the actual Vault String value.  The path value can be
+		/// either the Name or Path.  It's a path if it has the trailing slash.
 		/// </summary>
-		/// <param name="type"></param>
-		public AuthMethod (string type) {
-			// we do not call the actual property setters here, because of an endless loop situation.
+		/// <param name="path">String - Either the path or the name of the method.  Constructor determines which by the last character.
+		/// If the last character is a trailing slash then it is a path.  If not it is a name.  </param>
+		/// <param name="type">String - Type of authentication method to create, specified as the backend Vault name.</param>
+		public AuthMethod (string path, string type) {
+			// We do not call the actual property setters here, because of an endless loop situation.
 			_type = type;
 			_typeEnum = AuthMethodEnumConverters.EnumAuthMethodsFromString(type);
+			Config = new AuthConfig();
+
+			// We also accept a null path value.  We have to allow this because Vault does not return the path as part of the JSON object, but 
+			// rather as a dictionary key element.  We are assuming that if the value is null then the caller will eventually get around to 
+			// setting the path or name....
+			if (path != null) { SetPathAndName(path); }
 		}
 
 
-		public AuthMethod (EnumAuthMethods authenticationMethod) {
+
+		/// <summary>
+		/// Constructor that accepts our EnumAuthMethod argument for constructing the method.
+		/// </summary>
+		/// <param name="authenticationMethod">EnumAuthMethod - Type of authentication method object to create</param>
+		public AuthMethod (string path, EnumAuthMethods authenticationMethod) {
 			_typeEnum = authenticationMethod;
 			_type = AuthMethodEnumConverters.EnumAuthMethodsToString(_typeEnum);
+			Config = new AuthConfig();
+
+			if (path == null) {
+				throw new ArgumentException("The path value cannot be null.");
+			}
+			if (path == "") {
+				throw new ArgumentException("The path value cannot be an empty string.");
+			}
+
+			SetPathAndName(path);
 		}
 
 
-		[JsonProperty("path")]
-		public string Path { get; set; }
 
-		//[JsonProperty("description")]
+
+		/// <summary>
+		/// Since vault backend accepts paths with a trailing slash and without, but usually returns with a slash it can be difficult to compare
+		/// values created with values returned.  We therefore break them into name and path.  Name is without the slash, path is with the slash.
+		/// </summary>
+		/// <param name="value"></param>
+		private void SetPathAndName(string value) {
+			// Determine if value or name.
+			if (value[value.Length - 1] == '/') {
+				_path = value;
+				_name= value.Substring(0, value.Length - 1);
+			}
+			else {
+				_name = value;
+				_path = value + '/';
+			}
+
+		}
+
+
+
+
+		/// <summary>
+		/// The name or path of the object to create.
+		/// </summary>
+		public string Path
+		{
+			get { return _path; }
+			set {
+				SetPathAndName(value);
+			}
+		}
+
+
+		public string Name
+		{
+			get { return _name; }
+			set {
+				SetPathAndName(value);
+			}
+		}
+
+
+		/// <summary>
+		/// General description of the authentication method.
+		/// </summary>
 		public string Description { get; set; }
 
 
@@ -65,8 +134,12 @@ namespace VaultAgent.Backends.System
 
 
 
+
+		/// <summary>
+		/// A Vault Authentication Method configuration object that provides additional details about the Authentication Method.
+		/// </summary>
 		[JsonProperty("config", NullValueHandling = NullValueHandling.Ignore)]
-		public AuthConfig Config { get; set; }
+		public AuthConfig Config { get; private set; }
 
 
 		[JsonProperty("accessor")]

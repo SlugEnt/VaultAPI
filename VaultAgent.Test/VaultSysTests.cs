@@ -381,10 +381,87 @@ namespace VaultAgentTests
 
 
 		#region Auth_Tests
+
+		[Test]
+		// Make sure that the JSON constructor will set the path and name value correctly.
+		public void SystemBE_AuthMethod_JSONConstructor_SetsNameAndPathCorrectly () {
+			string path = "test2/";
+			string name = path.Substring(0, path.Length - 1);
+			AuthMethod am = new AuthMethod(path, EnumAuthMethods.Kubernetes);
+
+			Assert.AreEqual(path, am.Path);
+			Assert.AreEqual(name, am.Name);
+		}
+
+
+
+		[Test]
+		// Make sure that the non-JSON constructor will set the path and name value correctly.
+		public void SystemBE_AuthMethod_Constructor_SetsNameAndPathCorrectly() {
+			string path = "test2/";
+			string name = path.Substring(0, path.Length - 1);
+			AuthMethod am = new AuthMethod(path, EnumAuthMethods.Kubernetes);
+
+			Assert.AreEqual(path, am.Path);
+			Assert.AreEqual(name, am.Name);
+		}
+
+
+
+		[Test]
+		// Make sure that specifying a name value will build the appropriate path value.
+		public void SystemBE_AuthMethod_Constructor_SetsNameAndPathCorrectly_WhenProvidedName() {
+			string name = "test2";
+			string path = name + "/";
+			AuthMethod am = new AuthMethod(name, EnumAuthMethods.Kubernetes);
+
+			Assert.AreEqual(path, am.Path);
+			Assert.AreEqual(name, am.Name);
+		}
+
+
+		[Test]
+		// Make sure we can set path and name properties and they will update the other property.
+		public void SystemBE_AuthMethod_PathAndNameProperties_SetCorrectly () {
+			string name = "test2";
+			string path = name + "/";
+			AuthMethod am = new AuthMethod(name, EnumAuthMethods.Kubernetes);
+
+			string newName = "ABC";
+			am.Name = newName;
+			Assert.AreEqual(newName, am.Name);
+			Assert.AreEqual(newName + "/", am.Path);
+
+			string newPath = "ZXY/";
+			am.Path = newPath;
+			Assert.AreEqual(newPath, am.Path);
+			Assert.AreEqual(newPath.Substring(0, newPath.Length - 1), am.Name);
+		}
+
+
+
+		[Test]
+		// we do not allow an empty path/name value when calling the non JSON constructor.
+		public void SystemBE_AuthMethod_NormlConstructor_ThrowsOnInvalidPathArgument () {
+			string path = "";
+			Assert.Throws<ArgumentException>(() => new AuthMethod(path, EnumAuthMethods.GitHub));
+
+			Assert.Throws<ArgumentException>(() => new AuthMethod(null, EnumAuthMethods.GitHub));
+		}
+
+
+
+		[Test]
+		// The JSON constructor must accept a null value for path as the Vault API does not return the path value inside the objects JSON value, but rather
+		// outside it as the dictionary key...
+		public void SystemBE_AuthMethod_JSONConstructor_AcceptsNullPath() {
+			Assert.DoesNotThrow(() => new AuthMethod(null, AuthMethodEnumConverters.EnumAuthMethodsToString(EnumAuthMethods.AppRole)));
+		}
+
+
+
 		[Test,Order(2100)]
 		public async Task SystemBE_AuthEnumConverterToString () {
-			SystemTestInit();
-
 			EnumAuthMethods i = EnumAuthMethods.AppRole;
 			string s = AuthMethodEnumConverters.EnumAuthMethodsToString(i);
 		}
@@ -403,7 +480,7 @@ namespace VaultAgentTests
 		[TestCase(EnumAuthMethods.TLSCertificates, "cert")]
 		[TestCase(EnumAuthMethods.UsernamePassword, "userpass")]
 		public void SystemBE_AuthMethod_ConstructViaString (EnumAuthMethods i,string val) {
-			AuthMethod am = new AuthMethod(val);
+			AuthMethod am = new AuthMethod("test",val);
 			Assert.AreEqual(i, am.Type);
 		}
 
@@ -421,7 +498,8 @@ namespace VaultAgentTests
 		[TestCase(EnumAuthMethods.UsernamePassword, "userpass")]
 
 		public void SystemBE_AuthMethod_ConstructViaEnum (EnumAuthMethods i, string val) {
-			AuthMethod am = new AuthMethod(i);
+			string sPath = "GHI" + i.ToString();
+			AuthMethod am = new AuthMethod(sPath,i);
 			Assert.AreEqual(am.TypeAsString,val);
 		}
 
@@ -430,13 +508,16 @@ namespace VaultAgentTests
 
 
 		[Test,Order(2110)]
-		// Test that we can enable an authentication method with the provided name and no config options.
+		// Test that we can enable an authentication method with the provided name and no config options.  We test all possible authentication methods.
 		public async Task SystemBE_Auth_Enable_NoConfigOptions_Works ([Range((int)EnumAuthMethods.AppRole,(int)EnumAuthMethods.UsernamePassword)] EnumAuthMethods auth) {
 			SystemTestInit();
 			string a = Guid.NewGuid().ToString();
 			string c = a.Substring(0, 5);
+			string sPath = c + (int)auth;
 
-			Assert.True(await vsb.AuthEnable(c, "test", auth, null));
+			AuthMethod am = new AuthMethod(sPath, auth);
+			Assert.True(await vsb.AuthEnable(am));
+
 		}
 
 
@@ -449,8 +530,10 @@ namespace VaultAgentTests
 			ac.DefaultLeaseTTL = "120";
 			ac.MaxLeaseTTL = "240";
 
-			Assert.True(await vsb.AuthEnable("tst2100A", "test", EnumAuthMethods.AppRole, ac));
+			AuthMethod am = new AuthMethod("TST2110A",EnumAuthMethods.AppRole);
+			Assert.True(await vsb.AuthEnable(am));
 		}
+
 
 
 		[Test,Order(2111)]
@@ -462,8 +545,33 @@ namespace VaultAgentTests
 			ac.MaxLeaseTTL = "240";
 
 			string name = "tst2101A";
-			Assert.True(await vsb.AuthEnable(name, "test", EnumAuthMethods.AppRole, ac));
-			Assert.True(await vsb.AuthDisable(name));
+			AuthMethod am = new AuthMethod("TST2110B2",EnumAuthMethods.AppRole);
+			Assert.True(await vsb.AuthEnable(am));
+			Assert.True(await vsb.AuthDisable(am));
+		}
+
+
+
+		[Test,Order(2112)]
+		public async Task SystemBE_Auth_EnableDisableValidated () {
+			SystemTestInit();
+
+			string name = "TST2112B3";
+			AuthMethod am = new AuthMethod(name,EnumAuthMethods.AppRole);
+			string path = am.Path;
+			Assert.True(await vsb.AuthEnable(am));
+
+			// Now get listing of methods and search for our test one.
+			Dictionary<string, AuthMethod> authMethods = await vsb.AuthListAll();
+			Assert.NotNull(authMethods);
+			Assert.That(authMethods, Contains.Key(path));
+			
+
+			// Now disable and verify it is not in list.
+			Assert.True(await vsb.AuthDisable(am));
+			Dictionary<string, AuthMethod> latestMethods = await vsb.AuthListAll();
+			Assert.NotNull(latestMethods);
+			Assert.That(latestMethods, !Contains.Key(path));
 		}
 		#endregion
 	}

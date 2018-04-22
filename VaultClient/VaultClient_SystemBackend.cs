@@ -34,10 +34,12 @@ namespace VaultClient
 			ac.DefaultLeaseTTL = "120";
 			ac.MaxLeaseTTL = "240";
 
-			bool rc = await VSB.AuthEnable("authT3", "Terminator T2", EnumAuthMethods.AppRole, ac);
-			rc = await VSB.AuthDisable ("authT3");
-
-
+			string name = "ABC";
+			AuthMethod am = new AuthMethod(name, EnumAuthMethods.AppRole);
+			am.Config.DefaultLeaseTTL = "120";
+			am.Config.MaxLeaseTTL = "249";
+			bool rc = await VSB.AuthEnable(am);
+			rc = await VSB.AuthDisable (name);
 		}
 
 

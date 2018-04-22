@@ -19,6 +19,9 @@ namespace VaultAgent.Backends.System
 		[JsonProperty("default_lease_ttl")]
 		public string DefaultLeaseTTL { get; set; } = "3600";
 
+		/// <summary>
+		/// Maximum amount of time that the token can be leased for before requiring a renewal.  
+		/// </summary>
 		[JsonProperty("max_lease_ttl")]
 		public string MaxLeaseTTL { get; set; } = "0";
 
@@ -31,6 +34,10 @@ namespace VaultAgent.Backends.System
 		[JsonProperty("audit_non_hmac_response_keys")]
 		public List<string> Audit_NonHMAC_ResponseKeys { get; set; } = new List<string>();
 
+
+		/// <summary>
+		/// Determines if this authentication method is listed in the GUI.
+		/// </summary>
 		[JsonProperty("listing_visibility")]
 		public string ListingVisibility { get; set; } = "";
 
