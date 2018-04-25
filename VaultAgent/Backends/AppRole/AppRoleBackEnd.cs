@@ -75,6 +75,19 @@ namespace VaultAgent.Backends.AppRole
 
 
 
+		/// <summary>
+		/// Reads the AppRole with the given name.
+		/// </summary>
+		/// <param name="appRoleName">String name of the app role to retrieve.</param>
+		/// <returns>AppRoleToken object.</returns>
+		public async Task<AppRoleToken> ReadAppRole (string appRoleName) {
+			// The rolename forms the last part of the path
+			string path = vaultAppRolePath + "/" + appRoleName;
+
+			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "ReadAppRole");
+			AppRoleToken ART = vdro.GetVaultTypedObject<AppRoleToken>();
+			return ART;
+		}
 
 
 

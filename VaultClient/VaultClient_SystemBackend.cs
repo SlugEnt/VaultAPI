@@ -26,7 +26,7 @@ namespace VaultClient
 
 		public async Task Run() {
 			// Not Working - bool rc = await VSB.SysAuditEnable("testABC");
-			await AuthEnableExample();
+			//await AuthEnableExample();
 			return;
 	//		await PolicyCreateExamples();
 			await PolicyReadExamples();
@@ -35,48 +35,7 @@ namespace VaultClient
 		}
 
 
-
-		private async Task AuthEnableExample () {
-			// In this routine we will create an AppRole Authentication backend - Will be at a custom path
-			// Then we will Create an App Role in it.
-
-			//await VSB.AuthListAll();
-
-			AuthConfig ac = new AuthConfig() {
-				DefaultLeaseTTL = "120",
-				MaxLeaseTTL = "240"
-			};
-
-			string name = "ABC";
-			AuthMethod am = new AuthMethod(name, EnumAuthMethods.AppRole) {
-				Config = {
-					DefaultLeaseTTL = "120",
-					MaxLeaseTTL = "249"
-				}
-			};
-
-			bool rc;
-//			rc = await VSB.AuthEnable(am);
-
-			// Now create the backend object.
-			AppRoleBackEnd ARB = new AppRoleBackEnd(_ip, _port, _token, name);
-
-
-			// Now lets create a role in that backend.
-			AppRoleToken art = new AppRoleToken("ABC_Token") {
-				SecretTTL = "3600",
-				NumberOfUses = 500,
-				SecretNumberOfUses = 450
-			};
-
-			rc = await ARB.CreateRole(art);
-
-			// Now lets get a list of roles in that backend.
-			List<string> roles = await ARB.ListRoles();
-
-			// Disable the backend.
-			rc = await VSB.AuthDisable (name);
-		}
+		
 
 
 
