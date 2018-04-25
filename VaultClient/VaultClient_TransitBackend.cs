@@ -82,7 +82,7 @@ namespace VaultClient
 
 			// Finally delete a non-existent key.
 			try {
-				TB.DeleteKey("gggggpgg");
+				await TB.DeleteKey("gggggpgg");
 			}
 			catch (Exception e) { }
 		}

@@ -17,10 +17,10 @@ namespace VaultAgent.Backends.System
 		GitHub = 4,
 		LDAP = 5,
 		Okta = 6,
-		Radius = 7,
-		TLSCertificates = 8,
-		UsernamePassword = 9,
-		Token = 10 //,
+//		Radius = 7,
+		TLSCertificates = 7,
+		UsernamePassword = 8,
+		Token = 9 //,
 		//Azure = 10
 	}
 
@@ -54,8 +54,8 @@ namespace VaultAgent.Backends.System
 					return "ldap";
 				case EnumAuthMethods.Okta:
 					return "okta";
-				case EnumAuthMethods.Radius:
-					return "radius";
+//				case EnumAuthMethods.Radius:
+	//				return "radius";
 				case EnumAuthMethods.TLSCertificates:
 					return "cert";
 				case EnumAuthMethods.UsernamePassword:
@@ -96,8 +96,8 @@ namespace VaultAgent.Backends.System
 					return EnumAuthMethods.LDAP;
 				case "okta":
 					return EnumAuthMethods.Okta;
-				case "radius":
-					return EnumAuthMethods.Radius;
+//				case "radius":
+	//				return EnumAuthMethods.Radius;
 				case "cert":
 					return EnumAuthMethods.TLSCertificates;
 				case "userpass":

@@ -27,8 +27,8 @@ namespace VaultAgent
 		public VaultAPI_Http(string vaultIP, int port, string Token) {
 			vaultIPAddress = new Uri("http://" + vaultIP + ":" + port);
 
-			httpClt = new HttpClient();
-			httpClt.BaseAddress = vaultIPAddress;
+			httpClt = new HttpClient(new HttpClientHandler { MaxConnectionsPerServer = 500 }) {	BaseAddress = vaultIPAddress	};
+			//httpClt.BaseAddress = vaultIPAddress;
 			accessToken = Token;
 
 			// Set token into HTTP headers.

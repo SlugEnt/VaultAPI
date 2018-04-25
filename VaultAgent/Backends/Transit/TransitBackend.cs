@@ -29,8 +29,9 @@ namespace VaultAgent.Backends
 		/// <param name="backendMountName">The name of the transit backend to mount.  For example for a mount at /mine/transitA use mine/transitA as value.</param>
 		public TransitBackend(string vaultIP, int port, string Token, string backendMountName = "transit") {
 			vaultHTTP = new VaultAPI_Http(vaultIP, port, Token);
-			transitToken = new TokenInfo();
-			transitToken.Id = Token;
+			transitToken = new TokenInfo() {
+				Id = Token
+			};
 
 			transitPath = "/v1/" + backendMountName + "/";
 			vaultTransitPath = new Uri("http://" + vaultIP + ":" + port + transitPath);
@@ -541,7 +542,7 @@ namespace VaultAgent.Backends
 
 
 
-		public async Task<object> ExportKey(string keyName) {
+		public void ExportKey(string keyName) {
 			throw new NotImplementedException();
 		}
 
@@ -613,9 +614,12 @@ namespace VaultAgent.Backends
 				}
 				else { throw e; }
 
-				TransitBackupRestoreItem tbri = new TransitBackupRestoreItem();
-				tbri.Success = false;
-				tbri.ErrorMsg = errMsg;
+				TransitBackupRestoreItem tbri = new TransitBackupRestoreItem() {
+					Success = false,
+					ErrorMsg = errMsg
+				};
+				//tbri.Success = false;
+				//tbri.ErrorMsg = errMsg;
 				return tbri;
 			}
 		}

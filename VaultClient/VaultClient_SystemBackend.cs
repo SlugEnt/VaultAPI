@@ -7,15 +7,16 @@ namespace VaultClient
 {
     public class VaultClient_SystemBackend
     {
-		VaultSystemBackend VSB;
+		SysBackend VSB;
 
 		public VaultClient_SystemBackend(string token, string ip, int port) {
-			VSB = new VaultSystemBackend(ip, port, token);
+			VSB = new SysBackend(ip, port, token);
 		}
 
 
 
 		public async Task Run() {
+			bool rc = await VSB.SysAuditEnable("testABC");
 			await AuthEnableExample();
 			return;
 	//		await PolicyCreateExamples();
@@ -30,9 +31,10 @@ namespace VaultClient
 			// 
 			await VSB.AuthListAll();
 
-			AuthConfig ac = new AuthConfig();
-			ac.DefaultLeaseTTL = "120";
-			ac.MaxLeaseTTL = "240";
+			AuthConfig ac = new AuthConfig() {
+				DefaultLeaseTTL = "120",
+				MaxLeaseTTL = "240"
+			};
 
 			string name = "ABC";
 			AuthMethod am = new AuthMethod(name, EnumAuthMethods.AppRole);
@@ -59,10 +61,11 @@ namespace VaultClient
 			VaultPolicy VP = new VaultPolicy("TestingABC");
 
 
-			VaultPolicyPath vpi = new VaultPolicyPath("secret/TestA");
-			vpi.DeleteAllowed = true;
-			vpi.ReadAllowed = true;
-			vpi.CreateAllowed = true;
+			VaultPolicyPath vpi = new VaultPolicyPath("secret/TestA") {
+				DeleteAllowed = true,
+				ReadAllowed = true,
+				CreateAllowed = true
+			};
 			VP.PolicyPaths.Add(vpi);
 
 

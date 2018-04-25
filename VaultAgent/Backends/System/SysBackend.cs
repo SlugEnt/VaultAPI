@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 namespace VaultAgent.Backends.System
 {
 
-	public class VaultSystemBackend
+	public class SysBackend
 	{
 		private VaultAPI_Http vaultHTTP;
 		private string sysPath = "/v1/sys/";
@@ -31,10 +31,12 @@ namespace VaultAgent.Backends.System
 		/// <param name="vaultIP">The IP address of the Vault Server.</param>
 		/// <param name="port">The network port the Vault server listens on.</param>
 		/// <param name="Token">The token used to authenticate with.</param>
-		public VaultSystemBackend(string vaultIP, int port, string Token) {
+		public SysBackend(string vaultIP, int port, string Token) {
 			vaultHTTP = new VaultAPI_Http(vaultIP, port, Token);
-			sysToken = new TokenInfo();
-			sysToken.Id = Token;
+			sysToken = new TokenInfo() {
+				Id = Token
+			};
+
 
 			vaultSysPath = new Uri("http://" + vaultIP + ":" + port + sysPath);
 		}
@@ -84,7 +86,7 @@ namespace VaultAgent.Backends.System
 
 			
 			//string json = contentJSON;
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "VaultSystemBackend:AuthEnable", null,json);
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "SysBackend:AuthEnable", null,json);
 			if (vdro.Success) { return true; }
 			return false;
 		}
@@ -109,7 +111,7 @@ namespace VaultAgent.Backends.System
 
 		// Disables the given authentication method 
 		public async Task<bool> AuthDisable (AuthMethod am) {
-			return await AuthDisable(am.Path);
+			return await AuthDisable(am.Name);
 		}
 
 
@@ -141,6 +143,46 @@ namespace VaultAgent.Backends.System
 		#endregion
 
 
+		#region SysAudit
+		 public async Task<bool> SysAuditEnable (string Name) {
+			string path = vaultSysPath + "audit/" + Name;
+
+			Dictionary<string, string> contentParams = new Dictionary<string, string>() {
+				{  "description", "Send to file" },
+				{ "type", "file" }
+
+			};
+
+
+			string inputVarsJSON = JsonConvert.SerializeObject(contentParams, Formatting.None);
+			Dictionary<string, string> optionsList = new Dictionary<string, string>() {
+				{ "path",@"c:\temp\avault.log" }
+			};
+
+			// Build entire JSON Body:  Input Params + Bulk Items List.
+			string bulkJSON = JsonConvert.SerializeObject(new
+			{
+				options = optionsList
+			}, Formatting.None);
+
+
+			// Combine the 2 JSON's
+			if (contentParams.Count > 0) {
+				string newVarsJSON = inputVarsJSON.Substring(1, inputVarsJSON.Length - 2) + ",";
+				bulkJSON = bulkJSON.Insert(1, newVarsJSON);
+			}
+
+
+
+
+			VaultDataResponseObject vdro = await vaultHTTP.PutAsync(path, "SysAuditEnable", null, bulkJSON);
+			if (vdro.httpStatusCode == 204) { return true; }
+			else { return false; }
+
+
+
+		}
+		#endregion
 
 
 		#region SysMounts
@@ -190,7 +232,7 @@ namespace VaultAgent.Backends.System
 			else { return false; }
 		}
 
-		public async Task<List<string>> SysMountListSecretEngines () {
+		public List<string> SysMountListSecretEngines () {
 			// Build Path
 			string path = vaultSysPath + pathMounts;
 
@@ -198,7 +240,7 @@ namespace VaultAgent.Backends.System
 		}
 
 
-		public async Task<List<string>> SysMountDisable(string mountPath) {
+		public bool SysMountDisable(string mountPath) {
 			// Build Path
 			string path = vaultSysPath + pathMounts + mountPath;
 
@@ -206,13 +248,13 @@ namespace VaultAgent.Backends.System
 		}
 
 
-		public async Task<bool> SysMountReadConfig (string mountPath) {
+		public string SysMountReadConfig (string mountPath) {
 			// Build Path
 			string path = vaultSysPath + pathMounts + mountPath + "/tune";
 
 			throw new NotImplementedException("SysMountReadConfig Not implemented Yet");
 		}
-		public async Task<bool> SysMountUpdateConfig(string mountPath) {
+		public bool SysMountUpdateConfig(string mountPath) {
 			// Build Path
 			string path = vaultSysPath + pathMounts + mountPath + "/tune";
 

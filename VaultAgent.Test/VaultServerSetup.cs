@@ -7,8 +7,8 @@ using System.Net;
 using System.IO;
 using NUnit.Framework;
 using System.Reflection;
-using System;
 using VaultAgent;
+using System.Threading;
 
 
 namespace VaultAgentTests
@@ -24,6 +24,7 @@ namespace VaultAgentTests
 		public static string vaultFolder;
 		public static string unSealKey;
 		public static int ipPort;
+
 	}
 
 
@@ -39,15 +40,19 @@ namespace VaultAgentTests
 		private Process _process;
 		private bool _disposed;
 
-	
-		
+		private static bool _startingUP = true;
+
+		public VaultServerSetup() { }
+
+
 		[OneTimeSetUp]
 		public void StartVaultServer() {
 
 			//VaultServerRef.rootToken = Guid.NewGuid().ToString();
 			VaultServerRef.rootToken = "testing";
 			VaultServerRef.ipPort = GetRandomUnusedPort();
-			//VaultServerRef.ipPort = 54678;
+// Temp for scott test.
+//VaultServerRef.ipPort = 56555;
 			VaultServerRef.ipAddress = "127.0.0.1";
 			VaultServerRef.vaultURI  =  new Uri("http://" + VaultServerRef.ipAddress + ":" +  VaultServerRef.ipPort);
 			VaultServerRef.vaultFolder = GetTestsPath() + "\\Utility";
@@ -58,7 +63,8 @@ namespace VaultAgentTests
 				"server",
 				"-dev",
 				$"-dev-root-token-id={VaultServerRef.rootToken}",
-				$"-dev-listen-address={VaultServerRef.ipAddress}:{VaultServerRef.ipPort}"
+				$"-dev-listen-address={VaultServerRef.ipAddress}:{VaultServerRef.ipPort}",
+				$"-log-level=trace"
 			});
 
 
@@ -67,7 +73,13 @@ namespace VaultAgentTests
 			string vaultBin = "vault.exe";
 			string vaultFullBin = VaultServerRef.vaultFolder + "\\" + vaultBin;
 
-			var startInfo = new ProcessStartInfo(vaultFullBin, vaultArgs) { UseShellExecute = false };
+			var startInfo = new ProcessStartInfo(vaultFullBin, vaultArgs) {
+				UseShellExecute = false,
+				WindowStyle = ProcessWindowStyle.Normal,
+				CreateNoWindow = false,
+				RedirectStandardError = true,
+				RedirectStandardOutput = true
+		};
 
 			// Startup the vault server
 			startInfo.EnvironmentVariables["HOME"] = VaultServerRef.vaultFolder;
@@ -80,23 +92,23 @@ namespace VaultAgentTests
 			_process = new Process {
 				StartInfo = startInfo
 			};
-			_process.StartInfo.RedirectStandardOutput = true;
-			_process.StartInfo.RedirectStandardError = true;
+
+
+			_process.OutputDataReceived += (sender, eventArgs) => CaptureOutput(sender, eventArgs);
+			_process.ErrorDataReceived += (sender, eventArgs) => CaptureError(sender, eventArgs);
 
 
 			if (!_process.Start()) {
 				throw new Exception($"Process did not start successfully: {_process.StandardError}");
 			}
+			_process.BeginErrorReadLine();
+			_process.BeginOutputReadLine();
 
 
-			// Now look for successful start message.
-			var line = _process.StandardOutput.ReadLine();
-			while (line?.StartsWith("==> Vault server started!") == false) {
-				if (line?.StartsWith("Unseal Key:") == true) {
-					VaultServerRef.unSealKey = line.Substring("Unseal Key:".Length+1);
-				}
-				line = _process.StandardOutput.ReadLine();
+			while (VaultServerSetup._startingUP == true) {
+				Thread.Sleep(10);				
 			}
+
 
 			if (_process.HasExited) {
 				throw new Exception($"Process could not be started: {_process.StandardError}");
@@ -172,5 +184,41 @@ namespace VaultAgentTests
 		public void Dispose() {
 			Dispose(true);
 		}
+
+
+
+		// Following methods are used to output Vault messages to the Debug window.
+
+		static void CaptureOutput(object sender, DataReceivedEventArgs e) {
+			ShowOutput(e.Data, true);
+		}
+
+		static void CaptureError(object sender, DataReceivedEventArgs e) {
+			ShowOutput(e.Data, false);
+		}
+
+		static void ShowOutput(string data, bool stdOutput) {
+			string cat;
+			if (stdOutput) { cat = "Vault"; }
+			else { cat = "VERR"; }
+
+
+			// Write the line to the Debug window.
+			Debug.WriteLine(data,cat);
+
+			// If starting up then we need to look for some stuff.
+			if (VaultServerSetup._startingUP) {
+				// Now look for successful start message.
+				if (data?.StartsWith("==> Vault server started!") == true) {
+					VaultServerSetup._startingUP = false;
+					return;
+				}
+				if (data?.StartsWith("Unseal Key:") == true) {
+					VaultServerRef.unSealKey = data.Substring("Unseal Key:".Length + 1);
+				}
+			}
+
+		}
+			
 	}
 }

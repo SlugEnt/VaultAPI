@@ -18,7 +18,7 @@ namespace VaultAgentTests
 		TransitBackend TB;
 
 		// For system related calls we will use this Backend.
-		VaultSystemBackend VSB;
+		SysBackend VSB;
 
 
 		// Encryption keys we will generally use throughout tests.
@@ -41,7 +41,7 @@ namespace VaultAgentTests
 
 
 			// Create a Transit Backend Mount for this series of tests.
-			VSB = new VaultSystemBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+			VSB = new SysBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
 
 			// Create transitBE_A backend.
 			string transitName = transitBE_A;

@@ -14,7 +14,7 @@ namespace VaultAgentTests
 		SecretBackend SB;
 
 		// For system related calls we will use this Backend.
-		VaultSystemBackend VSB;
+		SysBackend VSB;
 
 	
 		/// <summary>
@@ -36,7 +36,7 @@ namespace VaultAgentTests
 
 
 			// Create a Transit Backend Mount for this series of tests.
-			VSB = new VaultSystemBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+			VSB = new SysBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
 
 			// Create a custom Secret Backend.
 			string secretName = secretBE_A;
@@ -477,25 +477,11 @@ namespace VaultAgentTests
 
 
 		[Test,Order(800)]
-		public async Task Secret_DeleteSecret_ShouldFailIfNoPermission () {
+		public bool Secret_DeleteSecret_ShouldFailIfNoPermission () {
 			throw new NotImplementedException();
 		}
 
 
-
-		[Test, Order(900)]
-		public async Task TestSomething() {
-			Secret A = new Secret("hello/world");
-			int cntA1 = A.Attributes.Count;
-			DoSomething(A);
-			int cntA2 = A.Attributes.Count;
-			if (cntA1 > cntA2) { return; }
-		}
-
-		public async Task DoSomething (Secret secret) {
-			secret.Attributes.Add("yep", "check");
-
-		}
 	}
 
 

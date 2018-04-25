@@ -87,9 +87,6 @@ namespace VaultClient
 			Console.WriteLine("JSON = {0}", vdr.GetDataPackageAsJSON());
 
 			
-	
-			Dictionary<string, object> RespDict;
-			Dictionary<string, object> DataDict;
 
 			try {
 
