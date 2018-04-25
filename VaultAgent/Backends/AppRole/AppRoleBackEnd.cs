@@ -12,7 +12,7 @@ namespace VaultAgent.Backends.AppRole
 	{
 		TokenInfo backendToken;
 		private VaultAPI_Http vaultHTTP;
-		string roleBEPath = "/v1/auth/approle/role/";
+		string roleBEPath = "/v1/auth/";
 		Uri vaultAppRolePath;
 
 
@@ -20,11 +20,13 @@ namespace VaultAgent.Backends.AppRole
 		/// <summary>
 		/// Constructor for AppRoleBackEnd
 		/// </summary>
-		public AppRoleBackEnd (string vaultIP, int port, string Token) {
+		public AppRoleBackEnd (string vaultIP, int port, string Token, string mountPath = "approle") {
 			vaultHTTP = new VaultAPI_Http(vaultIP, port, Token);
 			backendToken = new TokenInfo();
 			backendToken.Id = Token;
 
+			// Mount the AppRole backend at the specified mount point.
+			roleBEPath = roleBEPath + mountPath + "/role";
 
 			vaultAppRolePath = new Uri("http://" + vaultIP + ":" + port + roleBEPath);
 		}
@@ -32,12 +34,12 @@ namespace VaultAgent.Backends.AppRole
 
 
 
-		public async Task<bool> Create (AppRoleToken art) {
-			string path = vaultAppRolePath + art.Name;
+		public async Task<bool> CreateRole (AppRoleToken art) {
+			string path = vaultAppRolePath + "/" + art.Name;
 			string json = JsonConvert.SerializeObject(art);
 
 
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "AppRoleBackEnd_Create", null, json);
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "AppRoleBackEnd: CreateRole", null, json);
 			if (vdro.Success) {
 				return true;
 			}
@@ -53,7 +55,13 @@ namespace VaultAgent.Backends.AppRole
 		/// <returns>List[string] of role names.</string></returns>
 		public async Task<List<string>> ListRoles () {
 			try {
-				VaultDataResponseObject vdro = await vaultHTTP.GetAsync(roleBEPath, "ListRoles");
+				// Setup List Parameter
+				Dictionary<string, string> contentParams = new Dictionary<string, string>() {
+					{ "list", "true" }
+				};
+	
+
+				VaultDataResponseObject vdro = await vaultHTTP.GetAsync(roleBEPath, "ListRoles",contentParams);
 				if (vdro.Success) {
 					string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
 					List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js);

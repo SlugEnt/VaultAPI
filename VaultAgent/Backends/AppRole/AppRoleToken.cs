@@ -13,16 +13,16 @@ namespace VaultAgent.Backends.AppRole
 	{
 		public AppRoleToken (string name) {
 			Name = name;
-			SecretIDRequiredOnLogin = true;
+			IsSecretIDRequiredOnLogin = true;
 			NumberOfUses = 0;
 			SecretNumberOfUses = 0;
 		}
 
-		//[JsonProperty("id")]
+		[JsonProperty("role_name")]
 		public string Name { get; set; }
 
 		[JsonProperty("bind_secret_id")]
-		public bool SecretIDRequiredOnLogin { get; set; }
+		public bool IsSecretIDRequiredOnLogin { get; set; }
 
 		[JsonProperty("bound_cidr_list")]
 		public List<string> BoundCIDRList { get; set; }
@@ -47,6 +47,5 @@ namespace VaultAgent.Backends.AppRole
 
 		[JsonProperty("period")]
 		public string Period { get; set; }
-
 	}
 }

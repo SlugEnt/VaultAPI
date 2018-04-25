@@ -2,6 +2,7 @@
 using VaultAgent.Backends.System;
 using System.Collections.Generic;
 using System;
+using VaultAgent.Backends.AppRole;
 
 namespace VaultClient
 {
@@ -9,14 +10,22 @@ namespace VaultClient
     {
 		SysBackend VSB;
 
+		private string _token;
+		private string _ip;
+		private int _port;
+
 		public VaultClient_SystemBackend(string token, string ip, int port) {
 			VSB = new SysBackend(ip, port, token);
+			_token = token;
+			_ip = ip;
+			_port = port;
+
 		}
 
 
 
 		public async Task Run() {
-			bool rc = await VSB.SysAuditEnable("testABC");
+			// Not Working - bool rc = await VSB.SysAuditEnable("testABC");
 			await AuthEnableExample();
 			return;
 	//		await PolicyCreateExamples();
@@ -28,8 +37,10 @@ namespace VaultClient
 
 
 		private async Task AuthEnableExample () {
-			// 
-			await VSB.AuthListAll();
+			// In this routine we will create an AppRole Authentication backend - Will be at a custom path
+			// Then we will Create an App Role in it.
+
+			//await VSB.AuthListAll();
 
 			AuthConfig ac = new AuthConfig() {
 				DefaultLeaseTTL = "120",
@@ -37,10 +48,33 @@ namespace VaultClient
 			};
 
 			string name = "ABC";
-			AuthMethod am = new AuthMethod(name, EnumAuthMethods.AppRole);
-			am.Config.DefaultLeaseTTL = "120";
-			am.Config.MaxLeaseTTL = "249";
-			bool rc = await VSB.AuthEnable(am);
+			AuthMethod am = new AuthMethod(name, EnumAuthMethods.AppRole) {
+				Config = {
+					DefaultLeaseTTL = "120",
+					MaxLeaseTTL = "249"
+				}
+			};
+
+			bool rc;
+//			rc = await VSB.AuthEnable(am);
+
+			// Now create the backend object.
+			AppRoleBackEnd ARB = new AppRoleBackEnd(_ip, _port, _token, name);
+
+
+			// Now lets create a role in that backend.
+			AppRoleToken art = new AppRoleToken("ABC_Token") {
+				SecretTTL = "3600",
+				NumberOfUses = 500,
+				SecretNumberOfUses = 450
+			};
+
+			rc = await ARB.CreateRole(art);
+
+			// Now lets get a list of roles in that backend.
+			List<string> roles = await ARB.ListRoles();
+
+			// Disable the backend.
 			rc = await VSB.AuthDisable (name);
 		}
 
