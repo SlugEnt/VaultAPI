@@ -34,7 +34,7 @@ namespace VaultAgent.Backends.AppRole
 
 
 
-		public async Task<bool> CreateRole (AppRoleToken art) {
+		public async Task<bool> CreateRole (AppRole art) {
 			string path = vaultAppRolePath + "/" + art.Name;
 			string json = JsonConvert.SerializeObject(art);
 
@@ -79,13 +79,13 @@ namespace VaultAgent.Backends.AppRole
 		/// Reads the AppRole with the given name.
 		/// </summary>
 		/// <param name="appRoleName">String name of the app role to retrieve.</param>
-		/// <returns>AppRoleToken object.</returns>
-		public async Task<AppRoleToken> ReadAppRole (string appRoleName) {
+		/// <returns>AppRole object.</returns>
+		public async Task<AppRole> ReadAppRole (string appRoleName) {
 			// The rolename forms the last part of the path
 			string path = vaultAppRolePath + "/" + appRoleName;
 
 			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "ReadAppRole");
-			AppRoleToken ART = vdro.GetVaultTypedObject<AppRoleToken>();
+			AppRole ART = vdro.GetVaultTypedObject<AppRole>();
 			return ART;
 		}
 

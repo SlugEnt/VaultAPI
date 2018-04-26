@@ -33,7 +33,7 @@ namespace VaultClient
 
 
 		private async Task ReadRole() {
-			AppRoleToken art = await ARB.ReadAppRole(_AppRoleName);
+			AppRole art = await ARB.ReadAppRole(_AppRoleName);
 			Console.WriteLine("Read token: {0}", art);
 		}
 
@@ -50,7 +50,7 @@ namespace VaultClient
 
 
 		private async Task AppRole_Create() {
-			AppRoleToken art = new AppRoleToken(_AppRoleName);
+			AppRole art = new AppRole(_AppRoleName);
 
 			await ARB.CreateRole(art);
 

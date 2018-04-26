@@ -9,9 +9,9 @@ using Newtonsoft.Json;
 
 namespace VaultAgent.Backends.AppRole
 {
-	public class AppRoleToken
+	public class AppRole
 	{
-		public AppRoleToken (string name) {
+		public AppRole (string name) {
 			Name = name;
 			IsSecretIDRequiredOnLogin = true;
 			NumberOfUses = 0;

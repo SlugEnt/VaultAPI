@@ -72,7 +72,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Backends\AppRole\AppRoleBackEnd.cs" />
-    <Compile Include="Backends\AppRole\AppRoleToken.cs" />
+    <Compile Include="Backends\AppRole\AppRole.cs" />
     <Compile Include="Backends\Secret\Secret.cs" />
     <Compile Include="Backends\Secret\SecretBackend.cs" />
     <Compile Include="Backends\System\AuthConfig.cs" />
