@@ -28,6 +28,11 @@ namespace VaultClient
 
 			appRoles = await AppRole_ListRoles();
 
+			// Now get a role ID
+			string roleID = await ARB.GetRoleID(_AppRoleName);
+
+			// Now delete the app role.
+			bool rc = await ARB.DeleteAppRole(_AppRoleName);
 		}
 
 

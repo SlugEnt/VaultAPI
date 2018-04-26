@@ -91,5 +91,60 @@ namespace VaultAgent.Backends.AppRole
 
 
 
+		/// <summary>
+		/// Deletes the App Role from the vaule.
+		/// </summary>
+		/// <param name="appRole">AppRole object to be deleted</param>
+		/// <returns>Bool:  True if deleted.  False otherwise</returns>
+		public async Task<bool> DeleteAppRole (AppRole appRole) {
+			return await DeleteAppRole(appRole.Name);
+		}
+
+
+
+
+		/// <summary>
+		/// Deletes the AppRole with the given name.
+		/// </summary>
+		/// <param name="appRoleName">AppRole name that should be deleted.</param>
+		/// <returns>Bool:  True if deleted.  False otherwise.</returns>
+		public async Task<bool> DeleteAppRole (string appRoleName) {
+			// The rolename forms the last part of the path
+			string path = vaultAppRolePath + "/" + appRoleName;
+
+
+			try {
+				VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "DeleteAppRole");
+				if (vdro.Success) { return true; }
+				else { return false; }
+			}
+/*
+				catch (VaultInvalidDataException e) {
+				// Search for the error message - it indicates whether it is key could not be found or deletion not allowed.
+				if (e.Message.Contains("could not delete policy; not found")) { throw e; }
+
+				if (e.Message.Contains("deletion is not allowed for this policy")) { return false; }
+
+				// not sure - rethrow error.
+				throw e;
+			}
+*/
+			catch (Exception e) { throw e; }
+		}
+
+
+
+
+		public async Task<string> GetRoleID (string appRoleName) {
+			// The rolename forms the last part of the path
+			string path = vaultAppRolePath + "/" + appRoleName + "/role-id";
+
+
+			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "GetRoleID");
+			if (vdro.Success) {
+				return  vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "role_id");
+			}
+			else { return ""; }
+		}
 	}
 }
