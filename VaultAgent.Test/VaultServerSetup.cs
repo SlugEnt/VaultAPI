@@ -115,6 +115,7 @@ namespace VaultAgentTests
 			}
 		}
 
+
 		[OneTimeTearDown]
 		public void StopVaultServer() {
 			_process.CloseMainWindow();

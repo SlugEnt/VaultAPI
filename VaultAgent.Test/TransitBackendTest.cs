@@ -13,6 +13,7 @@ using VaultAgent.Backends.Transit;
 
 namespace VaultAgentTests
 {
+	[Parallelizable]
 	public class TransitBackendTest {
 		// The Vault Transit Backend we will be using throughout our testing.
 		TransitBackend TB;
@@ -34,6 +35,7 @@ namespace VaultAgentTests
 		string keyPrefix = "xAAAx";
 
 
+		[OneTimeSetUp]
 		public async Task Transit_Init() {
 			if (TB != null) {
 				return;
@@ -53,6 +55,7 @@ namespace VaultAgentTests
 		}
 
 
+
 		/// <summary>
 		/// Used as shortcut for commonly called code in test methods of Transit Type.
 		/// </summary>
@@ -61,7 +64,6 @@ namespace VaultAgentTests
 		/// <param name="convergentKey">Boolean.  True if you want a key that supports convergent encryption.</param>
 		/// <returns>string value of the key name.</returns>
 		public async Task<string> Transit_InitWithKey (EnumTransitKeyType keyType = EnumTransitKeyType.aes256, bool keyDerivation = false, bool convergentKey = false) {
-			await Transit_Init();
 			randomKeyNum++;
 			string key = keyPrefix + randomKeyNum.ToString();
 
@@ -71,12 +73,6 @@ namespace VaultAgentTests
 			return key;
 		}
 
-
-
-		[Test, Order(1)]
-		public async Task Transit_CreateAndMountCustomTransitBackend() {
-			await Transit_Init();
-		}
 
 
 		[Test, Order(2)]
@@ -92,7 +88,6 @@ namespace VaultAgentTests
 
 		[Test, Order(20)]
 		public async Task Transit_CreateEncryptionKeyWithMethodParameters() {
-			await Transit_Init();
 			try {
 				// Try with parameters values.
 				bool rc = await TB.CreateEncryptionKey(encKeyA, true, true, EnumTransitKeyType.rsa4096);
@@ -107,7 +102,6 @@ namespace VaultAgentTests
 		[Test, Order(21)]
 		// Ensure we can create an encryption key by specifying parameters thru a dictionary.
 		public async Task Transit_CreateEncryptionKeyWithDictionaryParams() {
-			await Transit_Init();
 			randomKeyNum++;
 			string key = keyPrefix + randomKeyNum.ToString();
 
@@ -121,7 +115,6 @@ namespace VaultAgentTests
 
 		[Test, Order(22)]
 		public async Task Transit_CreateEncryptionKey_ConvergentAndDerivedTrue() {
-			await Transit_Init();
 			randomKeyNum++;
 			string key = keyPrefix + randomKeyNum.ToString();
 
@@ -139,7 +132,6 @@ namespace VaultAgentTests
 
 		[Test, Order(23)]
 		public async Task Transit_CreateEncryptionKey_ValidateAllTypes() {
-			await Transit_Init();
 			string keyStr = "";
 			string key = "";
 
@@ -182,9 +174,8 @@ namespace VaultAgentTests
 		// Validates that trying to create an encryption key with a setting of KeyDerivation enabled for a 
 		// key type that does not support Convergent or key Derivation encryption.  
 		public async Task Transit_CreateEncryptionKey_ErrorsOnInvalidKeyTypeKeyDerivationSetting() {
-			await Transit_Init();
-			string keyStr = "";
 			string key = "";
+			string keyStr = "";
 
 			for (int i = 3; i < 6; i++) {
 				switch (i) {
@@ -537,13 +528,13 @@ namespace VaultAgentTests
 		[Test, Order(400)]
 		// Test key deletion for a key that does not exist.  Should throw an exception.
 		public async Task Transit_DeleteKey_BadKeyValue_ThrowsException() {
-			await Transit_Init();
+//			await Transit_Init();
 			randomKeyNum++;
 			string key = keyPrefix + randomKeyNum.ToString();
 
 			// We don't create it however, so it will fail.
 			// Delete the key.
-			Assert.That(() => TB.DeleteKey(key),
+			Assert.That(() =>  TB.DeleteKey(key),
 				Throws.Exception
 					.TypeOf<VaultInvalidDataException>()
 					.With.Property("Message")
@@ -643,7 +634,6 @@ namespace VaultAgentTests
 		// Validates that Bulk encryption, decryption and re-encryption works for Key Derivation encryption keys that need contexts.
 		public async Task Transit_BulkEncryptionDecryptionContextual_Works() {
 			// Create key, validate the version and then encrypt some data with that key.
-			await Transit_Init();
 			randomKeyNum++;
 			string key = keyPrefix + randomKeyNum.ToString();
 
@@ -834,7 +824,6 @@ namespace VaultAgentTests
 		// Test that we get an error when trying to backup a key that cannot be backed up.
 		public async Task Transit_BackupKey_FailsWhenNotEnabledForBackup_ThrowsError() {
 			// Cannot use the Transit_InitWithKey function.  It sets Backup to true and once set that value cannot be changed.
-			await Transit_Init();
 			randomKeyNum++;
 			string key = keyPrefix + randomKeyNum.ToString();
 
@@ -856,7 +845,6 @@ namespace VaultAgentTests
 		// Test that we get an error when trying to backup a key that cannot be backed up.
 		public async Task Transit_BackupKey_FailsWhenNotExportable_ThrowsError() {
 			// Cannot use the Transit_InitWithKey function.  It sets Backup to true and once set that value cannot be changed.
-			await Transit_Init();
 			randomKeyNum++;
 			string key = keyPrefix + randomKeyNum.ToString();
 
@@ -967,8 +955,6 @@ namespace VaultAgentTests
 		[Test, Order (2102)]
 		// Generate random bytes.  Bytes are base64 encoded and then decoded before we receive.  We get straight bytes.
 		public async Task Transit_GenerateRandomBytes_Base64() {
-			await Transit_Init();
-
 			string value = await TB.GenerateRandomBytes(10);
 			Assert.AreEqual(10, value.Length);
 		}
@@ -977,8 +963,6 @@ namespace VaultAgentTests
 		[Test, Order(2102)]
 		// Generate random bytes.  string should be hexidecimal
 		public async Task Transit_GenerateRandomBytes_Hex() {
-			await Transit_Init();
-
 			string value = await TB.GenerateRandomBytes(15,true);
 			Assert.AreNotEqual("", value);
 		}
@@ -989,8 +973,6 @@ namespace VaultAgentTests
 		[Test, Order(2103)]
 		// Compute the hash of a string.  
 		public async Task Transit_ComputeHash_Base64() {
-			await Transit_Init();
-			 
 			string value = await TB.ComputeHash("abcdefXYZ12",EnumHashAlgorithm.sha2_512);
 			Assert.AreNotEqual("", value);
 		}
@@ -1000,14 +982,9 @@ namespace VaultAgentTests
 		[Test, Order(2103)]
 		// Generate random bytes.  string should be hexidecimal
 		public async Task Transit_ComputeHash_Hex() {
-			await Transit_Init();
-
 			string value = await TB.ComputeHash("abcdefXYZ",VaultAgent.Backends.Transit.EnumHashAlgorithm.sha2_384,true);
 			Assert.AreNotEqual("", value);
 		}
-
-
-
 
 	}
 }

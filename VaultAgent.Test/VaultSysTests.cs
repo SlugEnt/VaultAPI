@@ -11,6 +11,7 @@ using System.Diagnostics;
 
 namespace VaultAgentTests
 {
+	[Parallelizable]
     public class VaultSysTests
     {
 		// Used for testing so we do not need to create the backend everytime.
@@ -18,7 +19,7 @@ namespace VaultAgentTests
 		Object vsbLocker = new Object();
 
 
-
+		[OneTimeSetUp]
 		public void SystemTestInit() {
 			if (vsb == null) {
 				lock(vsbLocker) {
@@ -170,8 +171,6 @@ namespace VaultAgentTests
 
 		[Test, Order(2001)]
 		public async Task SystemBE_CanCreateAPolicy_WithSingleVaultPolicyItem () {
-			SystemTestInit();
-
 			// Create a Vault Policy Path Item
 			VaultPolicyPath vpi = new VaultPolicyPath("secret/TestA");
 			vpi.DeleteAllowed = true;
@@ -186,10 +185,7 @@ namespace VaultAgentTests
 
 		[Test, Order(2001)]
 		public async Task SystemBE_CanCreateAPolicy_WithMultipleVaultPolicyItems() {
-			SystemTestInit();
-
 			// Create multiple Vault Policy Path Items
-
 			VaultPolicyPath vpi1 = new VaultPolicyPath("secret/TestA");
 			vpi1.DeleteAllowed = true;
 			vpi1.ReadAllowed = true;
@@ -222,8 +218,6 @@ namespace VaultAgentTests
 
 		[Test, Order(15)]
 		public async Task SystemBE_Policy_CanReadSinglePathPolicy () {
-			SystemTestInit();
-
 			VaultPolicy VP = new VaultPolicy("Test2000A");
 
 			VaultPolicyPath vpi3 = new VaultPolicyPath("secret/Test2000A");
@@ -252,8 +246,6 @@ namespace VaultAgentTests
 		[Test, Order(15)]
 		// Can read a policy that has multiple paths attached to it.
 		public async Task SystemBE_Policy_CanReadMultiplePathPolicy() {
-			SystemTestInit();
-
 			// Create a Vault Policy Item and add the policy paths.
 			VaultPolicy VP = new VaultPolicy("Test2000B");
 
@@ -317,8 +309,6 @@ namespace VaultAgentTests
 
 		[Test, Order(15)]
 		public async Task SystemBE_Policy_ListReturnsPolicies () {
-			SystemTestInit();
-
 			// Ensure there is at least one policy saved.
 			VaultPolicy VP = new VaultPolicy("listPolicyA");
 			VaultPolicyPath vpi = new VaultPolicyPath("secret/listpol2000A");
@@ -338,8 +328,6 @@ namespace VaultAgentTests
 		[Test, Order(15)]
 		// Providing a valid policy name results in returning true.
 		public async Task SystemBE_Policy_CanDelete_ValidPolicyName () {
-			SystemTestInit();
-
 			// Create a policy to delete
 			VaultPolicy VP = new VaultPolicy("deletePolicyA");
 			VaultPolicyPath vpi = new VaultPolicyPath("secret/Test2000A");
@@ -358,8 +346,6 @@ namespace VaultAgentTests
 		[Test, Order(15)]
 		// Providing an invalid policy name returns false.
 		public async Task SystemBE_Policy_Delete_InvalidPolicyName_ReturnsTrue () {
-			SystemTestInit();
-
 			Assert.True(await vsb.SysPoliciesACLDelete("invalidName"));
 		}
 		#endregion
@@ -454,7 +440,7 @@ namespace VaultAgentTests
 		[TestCase(EnumAuthMethods.Kubernetes, "kubernetes")]
 		[TestCase(EnumAuthMethods.LDAP, "ldap")]
 		[TestCase(EnumAuthMethods.Okta, "okta")]
-//		[TestCase(EnumAuthMethods.Radius, "radius")]
+		[TestCase(EnumAuthMethods.Radius, "radius")]
 		[TestCase(EnumAuthMethods.TLSCertificates, "cert")]
 		[TestCase(EnumAuthMethods.UsernamePassword, "userpass")]
 		public void SystemBE_AuthMethod_ConstructViaString (EnumAuthMethods i,string val) {
@@ -472,7 +458,7 @@ namespace VaultAgentTests
 		[TestCase(EnumAuthMethods.Kubernetes, "kubernetes")]
 		[TestCase(EnumAuthMethods.LDAP, "ldap")]
 		[TestCase(EnumAuthMethods.Okta, "okta")]
-	//	[TestCase(EnumAuthMethods.Radius, "radius")]
+		[TestCase(EnumAuthMethods.Radius, "radius")]
 		[TestCase(EnumAuthMethods.TLSCertificates, "cert")]
 		[TestCase(EnumAuthMethods.UsernamePassword, "userpass")]
 		public void SystemBE_AuthMethod_ConstructViaEnum (EnumAuthMethods i, string val) {
@@ -486,7 +472,7 @@ namespace VaultAgentTests
 		[Test, Order(0)]
 		[TestCase(EnumAuthMethods.LDAP)]
 		[TestCase(EnumAuthMethods.Okta)]
-		//[TestCase(EnumAuthMethods.Radius, "radius")]
+		[TestCase(EnumAuthMethods.Radius, "radius")]
 		[TestCase(EnumAuthMethods.TLSCertificates)]
 		[TestCase(EnumAuthMethods.UsernamePassword)]
 		[TestCase(EnumAuthMethods.AppRole)]
@@ -498,7 +484,6 @@ namespace VaultAgentTests
 		// Test that we can enable an authentication method with the provided name and no config options.  We test all possible authentication methods.
 		//public async Task SystemBE_Auth_Enable_NoConfigOptions_Works([Range((int)EnumAuthMethods.AppRole, (int)EnumAuthMethods.Token)] EnumAuthMethods auth) {
 		public async Task SystemBE_Auth_Enable_NoConfigOptions_Works (EnumAuthMethods auth) {
-			SystemTestInit();
 			string a = Guid.NewGuid().ToString();
 			string c = a.Substring(0, 5);
 			string sPath = c + (int)auth;
@@ -513,8 +498,6 @@ namespace VaultAgentTests
 
 		[Test,Order(110)]
 		public async Task SystemBE_Auth_Enable_ConfigOptions () {
-			SystemTestInit();
-
 			AuthMethod am = new AuthMethod("TST2110A",EnumAuthMethods.AppRole);
 			am.Config.DefaultLeaseTTL = "120";
 			am.Config.MaxLeaseTTL = "240";
@@ -538,8 +521,6 @@ namespace VaultAgentTests
 
 		[Test,Order(9)]
 		public async Task SystemBE_Auth_EnableDisableValidated () {
-			SystemTestInit();
-
 			string name = "TST2BZZ3";
 			AuthMethod am = new AuthMethod(name,EnumAuthMethods.AppRole);
 			string path = am.Path;

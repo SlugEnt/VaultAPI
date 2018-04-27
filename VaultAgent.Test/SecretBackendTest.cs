@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace VaultAgentTests
 {
+	[Parallelizable]
     public class SecretBackendTest
     {
 		// The Vault Transit Backend we will be using throughout our testing.
@@ -28,7 +29,7 @@ namespace VaultAgentTests
 		string secretPrefix = "Test/ZYAB";
 
 
-
+		[OneTimeSetUp]
 		public async Task Secret_Init() {
 			if (SB != null) {
 				return;
@@ -52,8 +53,6 @@ namespace VaultAgentTests
 
 
 		public async Task<string> Secret_Init_Create(Secret val) {
-			await Secret_Init();
-
 			randomSecretNum++;
 			string secretName = secretPrefix + randomSecretNum.ToString();
 
@@ -66,20 +65,9 @@ namespace VaultAgentTests
 		
 
 
-
-		[Test, Order(1)]
-		public async Task Secret_CreateAndMountCustomSecretBackend() {
-			await Secret_Init();
-		}
-
-
-
-
 		// Simple Secret Creation Test.
 		[Test, Order(100)]
 		public async Task Secret_CreateSecret () {
-			await Secret_Init();
-
 			Secret A = new Secret();
 
 			string secretName = "Test/A/mysecret";
@@ -95,8 +83,6 @@ namespace VaultAgentTests
 		// Create an Empty Secret, from a Secret object.  Has no attributes
 		[Test, Order(100)]
 		public async Task Secret_CreateSecret_FromSecretObject_ReturnsTrue() {
-			await Secret_Init();
-
 			Secret A = new Secret();
 
 			string secretName = "Test/B/mysecret";
@@ -110,7 +96,6 @@ namespace VaultAgentTests
 		// Create an Empty Secret from just a secret name.
 		[Test, Order(100)]
 		public async Task Secret_CreateSecret_FromJustSecretName_ReturnsTrue() {
-			await Secret_Init();		
 			string secretName = "Test/C/mysecret";
 			Assert.True(await SB.CreateOrUpdateSecretAndReturn(secretName));
 		}
@@ -120,8 +105,6 @@ namespace VaultAgentTests
 		// Create an empty secret with just the secret name.
 		[Test, Order(100)]
 		public async Task Secret_CreateSecret_FromJustSecretName_ReturnsSecretObject () {
-			await Secret_Init();
-
 			String secretName = "Test/D/myothersec";
 			Secret B = await SB.CreateOrUpdateSecret(secretName);
 			Assert.NotNull(B);
@@ -134,8 +117,6 @@ namespace VaultAgentTests
 		// Create an empty secret from a Secret Object, returning a secret.
 		[Test, Order(100)]
 		public async Task Secret_CreateSecret_FromSecretObject_ReturnsSecretObject() {
-			await Secret_Init();
-
 			String secretName = "Test/E/myothersec";
 			Secret A = new Secret(secretName);
 			Secret B = await SB.CreateOrUpdateSecret(A);
@@ -148,8 +129,6 @@ namespace VaultAgentTests
 
 		[Test, Order (100)]
 		public async Task Secret_CreateSecret_Success () {
-			await Secret_Init();
-
 			String secretName = "Test/F/bkbk";
 			Secret A = new Secret(secretName);
 
@@ -170,8 +149,6 @@ namespace VaultAgentTests
 		// Tests if Create Secret returns null if the secret already exists.  Prevents overwriting it.
 		[Test, Order(100)]
 		public async Task Secret_CreateSecret_ExistingSecret_ReturnsNull () {
-			await Secret_Init();
-
 			String secretName = "Test/F/hhyhyk";
 			Secret A = new Secret(secretName);
 
@@ -194,8 +171,6 @@ namespace VaultAgentTests
 		// Read a secret that does not exist.  Should return null.
 		[Test,Order(200)]
 		public async Task Secret_ReadSecret_SecretDoesNotExist_ReturnsNull () {
-			await Secret_Init();
-
 			Assert.Null(await SB.ReadSecret(Guid.NewGuid().ToString()));
 		}
 
@@ -244,8 +219,6 @@ namespace VaultAgentTests
 		// IfExists should return false when no secret exists.
 		[Test, Order(250)]
 		public async Task Secret_IfExists_IfNoSecret_ShouldReturnFalse () {
-			await Secret_Init();
-
 			string secret = Guid.NewGuid().ToString();
 			Secret A = new Secret(secret);
 
@@ -272,10 +245,7 @@ namespace VaultAgentTests
 		// IfExists should return false when no secret exists.
 		[Test, Order(250)]
 		public async Task Secret_IfExists_IfNoSecretSecretPath_ShouldReturnFalse() {
-			await Secret_Init();
-
 			string secret = Guid.NewGuid().ToString();
-
 			Assert.False(await SB.IfExists(secret));
 		}
 
@@ -311,8 +281,6 @@ namespace VaultAgentTests
 		// List sub secrets.
 		[Test, Order(300)]
 		public async Task Secret_ListSecrets_WithSubSecrets_Success() {
-			await Secret_Init();
-
 			// Create a generic seceret object.
 			Secret z = new Secret();
 			try {
@@ -339,8 +307,6 @@ namespace VaultAgentTests
 		// Same as prior test.  Only we pass a Secret object instead of a secret Path.
 		[Test, Order(300)]
 		public async Task Secret_ListSecrets_WithSubSecretsPassingSecretObject_Success() {
-			await Secret_Init();
-
 			// Create a generic seceret object.
 			Secret z = new Secret();
 			try {
@@ -367,8 +333,6 @@ namespace VaultAgentTests
 		// List secrets that have multiple sub secrets.
 		[Test, Order(300)]
 		public async Task Secret_ListSecrets_WithSubSubSecrets_Success () {
-			await Secret_Init();
-
 			// Create a generic seceret object.
 			Secret z = new Secret();
 			Secret y = new Secret();

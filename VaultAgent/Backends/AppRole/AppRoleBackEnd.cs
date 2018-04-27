@@ -85,8 +85,12 @@ namespace VaultAgent.Backends.AppRole
 			string path = vaultAppRolePath + "/" + appRoleName;
 
 			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "ReadAppRole");
-			AppRole ART = vdro.GetVaultTypedObject<AppRole>();
-			return ART;
+			if (vdro.Success) {
+				AppRole ART = vdro.GetVaultTypedObject<AppRole>();
+				ART.Name = appRoleName;
+				return ART;
+			}
+			return null;
 		}
 
 

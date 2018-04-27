@@ -11,15 +11,30 @@ namespace VaultAgent.Backends.AppRole
 {
 	public class AppRole
 	{
+		private string _name;
+
+
+		/// <summary>
+		/// Creates an AppRole object with the specified name.  Number of uses is set to unlimited.
+		/// </summary>
+		/// <param name="name">Name to be given to the App Role.  It will be converted to Lower Case, since Vault only deals with lower case.</param>
 		public AppRole (string name) {
-			Name = name;
+			_name = name.ToLower();
 			IsSecretIDRequiredOnLogin = true;
 			NumberOfUses = 0;
 			SecretNumberOfUses = 0;
 		}
 
+
+		[JsonConstructor]
+		private AppRole () { }
+
+
 		[JsonProperty("role_name")]
-		public string Name { get; set; }
+		public string Name {
+			get { return _name; }
+			set { _name = value.ToLower(); }
+		}
 
 		[JsonProperty("bind_secret_id")]
 		public bool IsSecretIDRequiredOnLogin { get; set; }

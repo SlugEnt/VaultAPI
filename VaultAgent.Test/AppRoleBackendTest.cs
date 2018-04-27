@@ -9,6 +9,7 @@ using VaultAgent.Backends.System;
 
 namespace VaultAgentTests
 {
+	[Parallelizable]
     public class AppRoleBackendTest
     {
 		private AppRoleBackEnd _ARB;
@@ -18,7 +19,7 @@ namespace VaultAgentTests
 
 
 
-		[SetUp]
+		[OneTimeSetUp]
 		public async Task AppRoleBackendSetup () {
 			// Ensure we have an authentication method of AppRole enabled on the Vault.
 			SysBackend VSB = new SysBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
@@ -28,34 +29,65 @@ namespace VaultAgentTests
 		}
 
 
-
+		[SetUp]
 		// Ensure Backend is initialized during each test.
 		protected void AppBackendTestInit() {
-			if (_ARB == null) {
-				roleName = "roleABC";
-				lock (_arLocker) {
-					_ARB = new AppRoleBackEnd(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken,_authBEName);
+			lock (_arLocker) {
+				if (_ARB == null) {
+					roleName = "roleABC";
+					_ARB = new AppRoleBackEnd(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, _authBEName);
 				}
 			}
 		}
 
+		[Test,Order(100)]
+		public void AppRoleBE_AppRole_NameIsLowerCase() {
+			string name = "GGGttRR";
+			AppRole ar = new AppRole(name);
+			Assert.AreEqual(name.ToLower(), ar.Name);
+		}
+
+
+
+		[Test, Order(100)]
+		public void AppRoleBE_AppRole_PropertyNameIsLowerCase() {
+			string name = "GGGttRR";
+			AppRole ar = new AppRole("abc");
+			ar.Name = name;
+			Assert.AreEqual(name.ToLower(), ar.Name);
+		}
+
+
 
 		[Test,Order(1000)]
 		public async Task AppRoleBE_CreateRole () {
-			AppBackendTestInit();
-			AppRole ar = new AppRole(roleName); 
+			string rName = "hhFFG";
+			AppRole ar = new AppRole(rName); 
 			Assert.True(await _ARB.CreateRole(ar));
 		}
+
+
+
+		// Validate we can read a role back and its name is lowercase and set.
+		[Test,Order(1000)]
+		public async Task AppRoleBE_ReadRole () {
+			string rName = "uutts5";
+			AppRole ar = new AppRole(rName);
+			Assert.True(await _ARB.CreateRole(ar));
+
+			AppRole arReturn = await (_ARB.ReadAppRole(rName));
+			Assert.NotNull(arReturn);
+			Assert.AreEqual(rName, arReturn.Name);
+		}
+
 
 
 
 		[Test,Order(1000)]
 		public async Task AppRoleBE_DeleteRoleThatExists () {
-			AppBackendTestInit();
 			string rName = "roleZYX";
 			AppRole ar = new AppRole(rName);
 			Assert.True(await _ARB.CreateRole(ar));
-
 
 			// Delete it.
 			Assert.True(await _ARB.DeleteAppRole(ar));
@@ -65,11 +97,34 @@ namespace VaultAgentTests
 
 		[Test, Order(1000)]
 		public async Task AppRoleBE_DeleteRoleThatDoesNotExist_ReturnsTrue () {
-			AppBackendTestInit();
 			string rName = "rolezzzzz";
 			Assert.True(await _ARB.DeleteAppRole(rName));
 		}
 
+
+
+		[Test, Order(1000)]
+		public async Task AppRoleBE_CreateRoleThatAlreadyExists () {
+			string rName = "gg443";
+			AppRole ar = new AppRole(rName) {
+				NumberOfUses = 100
+			};
+			Assert.True(await _ARB.CreateRole(ar));
+
+			// Read the role back
+			AppRole ar2 = await (_ARB.ReadAppRole(rName));
+			Assert.AreEqual(100, ar2.NumberOfUses);
+
+			// Change value - and recreate
+			ar2.NumberOfUses = 200;
+			Assert.True(await _ARB.CreateRole(ar2));
+
+			// Read the role back
+			AppRole ar3 = await (_ARB.ReadAppRole(rName));
+			Assert.AreEqual(ar.Name, ar3.Name);
+			Assert.AreEqual(200, ar3.NumberOfUses);
+			Assert.AreEqual((ar.NumberOfUses + 100), ar3.NumberOfUses);
+		}
 
 
 
@@ -77,7 +132,6 @@ namespace VaultAgentTests
 		// Delete, List - Confirm its gone.
 		[Test,Order(1100)]
 		public async Task AppRoleBE_CreateListDeleteList_CycleValidated () {
-			AppBackendTestInit();
 			string rName = "roleCycle";
 			AppRole ar = new AppRole(rName);
 			Assert.True(await _ARB.CreateRole(ar));
@@ -97,10 +151,11 @@ namespace VaultAgentTests
 
 
 
+
 		[Test, Order(1000)]
 		public async Task AppRoleBE_GetRoleID () {
 			string rName = "jk45";
-			AppBackendTestInit();
+
 			AppRole ar = new AppRole(rName);
 			Assert.True(await _ARB.CreateRole(ar));
 
