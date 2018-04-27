@@ -107,7 +107,7 @@ namespace VaultAgent.Backends.AppRole
 		/// Deletes the AppRole with the given name.
 		/// </summary>
 		/// <param name="appRoleName">AppRole name that should be deleted.</param>
-		/// <returns>Bool:  True if deleted.  False otherwise.</returns>
+		/// <returns>Bool:  True if deleted OR did not exist.  False otherwise.</returns>
 		public async Task<bool> DeleteAppRole (string appRoleName) {
 			// The rolename forms the last part of the path
 			string path = vaultAppRolePath + "/" + appRoleName;
