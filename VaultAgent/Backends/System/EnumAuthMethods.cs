@@ -17,7 +17,7 @@ namespace VaultAgent.Backends.System
 		GitHub = 4,
 		LDAP = 5,
 		Okta = 6,
-		Radius = 7,
+		//Radius = 7,
 		TLSCertificates = 7,
 		UsernamePassword = 8,
 		Token = 9 //,

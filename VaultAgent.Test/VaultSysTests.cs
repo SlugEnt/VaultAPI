@@ -440,7 +440,7 @@ namespace VaultAgentTests
 		[TestCase(EnumAuthMethods.Kubernetes, "kubernetes")]
 		[TestCase(EnumAuthMethods.LDAP, "ldap")]
 		[TestCase(EnumAuthMethods.Okta, "okta")]
-		[TestCase(EnumAuthMethods.Radius, "radius")]
+		//[TestCase(EnumAuthMethods.Radius, "radius")]
 		[TestCase(EnumAuthMethods.TLSCertificates, "cert")]
 		[TestCase(EnumAuthMethods.UsernamePassword, "userpass")]
 		public void SystemBE_AuthMethod_ConstructViaString (EnumAuthMethods i,string val) {
@@ -458,7 +458,7 @@ namespace VaultAgentTests
 		[TestCase(EnumAuthMethods.Kubernetes, "kubernetes")]
 		[TestCase(EnumAuthMethods.LDAP, "ldap")]
 		[TestCase(EnumAuthMethods.Okta, "okta")]
-		[TestCase(EnumAuthMethods.Radius, "radius")]
+		//[TestCase(EnumAuthMethods.Radius, "radius")]
 		[TestCase(EnumAuthMethods.TLSCertificates, "cert")]
 		[TestCase(EnumAuthMethods.UsernamePassword, "userpass")]
 		public void SystemBE_AuthMethod_ConstructViaEnum (EnumAuthMethods i, string val) {
@@ -472,11 +472,12 @@ namespace VaultAgentTests
 		[Test, Order(0)]
 		[TestCase(EnumAuthMethods.LDAP)]
 		[TestCase(EnumAuthMethods.Okta)]
-		[TestCase(EnumAuthMethods.Radius, "radius")]
+		//[TestCase(EnumAuthMethods.Radius)]
 		[TestCase(EnumAuthMethods.TLSCertificates)]
 		[TestCase(EnumAuthMethods.UsernamePassword)]
 		[TestCase(EnumAuthMethods.AppRole)]
-		[TestCase(EnumAuthMethods.Token)]
+		// Token can no longer be instantiated.  It is an automatic entry.
+		//[TestCase(EnumAuthMethods.Token)]
 		[TestCase(EnumAuthMethods.AWS)]
 		[TestCase(EnumAuthMethods.GoogleCloud)]
 		[TestCase(EnumAuthMethods.GitHub)]

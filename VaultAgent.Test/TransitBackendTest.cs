@@ -499,7 +499,12 @@ namespace VaultAgentTests
 			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256);
 
 			// Delete Key
-			Assert.AreEqual(false, await TB.DeleteKey(key));
+			Assert.That(() => TB.DeleteKey(key),
+				Throws.Exception
+					.TypeOf<VaultInvalidDataException>()
+					.With.Property("Message")
+					.Contains("deletion is not allowed for this key"));
+
 		}
 
 
@@ -538,7 +543,7 @@ namespace VaultAgentTests
 				Throws.Exception
 					.TypeOf<VaultInvalidDataException>()
 					.With.Property("Message")
-					.Contains("could not delete policy; not found"));
+					.Contains("could not delete key; not found"));
 		}
 
 

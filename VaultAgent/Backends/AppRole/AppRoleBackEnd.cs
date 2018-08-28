@@ -4,10 +4,14 @@ using System.Text;
 using System.Threading.Tasks;
 using VaultAgent.Models;
 using Newtonsoft.Json;
-
+using VaultAgent.Models;
 
 namespace VaultAgent.Backends.AppRole
 {
+	/// <summary>
+	/// The AppRoleBackEnd represents the Vault AppRole backend authentication engine and all the service endpoints it exposes
+	/// for the creation, updating, reading and deletion of AppRole's
+	/// </summary>
 	public class AppRoleBackEnd
 	{
 		TokenInfo backendToken;
@@ -33,7 +37,12 @@ namespace VaultAgent.Backends.AppRole
 
 
 
-
+		/// <summary>
+		/// Sends the AppRole C# object onto Vault to be created.
+		/// Returns True on Success.
+		/// </summary>
+		/// <param name="art"></param>
+		/// <returns></returns>
 		public async Task<bool> CreateRole (AppRole art) {
 			string path = vaultAppRolePath + "/" + art.Name;
 			string json = JsonConvert.SerializeObject(art);
@@ -139,6 +148,11 @@ namespace VaultAgent.Backends.AppRole
 
 
 
+		/// <summary>
+		/// Retrieves the AppRoleID of the given AppRole.
+		/// </summary>
+		/// <param name="appRoleName"></param>
+		/// <returns></returns>
 		public async Task<string> GetRoleID (string appRoleName) {
 			// The rolename forms the last part of the path
 			string path = vaultAppRolePath + "/" + appRoleName + "/role-id";
@@ -149,6 +163,65 @@ namespace VaultAgent.Backends.AppRole
 				return  vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "role_id");
 			}
 			else { return ""; }
+		}
+
+
+
+		/// <summary>
+		/// Updates the AppRoleID of the given AppRole to the value specified.
+		/// </summary>
+		/// <param name="appRoleName"></param>
+		/// <param name="valueOfRoleID"></param>
+		/// <returns></returns>
+		public async Task<bool> UpdateAppRoleID (string appRoleName, string valueOfRoleID) {
+			// The keyname forms the last part of the path
+			string path = vaultAppRolePath +"/" + appRoleName + "/role-id";
+
+			Dictionary<string, string> contentParams = new Dictionary<string, string>() {
+				{ "role_id", valueOfRoleID }
+			};
+
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "UpdateAppRoleID", contentParams);
+			if (vdro.httpStatusCode == 204) { return true; }
+			else { return false; }
+		}
+
+
+
+		/// <summary>
+		/// Generates and issues a new SecretID on an existing AppRole. 
+		/// Similar to tokens, the response will also contain a secret_id_accessor value which can be used to read the properties of the SecretID 
+		/// without divulging the SecretID itself, and also to delete the SecretID from the AppRole.
+		/// </summary>
+		/// <param name="appRoleName">Name of the AppRole to create a secret for.</param>
+		/// <param name="metadata">Metadata to be tied to the SecretID. This should be a JSON-formatted string containing the metadata in key-value pairs. 
+		/// This metadata will be set on tokens issued with this SecretID, and is logged in audit logs in plaintext.</param>
+		/// <param name="cidrIPsAllowed">Comma separated string or list of CIDR blocks enforcing secret IDs to be used from specific set of IP addresses. 
+		/// If bound_cidr_list is set on the role, then the list of CIDR blocks listed here should be a subset of the CIDR blocks listed on the role.</param>
+		/// <returns></returns>
+		public async Task<AppRoleSecret> CreateSecretID (string appRoleName, Dictionary<string,string> metadata = null, List<string> cidrIPsAllowed = null) {
+			// The keyname forms the last part of the path
+			string path = vaultAppRolePath + "/" + appRoleName + "/secret-id";
+
+			Dictionary<string, string> contentParams = new Dictionary<string, string>();
+			if (metadata != null) {
+				string metadataString = JsonConvert.SerializeObject(metadata);
+				contentParams.Add("metadata", metadataString);
+			}
+			
+
+
+			if (cidrIPsAllowed != null) {
+				string cidrs = JsonConvert.SerializeObject(cidrIPsAllowed);
+				contentParams.Add("cidr_list", cidrs); }
+
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "CreateSecretID", contentParams);
+			if (vdro.Success) {
+				return vdro.GetVaultTypedObject<AppRoleSecret>();
+			}
+			else { return null; }
+
+
 		}
 	}
 }

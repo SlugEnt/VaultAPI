@@ -95,6 +95,7 @@
     <Compile Include="Backends\Transit\Models\TransitEncryptionResultsBulk.cs" />
     <Compile Include="Backends\Transit\TransitBackend.cs" />
     <Compile Include="Backends\Transit\Models\TransitBulkItemToEncrypt.cs" />
+    <Compile Include="Backends\AppRole\AppRoleSecret.cs" />
     <Compile Include="Models\TokenInfo.cs" />
     <Compile Include="Backends\Transit\Models\TransitKeyInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

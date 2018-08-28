@@ -443,6 +443,7 @@ namespace VaultAgentTests
 		[Test,Order(800)]
 		public bool Secret_DeleteSecret_ShouldFailIfNoPermission () {
 			throw new NotImplementedException();
+			return false;
 		}
 
 
