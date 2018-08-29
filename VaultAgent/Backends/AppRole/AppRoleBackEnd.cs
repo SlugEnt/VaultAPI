@@ -41,8 +41,9 @@ namespace VaultAgent.Backends.AppRole
 		/// Sends the AppRole C# object onto Vault to be created.
 		/// Returns True on Success.
 		/// </summary>
-		/// <param name="art"></param>
-		/// <returns></returns>
+		/// <param name="art" >The AppRole Object that you wish to be created in Vault.</param>
+		/// <returns>True if successful.</returns>
+		/// <see cref="AppRole"/>
 		public async Task<bool> CreateRole (AppRole art) {
 			string path = vaultAppRolePath + "/" + art.Name;
 			string json = JsonConvert.SerializeObject(art);
@@ -61,7 +62,7 @@ namespace VaultAgent.Backends.AppRole
 		/// <summary>
 		/// Lists all Application Roles.
 		/// </summary>
-		/// <returns>List[string] of role names.</string></returns>
+		/// <returns>List[string] of role names.  Empty list if no roles found.</string></returns>
 		public async Task<List<string>> ListRoles () {
 			try {
 				// Setup List Parameter
@@ -152,7 +153,7 @@ namespace VaultAgent.Backends.AppRole
 		/// Retrieves the AppRoleID of the given AppRole.
 		/// </summary>
 		/// <param name="appRoleName"></param>
-		/// <returns></returns>
+		/// <returns>Returns a string representing the Role ID as stored in Vault.</returns>
 		public async Task<string> GetRoleID (string appRoleName) {
 			// The rolename forms the last part of the path
 			string path = vaultAppRolePath + "/" + appRoleName + "/role-id";
@@ -172,7 +173,7 @@ namespace VaultAgent.Backends.AppRole
 		/// </summary>
 		/// <param name="appRoleName"></param>
 		/// <param name="valueOfRoleID"></param>
-		/// <returns></returns>
+		/// <returns>True if update of RoleID was successful.</returns>
 		public async Task<bool> UpdateAppRoleID (string appRoleName, string valueOfRoleID) {
 			// The keyname forms the last part of the path
 			string path = vaultAppRolePath +"/" + appRoleName + "/role-id";
@@ -198,7 +199,7 @@ namespace VaultAgent.Backends.AppRole
 		/// This metadata will be set on tokens issued with this SecretID, and is logged in audit logs in plaintext.</param>
 		/// <param name="cidrIPsAllowed">Comma separated string or list of CIDR blocks enforcing secret IDs to be used from specific set of IP addresses. 
 		/// If bound_cidr_list is set on the role, then the list of CIDR blocks listed here should be a subset of the CIDR blocks listed on the role.</param>
-		/// <returns></returns>
+		/// <returns>AppRoleSecret representing the a secret ID Vault returned.</returns>
 		public async Task<AppRoleSecret> CreateSecretID (string appRoleName, Dictionary<string,string> metadata = null, List<string> cidrIPsAllowed = null) {
 			// The keyname forms the last part of the path
 			string path = vaultAppRolePath + "/" + appRoleName + "/secret-id";
