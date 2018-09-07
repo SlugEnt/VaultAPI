@@ -73,6 +73,8 @@
   <ItemGroup>
     <Compile Include="Backends\AppRole\AppRoleBackEnd.cs" />
     <Compile Include="Backends\AppRole\AppRole.cs" />
+    <Compile Include="Backends\KV_V2\KeyValueV2.cs" />
+    <Compile Include="Backends\KV_V2\KV_V2_Settings.cs" />
     <Compile Include="Backends\Secret\Secret.cs" />
     <Compile Include="Backends\Secret\SecretBackend.cs" />
     <Compile Include="Backends\System\AuthConfig.cs" />
