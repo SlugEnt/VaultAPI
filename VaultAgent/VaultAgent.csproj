@@ -87,6 +87,7 @@
     <Compile Include="Backends\System\VaultPolicy.cs" />
     <Compile Include="Backends\System\VaultPolicyPath.cs" />
     <Compile Include="Backends\System\SysBackend.cs" />
+    <Compile Include="Backends\System\VaultSysMountConfig.cs" />
     <Compile Include="Backends\Transit\EnumHashAlgorithm.cs" />
     <Compile Include="Backends\Transit\EnumTransitKeyType.cs" />
     <Compile Include="Backends\JSONSingleOrArrayConverter.cs" />

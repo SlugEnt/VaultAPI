@@ -187,7 +187,16 @@ namespace VaultAgent.Backends.System
 
 		#region SysMounts
 		// ==============================================================================================================================================
-		public async Task<bool> SysMountEnable (string mountPath, string description, EnumBackendTypes bType) {
+
+		/// <summary>
+		/// Creates (Enables in Vault terminology) a new backend secrets engine with the given name, type and configuration settings.
+		/// </summary>
+		/// <param name="mountPath">The root path to this secrets engine that it will be mounted at.  Is a part of every URL to this backend.
+		/// <param name="description">Brief human friendly name for the mount.</param>
+		/// <param name="backendType">The type of secrets backend this mount is.  </param>
+		/// <param name="config">The configuration to be applied to this mount.</param>
+		/// <returns>Bool:  True if successful in creating the backend mount point.  False otherwise.</returns>
+		public async Task<bool> SysMountCreate (string mountPath, string description, EnumBackendTypes backendType, VaultSysMountConfig config = null) {
 			// The keyname forms the last part of the path
 			string path = vaultSysPath + pathMounts +  mountPath;
 
@@ -200,7 +209,7 @@ namespace VaultAgent.Backends.System
 
 			string typeName = "";
 
-			switch (bType) {
+			switch (backendType) {
 				case EnumBackendTypes.Transit:
 					typeName = "transit";		
 					break;
@@ -233,12 +242,18 @@ namespace VaultAgent.Backends.System
 			createParams.Add("description", description);
 			createParams.Add("options", options);
 
+			if (config != null) {
+				createParams.Add("config", config);
+			}
 
 
 			VaultDataResponseObject vdro = await vaultHTTP.PostAsync2(path, "SysMountEnable", createParams);
 			if (vdro.httpStatusCode == 204) { return true; }
 			else { return false; }
 		}
+
+
+
 
 		public List<string> SysMountListSecretEngines () {
 			// Build Path
@@ -248,26 +263,76 @@ namespace VaultAgent.Backends.System
 		}
 
 
-		public bool SysMountDisable(string mountPath) {
-			// Build Path
-			string path = vaultSysPath + pathMounts + mountPath;
 
-			throw new NotImplementedException("SysMountDisable Not implemented Yet");
+		/// <summary>
+		/// Deletes the backend Mount.
+		/// </summary>
+		/// <param name="Name">Name of the mount to delete.</param>
+		/// <returns>True if successful.  False otherwise.</returns>
+		public async Task<bool> SysMountDelete(string name) {
+			string path = vaultSysPath + pathMounts + name;
+
+			VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "SysMountDelete");
+			if (vdro.Success) { return true; }
+			return false;
 		}
 
 
-		public string SysMountReadConfig (string mountPath) {
+
+
+		/// <summary>
+		/// Reads the configuration for the given backend mount point.
+		/// </summary>
+		/// <param name="mountPath">The Name(path) of the backend to read the configuration for.</param>
+		/// <returns><see cref="VaultSysMountConfig"/>VaultSysMountConfig object containing the configuration settings.</returns>
+		public async Task<VaultSysMountConfig> SysMountReadConfig (string mountPath) {
 			// Build Path
 			string path = vaultSysPath + pathMounts + mountPath + "/tune";
 
-			throw new NotImplementedException("SysMountReadConfig Not implemented Yet");
-		}
-		public bool SysMountUpdateConfig(string mountPath) {
-			// Build Path
-			string path = vaultSysPath + pathMounts + mountPath + "/tune";
+			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "SysMountReadConfig");
+			if (vdro.Success) {
+				VaultSysMountConfig config = vdro.GetVaultTypedObject<VaultSysMountConfig>();
+				return config;
+			}
+			return null;
 
-			throw new NotImplementedException("SysMountUpdateConfig Not implemented Yet");
 		}
+
+
+
+
+		/// <summary>
+		/// Updates the configuration of a given system mount point.  If description is null then it will not be updated.
+		/// </summary>
+		/// <param name="Name">The name of the mount to update</param>
+		/// <param name="config"><see cref="VaultSysMountConfig"/>The backend's configuration changes</param>
+		/// <param name="description">If set, the description will be updated.  </param>
+		/// <returns>True if successfull.  False otherwise.</returns>
+		public async Task<bool> SysMountUpdateConfig(string Name, VaultSysMountConfig config, string description = null) {
+			string path = vaultSysPath + pathMounts + Name + "/tune";
+
+			Dictionary<string, string> content = new Dictionary<string, string> {
+				{ "default_lease_ttl", config.DefaultLeaseTTL },
+				{ "max_lease_ttl", config.MaxLeaseTTL },
+				{ "audit_non_hmac_request_keys", config.RequestKeysToNotAuditViaHMAC},
+				{ "audit_non_hmac_response_keys", config.ResponseKeysToNotAuditViaHMAC},
+				{ "listing_visibility", config.VisibilitySetting },
+				
+				{ "passthrough_request_headers", config.PassThruRequestHeaders }
+			};
+
+
+			if (description != null ) { content.Add("description", description); }
+
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "SysMountUpdateConfig", content);
+
+			if (vdro.httpStatusCode == 204) { return true; }
+			else { return false; }
+
+		}
+
+
+
 		#endregion
 
 		#region SysPolicies

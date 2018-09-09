@@ -40,7 +40,15 @@ namespace VaultAgentTests
 			secretBE_A = UK.GetKey("SV2");
 			string secretName = secretBE_A;
 			string desc = "KeyValue V2 DB: " + secretName + " backend.";
-			bool rc = await VSB.SysMountEnable(secretName, desc, EnumBackendTypes.KeyValueV2);
+
+			VaultSysMountConfig config = new VaultSysMountConfig {
+				DefaultLeaseTTL = "30m",
+				MaxLeaseTTL = "90m",
+				VisibilitySetting ="hidden"
+			};
+
+
+			bool rc = await VSB.SysMountCreate(secretName, desc, EnumBackendTypes.KeyValueV2,config);
 			Assert.AreEqual(true, rc);
 			AppBackendTestInit();
 			return;

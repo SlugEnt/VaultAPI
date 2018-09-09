@@ -48,7 +48,7 @@ namespace VaultAgentTests
 			// Create transitBE_A backend.
 			string transitName = transitBE_A;
 			string desc = "Transit DB: " + transitName + " backend.";
-			bool rc = await VSB.SysMountEnable(transitName, desc, EnumBackendTypes.Transit);
+			bool rc = await VSB.SysMountCreate(transitName, desc, EnumBackendTypes.Transit);
 			Assert.AreEqual(true, rc);
 
 			TB = new TransitBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, transitName);

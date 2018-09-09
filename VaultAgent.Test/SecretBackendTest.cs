@@ -42,7 +42,7 @@ namespace VaultAgentTests
 			// Create a custom Secret Backend.
 			string secretName = secretBE_A;
 			string desc = "Secret DB: " + secretName + " backend.";
-			bool rc = await VSB.SysMountEnable(secretName, desc, EnumBackendTypes.Secret);
+			bool rc = await VSB.SysMountCreate(secretName, desc, EnumBackendTypes.Secret);
 			Assert.AreEqual(true, rc);
 
 			SB = new SecretBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, secretName);
