@@ -279,6 +279,9 @@ namespace VaultAgentTests
 			
 	}
 
+
+
+	// Used to generate Unique Keys for Vault Tests.  Especially useful when using a single Vault instance that continuously runs.
 	public class UniqueKeys
 	{
 		private int keyIncrementer = 0;

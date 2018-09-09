@@ -193,7 +193,11 @@ namespace VaultAgent.Backends.System
 
 
 			// Build out the parameters dictionary.
-			Dictionary<string, string> createParams = new Dictionary<string, string>();
+			Dictionary<string, object> createParams = new Dictionary<string, object>();
+
+			// Build Options Dictionary
+			Dictionary<string, string> options = new Dictionary<string, string>();
+
 			string typeName = "";
 
 			switch (bType) {
@@ -218,16 +222,20 @@ namespace VaultAgent.Backends.System
 				case EnumBackendTypes.SSH:
 					typeName = "ssh";
 					throw new NotImplementedException();
-
+				case EnumBackendTypes.KeyValueV2:
+					// It is the same type as a version 1, but it has an additional config value.
+					typeName = "kv";
+					options.Add("version", "2");
+					break;
 			}
 
 			createParams.Add("type", typeName);
 			createParams.Add("description", description);
+			createParams.Add("options", options);
 
-			// AT this time WE ARE NOT SUPPORTING THE Config Options.
 
 
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "SysMountEnable", createParams);
+			VaultDataResponseObject vdro = await vaultHTTP.PostAsync2(path, "SysMountEnable", createParams);
 			if (vdro.httpStatusCode == 204) { return true; }
 			else { return false; }
 		}
