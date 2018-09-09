@@ -103,6 +103,10 @@ namespace VaultAgentTests
 
 		#region "CAS False Testing"
 
+		/// <summary>
+		/// Confirms that Backend Settings can be set for No CAS.
+		/// </summary>
+		/// <returns></returns>
 		[Test, Order(200)]
 		public async Task Validate_BackendSettings_CAS_NotSet() {
 			Assert.True(await SB.SetBackendConfiguration(8, false));
@@ -112,20 +116,23 @@ namespace VaultAgentTests
 		}
 
 
+
 		// Should be able to save a secret without having to set CAS flag.
 		[Test, Order(201)]
-		public async Task SaveSecret() {
+		public async Task SaveSecret_No_CAS_Required() {
 
 			string secName = UK.GetKey();
 			SecretV2 secretV2 = new SecretV2(secName);
 
-			secretV2.Attributes.Add("Test54", "44");
+			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("test54", "44" );
+
+			secretV2.Attributes.Add(kv1.Key,kv1.Value);
 			Assert.True(await SB.SaveSecret(secretV2));
 
 			// Read the Secret back to confirm the save.
 			SecretV2 s = await SB.ReadSecret(secretV2.Path);
 			Assert.True(s.Path == secretV2.Path);
-			Assert.Contains("Test54", s.Attributes);
+			Assert.Contains(kv1, s.Attributes);
 		}
 
 
@@ -133,18 +140,29 @@ namespace VaultAgentTests
 
 
 
+		/// <summary>
+		/// Can save a secret with multiple attributes.
+		/// </summary>
+		/// <returns></returns>
 		[Test,Order(301)]
-		public async Task ReadSecret () {
+		public async Task SaveReadSecret_MultipleAttributes () {
 			string secName = UK.GetKey();
 			SecretV2 secretV2 = new SecretV2(secName);
-			secretV2.Attributes.Add("Test", "44");
-			secretV2.Attributes.Add("ABC", "large");
-			secretV2.Attributes.Add("DEF", "No more trump");
+			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("A1", "aaaa1");
+			KeyValuePair<string, string> kv2 = new KeyValuePair<string, string>("B2", "bbbbb2");
+			KeyValuePair<string, string> kv3 = new KeyValuePair<string, string>("C3", "cccccc3");
+			secretV2.Attributes.Add(kv1.Key,kv1.Value);
+			secretV2.Attributes.Add(kv2.Key,kv2.Value);
+			secretV2.Attributes.Add(kv3.Key,kv3.Value);
+
 			Assert.True(await SB.SaveSecret(secretV2));
 
 
 			SecretV2 s = await SB.ReadSecret(secretV2.Path);
 			Assert.True(s.Path == secretV2.Path);
+			Assert.Contains(kv1, s.Attributes);
+			Assert.Contains(kv2, s.Attributes);
+			Assert.Contains(kv3, s.Attributes);
 		}
 	}
 }

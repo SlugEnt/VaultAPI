@@ -34,7 +34,7 @@ namespace VaultAgent.Backends.KV_V2
 		/// </summary>
 		[JsonProperty("data")]
 		public Dictionary<string, string> Attributes { get; set; }
-
+		
 
 		[JsonProperty("metadata")]
 		public Dictionary<string,string> Metadata { get; set; }
