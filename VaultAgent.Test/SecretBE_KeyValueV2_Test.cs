@@ -18,7 +18,7 @@ namespace VaultAgentTests
     {
 		// The Vault Transit Backend we will be using throughout our testing.
 
-		private KeyValueV2Backend SB;
+		private KV2Backend SB;
 		private SysBackend VSB;         // For system related calls we will use this Backend.
 		private string secretBE_A;       // Secret Backend database name. 
 
@@ -68,7 +68,7 @@ namespace VaultAgentTests
 		protected void AppBackendTestInit() {
 			lock (kv2_locker) {
 				if (SB == null) {
-					SB = new KeyValueV2Backend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, secretBE_A);
+					SB = new KV2Backend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, secretBE_A);
 				}
 			}
 		}
@@ -79,7 +79,7 @@ namespace VaultAgentTests
 		[Test, Order(100)]
 		public async Task Validate_BackendSettings_CAS_Set() {
 			Assert.True(await SB.SetBackendConfiguration(6, true));
-			KV_V2_Settings s = await SB.GetBackendConfiguration();
+			KV2BackendSettings s = await SB.GetBackendConfiguration();
 			Assert.AreEqual(true, s.CASRequired);
 			Assert.AreEqual(6, s.MaxVersions);
 		}
@@ -92,11 +92,11 @@ namespace VaultAgentTests
 		public async Task BackendWithCAS_FailsSecretSaveWithoutCasOptionSet () {
 			// Setup backend to allow 6 versions of a key and requires CAS.
 			Assert.True(await SB.SetBackendConfiguration(6, true));
-			KV_V2_Settings s = await SB.GetBackendConfiguration();
+			KV2BackendSettings s = await SB.GetBackendConfiguration();
 			Assert.AreEqual(true, s.CASRequired);
 
 			string secName = UK.GetKey();
-			SecretV2 secretV2 = new SecretV2(secName);
+			KV2Secret secretV2 = new KV2Secret(secName);
 
 			secretV2.Attributes.Add("Test54", "44");
 
@@ -117,13 +117,13 @@ namespace VaultAgentTests
 		public async Task BackendWithCAS_AllowsSaveOfNewSecretWithCASSet() {
 			// Setup backend to allow 6 versions of a key and requires CAS.
 			Assert.True(await SB.SetBackendConfiguration(6, true));
-			KV_V2_Settings s = await SB.GetBackendConfiguration();
+			KV2BackendSettings s = await SB.GetBackendConfiguration();
 			Assert.AreEqual(true, s.CASRequired);
 
 
 			// Generate a key.
 			string secName = UK.GetKey();
-			SecretV2 secretV2 = new SecretV2(secName);
+			KV2Secret secretV2 = new KV2Secret(secName);
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
 			secretV2.Attributes.Add(kv1.Key,kv1.Value);
 
@@ -133,7 +133,7 @@ namespace VaultAgentTests
 
 
 			// Read the Secret back to confirm the save.
-			SecretReadReturnObj s2 = await SB.ReadSecret(secretV2.Path);
+			KV2SecretWrapper s2 = await SB.ReadSecret(secretV2.Path);
 			Assert.True(secretV2.Path == s2.Data.SecretObj.Path);
 			Assert.Contains(kv1, s2.Data.SecretObj.Attributes);
 		}
@@ -148,13 +148,13 @@ namespace VaultAgentTests
 		public async Task BackendWithCAS_AllowsSaveofSecretWithNewVersion () {
 			// Setup backend to allow 6 versions of a key and requires CAS.
 			Assert.True(await SB.SetBackendConfiguration(6, true));
-			KV_V2_Settings s = await SB.GetBackendConfiguration();
+			KV2BackendSettings s = await SB.GetBackendConfiguration();
 			Assert.AreEqual(true, s.CASRequired);
 
 
 			// Generate a key.
 			string secName = UK.GetKey();
-			SecretV2 secretV2 = new SecretV2(secName);
+			KV2Secret secretV2 = new KV2Secret(secName);
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
 			secretV2.Attributes.Add(kv1.Key, kv1.Value);
 
@@ -166,7 +166,7 @@ namespace VaultAgentTests
 
 
 			// 2. Read the secret back and get the version
-			SecretReadReturnObj s2 = await SB.ReadSecret(secretV2.Path);
+			KV2SecretWrapper s2 = await SB.ReadSecret(secretV2.Path);
 			Assert.True(secretV2.Path == s2.Data.SecretObj.Path);
 			Assert.Contains(kv1, s2.Data.SecretObj.Attributes);
 			Assert.AreEqual(1, s2.Data.Metadata.Version);
@@ -186,13 +186,13 @@ namespace VaultAgentTests
 		public async Task BackendWithCAS_SaveSecretWithInvalidVersionNumFails() {
 			// Setup backend to allow 6 versions of a key and requires CAS.
 			Assert.True(await SB.SetBackendConfiguration(6, true));
-			KV_V2_Settings s = await SB.GetBackendConfiguration();
+			KV2BackendSettings s = await SB.GetBackendConfiguration();
 			Assert.AreEqual(true, s.CASRequired);
 
 
 			// Generate a key.
 			string secName = UK.GetKey();
-			SecretV2 secretV2 = new SecretV2(secName);
+			KV2Secret secretV2 = new KV2Secret(secName);
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
 			secretV2.Attributes.Add(kv1.Key, kv1.Value);
 
@@ -204,7 +204,7 @@ namespace VaultAgentTests
 
 
 			// 2. Read the secret back and get the version
-			SecretReadReturnObj s2 = await SB.ReadSecret(secretV2.Path);
+			KV2SecretWrapper s2 = await SB.ReadSecret(secretV2.Path);
 			Assert.True(secretV2.Path == s2.Data.SecretObj.Path);
 			Assert.Contains(kv1, s2.Data.SecretObj.Attributes);
 			Assert.AreEqual(1, s2.Data.Metadata.Version);
@@ -246,7 +246,7 @@ namespace VaultAgentTests
 		[Test, Order(200)]
 		public async Task Validate_BackendSettings_CAS_NotSet() {
 			Assert.True(await SB.SetBackendConfiguration(8, false));
-			KV_V2_Settings s = await SB.GetBackendConfiguration();
+			KV2BackendSettings s = await SB.GetBackendConfiguration();
 			Assert.AreEqual(false, s.CASRequired);
 			Assert.AreEqual(8, s.MaxVersions);
 		}
@@ -258,7 +258,7 @@ namespace VaultAgentTests
 		public async Task BackendWithOUTCAS_SaveSecret_Success() {
 
 			string secName = UK.GetKey();
-			SecretV2 secretV2 = new SecretV2(secName);
+			KV2Secret secretV2 = new KV2Secret(secName);
 
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("test54", "44" );
 
@@ -267,7 +267,7 @@ namespace VaultAgentTests
 
 
 			// Read the Secret back to confirm the save.
-			SecretReadReturnObj s2 = await SB.ReadSecret(secretV2.Path);
+			KV2SecretWrapper s2 = await SB.ReadSecret(secretV2.Path);
 			Assert.True(secretV2.Path == s2.Data.SecretObj.Path);
 			Assert.Contains(kv1, s2.Data.SecretObj.Attributes);
 		}
@@ -279,7 +279,7 @@ namespace VaultAgentTests
 		public async Task BackendWithOUTCAS_UpdateExistingSecret_Success() {
 
 			string secName = UK.GetKey();
-			SecretV2 secretV2 = new SecretV2(secName);
+			KV2Secret secretV2 = new KV2Secret(secName);
 
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("test54", "44");
 
@@ -288,7 +288,7 @@ namespace VaultAgentTests
 
 
 			// Read the Secret back to confirm the save.
-			SecretReadReturnObj s2 = await SB.ReadSecret(secretV2.Path);
+			KV2SecretWrapper s2 = await SB.ReadSecret(secretV2.Path);
 			Assert.True(secretV2.Path == s2.Data.SecretObj.Path);
 			Assert.Contains(kv1, s2.Data.SecretObj.Attributes);
 
@@ -310,13 +310,13 @@ namespace VaultAgentTests
 		public async Task BackendWithOUTCAS_SaveSecretWithMultipleVersionsWorks() {
 			// Setup backend to allow 6 versions of a key and requires CAS.
 			Assert.True(await SB.SetBackendConfiguration(6, false));
-			KV_V2_Settings s = await SB.GetBackendConfiguration();
+			KV2BackendSettings s = await SB.GetBackendConfiguration();
 			Assert.False(s.CASRequired, "A1: CAS should not be required, but backend is set for CAS.");
 
 
 			// Generate a key.
 			string secName = UK.GetKey();
-			SecretV2 secretV2 = new SecretV2(secName);
+			KV2Secret secretV2 = new KV2Secret(secName);
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
 			secretV2.Attributes.Add(kv1.Key, kv1.Value);
 
@@ -328,7 +328,7 @@ namespace VaultAgentTests
 
 
 			// 2. Read the secret back and get the version
-			SecretReadReturnObj s2 = await SB.ReadSecret(secretV2.Path);
+			KV2SecretWrapper s2 = await SB.ReadSecret(secretV2.Path);
 			Assert.True(secretV2.Path == s2.Data.SecretObj.Path,"A3: Secret Paths were not equal");
 			Assert.Contains(kv1, s2.Data.SecretObj.Attributes,"A4: Secret Attributes did not contain expected value");
 			Assert.AreEqual(1, s2.Data.Metadata.Version,"A5: Version did not match 1.");
@@ -366,13 +366,13 @@ namespace VaultAgentTests
 		public async Task SecretReadReturnObjShortcutsWork() {
 			// Setup backend to allow 6 versions of a key and not require CAS.
 			Assert.True(await SB.SetBackendConfiguration(6, false));
-			KV_V2_Settings s = await SB.GetBackendConfiguration();
+			KV2BackendSettings s = await SB.GetBackendConfiguration();
 			Assert.False(s.CASRequired, "A1: Backend settings are not what was expected.");
 
 
 			// Generate a key.
 			string secName = UK.GetKey();
-			SecretV2 secretV2 = new SecretV2(secName);
+			KV2Secret secretV2 = new KV2Secret(secName);
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
 			secretV2.Attributes.Add(kv1.Key, kv1.Value);
 
@@ -381,7 +381,7 @@ namespace VaultAgentTests
 			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist),"A2: SaveSecret failed to return True.");
 
 			// Now read the secret back and validate the shortcuts.
-			SecretReadReturnObj s2 = await SB.ReadSecret(secretV2.Path);
+			KV2SecretWrapper s2 = await SB.ReadSecret(secretV2.Path);
 			Assert.True(secretV2.Path == s2.Data.SecretObj.Path,"A3: Path sent and received are not the same.");
 			Assert.Contains(kv1, s2.Data.SecretObj.Attributes,"A4: Secret Attributes are missing expected values");
 
@@ -390,7 +390,7 @@ namespace VaultAgentTests
 			Assert.Contains(kv1, s2.SecretAttributes,"A6: Secret did not contain the expected attributes.");
 
 			// Now confirm we can replace the secret object with a new one.
-			SecretV2 sv3 = new SecretV2();
+			KV2Secret sv3 = new KV2Secret();
 			sv3.Path = "valley";
 			KeyValuePair<string, string> kv3 = new KeyValuePair<string, string>("c", "3");
 			sv3.Attributes.Add(kv3.Key, kv3.Value);
@@ -411,7 +411,7 @@ namespace VaultAgentTests
 		[Test,Order(302)]
 		public async Task SaveReadSecret_MultipleAttributes () {
 			string secName = UK.GetKey();
-			SecretV2 secretV2 = new SecretV2(secName);
+			KV2Secret secretV2 = new KV2Secret(secName);
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("A1", "aaaa1");
 			KeyValuePair<string, string> kv2 = new KeyValuePair<string, string>("B2", "bbbbb2");
 			KeyValuePair<string, string> kv3 = new KeyValuePair<string, string>("C3", "cccccc3");
@@ -423,7 +423,7 @@ namespace VaultAgentTests
 
 
 			// Read the Secret back to confirm the save.
-			SecretReadReturnObj s2 = await SB.ReadSecret(secretV2.Path);
+			KV2SecretWrapper s2 = await SB.ReadSecret(secretV2.Path);
 			Assert.True(secretV2.Path == s2.Data.SecretObj.Path);
 			Assert.Contains(kv1, s2.Data.SecretObj.Attributes);
 			Assert.Contains(kv2, s2.Data.SecretObj.Attributes);
@@ -440,12 +440,12 @@ namespace VaultAgentTests
 		public async Task DeleteSecretThatExists_Succeeds () {
 			// Setup backend to allow 6 versions of a key and not require CAS.
 			Assert.True(await SB.SetBackendConfiguration(6, false));
-			KV_V2_Settings s = await SB.GetBackendConfiguration();
+			KV2BackendSettings s = await SB.GetBackendConfiguration();
 			Assert.False(s.CASRequired, "A1: Backend settings are not what was expected.");
 
 			// Generate a key.
 			string secName = UK.GetKey();
-			SecretV2 secretV2 = new SecretV2(secName);
+			KV2Secret secretV2 = new KV2Secret(secName);
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
 			secretV2.Attributes.Add(kv1.Key, kv1.Value);
 
@@ -454,14 +454,14 @@ namespace VaultAgentTests
 			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.AlwaysAllow), "A2: SaveSecret failed to return True.");
 
 			// Confirm it exists:
-			SecretReadReturnObj s2 = await SB.ReadSecret(secretV2.Path);
+			KV2SecretWrapper s2 = await SB.ReadSecret(secretV2.Path);
 			Assert.True(secretV2.Path == s2.Data.SecretObj.Path,"A3: Secret saved and secret read were not the same.");
 
 			// Now delete it.
 			Assert.True(await SB.DeleteSecret(secretV2.Path), "A4: Deletion of secret failed.");
 
 			// Try to read it to confirm it is gone.
-			SecretReadReturnObj s3 = await SB.ReadSecret(secretV2.Path);
+			KV2SecretWrapper s3 = await SB.ReadSecret(secretV2.Path);
 			Assert.IsNull(s3, "A5: Expected ReadSecret to return null object.  Instead it returned an object.  Seems deletion did not work.");
 		}
 
@@ -475,12 +475,12 @@ namespace VaultAgentTests
 		public async Task DeleteSecretThatDOESNOTExist_ReturnsNull () {
 			// Setup backend to allow 6 versions of a key and not require CAS.
 			Assert.True(await SB.SetBackendConfiguration(6, false));
-			KV_V2_Settings s = await SB.GetBackendConfiguration();
+			KV2BackendSettings s = await SB.GetBackendConfiguration();
 			Assert.False(s.CASRequired, "A1: Backend settings are not what was expected.");
 
 			// Generate a key.
 			string secName = UK.GetKey();
-			SecretV2 secretV2 = new SecretV2(secName);
+			KV2Secret secretV2 = new KV2Secret(secName);
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
 			secretV2.Attributes.Add(kv1.Key, kv1.Value);
 
@@ -498,12 +498,12 @@ namespace VaultAgentTests
 		public async Task DeleteSecretSpecificVersionThatExists_Succeeds() {
 			// Setup backend to allow 6 versions of a key and not require CAS.
 			Assert.True(await SB.SetBackendConfiguration(6, true));
-			KV_V2_Settings s = await SB.GetBackendConfiguration();
+			KV2BackendSettings s = await SB.GetBackendConfiguration();
 			Assert.True(s.CASRequired, "A1: Backend settings are not what was expected.");
 
 			// Generate a key.
 			string secName = UK.GetKey();
-			SecretV2 secretV2 = new SecretV2(secName);
+			KV2Secret secretV2 = new KV2Secret(secName);
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
 			secretV2.Attributes.Add(kv1.Key, kv1.Value);
 
@@ -512,14 +512,14 @@ namespace VaultAgentTests
 			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
 
 			// Confirm it exists:
-			SecretReadReturnObj s2 = await SB.ReadSecret(secretV2.Path);
+			KV2SecretWrapper s2 = await SB.ReadSecret(secretV2.Path);
 			Assert.True(secretV2.Path == s2.Data.SecretObj.Path, "A3: Secret saved and secret read were not the same.");
 
 			// Save a new version
 			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch ,s2.Data.Metadata.Version), "A4: SaveSecret failed to return True.");
 
 			// Confirm it exists:
-			SecretReadReturnObj s3 = await SB.ReadSecret(secretV2.Path);
+			KV2SecretWrapper s3 = await SB.ReadSecret(secretV2.Path);
 			Assert.AreEqual(2, s3.Data.Metadata.Version, "A5: Expected Key version was not received.");
 
 
@@ -528,16 +528,29 @@ namespace VaultAgentTests
 			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s3.Data.Metadata.Version), "A6: SaveSecret failed to return True.");
 
 			// Confirm it exists:
-			SecretReadReturnObj s4 = await SB.ReadSecret(secretV2.Path);
+			KV2SecretWrapper s4 = await SB.ReadSecret(secretV2.Path);
 			Assert.AreEqual(3, s4.Data.Metadata.Version, "A7: Expected Key version was not received.");
 
 			// Now delete a specific version.
 			Assert.True(await SB.DeleteSecret(secretV2.Path,s3.Data.Metadata.Version), "A8: Deletion of secret failed.");
 
 			// Try to read it to confirm it is gone.
-			SecretReadReturnObj s5 = await SB.ReadSecret(secretV2.Path,s3.Data.Metadata.Version);
+			KV2SecretWrapper s5 = await SB.ReadSecret(secretV2.Path,s3.Data.Metadata.Version);
 
 			Assert.IsNull(s5, "A9: Expected ReadSecret to return null object.  Instead it returned an object.  Seems deletion did not work.");
+		}
+
+
+
+		[Test]
+		// Test that Secret shortcut access the actual backing value correctly.
+		public void SecretVersion () {
+			KV2SecretWrapper secretA = new KV2SecretWrapper();
+			secretA.Secret = new KV2Secret("test");
+			secretA.Version = 2;
+			Assert.AreEqual(2, secretA.Version);
+			Assert.AreEqual(2, secretA.Data.Metadata.Version);
+
 		}
 
 	}

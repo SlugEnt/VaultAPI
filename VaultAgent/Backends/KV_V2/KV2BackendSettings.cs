@@ -11,7 +11,7 @@ namespace VaultAgent.Backends.SecretEngines.KVV2
 	/// <summary>
 	/// Represents a Vault Key Value Backend Version 2 settings object.
 	/// </summary>
-	public class KV_V2_Settings
+	public class KV2BackendSettings
 	{
 		[JsonProperty("cas_required")]
 		public bool CASRequired;

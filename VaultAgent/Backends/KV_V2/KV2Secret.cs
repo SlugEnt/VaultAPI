@@ -10,13 +10,12 @@ namespace VaultAgent.Backends.KV_V2
 	/// the vault.  So, if upon reading a secret it has attributes of canDelete:True and connection:db1 and you save it, but the only attribute in the 
 	/// list upon save is connection:db1 then canDelete will no longer exist after the save.  
 	/// </summary>
-	public class SecretV2
-	{
-		public SecretV2() {
+	public class KV2Secret {
+		public KV2Secret() {
 			Attributes = new Dictionary<string, string>();
 		}
 
-		public SecretV2(string nameAndPath) {
+		public KV2Secret(string nameAndPath) {
 			Path = nameAndPath;
 			Attributes = new Dictionary<string, string>();
 		}
@@ -34,8 +33,8 @@ namespace VaultAgent.Backends.KV_V2
 		/// </summary>
 		[JsonProperty("data")]
 		public Dictionary<string, string> Attributes { get; set; }
-		
 
+		
 		[JsonProperty("metadata")]
 		public Dictionary<string,string> Metadata { get; set; }
 	

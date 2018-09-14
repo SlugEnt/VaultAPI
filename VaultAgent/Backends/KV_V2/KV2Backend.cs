@@ -17,13 +17,14 @@ namespace VaultAgent.Backends.SecretEngines
 			"specify the current version of the key in order to update it.  The calling routine provided an incorrect version.";
 	}
 	
+
 	
 	/// <summary>
 	/// This backend is for interfacing with the Vault secret Backend Version 2.0.  
 	/// One of the unique things is that there are different root mounts within the given backend depending on what you want to do.  So having
 	/// a std BackEnd path does not really work with this class.  It generally builds the unique path in each member method.
 	/// </summary>
-	public class KeyValueV2Backend
+	public class KV2Backend
 	{
 		TokenInfo secretToken;
 		private VaultAPI_Http vaultHTTP;
@@ -39,7 +40,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <param name="port">The network port the Vault server listens on.</param>
 		/// <param name="Token">The token used to authenticate with.</param>
 		/// <param name="backendMountName">The name of the secret backend to mount.  For example for a mount at /mine/secretA use mine/secretA as value.</param>
-		public KeyValueV2Backend(string vaultIP, int port, string Token, string backendMountName = "secret") {
+		public KV2Backend(string vaultIP, int port, string Token, string backendMountName = "secret") {
 			vaultHTTP = new VaultAPI_Http(vaultIP, port, Token);
 			secretToken = new TokenInfo();
 			secretToken.Id = Token;
@@ -80,15 +81,15 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <summary>
 		/// Returns the configuration settings of the current KeyValue V2 secret store. 
 		/// </summary>
-		/// <returns>KV_V2_Settings object with the values of the current configuration.</returns>
-		public async Task<KV_V2_Settings> GetBackendConfiguration () {
+		/// <returns>KV2BackendSettings object with the values of the current configuration.</returns>
+		public async Task<KV2BackendSettings> GetBackendConfiguration () {
 			try {
 
 				// V2 Secret stores have a unique config path...
 				string path = secretBEPath + "config";
 
 				VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "GetBackendConfiguration");
-				KV_V2_Settings settings = vdro.GetVaultTypedObject<KV_V2_Settings>();
+				KV2BackendSettings settings = vdro.GetVaultTypedObject<KV2BackendSettings>();
 				return settings;
 			}
 			catch (Exception e) { throw e; }
@@ -99,7 +100,7 @@ namespace VaultAgent.Backends.SecretEngines
 
 
 
-		public async Task<bool> SaveSecret (SecretV2 secret, EnumKVv2SaveSecretOptions enumKVv2SaveSecretOption, int currentVersion = 0) {
+		public async Task<bool> SaveSecret (KV2Secret secret, EnumKVv2SaveSecretOptions enumKVv2SaveSecretOption, int currentVersion = 0) {
 			string path = secretBEPath + "data/" + secret.Path;
 
 
@@ -150,15 +151,15 @@ namespace VaultAgent.Backends.SecretEngines
 		/// </summary>
 		/// <param name="secretPath">The Name (path) to the secret you wish to read.</param>
 		/// <param name="secretVersion">The version of the secret to retrieve.  Leave at default of Zero to read most recent version.</param>
-		/// <returns>SecretV2 of the secret as read from Vault.  </returns>
-		public async Task<SecretReadReturnObj> ReadSecret (string secretPath, int secretVersion = 0) {
+		/// <returns>KV2Secret of the secret as read from Vault.  </returns>
+		public async Task<KV2SecretWrapper> ReadSecret (string secretPath, int secretVersion = 0) {
 			string path = secretBEPath + "data/" + secretPath;
 			try {
 				Dictionary<string, string> contentParams = new Dictionary<string, string>() {{ "version", secretVersion.ToString() }};
 
 				VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "ReadSecret",contentParams);
 				if (vdro.Success) {
-					SecretReadReturnObj secretReadReturnObj = SecretReadReturnObj.FromJson(vdro.GetResponsePackageAsJSON());
+					KV2SecretWrapper secretReadReturnObj = KV2SecretWrapper.FromJson(vdro.GetResponsePackageAsJSON());
 					return secretReadReturnObj;
 					//return secretReadReturnObj.Data.SecretObj;
 				}

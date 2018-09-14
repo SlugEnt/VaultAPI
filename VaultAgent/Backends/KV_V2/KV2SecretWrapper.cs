@@ -9,7 +9,12 @@ using Newtonsoft.Json.Converters;
 namespace VaultAgent.Backends.KV_V2
 {
 
-	public partial class SecretReadReturnObj
+	/// <summary>
+	/// The KV2SecretWrapper represents a Secret Container object that presents all the information Vault returns in regards to a secret.  
+	/// Much of the info is just Informational, but some such as the version saved, etc is of critical nature.
+	/// The main secret data is stored in the KV2Secret object.
+	/// </summary>
+	public partial class KV2SecretWrapper
 	{
 		[JsonProperty("request_id")]
 		public Guid RequestId { get; internal set; }
@@ -41,23 +46,39 @@ namespace VaultAgent.Backends.KV_V2
 		/// <summary>
 		/// Gets or sets the actual secret object.  This is a shortcut for going to obj.data.secretobj.
 		/// </summary>
-		public SecretV2 Secret
+		public KV2Secret Secret
 		{
 			get { return this.Data.SecretObj; }
 			set { this.Data.SecretObj = value; }
 		}
 
+
+
+		/// <summary>
+		/// Accesses the attributes of the Secret.
+		/// </summary>
 		public Dictionary<string,string> SecretAttributes
 		{
 			get { return this.Data.SecretObj.Attributes; }
 			
+		}
+
+
+
+		/// <summary>
+		/// The version of the current key.  Versions are numerically increasing
+		/// </summary>
+		public int Version
+		{
+			get { return this.Data.Metadata.Version; }
+			set { this.Data.Metadata.Version = value; }
 		}
 	}
 
 	public partial class SecretReadReturnObjData
 	{
 		[JsonProperty("data")]
-		public SecretV2 SecretObj { get; set; }
+		public KV2Secret SecretObj { get; set; }
 
 		[JsonProperty("metadata")]
 		public Metadata Metadata { get; internal set; }
@@ -78,14 +99,14 @@ namespace VaultAgent.Backends.KV_V2
 		public int Version { get; internal set; }
 	}
 
-	public partial class SecretReadReturnObj
+	public partial class KV2SecretWrapper
 	{
-		public static SecretReadReturnObj FromJson(string json) => JsonConvert.DeserializeObject<SecretReadReturnObj>(json, VaultAgent.Backends.KV_V2.Converter.Settings);
+		public static KV2SecretWrapper FromJson(string json) => JsonConvert.DeserializeObject<KV2SecretWrapper>(json, VaultAgent.Backends.KV_V2.Converter.Settings);
 	}
 
 	public static class Serialize
 	{
-		public static string ToJson(this SecretReadReturnObj self) => JsonConvert.SerializeObject(self, VaultAgent.Backends.KV_V2.Converter.Settings);
+		public static string ToJson(this KV2SecretWrapper self) => JsonConvert.SerializeObject(self, VaultAgent.Backends.KV_V2.Converter.Settings);
 	}
 
 	internal static class Converter
