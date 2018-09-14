@@ -213,7 +213,14 @@ namespace VaultAgent
 		protected async Task HandleVaultErrors (HttpResponseMessage response, string vaultHttpPath, string callingRoutineName) {
 			// See if Response Body Contains an Errors object.
 			string jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-			List<string> Errors = ConvertJSONArrayToList(jsonResponse, "errors");
+			List<string> Errors = new List<string>();
+
+			try {
+				Errors = ConvertJSONArrayToList(jsonResponse, "errors");
+			}
+			catch (MissingFieldException e) {
+				// Swallow the error.  Latest updates to Vault V1.2.2 in KV2 do not necessarily populate the error object if object not foundf.
+			}
 
 
 			string exceptionMsg;

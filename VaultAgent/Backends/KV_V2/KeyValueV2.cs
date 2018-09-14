@@ -167,5 +167,35 @@ namespace VaultAgent.Backends.SecretEngines
 			catch (VaultInvalidPathException e) { return null; }
 			catch (Exception e) { throw e; }
 		}
+
+
+
+		/// <summary>
+		/// Deletes the most recent version of a secret or a specific version of a secret.
+		/// </summary>
+		/// <param name="secretPath">The name of the secret to delete.</param>
+		/// <param name="version">The version to delete.  Defaults to zero which is the most recent or current version of the key.</param>
+		/// <returns>True if successful.  False otherwise.</returns>
+		public async Task<bool> DeleteSecret (string secretPath, int version = 0 ) {
+			string path;
+			VaultDataResponseObject vdro;
+
+			// Paths are different if specifying versions or version = 0 (current)
+			if (version != 0) {
+				path = secretBEPath + "delete/" + secretPath;
+
+				// Add the version parameter
+				string jsonParams = "{\"versions\": [" + version.ToString() + "]}";
+				vdro = await vaultHTTP.PostAsync(path, "DeleteSecret",null,jsonParams);
+			}
+			else {
+				path = secretBEPath + "data/" + secretPath;
+				vdro = await vaultHTTP.DeleteAsync(path, "DeleteSecret");
+			}	
+
+			
+			if (vdro.Success) { return true; }
+			else { return false; }
+		}
 	}
 }

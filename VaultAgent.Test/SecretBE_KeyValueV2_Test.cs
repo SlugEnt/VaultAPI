@@ -26,6 +26,12 @@ namespace VaultAgentTests
 
 		private UniqueKeys UK = new UniqueKeys();		// Unique Key generator
 
+
+
+		/// <summary>
+		/// One Time Setup - Run once per a single Test run exection.
+		/// </summary>
+		/// <returns></returns>
 		[OneTimeSetUp]
 		public async Task Secret_Init() {
 			if (SB != null) {
@@ -423,5 +429,116 @@ namespace VaultAgentTests
 			Assert.Contains(kv2, s2.Data.SecretObj.Attributes);
 			Assert.Contains(kv3, s2.Data.SecretObj.Attributes);
 		}
+
+
+
+		/// <summary>
+		/// Confirms that a secret that exists can be deleted.
+		/// </summary>
+		/// <returns></returns>
+		[Test,Order(400)]
+		public async Task DeleteSecretThatExists_Succeeds () {
+			// Setup backend to allow 6 versions of a key and not require CAS.
+			Assert.True(await SB.SetBackendConfiguration(6, false));
+			KV_V2_Settings s = await SB.GetBackendConfiguration();
+			Assert.False(s.CASRequired, "A1: Backend settings are not what was expected.");
+
+			// Generate a key.
+			string secName = UK.GetKey();
+			SecretV2 secretV2 = new SecretV2(secName);
+			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
+			secretV2.Attributes.Add(kv1.Key, kv1.Value);
+
+
+			// Save Secret
+			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.AlwaysAllow), "A2: SaveSecret failed to return True.");
+
+			// Confirm it exists:
+			SecretReadReturnObj s2 = await SB.ReadSecret(secretV2.Path);
+			Assert.True(secretV2.Path == s2.Data.SecretObj.Path,"A3: Secret saved and secret read were not the same.");
+
+			// Now delete it.
+			Assert.True(await SB.DeleteSecret(secretV2.Path), "A4: Deletion of secret failed.");
+
+			// Try to read it to confirm it is gone.
+			SecretReadReturnObj s3 = await SB.ReadSecret(secretV2.Path);
+			Assert.IsNull(s3, "A5: Expected ReadSecret to return null object.  Instead it returned an object.  Seems deletion did not work.");
+		}
+
+
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+		[Test,Order(401)]
+		public async Task DeleteSecretThatDOESNOTExist_ReturnsNull () {
+			// Setup backend to allow 6 versions of a key and not require CAS.
+			Assert.True(await SB.SetBackendConfiguration(6, false));
+			KV_V2_Settings s = await SB.GetBackendConfiguration();
+			Assert.False(s.CASRequired, "A1: Backend settings are not what was expected.");
+
+			// Generate a key.
+			string secName = UK.GetKey();
+			SecretV2 secretV2 = new SecretV2(secName);
+			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
+			secretV2.Attributes.Add(kv1.Key, kv1.Value);
+
+			// Try to delete it - It Does not exist so should return null.
+			Assert.IsNull(await SB.ReadSecret(secretV2.Path),"A2: Deletion failed.  Expected Null object to indicate deletion could not find key.");
+		}
+
+
+
+		/// <summary>
+		/// Deletes a specific version of a secret.
+		/// </summary>
+		/// <returns></returns>
+		[Test, Order(400)]
+		public async Task DeleteSecretSpecificVersionThatExists_Succeeds() {
+			// Setup backend to allow 6 versions of a key and not require CAS.
+			Assert.True(await SB.SetBackendConfiguration(6, true));
+			KV_V2_Settings s = await SB.GetBackendConfiguration();
+			Assert.True(s.CASRequired, "A1: Backend settings are not what was expected.");
+
+			// Generate a key.
+			string secName = UK.GetKey();
+			SecretV2 secretV2 = new SecretV2(secName);
+			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
+			secretV2.Attributes.Add(kv1.Key, kv1.Value);
+
+
+			// Save Secret
+			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
+
+			// Confirm it exists:
+			SecretReadReturnObj s2 = await SB.ReadSecret(secretV2.Path);
+			Assert.True(secretV2.Path == s2.Data.SecretObj.Path, "A3: Secret saved and secret read were not the same.");
+
+			// Save a new version
+			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch ,s2.Data.Metadata.Version), "A4: SaveSecret failed to return True.");
+
+			// Confirm it exists:
+			SecretReadReturnObj s3 = await SB.ReadSecret(secretV2.Path);
+			Assert.AreEqual(2, s3.Data.Metadata.Version, "A5: Expected Key version was not received.");
+
+
+			// And one more time. save another version
+			// Save a new version
+			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s3.Data.Metadata.Version), "A6: SaveSecret failed to return True.");
+
+			// Confirm it exists:
+			SecretReadReturnObj s4 = await SB.ReadSecret(secretV2.Path);
+			Assert.AreEqual(3, s4.Data.Metadata.Version, "A7: Expected Key version was not received.");
+
+			// Now delete a specific version.
+			Assert.True(await SB.DeleteSecret(secretV2.Path,s3.Data.Metadata.Version), "A8: Deletion of secret failed.");
+
+			// Try to read it to confirm it is gone.
+			SecretReadReturnObj s5 = await SB.ReadSecret(secretV2.Path,s3.Data.Metadata.Version);
+
+			Assert.IsNull(s5, "A9: Expected ReadSecret to return null object.  Instead it returned an object.  Seems deletion did not work.");
+		}
+
 	}
 }
