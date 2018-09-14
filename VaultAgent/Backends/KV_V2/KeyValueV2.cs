@@ -5,9 +5,19 @@ using VaultAgent.Models;
 using VaultAgent.Backends.SecretEngines.KVV2;
 using VaultAgent.Backends.KV_V2;
 using Newtonsoft.Json;
+using System.Text;
 
 namespace VaultAgent.Backends.SecretEngines
 {
+	public static class Constants
+	{
+		public const string Error_CAS_Set = "The backend storage engine has the CAS property set.  This requires that all secret saves must have " +
+			"the CAS value set to zero upon saving a new key or the latest version of the key must be specified in the version parameter.";
+		public const string Error_CAS_InvalidVersion = "The backend storage engine has the CAS property set.  This requires that all secret saves must " +
+			"specify the current version of the key in order to update it.  The calling routine provided an incorrect version.";
+	}
+	
+	
 	/// <summary>
 	/// This backend is for interfacing with the Vault secret Backend Version 2.0.  
 	/// One of the unique things is that there are different root mounts within the given backend depending on what you want to do.  So having
@@ -87,33 +97,70 @@ namespace VaultAgent.Backends.SecretEngines
 		#endregion
 
 
-		public async Task<bool> SaveSecret (SecretV2 secret) {
+
+
+		public async Task<bool> SaveSecret (SecretV2 secret, EnumKVv2SaveSecretOptions enumKVv2SaveSecretOption, int currentVersion = 0) {
 			string path = secretBEPath + "data/" + secret.Path;
 
 
 			Dictionary<string, object> reqData = new Dictionary<string, object>();
 			Dictionary<string, string> options = new Dictionary<string, string>();
+
+			// Set CAS depending on option coming from caller.
+			switch (enumKVv2SaveSecretOption) {
+				case EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist:
+					options.Add("cas", "0");
+					break;
+				case EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch:
+					if (currentVersion != 0) {
+						options.Add("cas", currentVersion.ToString());
+					}
+					else { throw new ArgumentException("The option OnlyOnExistingVersionMatch was chosen, but the currentVersion parameter was not set.  It must be set to the value of the current version of the key as stored in Vault."); }
+					break;				
+			}
+
+
 			// CAS - Check and Set needs to be passed in from caller.
 			//options.Add("cas", "");
 			reqData.Add("options",options);
 			reqData.Add("data", secret);
 
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync2(path, "SaveSecret",reqData);
-			if (vdro.Success) {
-				return true;
+			try {
+				VaultDataResponseObject vdro = await vaultHTTP.PostAsync2(path, "SaveSecret", reqData);
+				if (vdro.Success) { return true; }
+				return false;
 			}
-			return false;
+			catch (VaultInvalidDataException e) {
+				if (e.Message.Contains("check-and-set parameter required for this call")) {
+					throw new VaultInvalidDataException(Constants.Error_CAS_Set + " | Original Error message was: " + e.Message);
+				}
+				else if (e.Message.Contains("did not match the current version")) {
+					throw new VaultInvalidDataException(Constants.Error_CAS_InvalidVersion + " Version specified was: " + currentVersion + " | Original Error message was: " + e.Message);
+				}
+				else { throw new VaultInvalidDataException(e.Message); }
+			}
 		}
+		
 
 
 
-		public async Task<SecretV2> ReadSecret (string secretPath) {
+		/// <summary>
+		/// Reads the secret from Vault.  It defaults to reading the most recent version.  Set secretVersion to non zero to retrieve a
+		/// specific version.
+		/// </summary>
+		/// <param name="secretPath">The Name (path) to the secret you wish to read.</param>
+		/// <param name="secretVersion">The version of the secret to retrieve.  Leave at default of Zero to read most recent version.</param>
+		/// <returns>SecretV2 of the secret as read from Vault.  </returns>
+		public async Task<SecretReadReturnObj> ReadSecret (string secretPath, int secretVersion = 0) {
 			string path = secretBEPath + "data/" + secretPath;
 			try {
-				VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "ReadSecret");
+				Dictionary<string, string> contentParams = new Dictionary<string, string>() {{ "version", secretVersion.ToString() }};
+
+				VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "ReadSecret",contentParams);
 				if (vdro.Success) {
 					SecretReadReturnObj secretReadReturnObj = SecretReadReturnObj.FromJson(vdro.GetResponsePackageAsJSON());
-					return secretReadReturnObj.Data.SecretObj;
+					return secretReadReturnObj;
+					//return secretReadReturnObj.Data.SecretObj;
 				}
 				throw new ApplicationException("SecretBackEnd: ReadSecret - Arrived at an unexpected code path.");
 			}

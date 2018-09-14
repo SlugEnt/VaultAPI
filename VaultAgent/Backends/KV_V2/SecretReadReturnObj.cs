@@ -34,6 +34,24 @@ namespace VaultAgent.Backends.KV_V2
 
 		[JsonProperty("auth")]
 		public object Auth { get; internal set; }
+
+		// The following are shortcuts to some of the properties above:
+
+
+		/// <summary>
+		/// Gets or sets the actual secret object.  This is a shortcut for going to obj.data.secretobj.
+		/// </summary>
+		public SecretV2 Secret
+		{
+			get { return this.Data.SecretObj; }
+			set { this.Data.SecretObj = value; }
+		}
+
+		public Dictionary<string,string> SecretAttributes
+		{
+			get { return this.Data.SecretObj.Attributes; }
+			
+		}
 	}
 
 	public partial class SecretReadReturnObjData
@@ -57,7 +75,7 @@ namespace VaultAgent.Backends.KV_V2
 		public bool Destroyed { get; internal set; }
 
 		[JsonProperty("version")]
-		public long Version { get; internal set; }
+		public int Version { get; internal set; }
 	}
 
 	public partial class SecretReadReturnObj
