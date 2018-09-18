@@ -40,8 +40,9 @@ namespace VaultAgent.Backends.KV_V2
 		[JsonProperty("auth")]
 		public object Auth { get; internal set; }
 
-		// The following are shortcuts to some of the properties above:
 
+
+		// The following are shortcuts to some of the properties above:
 
 		/// <summary>
 		/// Gets or sets the actual secret object.  This is a shortcut for going to obj.data.secretobj.
@@ -99,6 +100,9 @@ namespace VaultAgent.Backends.KV_V2
 		public int Version { get; internal set; }
 	}
 
+
+
+	// All of the following code is for the JSON conversion.
 	public partial class KV2SecretWrapper
 	{
 		public static KV2SecretWrapper FromJson(string json) => JsonConvert.DeserializeObject<KV2SecretWrapper>(json, VaultAgent.Backends.KV_V2.Converter.Settings);
@@ -108,6 +112,7 @@ namespace VaultAgent.Backends.KV_V2
 	{
 		public static string ToJson(this KV2SecretWrapper self) => JsonConvert.SerializeObject(self, VaultAgent.Backends.KV_V2.Converter.Settings);
 	}
+
 
 	internal static class Converter
 	{

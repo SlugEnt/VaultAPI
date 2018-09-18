@@ -230,8 +230,28 @@ namespace VaultAgent.Backends.SecretEngines
 		}
 
 
+
 		//TODO ReadSecretMetaData routine needed.
 		//TODO UpdateSecretMetaData routine needed.
+		public async Task<bool> UpdateSecretSettings (string namePath, UInt16 maxVersions, bool casRequired) {
+			try {
+				// V2 Secret stores have a unique config path...
+				string path = secretBEPath + "metadata/" + namePath;
+
+				// Build the content parameters, which will contain the maxVersions and casRequired settings.
+				Dictionary<string, string> contentParams = new Dictionary<string, string>();
+				contentParams.Add("max_versions", maxVersions.ToString());
+				contentParams.Add("cas_required", casRequired.ToString());
+
+				VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "UpdateSecretSettings", contentParams);
+				if (vdro.Success) { return true; }
+				return false;
+			}
+			catch (Exception e) { throw e; }
+		}
+
+
+
 		//TODO Delete MetaData and All Versions routine needed.
 		//TODO Undelete secret versions routine needed.
 		//TODO Destroy secret

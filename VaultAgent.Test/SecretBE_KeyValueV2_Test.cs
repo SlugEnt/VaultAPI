@@ -618,6 +618,28 @@ namespace VaultAgentTests
 
 
 
+		[Test,Order(500)]
+		public async Task UpdateSecretSettings_Works () {
+			// Setup a backend with known info.
+			Assert.True(await SB.SetBackendConfiguration(6, true));
+			KV2BackendSettings s = await SB.GetBackendConfiguration();
+			Assert.AreEqual(true, s.CASRequired);
+			Assert.AreEqual(6, s.MaxVersions);
+
+
+			// Create a secret.
+			string secName = UK.GetKey();
+			KV2Secret secretV2 = new KV2Secret(secName);
+			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("A1", "aaaa1");
+			secretV2.Attributes.Add(kv1.Key, kv1.Value);
+
+			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist),"Unable to create secret");
+
+			// Now change the metadata for this secret.  
+			Assert.True(await SB.UpdateSecretSettings(secName, 9, false));
+
+		}
+
 
 
 		[Test]
