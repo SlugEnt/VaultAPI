@@ -99,7 +99,14 @@ namespace VaultAgent.Backends.SecretEngines
 
 
 
-
+		//TODO - Elaborate on summary - describe the enum options.
+		/// <summary>
+		/// Saves the provided KV2Secret object.  You must specify a save option and optionally what the current version of the secret is.
+		/// </summary>
+		/// <param name="secret">KV2Secret object to be saved.  This must contain minimally the namePath of the secret and one or more optional attributes.</param>
+		/// <param name="enumKVv2SaveSecretOption"></param>
+		/// <param name="currentVersion">What the current version of the secret is.  Required if the backend is in CAS mode (Default mode).</param>
+		/// <returns></returns>
 		public async Task<bool> SaveSecret (KV2Secret secret, EnumKVv2SaveSecretOptions enumKVv2SaveSecretOption, int currentVersion = 0) {
 			string path = secretBEPath + "data/" + secret.Path;
 
@@ -197,6 +204,29 @@ namespace VaultAgent.Backends.SecretEngines
 			
 			if (vdro.Success) { return true; }
 			else { return false; }
+		}
+
+
+
+		/// <summary>
+		/// Returns a list of secrets at a given path
+		/// </summary>
+		/// <param name="namePath">The parent secret (Path to the parent secret) </param>
+		/// <returns>List of strings which contain secret names.</returns>
+		public async Task<List<string>> ListSecretsAtPath (string namePath) {
+			string path = secretBEPath + "metadata/" + namePath + "?list=true";
+
+			try {
+				VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "ListSecrets");
+				if (vdro.Success) {
+					string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
+					List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js);
+					return keys;
+				}
+				throw new ApplicationException("KV2Backend:ListSecretsAtPath  Arrived at unexpected code block.");
+			}
+			// 404 Errors mean there were no sub paths.  We just return an empty list.
+			catch (VaultInvalidPathException e) { return new List<string>(); }
 		}
 	}
 }

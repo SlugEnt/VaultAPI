@@ -433,6 +433,82 @@ namespace VaultAgentTests
 
 
 		/// <summary>
+		/// Can List secrets at a given path.
+		/// </summary>
+		/// <returns></returns>
+		[Test, Order(303)]
+		public async Task ListSecrets() {
+			string secName = UK.GetKey();
+			KV2Secret secretV2 = new KV2Secret(secName);
+			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("A1", "aaaa1");
+			KeyValuePair<string, string> kv2 = new KeyValuePair<string, string>("B2", "bbbbb2");
+			KeyValuePair<string, string> kv3 = new KeyValuePair<string, string>("C3", "cccccc3");
+			secretV2.Attributes.Add(kv1.Key, kv1.Value);
+			secretV2.Attributes.Add(kv2.Key, kv2.Value);
+			secretV2.Attributes.Add(kv3.Key, kv3.Value);
+
+			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.AlwaysAllow));
+
+			// Create a child secret of the first secret.
+			string secName2 = UK.GetKey();
+			KV2Secret secretV2B = new KV2Secret(secName + "/" + secName2);
+			KeyValuePair<string, string> kv4 = new KeyValuePair<string, string>("A1", "aaaa1");
+			KeyValuePair<string, string> kv5 = new KeyValuePair<string, string>("B2", "bbbbb2");
+			KeyValuePair<string, string> kv6 = new KeyValuePair<string, string>("C3", "cccccc3");
+			secretV2B.Attributes.Add(kv4.Key, kv4.Value);
+			secretV2B.Attributes.Add(kv5.Key, kv5.Value);
+			secretV2B.Attributes.Add(kv6.Key, kv6.Value);
+
+			Assert.True(await SB.SaveSecret(secretV2B, EnumKVv2SaveSecretOptions.AlwaysAllow));
+
+
+			// Create a third child secret of secret 2.
+			string secName3 = UK.GetKey();
+			KV2Secret secretV2C = new KV2Secret(secName + "/" + secName2 + "/" + secName3);
+			KeyValuePair<string, string> kv7 = new KeyValuePair<string, string>("A1", "aaaa1");
+			KeyValuePair<string, string> kv8 = new KeyValuePair<string, string>("B2", "bbbbb2");
+			KeyValuePair<string, string> kv9 = new KeyValuePair<string, string>("C3", "cccccc3");
+			secretV2C.Attributes.Add(kv7.Key, kv7.Value);
+			secretV2C.Attributes.Add(kv8.Key, kv8.Value);
+			secretV2C.Attributes.Add(kv9.Key, kv9.Value);
+
+			Assert.True(await SB.SaveSecret(secretV2C, EnumKVv2SaveSecretOptions.AlwaysAllow));
+
+
+			// Now get list of secrets at root secrt.
+			List<string> secrets = await (SB.ListSecretsAtPath(secName));
+
+
+			Assert.AreEqual(2, secrets.Count,"Expected 2 secrets to be listed.");
+			Assert.AreEqual(secName2, secrets[0],"Secret name at list position 0 is not what was expected.");
+			Assert.AreEqual(secName2 + "/", secrets[1],"Secret name at list position 1 is not what was expected.");
+		}
+
+
+
+		/// <summary>
+		/// List secrets at path with no secrets returns empty list.
+		/// </summary>
+		/// <returns></returns>
+		[Test, Order(303)]
+		public async Task ListSecretsWhereNoSecretsExistReturnsEmptyList() {
+			string secName = UK.GetKey();
+			KV2Secret secretV2 = new KV2Secret(secName);
+			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("A1", "aaaa1");
+			secretV2.Attributes.Add(kv1.Key, kv1.Value);
+
+			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.AlwaysAllow));
+
+			// Now get list of secrets at root secrt.
+			List<string> secrets = await (SB.ListSecretsAtPath(secName));
+
+
+			Assert.AreEqual(0, secrets.Count, "Expected secret list to be empty.");
+
+		}
+
+
+		/// <summary>
 		/// Confirms that a secret that exists can be deleted.
 		/// </summary>
 		/// <returns></returns>
@@ -539,6 +615,8 @@ namespace VaultAgentTests
 
 			Assert.IsNull(s5, "A9: Expected ReadSecret to return null object.  Instead it returned an object.  Seems deletion did not work.");
 		}
+
+
 
 
 

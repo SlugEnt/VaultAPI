@@ -202,7 +202,6 @@ namespace VaultAgent
 
 
 
-
 		/// <summary>
 		/// Processes errors returned by calls to the Vault API.
 		/// </summary>
