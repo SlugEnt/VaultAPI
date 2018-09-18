@@ -228,5 +228,13 @@ namespace VaultAgent.Backends.SecretEngines
 			// 404 Errors mean there were no sub paths.  We just return an empty list.
 			catch (VaultInvalidPathException e) { return new List<string>(); }
 		}
+
+
+		//TODO ReadSecretMetaData routine needed.
+		//TODO UpdateSecretMetaData routine needed.
+		//TODO Delete MetaData and All Versions routine needed.
+		//TODO Undelete secret versions routine needed.
+		//TODO Destroy secret
+
 	}
 }

@@ -21,7 +21,7 @@ namespace VaultAgent.Backends.KV_V2
 			Attributes = new Dictionary<string, string>();
 		}
 
-
+//TODO Need to split namePath into Name and Path attributes.  Makes more sense and easier to use.
 
 		/// <summary>
 		/// Creates a new secret with the specified Name (Path)
