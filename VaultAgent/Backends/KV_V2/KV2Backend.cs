@@ -285,9 +285,34 @@ namespace VaultAgent.Backends.SecretEngines
 		}
 
 
+
+
+		/// <summary>
+		/// Permanently deletes a given secret version.  This is unable to be undone.
+		/// </summary>
+		/// <param name="namePath">The secret name to be undeleted.</param>
+		/// <param name="version">The specific version of the secret to be unnamed.</param>
+		/// <returns>True if successful.  False otherwise.</returns>
+		public async Task<bool> DestroySecret (string namePath, int version) {
+			try {
+				// V2 Secret stores have a unique destroy path...
+				string path = secretBEPath + "destroy/" + namePath;
+
+				// Build the content parameters, which will contain the maxVersions and casRequired settings.
+				Dictionary<string, string> contentParams = new Dictionary<string, string>();
+				contentParams.Add("versions", version.ToString());
+
+				VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "DestroySecret", contentParams);
+				if (vdro.Success) { return true; }
+				return false;
+			}
+			catch (Exception e) { throw e; }
+		}
+
+
 		//TODO ReadSecretMetaData routine needed.
 		//TODO Delete MetaData and All Versions routine needed.
-		//TODO Destroy secret
+
 
 	}
 }
