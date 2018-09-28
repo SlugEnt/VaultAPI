@@ -262,7 +262,12 @@ namespace VaultAgent.Backends.SecretEngines
 
 
 
-
+		/// <summary>
+		/// Undeletes a given secret AND version.  
+		/// </summary>
+		/// <param name="namePath">The secret name to be undeleted.</param>
+		/// <param name="version">The specific version of the secret to be unnamed.</param>
+		/// <returns>True if successful.  False otherwise.</returns>
 		public async Task<bool> UndeleteSecret (string namePath, int version ) {
 			try {
 				// V2 Secret stores have a unique undelete path...
@@ -282,7 +287,6 @@ namespace VaultAgent.Backends.SecretEngines
 
 		//TODO ReadSecretMetaData routine needed.
 		//TODO Delete MetaData and All Versions routine needed.
-		//TODO Undelete secret versions routine needed.
 		//TODO Destroy secret
 
 	}
