@@ -208,6 +208,9 @@ namespace VaultAgent.Backends.SecretEngines
 
 
 
+
+
+
 		/// <summary>
 		/// Returns a list of secrets at a given path
 		/// </summary>
@@ -231,8 +234,15 @@ namespace VaultAgent.Backends.SecretEngines
 
 
 
-		//TODO ReadSecretMetaData routine needed.
-		//TODO UpdateSecretMetaData routine needed.
+
+
+		/// <summary>
+		/// Allows one to change 2 metadata parameters of a secret - Max # of versions and the CAS setting.  Represents Vaults Update MetaData function for a secret.
+		/// </summary>
+		/// <param name="namePath"></param>
+		/// <param name="maxVersions">The maximum number of versions of this key to keep.</param>
+		/// <param name="casRequired">Boolean determining if the CAS parameter needs to be set on save/update of a key.</param>
+		/// <returns></returns>
 		public async Task<bool> UpdateSecretSettings (string namePath, UInt16 maxVersions, bool casRequired) {
 			try {
 				// V2 Secret stores have a unique config path...
@@ -252,6 +262,25 @@ namespace VaultAgent.Backends.SecretEngines
 
 
 
+
+		public async Task<bool> UndeleteSecret (string namePath, int version ) {
+			try {
+				// V2 Secret stores have a unique undelete path...
+				string path = secretBEPath + "undelete/" + namePath;
+
+				// Build the content parameters, which will contain the maxVersions and casRequired settings.
+				Dictionary<string, string> contentParams = new Dictionary<string, string>();
+				contentParams.Add("versions", version.ToString());
+
+				VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "UndeleteSecret", contentParams);
+				if (vdro.Success) { return true; }
+				return false;
+			}
+			catch (Exception e) { throw e; }
+		}
+
+
+		//TODO ReadSecretMetaData routine needed.
 		//TODO Delete MetaData and All Versions routine needed.
 		//TODO Undelete secret versions routine needed.
 		//TODO Destroy secret
