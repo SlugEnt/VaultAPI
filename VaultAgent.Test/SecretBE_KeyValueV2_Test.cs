@@ -534,7 +534,7 @@ namespace VaultAgentTests
 			Assert.True(secretV2.Path == s2.Data.SecretObj.Path,"A3: Secret saved and secret read were not the same.");
 
 			// Now delete it.
-			Assert.True(await SB.DeleteSecret(secretV2.Path), "A4: Deletion of secret failed.");
+			Assert.True(await SB.DeleteSecretVersion(secretV2.Path), "A4: Deletion of secret failed.");
 
 			// Try to read it to confirm it is gone.
 			KV2SecretWrapper s3 = await SB.ReadSecret(secretV2.Path);
@@ -608,7 +608,7 @@ namespace VaultAgentTests
 			Assert.AreEqual(3, s4.Data.Metadata.Version, "A7: Expected Key version was not received.");
 
 			// Now delete a specific version.
-			Assert.True(await SB.DeleteSecret(secretV2.Path,s3.Data.Metadata.Version), "A8: Deletion of secret failed.");
+			Assert.True(await SB.DeleteSecretVersion(secretV2.Path,s3.Data.Metadata.Version), "A8: Deletion of secret failed.");
 
 			// Try to read it to confirm it is gone.
 			KV2SecretWrapper s5 = await SB.ReadSecret(secretV2.Path,s3.Data.Metadata.Version);
@@ -619,7 +619,7 @@ namespace VaultAgentTests
 
 
 		/// <summary>
-		/// Deletes a specific version of a secret.
+		/// UnDeletes a specific version of a secret.
 		/// </summary>
 		/// <returns></returns>
 		[Test, Order(401)]
@@ -660,7 +660,7 @@ namespace VaultAgentTests
 			Assert.AreEqual(3, s4.Data.Metadata.Version, "A7: Expected Key version was not received.");
 
 			// Now delete a specific version.
-			Assert.True(await SB.DeleteSecret(secretV2.Path, s3.Data.Metadata.Version), "A8: Deletion of secret failed.");
+			Assert.True(await SB.DeleteSecretVersion(secretV2.Path, s3.Data.Metadata.Version), "A8: Deletion of secret failed.");
 
 			// Try to read it to confirm it is gone.
 			KV2SecretWrapper s5 = await SB.ReadSecret(secretV2.Path, s3.Data.Metadata.Version);
@@ -668,7 +668,7 @@ namespace VaultAgentTests
 			Assert.IsNull(s5, "A9: Expected ReadSecret to return null object.  Instead it returned an object.  Seems deletion did not work.");
 
 			// Now undelete it.
-			Assert.True(await SB.UndeleteSecret(secretV2.Path, s3.Data.Metadata.Version),"A10: Undeletion did not work.");
+			Assert.True(await SB.UndeleteSecretVersion(secretV2.Path, s3.Data.Metadata.Version),"A10: Undeletion did not work.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s3B = await SB.ReadSecret(secretV2.Path);
@@ -678,7 +678,7 @@ namespace VaultAgentTests
 
 
 		/// <summary>
-		/// Deletes a specific version of a secret.
+		/// Destroys a specific version of a secret.
 		/// </summary>
 		/// <returns></returns>
 		[Test, Order(401)]
@@ -719,13 +719,80 @@ namespace VaultAgentTests
 			Assert.AreEqual(3, s4.Data.Metadata.Version, "A7: Expected Key version was not received.");
 
 			// Destroy it.  Instead of delete.
-			Assert.True(await SB.DestroySecret(secretV2.Path, s3.Data.Metadata.Version), "A8: Destroy secret failed.");
+			Assert.True(await SB.DestroySecretVersion(secretV2.Path, s3.Data.Metadata.Version), "A8: Destroy secret failed.");
 
 			// Try to read it to confirm it is gone.
 			KV2SecretWrapper s5 = await SB.ReadSecret(secretV2.Path, s3.Data.Metadata.Version);
 
 			Assert.IsNull(s5, "A9: Expected ReadSecret to return null object.  Instead it returned an object.  Seems deletion did not work.");
 		}
+
+
+
+		/// <summary>
+		/// Completely destroy a secret.
+		/// </summary>
+		/// <returns></returns>
+		[Test, Order(401)]
+		public async Task CompletelyDestroySecret_Succeeds() {
+			// Setup backend to allow 6 versions of a key and not require CAS.
+			Assert.True(await SB.SetBackendConfiguration(6, true));
+			KV2BackendSettings s = await SB.GetBackendConfiguration();
+			Assert.True(s.CASRequired, "A1: Backend settings are not what was expected.");
+
+			// Generate a key.
+			string secName = UK.GetKey();
+			KV2Secret secretV2 = new KV2Secret(secName);
+			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
+			secretV2.Attributes.Add(kv1.Key, kv1.Value);
+
+
+			// Save Secret
+			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
+
+			// Confirm it exists:
+			KV2SecretWrapper s2 = await SB.ReadSecret(secretV2.Path);
+			Assert.True(secretV2.Path == s2.Data.SecretObj.Path, "A3: Secret saved and secret read were not the same.");
+
+			// Save a new version
+			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s2.Data.Metadata.Version), "A4: SaveSecret failed to return True.");
+
+			// Confirm it exists:
+			KV2SecretWrapper s3 = await SB.ReadSecret(secretV2.Path);
+			Assert.AreEqual(2, s3.Data.Metadata.Version, "A5: Expected Key version was not received.");
+
+
+			// And one more time. save another version
+			// Save a new version
+			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s3.Data.Metadata.Version), "A6: SaveSecret failed to return True.");
+
+			// Confirm it exists:
+			KV2SecretWrapper s4 = await SB.ReadSecret(secretV2.Path);
+			Assert.AreEqual(3, s4.Data.Metadata.Version, "A7: Expected Key version was not received.");
+
+
+
+			// Destroy the Metadata
+			Assert.True(await SB.DestroySecretCompletely(secretV2.Path), "A8: DestroySecretCompletely failed.");
+
+			// Try to read it to confirm it is gone.
+			KV2SecretWrapper s5 = await SB.ReadSecret(secretV2.Path, s3.Data.Metadata.Version);
+
+			Assert.IsNull(s5, "A9: Expected ReadSecret to return null object.  Instead it returned an object.  Seems deletion did not work.");
+
+			// Try to read version 2
+			Assert.IsNull(await SB.ReadSecret(secretV2.Path, s3.Version),"A10:  Expected ReadSecret to return null object.  Instead it returned an object.  Deletion did not work");
+
+			// Try to read original version 
+			Assert.IsNull(await SB.ReadSecret(secretV2.Path, s2.Version), "A10:  Expected ReadSecret to return null object.  Instead it returned an object.  Deletion did not work");
+
+
+		}
+
+
+
+
+
 
 
 

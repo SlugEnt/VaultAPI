@@ -293,7 +293,7 @@ namespace VaultAgent.Backends.Secret
 		public async Task<bool> DeleteSecret(string secretPath) {
 			string path = vaultSecretPath + secretPath;
 
-			VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "DeleteSecret");
+			VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "DeleteSecretVersion");
 			if (vdro.Success) { return true; }
 			else { return false; }
 		}

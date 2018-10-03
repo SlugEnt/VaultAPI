@@ -184,7 +184,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <param name="secretPath">The name of the secret to delete.</param>
 		/// <param name="version">The version to delete.  Defaults to zero which is the most recent or current version of the key.</param>
 		/// <returns>True if successful.  False otherwise.</returns>
-		public async Task<bool> DeleteSecret (string secretPath, int version = 0 ) {
+		public async Task<bool> DeleteSecretVersion (string secretPath, int version = 0 ) {
 			string path;
 			VaultDataResponseObject vdro;
 
@@ -194,11 +194,11 @@ namespace VaultAgent.Backends.SecretEngines
 
 				// Add the version parameter
 				string jsonParams = "{\"versions\": [" + version.ToString() + "]}";
-				vdro = await vaultHTTP.PostAsync(path, "DeleteSecret",null,jsonParams);
+				vdro = await vaultHTTP.PostAsync(path, "DeleteSecretVersion",null,jsonParams);
 			}
 			else {
 				path = secretBEPath + "data/" + secretPath;
-				vdro = await vaultHTTP.DeleteAsync(path, "DeleteSecret");
+				vdro = await vaultHTTP.DeleteAsync(path, "DeleteSecretVersion");
 			}	
 
 			
@@ -268,7 +268,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <param name="namePath">The secret name to be undeleted.</param>
 		/// <param name="version">The specific version of the secret to be unnamed.</param>
 		/// <returns>True if successful.  False otherwise.</returns>
-		public async Task<bool> UndeleteSecret (string namePath, int version ) {
+		public async Task<bool> UndeleteSecretVersion (string namePath, int version ) {
 			try {
 				// V2 Secret stores have a unique undelete path...
 				string path = secretBEPath + "undelete/" + namePath;
@@ -277,7 +277,7 @@ namespace VaultAgent.Backends.SecretEngines
 				Dictionary<string, string> contentParams = new Dictionary<string, string>();
 				contentParams.Add("versions", version.ToString());
 
-				VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "UndeleteSecret", contentParams);
+				VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "UndeleteSecretVersion", contentParams);
 				if (vdro.Success) { return true; }
 				return false;
 			}
@@ -293,7 +293,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <param name="namePath">The secret name to be undeleted.</param>
 		/// <param name="version">The specific version of the secret to be unnamed.</param>
 		/// <returns>True if successful.  False otherwise.</returns>
-		public async Task<bool> DestroySecret (string namePath, int version) {
+		public async Task<bool> DestroySecretVersion (string namePath, int version) {
 			try {
 				// V2 Secret stores have a unique destroy path...
 				string path = secretBEPath + "destroy/" + namePath;
@@ -302,7 +302,7 @@ namespace VaultAgent.Backends.SecretEngines
 				Dictionary<string, string> contentParams = new Dictionary<string, string>();
 				contentParams.Add("versions", version.ToString());
 
-				VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "DestroySecret", contentParams);
+				VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "DestroySecretVersion", contentParams);
 				if (vdro.Success) { return true; }
 				return false;
 			}
@@ -311,8 +311,24 @@ namespace VaultAgent.Backends.SecretEngines
 
 
 		//TODO ReadSecretMetaData routine needed.
-		//TODO Delete MetaData and All Versions routine needed.
 
 
+
+		/// <summary>
+		/// Permanently destroys a secret, including all versions and metadata.
+		/// </summary>
+		/// <param name="namePath">The name of the secret to delete</param>
+		/// <returns>True if successful.</returns>
+		public async Task<bool> DestroySecretCompletely (string namePath) {
+			try {
+				// we need to use the MetaData Path
+				string path = secretBEPath + "metadata/" + namePath;
+
+				VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "DestroySecretCompletely");
+				if (vdro.Success) { return true; }
+				return false;
+			}
+			catch (Exception e) { throw e; }
+		}
 	}
 }
