@@ -16,6 +16,31 @@ namespace VaultAgent.Backends.KV_V2
 	/// </summary>
 	public partial class KV2SecretWrapper
 	{
+		// Default constructor used when created outside of vault.
+		public KV2SecretWrapper () {
+			WasReadFromVault = false;
+			Data = new SecretReadReturnObjData(true);
+		}
+
+
+
+		/// <summary>
+		/// This constructor should never be used by any outside caller.  Only used by the JSON Converter logic.
+		/// It's sole purpose is to set the WasReadFromVault flag.
+		/// </summary>
+		/// <param name="value"></param>
+		[JsonConstructor]
+		public KV2SecretWrapper	(bool value) { WasReadFromVault = true; }
+
+
+
+		/// <summary>
+		/// Tells you if this Secret was read from the Vault storage engine or if it was created outside of Vault.  
+		/// </summary>
+		public bool WasReadFromVault { get; private set; }
+
+
+
 		[JsonProperty("request_id")]
 		public Guid RequestId { get; internal set; }
 
@@ -76,33 +101,85 @@ namespace VaultAgent.Backends.KV_V2
 		}
 	}
 
+
+
+
 	public partial class SecretReadReturnObjData
 	{
+		/// <summary>
+		/// Default Constructor used by JSONConverter.
+		/// </summary>
+		[JsonConstructor]
+		public SecretReadReturnObjData () { }
+
+
+		/// <summary>
+		/// Constructor used when this object is being created manually, vs populated thru JSON Converter.
+		/// </summary>
+		/// <param name="manualCreation"></param>
+		public SecretReadReturnObjData (bool manualCreation = true) {
+			SecretObj = new KV2Secret();
+			Metadata = new Metadata();
+		}
+
+
+		/// <summary>
+		/// The actual secret object - this is what most callers want.
+		/// </summary>
 		[JsonProperty("data")]
 		public KV2Secret SecretObj { get; set; }
 
+
+		/// <summary>
+		/// The metadata - such as creation times, etc for this particular secret object.
+		/// </summary>
 		[JsonProperty("metadata")]
 		public Metadata Metadata { get; internal set; }
 	}
 
+
+
+	/// <summary>
+	/// This class is Vault Secret MetaData that tracks some values related to a given secret.
+	/// Items tracked include when it was created and/or deleted, as well as if it is currently marked soft deleted and what the version # is.
+	/// </summary>
 	public partial class Metadata
 	{
+		/// <summary>
+		/// When this particular secret version was created.
+		/// </summary>
 		[JsonProperty("created_time")]
 		public DateTimeOffset CreatedTime { get; internal set; }
 
+
+		/// <summary>
+		/// When this particular secret version was deleted.
+		/// </summary>
 		[JsonProperty("deletion_time")]
 		public string DeletionTime { get; internal set; }
 
+
+		/// <summary>
+		/// Boolean - Whether this particular secret version is soft deleted.
+		/// </summary>
 		[JsonProperty("destroyed")]
 		public bool Destroyed { get; internal set; }
 
+
+		/// <summary>
+		/// The version number of this particular secret version.
+		/// </summary>
 		[JsonProperty("version")]
 		public int Version { get; internal set; }
 	}
 
 
 
+
 	// All of the following code is for the JSON conversion.
+	#region JSONConverterLogic
+
+
 	public partial class KV2SecretWrapper
 	{
 		public static KV2SecretWrapper FromJson(string json) => JsonConvert.DeserializeObject<KV2SecretWrapper>(json, VaultAgent.Backends.KV_V2.Converter.Settings);
@@ -151,4 +228,5 @@ namespace VaultAgent.Backends.KV_V2
 
 		public static readonly ParseStringConverter Singleton = new ParseStringConverter();
 	}
+	#endregion
 }
