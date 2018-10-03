@@ -6,6 +6,7 @@ using VaultAgent.Backends.SecretEngines.KVV2;
 using VaultAgent.Backends.KV_V2;
 using Newtonsoft.Json;
 using System.Text;
+using VaultAgent.Backends.KV_V2.KV2SecretMetaData;
 
 namespace VaultAgent.Backends.SecretEngines
 {
@@ -311,15 +312,32 @@ namespace VaultAgent.Backends.SecretEngines
 
 
 		//TODO ReadSecretMetaData routine needed.
+		public async Task<KV2SecretMetaDataInfo> GetSecretMetaData (string namePath) {
+			try {
+
+				// we need to use the MetaData Path
+				string path = secretBEPath + "metadata/" + namePath;
+
+				VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "GetSecretMetaData");
+				if (vdro.Success) {
+					string ks = vdro.GetDataPackageAsJSON();
+					KV2SecretMetaDataInfo kvData = VaultUtilityFX.ConvertJSON<KV2SecretMetaDataInfo>(ks);
+					return kvData;
+				}
+				return null;
+			}
+			catch (Exception e) { throw e; }
+
+}
 
 
 
-		/// <summary>
-		/// Permanently destroys a secret, including all versions and metadata.
-		/// </summary>
-		/// <param name="namePath">The name of the secret to delete</param>
-		/// <returns>True if successful.</returns>
-		public async Task<bool> DestroySecretCompletely (string namePath) {
+/// <summary>
+/// Permanently destroys a secret, including all versions and metadata.
+/// </summary>
+/// <param name="namePath">The name of the secret to delete</param>
+/// <returns>True if successful.</returns>
+public async Task<bool> DestroySecretCompletely (string namePath) {
 			try {
 				// we need to use the MetaData Path
 				string path = secretBEPath + "metadata/" + namePath;

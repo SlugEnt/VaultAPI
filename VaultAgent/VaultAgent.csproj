@@ -78,6 +78,7 @@
     <Compile Include="Backends\KV_V2\KV2BackendSettings.cs" />
     <Compile Include="Backends\KV_V2\KV2SecretWrapper.cs" />
     <Compile Include="Backends\KV_V2\KV2Secret.cs" />
+    <Compile Include="Backends\KV_V2\SecretKV2MetaDataInfo.cs" />
     <Compile Include="Backends\Secret\Secret.cs" />
     <Compile Include="Backends\Secret\SecretBackend.cs" />
     <Compile Include="Backends\System\AuthConfig.cs" />

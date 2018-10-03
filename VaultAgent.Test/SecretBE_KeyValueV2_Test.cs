@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using VaultAgent.Backends.SecretEngines.KVV2;
 using VaultAgent.Backends.KV_V2;
 using VaultAgent;
+using VaultAgent.Backends.KV_V2.KV2SecretMetaData;
 
 namespace VaultAgentTests
 {
@@ -617,6 +618,49 @@ namespace VaultAgentTests
 		}
 
 
+		/// <summary>
+		/// Deletes a specific version of a secret.
+		/// </summary>
+		/// <returns></returns>
+		[Test, Order(401)]
+		public async Task ReadSecretMetaDataWorks() {
+			// Setup backend to allow 6 versions of a key and not require CAS.
+			Assert.True(await SB.SetBackendConfiguration(6, true));
+			KV2BackendSettings s = await SB.GetBackendConfiguration();
+			Assert.True(s.CASRequired, "A1: Backend settings are not what was expected.");
+
+			// Generate a key.
+			string secName = UK.GetKey();
+			KV2Secret secretV2 = new KV2Secret(secName);
+			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
+			secretV2.Attributes.Add(kv1.Key, kv1.Value);
+
+
+			// Save Secret
+			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
+
+			// Confirm it exists:
+			KV2SecretWrapper s2 = await SB.ReadSecret(secretV2.Path);
+			Assert.True(secretV2.Path == s2.Data.SecretObj.Path, "A3: Secret saved and secret read were not the same.");
+
+			// Save a new version
+			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s2.Data.Metadata.Version), "A4: SaveSecret failed to return True.");
+
+			// Confirm it exists:
+			KV2SecretWrapper s3 = await SB.ReadSecret(secretV2.Path);
+			Assert.AreEqual(2, s3.Data.Metadata.Version, "A5: Expected Key version was not received.");
+
+
+			// And one more time. save another version
+			// Save a new version
+			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s3.Data.Metadata.Version), "A6: SaveSecret failed to return True.");
+
+			// Confirm it exists:
+			KV2SecretWrapper s4 = await SB.ReadSecret(secretV2.Path);
+			Assert.AreEqual(3, s4.Data.Metadata.Version, "A7: Expected Key version was not received.");
+		}
+
+
 
 		/// <summary>
 		/// UnDeletes a specific version of a secret.
@@ -789,6 +833,58 @@ namespace VaultAgentTests
 
 		}
 
+
+
+
+
+		/// <summary>
+		/// Completely destroy a secret.
+		/// </summary>
+		/// <returns></returns>
+		[Test, Order(401)]
+		public async Task GetSecretMetaData_Succeeds() {
+			// Setup backend to allow 6 versions of a key and not require CAS.
+			Assert.True(await SB.SetBackendConfiguration(6, true));
+			KV2BackendSettings s = await SB.GetBackendConfiguration();
+			Assert.True(s.CASRequired, "A1: Backend settings are not what was expected.");
+
+			// Generate a key.
+			string secName = UK.GetKey();
+			KV2Secret secretV2 = new KV2Secret(secName);
+			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
+			secretV2.Attributes.Add(kv1.Key, kv1.Value);
+
+
+			// Save Secret
+			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
+
+			// Confirm it exists:
+			KV2SecretWrapper s2 = await SB.ReadSecret(secretV2.Path);
+			Assert.True(secretV2.Path == s2.Data.SecretObj.Path, "A3: Secret saved and secret read were not the same.");
+
+			// Save a new version
+			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s2.Data.Metadata.Version), "A4: SaveSecret failed to return True.");
+
+			// Confirm it exists:
+			KV2SecretWrapper s3 = await SB.ReadSecret(secretV2.Path);
+			Assert.AreEqual(2, s3.Data.Metadata.Version, "A5: Expected Key version was not received.");
+
+
+			// And one more time. save another version
+			// Save a new version
+			Assert.True(await SB.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s3.Data.Metadata.Version), "A6: SaveSecret failed to return True.");
+
+			// Confirm it exists:
+			KV2SecretWrapper s4 = await SB.ReadSecret(secretV2.Path);
+			Assert.AreEqual(3, s4.Data.Metadata.Version, "A7: Expected Key version was not received.");
+
+
+			// Now get metadata info
+			KV2SecretMetaDataInfo k1 = await SB.GetSecretMetaData(s3.Secret.Path);
+			Assert.NotNull(k1,"A8:  Unable to retrieve Secret MetaData");
+			Assert.AreEqual(3, k1.Versions.Count,"A9:  Expected 3 versions to be retrieved.");
+
+		}
 
 
 
