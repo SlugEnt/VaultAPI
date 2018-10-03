@@ -10,9 +10,20 @@ using System.Reflection;
 using VaultAgent;
 using System.Threading;
 
+using VaultAgent.SupportFX;
+
+// NOTE:  The only thing you ever really need to change here is the UseNewVaultServerEachRun variable in the TestInitializer class. 
+//   Set to True to use a new Vault development instance each time the tests are run.
+//   Set to False to use an already running Vault instance.  For instance, we have a standard Vault Development instance that can 
+//   be started and then left running thru multiple tests scenarios.  Useful when you need to debug with Postman or just want a slight
+//   speedup in starting up each test run.  
+//
+// NOTE: It is up to the UnitTestCases to ensure they can handle such a scenario by creating unique keys each test run.
+
 
 namespace VaultAgentTests
 {
+
 	/// <summary>
 	/// Static class used by all the other test methods to communicate with the Vault server that has been started in dev mode.
 	/// </summary>
@@ -24,9 +35,103 @@ namespace VaultAgentTests
 		public static string vaultFolder;
 		public static string unSealKey;
 		public static int ipPort;
-
 	}
 
+
+
+	/// <summary>
+	/// This class exists purely to start up Vault or to connect to an existing already running version of Vault for Testing purposes.
+	/// </summary>
+	[SetUpFixture]
+	public class TestInitializer : IDisposable {
+		// Set this flag to false if you do not want a new Vault instance started during each test run.  
+		// This can be useful if you want to be able to connect PostMan to the vault server to query for data to get a better handle on what is going on.
+		// Also, you can see the log files, etc.
+		private bool UseNewVaultServerEachRun = false;
+
+		// The new Vault instance object if we needed to create it.
+		private VaultServerInstance VSI;
+
+		private bool _disposed = false;
+
+
+		public TestInitializer() { }
+
+
+
+		[OneTimeSetUp]
+		public void InitTestingSetup() {
+			if (UseNewVaultServerEachRun == true) {
+				// Startup new Vault instance each run
+				VaultServerRef.rootToken = "testing";
+				VaultServerRef.ipAddress = "127.0.0.1";
+				VaultServerRef.ipPort = GetRandomUnusedPort();
+			}
+			else {
+				// Connect to an already running Vault instance.
+				VaultServerRef.rootToken = "tokenA";
+				VaultServerRef.ipAddress = "127.0.0.1";
+				VaultServerRef.ipPort = 47002;
+			}
+
+			VaultServerRef.vaultFolder = "C:\\A_Dev\\Tools\\";
+			VaultServerRef.vaultURI = new Uri("http://" + VaultServerRef.ipAddress + ":" + VaultServerRef.ipPort);
+
+			// Now startup the Vault instance if we need to.
+			if (UseNewVaultServerEachRun) {
+				VSI = new VaultServerInstance();
+				VSI.StartVaultServer();
+			}
+		}
+
+
+
+		
+
+
+
+
+		/// <summary>
+		/// Acquires an IP Address port that is not currently used.
+		/// </summary>
+		/// <returns></returns>
+		private static int GetRandomUnusedPort() {
+			var listener = new TcpListener(IPAddress.Any, 0);
+			listener.Start();
+			var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+			listener.Stop();
+			return port;
+		}
+
+
+
+		/// <summary>
+		/// Ensures the Vault process is stopped.
+		/// </summary>
+		/// <param name="disposing"></param>
+		protected virtual void Dispose(bool disposing) {
+			if ((_disposed) || (VSI == null))  {
+				return;
+			}
+
+			if (disposing) {
+				try {
+					VSI.StopVaultServer();
+				}
+				catch { }
+			}
+
+			_disposed = true;
+		}
+
+
+
+		[OneTimeTearDown]
+		public void Dispose() {
+			Dispose(true);
+		}
+
+	}
 
 
 
@@ -35,29 +140,18 @@ namespace VaultAgentTests
 	///   - Starts the vault server in Dev mode, with a known root token.
 	///   - Scans the startup process to look for the unseal key.
 	/// </summary>
-	[SetUpFixture]
-	public class VaultServerSetup : IDisposable {
+	public class VaultServerInstance : IDisposable {
 		private Process _process;
 		private bool _disposed;
 
 		private static bool _startingUP = true;
 
-		public VaultServerSetup() { }
+		public VaultServerInstance() { }
 
 
-		[OneTimeSetUp]
+
+		// Starts up an instance of Vault for development and testing purposes.
 		public void StartVaultServer() {
-
-			//VaultServerRef.rootToken = Guid.NewGuid().ToString();
-			VaultServerRef.rootToken = "testing";
-			VaultServerRef.ipPort = GetRandomUnusedPort();
-// Temp for scott test.
-//VaultServerRef.ipPort = 56555;
-			VaultServerRef.ipAddress = "127.0.0.1";
-			VaultServerRef.vaultURI  =  new Uri("http://" + VaultServerRef.ipAddress + ":" +  VaultServerRef.ipPort);
-			VaultServerRef.vaultFolder = GetTestsPath() + "\\Utility";
-
-
 			var vaultArgs = string.Join(" ", new List<string>
 			{
 				"server",
@@ -71,7 +165,7 @@ namespace VaultAgentTests
 			// Define the shell environment for the vault server.  Vault.Exe should be in a subdirectory off 
 			// of this projects main folder.  Subdirectory should be called Utility.
 			string vaultBin = "vault.exe";
-			string vaultFullBin = VaultServerRef.vaultFolder + "\\" + vaultBin;
+			string vaultFullBin = VaultServerRef.vaultFolder + vaultBin;
 
 			var startInfo = new ProcessStartInfo(vaultFullBin, vaultArgs) {
 				UseShellExecute = false,
@@ -105,7 +199,7 @@ namespace VaultAgentTests
 			_process.BeginOutputReadLine();
 
 
-			while (VaultServerSetup._startingUP == true) {
+			while (VaultServerInstance._startingUP == true) {
 				Thread.Sleep(10);				
 			}
 
@@ -116,48 +210,10 @@ namespace VaultAgentTests
 		}
 
 
-		[OneTimeTearDown]
 		public void StopVaultServer() {
 			_process.CloseMainWindow();
 			_process.Kill();
 		}
-
-
-
-
-		/// <summary>
-		/// Used to get the path to the Utility folder which is where vault.exe needs to be placed and any files the test
-		/// scripts need to process.
-		/// </summary>
-		/// <returns></returns>
-		public static string GetTestsPath() {
-			string sPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase);
-			int i = sPath.LastIndexOf("\\bin");
-			if (i > 0) { sPath = sPath.Substring(0, i);  }
-			else {
-				throw new Exception("Unable to locate bin directory of the test executable.  Need this to find Vault directory");
-			}
-
-			// Strip off the beginning
-			sPath = sPath.Replace("file:\\", "");
-			return sPath;		
-		}
-
-
-
-
-		/// <summary>
-		/// Acquires an IP Address port that is not currently used.
-		/// </summary>
-		/// <returns></returns>
-		private static int GetRandomUnusedPort() {
-			var listener = new TcpListener(IPAddress.Any, 0);
-			listener.Start();
-			var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-			listener.Stop();
-			return port;
-		}
-
 
 
 
@@ -208,10 +264,10 @@ namespace VaultAgentTests
 			Debug.WriteLine(data,cat);
 
 			// If starting up then we need to look for some stuff.
-			if (VaultServerSetup._startingUP) {
+			if (VaultServerInstance._startingUP) {
 				// Now look for successful start message.
 				if (data?.StartsWith("==> Vault server started!") == true) {
-					VaultServerSetup._startingUP = false;
+					VaultServerInstance._startingUP = false;
 					return;
 				}
 				if (data?.StartsWith("Unseal Key:") == true) {
@@ -221,5 +277,48 @@ namespace VaultAgentTests
 
 		}
 			
+	}
+
+
+
+	// Used to generate Unique Keys for Vault Tests.  Especially useful when using a single Vault instance that continuously runs.
+	public class UniqueKeys
+	{
+		private int keyIncrementer = 0;
+		private object keyIncrLock = new object();
+		private string stGuid;
+
+		public UniqueKeys() {
+			DateTime d = DateTime.Now;
+			stGuid = TimeGuid.ConvertTimeToChar(d);
+		}
+
+
+		/// <summary>
+		/// Creates a small random key based upon the current time (H:M:S).
+		/// </summary>
+		/// <param name="prefix"></param>
+		/// <returns></returns>
+		public string GetKey(string prefix = "Key") {
+			string val = prefix + stGuid + IncrementKey();
+			return val;
+		}
+
+
+		public string RefreshKey (string prefix = "Key") {
+			DateTime d = DateTime.Now;
+			stGuid = TimeGuid.ConvertTimeToChar(d);
+			return GetKey();
+		}
+
+
+		private string IncrementKey() {
+			string val;
+			lock (keyIncrLock) {
+				keyIncrementer++;
+				val = keyIncrementer.ToString();
+			}
+			return val;
+		}
 	}
 }

@@ -15,6 +15,7 @@ namespace VaultAgent.Backends.System
 		CubbyHole = 3,
 		Generic = 4,
 		PKI = 5,
-		SSH = 6
+		SSH = 6,
+		KeyValueV2 = 7
 	}
 }
