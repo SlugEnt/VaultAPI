@@ -199,6 +199,12 @@ namespace VaultAgent.Backends.Secret
 		}
 
 
+
+		/// <summary>
+		/// Determines whether a given secret exists or not.
+		/// </summary>
+		/// <param name="secretPath">The name of the secret to determine if it exists.</param>
+		/// <returns>True if the secret exists.  False if it was not found.</returns>
 		public async Task<bool> IfExists (string secretPath) {
 			Secret exists = await ReadSecret(secretPath);
 			if (exists != null) { return true; }
@@ -287,7 +293,7 @@ namespace VaultAgent.Backends.Secret
 		public async Task<bool> DeleteSecret(string secretPath) {
 			string path = vaultSecretPath + secretPath;
 
-			VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "DeleteSecret");
+			VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "DeleteSecretVersion");
 			if (vdro.Success) { return true; }
 			else { return false; }
 		}
