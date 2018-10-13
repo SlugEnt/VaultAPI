@@ -12,7 +12,7 @@ using VaultAgent;
 namespace VaultAgent
 {
 
-	public class VaultAPI_Http
+	internal class VaultAPI_Http
 	{
 		private Uri vaultIPAddress;
 		private string accessToken;

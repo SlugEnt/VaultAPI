@@ -38,8 +38,8 @@ namespace VaultAgentTests
         }
 
 
-
-		[Test, Order(1)]
+		//TODO Replace this test function.  VaultAPI_Http is not accessible any longer outside the VaultAgent project.
+/*		[Test, Order(1)]
 		public async Task TokenInfoTest () {
 			// This is temporary until we have the ability to send input parameters
 			string path = "v1/auth/token/lookup";
@@ -59,7 +59,7 @@ namespace VaultAgentTests
 			}
 			catch (Exception e) { }
 		}
-
+*/
 
 
 		//[Test, Order(50)]

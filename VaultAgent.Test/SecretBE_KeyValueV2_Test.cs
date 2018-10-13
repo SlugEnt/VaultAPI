@@ -924,8 +924,12 @@ namespace VaultAgentTests
 			secretA.Version = 2;
 			Assert.AreEqual(2, secretA.Version);
 			Assert.AreEqual(2, secretA.Data.Metadata.Version);
-
 		}
 
+		[Test]
+		public void TestNameIsSet () {
+			// Secret Backend should be initialized in setup...
+			Assert.AreEqual(secretBE_A, SB.Name);
+		}
 	}
 }

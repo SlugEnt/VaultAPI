@@ -25,7 +25,7 @@ namespace VaultAgent.Backends.SecretEngines
 	/// One of the unique things is that there are different root mounts within the given backend depending on what you want to do.  So having
 	/// a std BackEnd path does not really work with this class.  It generally builds the unique path in each member method.
 	/// </summary>
-	public class KV2Backend
+	public class KV2Backend : VaultBackend
 	{
 		TokenInfo secretToken;
 		private VaultAPI_Http vaultHTTP;
@@ -41,7 +41,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <param name="port">The network port the Vault server listens on.</param>
 		/// <param name="Token">The token used to authenticate with.</param>
 		/// <param name="backendMountName">The name of the secret backend to mount.  For example for a mount at /mine/secretA use mine/secretA as value.</param>
-		public KV2Backend(string vaultIP, int port, string Token, string backendMountName = "secret") {
+		public KV2Backend(string vaultIP, int port, string Token, string backendMountName = "secret", string backendMountPoint = "secret") : base (backendMountName,backendMountPoint) {
 			vaultHTTP = new VaultAPI_Http(vaultIP, port, Token);
 			secretToken = new TokenInfo();
 			secretToken.Id = Token;
