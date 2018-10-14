@@ -12,7 +12,7 @@ using VaultAgent;
 namespace VaultAgent
 {
 
-	internal class VaultAPI_Http
+	public class VaultAPI_Http
 	{
 		private Uri vaultIPAddress;
 		private string accessToken;
@@ -142,7 +142,13 @@ namespace VaultAgent
 
 
 
-
+		/// <summary>
+		/// Retrieves data from the Vault.
+		/// </summary>
+		/// <param name="APIPath">Path to the vault method you wish to execute.</param>
+		/// <param name="callingRoutineName">Name of routine that is calling us - used during error reporting.</param>
+		/// <param name="sendParameters">The parameters to send to the API method.</param>
+		/// <returns>A VaultDataResponseObject containing the return data or error codes.</returns>
 		public async Task<VaultDataResponseObject> GetAsync(string APIPath, string callingRoutineName, Dictionary<string, string> sendParameters = null) {
 			string jsonResponse="";
 			string httpParameters = "";
