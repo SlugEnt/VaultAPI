@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
 
-namespace VaultAgent.Backends.Secret
+namespace VaultAgent.Backends.SecretEngines
 {
 	/// <summary>
 	/// Represents a secret read from the Vault.  Secrets can have many attributes which are just Key Value Pairs of a name and some data value.

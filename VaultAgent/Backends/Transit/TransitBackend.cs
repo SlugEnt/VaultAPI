@@ -10,11 +10,6 @@ namespace VaultAgent.Backends
 {
 	public class TransitBackend : VaultBackend
 	{
-//		TokenInfo transitToken;
-//		private VaultAPI_Http _vaultHTTP;
-//		string transitPath = "/v1/transit/";
-//		Uri MountPointPath;
-
 		const string pathKeys = "keys/";
 		const string pathEncrypt = "encrypt/";
 		const string pathDecrypt = "decrypt/";

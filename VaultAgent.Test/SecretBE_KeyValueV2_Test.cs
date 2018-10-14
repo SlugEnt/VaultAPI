@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
-using VaultAgent.Backends.Secret;
 using VaultAgent.Backends.System;
 using VaultAgent.Backends.SecretEngines;
 using VaultAgentTests;
