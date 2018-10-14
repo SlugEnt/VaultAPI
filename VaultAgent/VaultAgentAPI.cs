@@ -89,7 +89,8 @@ namespace VaultAgent
 					KV2Backend kv2Backend = new KV2Backend(backendName, backendMountPath, _httpConnector);
 					return kv2Backend;
 				case EnumBackendTypes.Secret:
-					break;
+					SecretBackend secretBackend = new SecretBackend(backendName, backendMountPath, _httpConnector);
+					return secretBackend;
 				case EnumBackendTypes.Transit:
 					TransitBackend transitBackend = new TransitBackend(backendName, backendMountPath, _httpConnector);
 					return transitBackend;

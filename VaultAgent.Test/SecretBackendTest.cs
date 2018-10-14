@@ -1,21 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
 using NUnit.Framework;
-using VaultAgent.Backends.Secret;
+using VaultAgent.Backends.SecretEngines;
 using VaultAgentTests;
 using VaultAgent.Backends.System;
 using System.Threading.Tasks;
+using VaultAgent;
 
 namespace VaultAgentTests
 {
+
+
 	[Parallelizable]
     public class SecretBackendTest
     {
+		private VaultAgentAPI VSB;
+		private UniqueKeys UK = new UniqueKeys();       // Unique Key generator
+
 		// The Vault Transit Backend we will be using throughout our testing.
 		SecretBackend SB;
 
-		// For system related calls we will use this Backend.
-		SysBackend VSB;
+
 
 	
 		/// <summary>
@@ -31,21 +36,18 @@ namespace VaultAgentTests
 
 		[OneTimeSetUp]
 		public async Task Secret_Init() {
-			if (SB != null) {
+			if (VSB != null) {
 				return;
 			}
 
+			// Build Connection to Vault.
+			VSB = new VaultAgentAPI("testa", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+			string mountName = UK.GetKey("SEC");
 
-			// Create a Transit Backend Mount for this series of tests.
-			VSB = new SysBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+			// Create a secret Backend Mount for this series of tests.
+			SB = (SecretBackend)await VSB.CreateSecretBackendMount(EnumBackendTypes.Secret, mountName, mountName, "Secret V1 Backend");
 
-			// Create a custom Secret Backend.
-			string secretName = secretBE_A;
-			string desc = "Secret DB: " + secretName + " backend.";
-			bool rc = await VSB.SysMountCreate(secretName, desc, EnumBackendTypes.Secret);
-			Assert.AreEqual(true, rc);
-
-			SB = new SecretBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, secretName);
+			Assert.NotNull(SB);
 			return;
 		}
 
@@ -53,13 +55,12 @@ namespace VaultAgentTests
 
 
 		public async Task<string> Secret_Init_Create(Secret val) {
-			randomSecretNum++;
-			string secretName = secretPrefix + randomSecretNum.ToString();
+			string sec = UK.GetKey("SEC");
 
-			val.Path = secretName;
+			val.Path = sec;
 			Assert.True(await SB.CreateOrUpdateSecretAndReturn(val));
 
-			return secretName;
+			return sec;
 		}
 
 		

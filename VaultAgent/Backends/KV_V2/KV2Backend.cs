@@ -27,11 +27,6 @@ namespace VaultAgent.Backends.SecretEngines
 	/// </summary>
 	public class KV2Backend : VaultBackend
 	{
-
-		//private string secretBEName = "secret";
-		//private string MountPoint = "/secret/";	
-
-
 		// ==============================================================================================================================================
 		/// <summary>
 		/// Constructor.  Initializes the connection to Vault and stores the token.
@@ -39,15 +34,8 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <param name="backendName">The name of the secret backend to mount.  This is purely cosmetic.</param>
 		/// <param name="backendMountPoint">The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/ and exclude trailing slash.</param>
 		/// <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
-//		public KV2Backend(string vaultIP, int port, string Token, string backendMountName = "secret", string backendMountPoint = "secret") : base (backendMountName,backendMountPoint) {
 		public KV2Backend(string backendName,string backendMountPoint, VaultAPI_Http _httpConnector) : base (backendName, backendMountPoint, _httpConnector) {
-//			__vaultHTTP = _httpConnector;
-//			_vaultHTTP = new VaultAPI_Http(vaultIP, port, Token);
-//			secretToken = new TokenInfo();
-//			secretToken.Id = Token;
-			
-//			secretBEName = backendMountPath;
-//			MountPoint = "/v1/" + secretBEName + "/";
+
 		}
 
 
