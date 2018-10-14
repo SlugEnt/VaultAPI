@@ -36,12 +36,11 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <summary>
 		/// Constructor.  Initializes the connection to Vault and stores the token.
 		/// </summary>
-		/// <param name="vaultIP">The IP address of the Vault Server.</param>
-		/// <param name="port">The network port the Vault server listens on.</param>
-		/// <param name="Token">The token used to authenticate with.</param>
-		/// <param name="backendMountName">The name of the secret backend to mount.  For example for a mount at /mine/secretA use mine/secretA as value.</param>
+		/// <param name="backendName">The name of the secret backend to mount.  This is purely cosmetic.</param>
+		/// <param name="backendMountPoint">The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/ and exclude trailing slash.</param>
+		/// <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
 //		public KV2Backend(string vaultIP, int port, string Token, string backendMountName = "secret", string backendMountPoint = "secret") : base (backendMountName,backendMountPoint) {
-		public KV2Backend(string backendName,string backendMountPath, VaultAPI_Http _httpConnector) : base (backendName, "/v1/" + backendMountPath + "/", _httpConnector) {
+		public KV2Backend(string backendName,string backendMountPoint, VaultAPI_Http _httpConnector) : base (backendName, backendMountPoint, _httpConnector) {
 //			__vaultHTTP = _httpConnector;
 //			_vaultHTTP = new VaultAPI_Http(vaultIP, port, Token);
 //			secretToken = new TokenInfo();
@@ -64,7 +63,7 @@ namespace VaultAgent.Backends.SecretEngines
 		public async Task<bool> SetBackendConfiguration (UInt16 maxVersions = 10, bool casRequired = false) {
 			try {
 				// V2 Secret stores have a unique config path...
-				string path = MountPoint + "config";
+				string path = MountPointPath + "config";
 
 				// Build the content parameters, which will contain the maxVersions and casRequired settings.
 				Dictionary<string, string> contentParams = new Dictionary<string, string>();
@@ -88,7 +87,7 @@ namespace VaultAgent.Backends.SecretEngines
 			try {
 
 				// V2 Secret stores have a unique config path...
-				string path = MountPoint + "config";
+				string path = MountPointPath + "config";
 
 				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "GetBackendConfiguration");
 				KV2BackendSettings settings = vdro.GetVaultTypedObject<KV2BackendSettings>();
@@ -110,7 +109,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <param name="currentVersion">What the current version of the secret is.  Required if the backend is in CAS mode (Default mode).</param>
 		/// <returns></returns>
 		public async Task<bool> SaveSecret (KV2Secret secret, EnumKVv2SaveSecretOptions enumKVv2SaveSecretOption, int currentVersion = 0) {
-			string path = MountPoint + "data/" + secret.Path;
+			string path = MountPointPath + "data/" + secret.Path;
 
 
 			Dictionary<string, object> reqData = new Dictionary<string, object>();
@@ -162,7 +161,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <param name="secretVersion">The version of the secret to retrieve.  Leave at default of Zero to read most recent version.</param>
 		/// <returns>KV2Secret of the secret as read from Vault.  </returns>
 		public async Task<KV2SecretWrapper> ReadSecret (string secretPath, int secretVersion = 0) {
-			string path = MountPoint + "data/" + secretPath;
+			string path = MountPointPath + "data/" + secretPath;
 			try {
 				Dictionary<string, string> contentParams = new Dictionary<string, string>() {{ "version", secretVersion.ToString() }};
 
@@ -192,14 +191,14 @@ namespace VaultAgent.Backends.SecretEngines
 
 			// Paths are different if specifying versions or version = 0 (current)
 			if (version != 0) {
-				path = MountPoint + "delete/" + secretPath;
+				path = MountPointPath + "delete/" + secretPath;
 
 				// Add the version parameter
 				string jsonParams = "{\"versions\": [" + version.ToString() + "]}";
 				vdro = await _vaultHTTP.PostAsync(path, "DeleteSecretVersion",null,jsonParams);
 			}
 			else {
-				path = MountPoint + "data/" + secretPath;
+				path = MountPointPath + "data/" + secretPath;
 				vdro = await _vaultHTTP.DeleteAsync(path, "DeleteSecretVersion");
 			}	
 
@@ -219,7 +218,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <param name="namePath">The parent secret (Path to the parent secret) </param>
 		/// <returns>List of strings which contain secret names.</returns>
 		public async Task<List<string>> ListSecretsAtPath (string namePath) {
-			string path = MountPoint + "metadata/" + namePath + "?list=true";
+			string path = MountPointPath + "metadata/" + namePath + "?list=true";
 
 			try {
 				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ListSecrets");
@@ -248,7 +247,7 @@ namespace VaultAgent.Backends.SecretEngines
 		public async Task<bool> UpdateSecretSettings (string namePath, UInt16 maxVersions, bool casRequired) {
 			try {
 				// V2 Secret stores have a unique config path...
-				string path = MountPoint + "metadata/" + namePath;
+				string path = MountPointPath + "metadata/" + namePath;
 
 				// Build the content parameters, which will contain the maxVersions and casRequired settings.
 				Dictionary<string, string> contentParams = new Dictionary<string, string>();
@@ -273,7 +272,7 @@ namespace VaultAgent.Backends.SecretEngines
 		public async Task<bool> UndeleteSecretVersion (string namePath, int version ) {
 			try {
 				// V2 Secret stores have a unique undelete path...
-				string path = MountPoint + "undelete/" + namePath;
+				string path = MountPointPath + "undelete/" + namePath;
 
 				// Build the content parameters, which will contain the maxVersions and casRequired settings.
 				Dictionary<string, string> contentParams = new Dictionary<string, string>();
@@ -298,7 +297,7 @@ namespace VaultAgent.Backends.SecretEngines
 		public async Task<bool> DestroySecretVersion (string namePath, int version) {
 			try {
 				// V2 Secret stores have a unique destroy path...
-				string path = MountPoint + "destroy/" + namePath;
+				string path = MountPointPath + "destroy/" + namePath;
 
 				// Build the content parameters, which will contain the maxVersions and casRequired settings.
 				Dictionary<string, string> contentParams = new Dictionary<string, string>();
@@ -317,7 +316,7 @@ namespace VaultAgent.Backends.SecretEngines
 			try {
 
 				// we need to use the MetaData Path
-				string path = MountPoint + "metadata/" + namePath;
+				string path = MountPointPath + "metadata/" + namePath;
 
 				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "GetSecretMetaData");
 				if (vdro.Success) {
@@ -341,7 +340,7 @@ namespace VaultAgent.Backends.SecretEngines
 public async Task<bool> DestroySecretCompletely (string namePath) {
 			try {
 				// we need to use the MetaData Path
-				string path = MountPoint + "metadata/" + namePath;
+				string path = MountPointPath + "metadata/" + namePath;
 
 				VaultDataResponseObject vdro = await _vaultHTTP.DeleteAsync(path, "DestroySecretCompletely");
 				if (vdro.Success) { return true; }

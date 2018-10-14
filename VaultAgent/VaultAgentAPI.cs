@@ -5,6 +5,8 @@ using VaultAgent.Backends.System;
 using VaultAgent.Backends.SecretEngines;
 using VaultAgent.Models;
 using System.Threading.Tasks;
+using VaultAgent.Backends;
+
 
 namespace VaultAgent
 {
@@ -89,7 +91,8 @@ namespace VaultAgent
 				case EnumBackendTypes.Secret:
 					break;
 				case EnumBackendTypes.Transit:
-					break;
+					TransitBackend transitBackend = new TransitBackend(backendName, backendMountPath, _httpConnector);
+					return transitBackend;
 			}
 			return null;
 		}
