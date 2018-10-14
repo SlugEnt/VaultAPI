@@ -58,6 +58,21 @@ namespace VaultAgent.Models
 		public string TTL { get; set; }
 
 
+
+		/// <summary>
+		/// Default JSON Constructor
+		/// </summary>
+		[JsonConstructor]
+		public TokenInfo() { }
+
+
+		/// <summary>
+		/// Constructor that accepts the token ID value
+		/// </summary>
+		/// <param name="tokenValue"></param>
+		public TokenInfo (string tokenID) { Id = tokenID; }
+
+
 		/// <summary>
 		/// Returns True if this token has a parent token.
 		/// </summary>

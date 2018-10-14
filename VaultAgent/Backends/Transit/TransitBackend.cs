@@ -8,12 +8,12 @@ using VaultAgent.Backends.Transit;
 
 namespace VaultAgent.Backends
 {
-	public class TransitBackend
+	public class TransitBackend : VaultBackend
 	{
-		TokenInfo transitToken;
-		private VaultAPI_Http vaultHTTP;
-		string transitPath = "/v1/transit/";
-		Uri vaultTransitPath;
+//		TokenInfo transitToken;
+//		private VaultAPI_Http _vaultHTTP;
+//		string transitPath = "/v1/transit/";
+//		Uri MountPointPath;
 
 		const string pathKeys = "keys/";
 		const string pathEncrypt = "encrypt/";
@@ -27,14 +27,7 @@ namespace VaultAgent.Backends
 		/// <param name="port">The network port the Vault server listens on.</param>
 		/// <param name="Token">The token used to authenticate with.</param>
 		/// <param name="backendMountName">The name of the transit backend to mount.  For example for a mount at /mine/transitA use mine/transitA as value.</param>
-		public TransitBackend(string vaultIP, int port, string Token, string backendMountName = "transit") {
-			vaultHTTP = new VaultAPI_Http(vaultIP, port, Token);
-			transitToken = new TokenInfo() {
-				Id = Token
-			};
-
-			transitPath = "/v1/" + backendMountName + "/";
-			vaultTransitPath = new Uri("http://" + vaultIP + ":" + port + transitPath);
+		public TransitBackend(string backendMountName, string backendMountPath, VaultAPI_Http _httpConnector) : base(backendMountName, backendMountPath,_httpConnector) {
 		}
 
 
@@ -59,7 +52,7 @@ namespace VaultAgent.Backends
 		public async Task<bool> CreateEncryptionKey(string keyName, bool canBeExported = false, bool allowPlainTextBackup = false,
 													EnumTransitKeyType keyType = EnumTransitKeyType.aes256, bool enableKeyDerivation = false, bool enableConvergentEncryption = false) {
 			// The keyname forms the last part of the path
-			string path = vaultTransitPath + pathKeys + keyName;
+			string path = MountPointPath + pathKeys + keyName;
 			string keyTypeV;
 
 			switch (keyType) {
@@ -121,9 +114,9 @@ namespace VaultAgent.Backends
 		/// <returns>True if the key is successfully created.</returns>
 		public async Task<bool> CreateEncryptionKey(string keyName, Dictionary<string, string> createParams) {
 			// The keyname forms the last part of the path
-			string path = vaultTransitPath + pathKeys + keyName;
+			string path = MountPointPath + pathKeys + keyName;
 
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "CreateEncryptionKey", createParams);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "CreateEncryptionKey", createParams);
 			if (vdro.httpStatusCode == 204) { return true; }
 			else { return false; }
 		}
@@ -134,9 +127,9 @@ namespace VaultAgent.Backends
 		// ==============================================================================================================================================
 		public async Task<TransitKeyInfo> ReadEncryptionKey(string keyName) {
 			// The keyname forms the last part of the path
-			string path = vaultTransitPath + pathKeys + keyName;
+			string path = MountPointPath + pathKeys + keyName;
 
-			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "ReadEncryptionKey");
+			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ReadEncryptionKey");
 			TransitKeyInfo TKI = vdro.GetVaultTypedObject<TransitKeyInfo>();
 			return TKI;
 		}
@@ -166,13 +159,13 @@ namespace VaultAgent.Backends
 
 		// ==============================================================================================================================================
 		public async Task<List<string>> ListEncryptionKeys() {
-			string path = vaultTransitPath + pathKeys;
+			string path = MountPointPath + pathKeys;
 
 			// Setup List Parameter
 			Dictionary<string, string> sendParams = new Dictionary<string, string>();
 			sendParams.Add("list", "true");
 
-			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "ListEncryptionKeys", sendParams);
+			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ListEncryptionKeys", sendParams);
 
 			string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
 
@@ -190,10 +183,10 @@ namespace VaultAgent.Backends
 		/// <param name="contentParams">Dictionary of string value pairs representing all the input parameters to be sent along with the request to the Vault API.</param>
 		/// <returns>A List of the encrypted value(s). </returns>
 		protected async Task<TransitEncryptedItem> EncryptToVault(string keyName, Dictionary<string, string> contentParams) {
-			string path = vaultTransitPath + pathEncrypt + keyName;
+			string path = MountPointPath + pathEncrypt + keyName;
 
 			// Call Vault API.
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "EncryptToVault", contentParams);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "EncryptToVault", contentParams);
 			if (vdro.httpStatusCode == 200) {
 				string js = vdro.GetDataPackageAsJSON();
 				TransitEncryptedItem data = VaultUtilityFX.ConvertJSON<TransitEncryptedItem>(js);
@@ -247,7 +240,7 @@ namespace VaultAgent.Backends
 		/// of the encryption key.</param>
 		/// <returns>TransitEncryptionResultsBulk which is a list or the encrypted values.</returns>
 		public async Task<TransitEncryptionResultsBulk> EncryptBulk(string keyName, List<TransitBulkItemToEncrypt> bulkItems, int keyVersion = 0) {
-			string path = vaultTransitPath + pathEncrypt + keyName;
+			string path = MountPointPath + pathEncrypt + keyName;
 
 
 			// Build the Posting Parameters as JSON.  We need to manually create in here as we also need to custom append the 
@@ -274,7 +267,7 @@ namespace VaultAgent.Backends
 
 
 			// Call Vault API.
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "EncryptBulk", null, bulkJSON);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "EncryptBulk", null, bulkJSON);
 
 
 			// Pull out the results and send back.  
@@ -297,7 +290,7 @@ namespace VaultAgent.Backends
 		/// <returns>TransitDecryptedItem if the value was able to be successfully decrypted.
 		/// Throws <VaultInvalidDataException> if unable to decrypt the item due to bad key or context value.</VaultInvalidDataException></returns>
 		public async Task<TransitDecryptedItem> Decrypt(string keyName, string encryptedData, string keyDerivationContext = "") {
-			string path = vaultTransitPath + pathDecrypt + keyName;
+			string path = MountPointPath + pathDecrypt + keyName;
 
 
 			// Setup Post Parameters in body.
@@ -309,7 +302,7 @@ namespace VaultAgent.Backends
 
 
 			// Call Vault API.
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "Decrypt", contentParams);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "Decrypt", contentParams);
 			if (vdro.httpStatusCode == 200) {
 				string js = vdro.GetDataPackageAsJSON();
 				TransitDecryptedItem data = VaultUtilityFX.ConvertJSON<TransitDecryptedItem>(js);
@@ -335,7 +328,7 @@ namespace VaultAgent.Backends
 		/// of the encryption key.</param>
 		/// <returns>TransitEncryptionResultsBulk which is a list or the deecrypted values.</returns>
 		public async Task<TransitDecryptionResultsBulk> DecryptBulk(string keyName, List<TransitBulkItemToDecrypt> bulkItems, int keyVersion = 0) {
-			string path = vaultTransitPath + "decrypt/" + keyName;
+			string path = MountPointPath + "decrypt/" + keyName;
 
 
 			// Build the Posting Parameters as JSON.  We need to manually create in here as we also need to custom append the 
@@ -361,7 +354,7 @@ namespace VaultAgent.Backends
 
 
 			// Call Vault API.
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "DecryptBulk", null, bulkJSON);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "DecryptBulk", null, bulkJSON);
 
 
 			// Pull out the results and send back.  
@@ -380,10 +373,10 @@ namespace VaultAgent.Backends
 		/// <param name="keyName">The name of the encryption ket to rotate.</param>
 		/// <returns>True if successfull.  Will thrown an error with the reason if unsuccesful.  </returns>
 		public async Task<bool> RotateKey(string keyName) {
-			string path = vaultTransitPath + pathKeys + keyName + "/rotate";
+			string path = MountPointPath + pathKeys + keyName + "/rotate";
 
 			// Call Vault API.
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "RotateKey");
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "RotateKey");
 			if (!vdro.Success) {
 				// This should not be able to happen.  If it errored, it should have been handled in the PostAsync call.  
 				throw new VaultUnexpectedCodePathException("Unexpected response in RotateKey");
@@ -406,7 +399,7 @@ namespace VaultAgent.Backends
 		/// <param name="keyVersion">Version of the key to use.  Defaults to current version (0).</param>
 		/// <returns>The data element encrypted with the version of the key specified.  (Default is latest version of the key).  Returns null if operation failed.</returns>
 		public async Task<TransitEncryptedItem> ReEncrypt(string keyName, string encryptedData, string keyDerivationContext = "", int keyVersion = 0) {
-			string path = vaultTransitPath + "rewrap/" + keyName;
+			string path = MountPointPath + "rewrap/" + keyName;
 
 
 			// Setup Post Parameters in body.
@@ -418,7 +411,7 @@ namespace VaultAgent.Backends
 			if (keyVersion > 0) { contentParams.Add("key_version", keyVersion.ToString()); }
 
 
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "ReEncrypt", contentParams);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "ReEncrypt", contentParams);
 			if (vdro.httpStatusCode == 200) {
 				string js = vdro.GetDataPackageAsJSON();
 				TransitEncryptedItem data = VaultUtilityFX.ConvertJSON<TransitEncryptedItem>(js);
@@ -441,7 +434,7 @@ namespace VaultAgent.Backends
 		/// of the encryption key.</param>
 		/// <returns>TransitEncryptionResultsBulk - which is a list or the encrypted values.</returns>
 		public async Task<TransitEncryptionResultsBulk> ReEncryptBulk(string keyName, List<TransitBulkItemToDecrypt> bulkItems, int keyVersion = 0) {
-			string path = vaultTransitPath + "rewrap/" + keyName;
+			string path = MountPointPath + "rewrap/" + keyName;
 
 
 			// Build the Posting Parameters as JSON.  We need to manually create in here as we also need to custom append the 
@@ -467,7 +460,7 @@ namespace VaultAgent.Backends
 
 
 			// Call Vault API.
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "ReEncryptBulk", null, bulkJSON);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "ReEncryptBulk", null, bulkJSON);
 
 
 			// Pull out the results and send back.  
@@ -487,7 +480,7 @@ namespace VaultAgent.Backends
 		/// <param name="inputParams">Dictionary of KeyValue string pairs that contain Vault config values and the value you want that config value to have.</param>
 		/// <returns>TransitKeyInfo object with the current settings after Update.</returns>
 		public async Task<TransitKeyInfo> UpdateKey(string keyName, Dictionary<string, string> inputParams) {
-			string path = vaultTransitPath + "keys/" + keyName + "/config";
+			string path = MountPointPath + "keys/" + keyName + "/config";
 
 			Dictionary<string, string> contentParams = new Dictionary<string, string>();
 			foreach (KeyValuePair<string, string> item in inputParams) {
@@ -501,7 +494,7 @@ namespace VaultAgent.Backends
 				}
 			}  // Foreach KeyValuePair
 
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "UpdateKey", contentParams);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "UpdateKey", contentParams);
 
 			if (vdro.Success) {
 				// Read the key and return.
@@ -521,10 +514,10 @@ namespace VaultAgent.Backends
 		/// False if the key does not allow deletion because its deletion_allowed config parameters is not set to true.
 		/// Throws VaultInvalidDataException with message of "could not delete policy; not found.</returns>
 		public async Task<bool> DeleteKey(string keyName) {
-			string path = vaultTransitPath + "keys/" + keyName;
+			string path = MountPointPath + "keys/" + keyName;
 
 			try {
-				VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "DeleteKey");
+				VaultDataResponseObject vdro = await _vaultHTTP.DeleteAsync(path, "DeleteKey");
 				if (vdro.Success) { return true; }
 				else { return false; }
 			}
@@ -570,10 +563,10 @@ namespace VaultAgent.Backends
 			if (context != "") { contentParams.Add("context", VaultUtilityFX.Base64EncodeAscii(context)); }
 
 
-			string path = vaultTransitPath + "datakey/" + sType + "/" + keyName;
+			string path = MountPointPath + "datakey/" + sType + "/" + keyName;
 
 
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "GenerateDataKey", contentParams);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "GenerateDataKey", contentParams);
 
 			// Pull out the results and send back.  
 			string js = vdro.GetDataPackageAsJSON();
@@ -593,10 +586,10 @@ namespace VaultAgent.Backends
 		/// <param name="keyName">Name of the encryption key to backup.</param>
 		/// <returns>TransitBackupRestoreItem containing the full backup of the key.</returns>
 		public async Task<TransitBackupRestoreItem> BackupKey(string keyName) {
-			string path = vaultTransitPath + "backup/" + keyName;
+			string path = MountPointPath + "backup/" + keyName;
 
 			try {
-				VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "BackupKey");
+				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "BackupKey");
 
 				// Pull out the results and send back.  
 				string js = vdro.GetDataPackageAsJSON();
@@ -633,7 +626,7 @@ namespace VaultAgent.Backends
 		/// <param name="tbri">TransitBackupRestoreItem containing the backup value.</param>
 		/// <returns>True if success.</returns>
 		public async Task<bool> RestoreKey(string keyName, TransitBackupRestoreItem tbri) {
-			string path = vaultTransitPath + "restore/" + keyName;
+			string path = MountPointPath + "restore/" + keyName;
 
 			// Setup Post Parameters in body.
 			Dictionary<string, string> contentParams = new Dictionary<string, string>();
@@ -641,7 +634,7 @@ namespace VaultAgent.Backends
 			try {
 				// Build the parameter list.
 				contentParams.Add("backup", tbri.KeyBackup);
-				VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "RestoreKey", contentParams);
+				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "RestoreKey", contentParams);
 				return vdro.Success;
 			}
 			catch (VaultInternalErrorException e) {
@@ -660,7 +653,7 @@ namespace VaultAgent.Backends
 		/// <param name="hexOutputFormat">true if you want hexidecimal values, False if you want ascii</param>
 		/// <returns></returns>
 		public async Task<string> GenerateRandomBytes(int numBytes, bool hexOutputFormat = false) {
-			string path = vaultTransitPath + "random/" + numBytes.ToString();
+			string path = MountPointPath + "random/" + numBytes.ToString();
 
 			// Setup Post Parameters in body.
 			Dictionary<string, string> contentParams = new Dictionary<string, string>();
@@ -668,7 +661,7 @@ namespace VaultAgent.Backends
 			if (hexOutputFormat) { encodeFormat = "hex"; }
 
 			contentParams.Add("format", encodeFormat);
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "GenerateRandomBytes", contentParams);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "GenerateRandomBytes", contentParams);
 			if (vdro.Success) {
 				string bytes = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "random_bytes");
 				if (hexOutputFormat) { return bytes; }
@@ -680,7 +673,7 @@ namespace VaultAgent.Backends
 
 
 		public async Task<string> ComputeHash(string input, EnumHashAlgorithm hash, bool hexOutputFormat = false) {
-			string path = vaultTransitPath + "hash";
+			string path = MountPointPath + "hash";
 
 			string hashStr = "";
 			switch (hash) {
@@ -707,7 +700,7 @@ namespace VaultAgent.Backends
 
 			string inputBase64 = VaultUtilityFX.Base64EncodeAscii(input);
 
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "ComputeHash", contentParams);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "ComputeHash", contentParams);
 			if (vdro.Success) {
 				return vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "sum");
 			}

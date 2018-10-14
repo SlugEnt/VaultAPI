@@ -68,7 +68,8 @@ namespace VaultClient
 			return;
 
 			string path = "v1/auth/token/lookup";
-
+//TODO This should be able to be replaced with a native VaultAgent implementation.  VaultAPI_HTTP is no longer public.
+/*
 			// JSON the input variables
 			Dictionary<string, string> content = new Dictionary<string, string>();
 			content.Add("token", lookupToken);
@@ -132,7 +133,7 @@ namespace VaultClient
 				Console.WriteLine("Error detected - {0}", e.Message);
 			}
 
-				
+*/				
 
 
 		}
