@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using VaultAgent.Backends.System;
-using VaultAgent.Backends.SecretEngines;
+using VaultAgent.SecretEngines;
 using VaultAgentTests;
 using System.Threading.Tasks;
-using VaultAgent.Backends.SecretEngines.KVV2;
+using VaultAgent.Backends;
 using VaultAgent.Backends.KV_V2;
 using VaultAgent;
 using VaultAgent.Backends.KV_V2.KV2SecretMetaData;
@@ -17,9 +17,9 @@ namespace VaultAgentTests
 	[Parallelizable]
     public class SecretBE_KeyValueV2_Test
     {
-		private KV2Backend casMount;
-		private KV2Backend noCasMount;
-		private KV2Backend defaultMount;
+		private KV2SecretEngine casMount;
+		private KV2SecretEngine noCasMount;
+		private KV2SecretEngine defaultMount;
 
 		private VaultAgentAPI VSB;
 		private UniqueKeys UK = new UniqueKeys();		// Unique Key generator
@@ -53,9 +53,9 @@ namespace VaultAgentTests
 				VisibilitySetting = "hidden"
 			};
 
-			noCasMount = (KV2Backend)await VSB.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, noCasMountName, noCasMountName, "No CAS Mount Test", config);
-			casMount = (KV2Backend)await VSB.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, casMountName, casMountName,"CAS Mount Test", config);
-			defaultMount = (KV2Backend)await VSB.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, defaultMountName, defaultMountName, "Default Mount Test", config);
+			noCasMount = (KV2SecretEngine)await VSB.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, noCasMountName, noCasMountName, "No CAS Mount Test", config);
+			casMount = (KV2SecretEngine)await VSB.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, casMountName, casMountName,"CAS Mount Test", config);
+			defaultMount = (KV2SecretEngine)await VSB.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, defaultMountName, defaultMountName, "Default Mount Test", config);
 
 
 			Assert.NotNull(noCasMount);
@@ -84,7 +84,7 @@ namespace VaultAgentTests
 
 		[Test, Order(100)]
 		public async Task Validate_BackendSettings_CAS_Set() {
-			KV2BackendSettings s = await casMount.GetBackendConfiguration();
+			KV2SecretEngineSettings s = await casMount.GetBackendConfiguration();
 			Assert.AreEqual(true, s.CASRequired);
 			Assert.AreEqual(6, s.MaxVersions);
 		}
@@ -95,7 +95,7 @@ namespace VaultAgentTests
 		/// Confirms that if the backend is set to require CAS, then a secret without CAS specified will fail.
 		/// </summary>
 		public async Task BackendWithCAS_FailsSecretSaveWithoutCasOptionSet () {
-			KV2BackendSettings s = await casMount.GetBackendConfiguration();
+			KV2SecretEngineSettings s = await casMount.GetBackendConfiguration();
 			Assert.AreEqual(true, s.CASRequired);
 
 			string secName = UK.GetKey();
@@ -120,7 +120,7 @@ namespace VaultAgentTests
 		public async Task BackendWithCAS_AllowsSaveOfNewSecretWithCASSet() {
 			// Setup backend to allow 6 versions of a key and requires CAS.
 			//Assert.True(await casMount.SetBackendConfiguration(6, true));
-			KV2BackendSettings s = await casMount.GetBackendConfiguration();
+			KV2SecretEngineSettings s = await casMount.GetBackendConfiguration();
 			Assert.AreEqual(true, s.CASRequired);
 
 
@@ -149,7 +149,7 @@ namespace VaultAgentTests
 		/// </summary>
 		/// <returns></returns>
 		public async Task BackendWithCAS_AllowsSaveofSecretWithNewVersion () {
-			KV2BackendSettings s = await casMount.GetBackendConfiguration();
+			KV2SecretEngineSettings s = await casMount.GetBackendConfiguration();
 			Assert.AreEqual(true, s.CASRequired);
 
 
@@ -185,7 +185,7 @@ namespace VaultAgentTests
 		/// </summary>
 		/// <returns></returns>
 		public async Task BackendWithCAS_SaveSecretWithInvalidVersionNumFails() {
-			KV2BackendSettings s = await casMount.GetBackendConfiguration();
+			KV2SecretEngineSettings s = await casMount.GetBackendConfiguration();
 			Assert.AreEqual(true, s.CASRequired);
 
 
@@ -244,7 +244,7 @@ namespace VaultAgentTests
 		/// <returns></returns>
 		[Test, Order(200)]
 		public async Task Validate_BackendSettings_CAS_NotSet() {
-			KV2BackendSettings s = await noCasMount.GetBackendConfiguration();
+			KV2SecretEngineSettings s = await noCasMount.GetBackendConfiguration();
 			Assert.AreEqual(false, s.CASRequired);
 			Assert.AreEqual(8, s.MaxVersions);
 		}
@@ -306,7 +306,7 @@ namespace VaultAgentTests
 		/// </summary>
 		/// <returns></returns>
 		public async Task BackendWithOUTCAS_SaveSecretWithMultipleVersionsWorks() {
-			KV2BackendSettings s = await noCasMount.GetBackendConfiguration();
+			KV2SecretEngineSettings s = await noCasMount.GetBackendConfiguration();
 			Assert.False(s.CASRequired, "A1: CAS should not be required, but backend is set for CAS.");
 
 
@@ -360,7 +360,7 @@ namespace VaultAgentTests
 
 		[Test, Order(301)]
 		public async Task SecretReadReturnObjShortcutsWork() {
-			KV2BackendSettings s = await defaultMount.GetBackendConfiguration();
+			KV2SecretEngineSettings s = await defaultMount.GetBackendConfiguration();
 			Assert.False(s.CASRequired, "A1: Backend settings are not what was expected.");
 
 
@@ -508,7 +508,7 @@ namespace VaultAgentTests
 		/// <returns></returns>
 		[Test,Order(400)]
 		public async Task DeleteSecretThatExists_Succeeds () {
-			KV2BackendSettings s = await defaultMount.GetBackendConfiguration();
+			KV2SecretEngineSettings s = await defaultMount.GetBackendConfiguration();
 			Assert.False(s.CASRequired, "A1: Backend settings are not what was expected.");
 
 			// Generate a key.
@@ -541,7 +541,7 @@ namespace VaultAgentTests
 		/// <returns></returns>
 		[Test,Order(400)]
 		public async Task DeleteSecretThatDOESNOTExist_ReturnsNull () {
-			KV2BackendSettings s = await defaultMount.GetBackendConfiguration();
+			KV2SecretEngineSettings s = await defaultMount.GetBackendConfiguration();
 			Assert.False(s.CASRequired, "A1: Backend settings are not what was expected.");
 
 			// Generate a key.
@@ -562,7 +562,7 @@ namespace VaultAgentTests
 		/// <returns></returns>
 		[Test, Order(401)]
 		public async Task DeleteSecretSpecificVersionThatExists_Succeeds() {
-			KV2BackendSettings s = await casMount.GetBackendConfiguration();
+			KV2SecretEngineSettings s = await casMount.GetBackendConfiguration();
 			Assert.True(s.CASRequired, "A1: Backend settings are not what was expected.");
 
 			// Generate a key.
@@ -611,7 +611,7 @@ namespace VaultAgentTests
 		/// <returns></returns>
 		[Test, Order(401)]
 		public async Task ReadSecretMetaDataWorks() {
-			KV2BackendSettings s = await casMount.GetBackendConfiguration();
+			KV2SecretEngineSettings s = await casMount.GetBackendConfiguration();
 			Assert.True(s.CASRequired, "A1: Backend settings are not what was expected.");
 
 			// Generate a key.
@@ -653,7 +653,7 @@ namespace VaultAgentTests
 		/// <returns></returns>
 		[Test, Order(401)]
 		public async Task UnDeleteSecretSpecificVersion_Succeeds() {
-			KV2BackendSettings s = await casMount.GetBackendConfiguration();
+			KV2SecretEngineSettings s = await casMount.GetBackendConfiguration();
 			Assert.True(s.CASRequired, "A1: Backend settings are not what was expected.");
 
 			// Generate a key.
@@ -710,7 +710,7 @@ namespace VaultAgentTests
 		/// <returns></returns>
 		[Test, Order(401)]
 		public async Task DestroySecretSpecificVersion_Succeeds() {
-			KV2BackendSettings s = await casMount.GetBackendConfiguration();
+			KV2SecretEngineSettings s = await casMount.GetBackendConfiguration();
 			Assert.True(s.CASRequired, "A1: Backend settings are not what was expected.");
 
 			// Generate a key.
@@ -760,7 +760,7 @@ namespace VaultAgentTests
 		/// <returns></returns>
 		[Test, Order(401)]
 		public async Task CompletelyDestroySecret_Succeeds() {
-			KV2BackendSettings s = await casMount.GetBackendConfiguration();
+			KV2SecretEngineSettings s = await casMount.GetBackendConfiguration();
 			Assert.True(s.CASRequired, "A1: Backend settings are not what was expected.");
 
 			// Generate a key.
@@ -822,7 +822,7 @@ namespace VaultAgentTests
 		/// <returns></returns>
 		[Test, Order(401)]
 		public async Task GetSecretMetaData_Succeeds() {
-			KV2BackendSettings s = await casMount.GetBackendConfiguration();
+			KV2SecretEngineSettings s = await casMount.GetBackendConfiguration();
 			Assert.True(s.CASRequired, "A1: Backend settings are not what was expected.");
 
 			// Generate a key.
@@ -871,7 +871,7 @@ namespace VaultAgentTests
 
 		[Test,Order(500)]
 		public async Task UpdateSecretSettings_Works () {
-			KV2BackendSettings s = await casMount.GetBackendConfiguration();
+			KV2SecretEngineSettings s = await casMount.GetBackendConfiguration();
 			Assert.AreEqual(true, s.CASRequired);
 			Assert.AreEqual(6, s.MaxVersions);
 

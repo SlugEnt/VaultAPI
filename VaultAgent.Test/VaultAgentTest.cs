@@ -1,7 +1,7 @@
 ﻿using NUnit.Framework;
 using VaultAgentTests;
 using VaultAgent.Backends.KV_V2;
-using VaultAgent.Backends.SecretEngines;
+using VaultAgent.SecretEngines;
 using VaultAgent.Models;
 
 namespace VaultAgent.Test
@@ -73,7 +73,7 @@ namespace VaultAgent.Test
 			string beName = _uk.GetKey("kv2");
 
 			//VaultAgentAPI vaultAgentAPI = new VaultAgentAPI("vault");
-//			vaultAgentAPI.AddBackend(new KV2Backend ()
+//			vaultAgentAPI.AddBackend(new KV2SecretEngine ()
 		}
 
 
