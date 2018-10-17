@@ -71,8 +71,8 @@ namespace VaultAgentTests
 			// Generate a hopefully small unique name.
 			string beName = "transit" + Guid.NewGuid().ToString().Substring(0, 6);
 			string oldName = "tr455" + Guid.NewGuid().ToString().Substring(0, 6);
-			Assert.True(await newBE.SysMountCreate(beName, "transit test backend", EnumBackendTypes.Transit));
-			Assert.True(await oldBE.SysMountCreate(oldName, "transit test backend", EnumBackendTypes.Transit));
+			Assert.True(await newBE.SysMountCreate(beName, "transit test backend", EnumSecretBackendTypes.Transit));
+			Assert.True(await oldBE.SysMountCreate(oldName, "transit test backend", EnumSecretBackendTypes.Transit));
 		}
 
 

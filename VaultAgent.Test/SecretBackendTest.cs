@@ -45,7 +45,7 @@ namespace VaultAgentTests
 			string mountName = UK.GetKey("SEC");
 
 			// Create a secret Backend Mount for this series of tests.
-			SB = (SecretBackend)await VSB.CreateSecretBackendMount(EnumBackendTypes.Secret, mountName, mountName, "Secret V1 Backend");
+			SB = (SecretBackend)await VSB.CreateSecretBackendMount(EnumSecretBackendTypes.Secret, mountName, mountName, "Secret V1 Backend");
 
 			Assert.NotNull(SB);
 			return;

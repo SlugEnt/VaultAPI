@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace VaultAgent.Backends.SecretEngines
 {
-	public class SecretBackend : VaultBackend
+	public class SecretBackend : VaultSecretBackend
 	{
 		// ==============================================================================================================================================
 		/// <summary>
@@ -19,6 +19,8 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <param name="backendMountPoint">The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/ and exclude trailing slash.</param>
 		/// <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
 		public SecretBackend(string backendName, string backendMountPoint, VaultAPI_Http _httpConnector) : base(backendName, backendMountPoint, _httpConnector) {
+			Type = System.EnumBackendTypes.Secret;
+			IsSecretBackend = true;
 		}
 
 

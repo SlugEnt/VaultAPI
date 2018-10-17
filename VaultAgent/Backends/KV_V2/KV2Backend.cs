@@ -25,7 +25,7 @@ namespace VaultAgent.Backends.SecretEngines
 	/// One of the unique things is that there are different root mounts within the given backend depending on what you want to do.  So having
 	/// a std BackEnd path does not really work with this class.  It generally builds the unique path in each member method.
 	/// </summary>
-	public class KV2Backend : VaultBackend
+	public class KV2Backend : VaultSecretBackend
 	{
 		// ==============================================================================================================================================
 		/// <summary>
@@ -35,7 +35,8 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <param name="backendMountPoint">The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/ and exclude trailing slash.</param>
 		/// <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
 		public KV2Backend(string backendName,string backendMountPoint, VaultAPI_Http _httpConnector) : base (backendName, backendMountPoint, _httpConnector) {
-
+			Type = System.EnumBackendTypes.KeyValueV2;
+			IsSecretBackend = true;
 		}
 
 
