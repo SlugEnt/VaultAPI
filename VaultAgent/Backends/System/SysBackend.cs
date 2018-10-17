@@ -138,7 +138,7 @@ namespace VaultAgent.Backends.System
 
 				return methods;
 			}
-			throw new ApplicationException("SecretBackend:ListSecrets  Arrived at unexpected code block.");
+			throw new ApplicationException("KeyValueSecretEngine:ListSecrets  Arrived at unexpected code block.");
 		}
 		#endregion
 

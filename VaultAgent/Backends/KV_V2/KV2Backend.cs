@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using VaultAgent.Models;
+using VaultAgent.Backends;
 using VaultAgent.Backends.SecretEngines.KVV2;
 using VaultAgent.Backends.KV_V2;
-using Newtonsoft.Json;
-using System.Text;
 using VaultAgent.Backends.KV_V2.KV2SecretMetaData;
 
 namespace VaultAgent.Backends.SecretEngines
@@ -35,7 +33,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <param name="backendMountPoint">The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/ and exclude trailing slash.</param>
 		/// <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
 		public KV2Backend(string backendName,string backendMountPoint, VaultAPI_Http _httpConnector) : base (backendName, backendMountPoint, _httpConnector) {
-			Type = System.EnumBackendTypes.KeyValueV2;
+			Type = EnumBackendTypes.KeyValueV2;
 			IsSecretBackend = true;
 		}
 

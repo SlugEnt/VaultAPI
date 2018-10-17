@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using VaultAgent.Models;
 using Newtonsoft.Json;
 using VaultAgent.Models;
+using VaultAgent.Backends;
 
 namespace VaultAgent.Backends.AppRole
 {
@@ -26,7 +27,7 @@ namespace VaultAgent.Backends.AppRole
 		/// Constructor for AppRoleBackend
 		/// </summary>
 		public AppRoleBackEnd ( string backendMountName, string backendMountPath, VaultAPI_Http _httpConnector) : base(backendMountName, backendMountPath, _httpConnector) {
-			Type = System.EnumBackendTypes.A_AppRole;
+			Type = EnumBackendTypes.A_AppRole;
 			this.MountPointPrefix = "/v1/auth/";
 
 /*			_vaultHTTP = new VaultAPI_Http(vaultIP, port, Token);

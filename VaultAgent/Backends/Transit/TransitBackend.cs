@@ -23,7 +23,7 @@ namespace VaultAgent.Backends
 		/// <param name="Token">The token used to authenticate with.</param>
 		/// <param name="backendMountName">The name of the transit backend to mount.  For example for a mount at /mine/transitA use mine/transitA as value.</param>
 		public TransitBackend(string backendMountName, string backendMountPath, VaultAPI_Http _httpConnector) : base(backendMountName, backendMountPath,_httpConnector) {
-			Type = System.EnumBackendTypes.Transit;
+			Type = EnumBackendTypes.Transit;
 			IsSecretBackend = true;
 		}
 

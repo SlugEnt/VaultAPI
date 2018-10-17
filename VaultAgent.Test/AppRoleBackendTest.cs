@@ -5,7 +5,7 @@ using NUnit.Framework;
 using System.Threading;
 using System.Threading.Tasks;
 using VaultAgent.Backends.System;
-using VaultAgent.Models;
+using VaultAgent.Backends;
 using VaultAgent;
 
 namespace VaultAgentTests
@@ -19,11 +19,6 @@ namespace VaultAgentTests
 		private UniqueKeys UK = new UniqueKeys();       // Unique Key generator
 
 		private AppRoleBackEnd _ARB;
-
-		//private object _arLocker = new object();
-		//private string roleName;
-		//private string _authBEName = "auth2";
-
 
 
 		[OneTimeSetUp]
@@ -44,44 +39,27 @@ namespace VaultAgentTests
 			
 			AuthMethod am = new AuthMethod(approleMountName, EnumAuthMethods.AppRole);
 
-//			_ARB = new AppRoleBackEnd(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, approleMountName);
-
-			//_ARB = (AppRoleBackEnd) await VSB.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, noCasMountName, noCasMountName, "No CAS Mount Test", config);
-
 			// Ensure we have an authentication method of AppRole enabled on the Vault.
 			SysBackend VSB = new SysBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
 
 
 			bool rc = await VSB.AuthEnable(am);
-			AppBackendTestInit();
 		}
 
 
-		[SetUp]
-		// Ensure Backend is initialized during each test.
-		protected void AppBackendTestInit() {
-/*
-			lock (_arLocker) {
-				if (_ARB == null) {
-					roleName = "roleABC";
-					_ARB = new AppRoleBackEnd(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, _authBEName);
-				}
-			}
-			*/
-		}
 
-		[Test,Order(100)]
+		[Test]
 		public void AppRoleBE_AppRole_NameIsLowerCase() {
-			string name = "GGGttRR";
+			string name = UK.GetKey("Role");
 			AppRole ar = new AppRole(name);
 			Assert.AreEqual(name.ToLower(), ar.Name);
 		}
 
 
 
-		[Test, Order(100)]
+		[Test]
 		public void AppRoleBE_AppRole_PropertyNameIsLowerCase() {
-			string name = "GGGttRR";
+			string name = UK.GetKey("Role");
 			AppRole ar = new AppRole("abc");
 			ar.Name = name;
 			Assert.AreEqual(name.ToLower(), ar.Name);
@@ -89,33 +67,35 @@ namespace VaultAgentTests
 
 
 
-		[Test,Order(1000)]
+		[Test]
 		public async Task AppRoleBE_CreateRole () {
-			string rName = "hhFFG";
-			AppRole ar = new AppRole(rName); 
+			string name = UK.GetKey("Role");
+			
+			AppRole ar = new AppRole(name); 
 			Assert.True(await _ARB.CreateRole(ar));
 		}
 
 
 
 		// Validate we can read a role back and its name is lowercase and set.
-		[Test,Order(1000)]
+		[Test]
 		public async Task AppRoleBE_ReadRole () {
-			string rName = "uutts5";
+			string rName = UK.GetKey("Role");
 			AppRole ar = new AppRole(rName);
 			Assert.True(await _ARB.CreateRole(ar));
 
 			AppRole arReturn = await (_ARB.ReadAppRole(rName));
 			Assert.NotNull(arReturn);
-			Assert.AreEqual(rName, arReturn.Name);
+			Assert.AreEqual(ar.Name, arReturn.Name);
 		}
 
 
 
 
-		[Test,Order(1000)]
+		[Test]
 		public async Task AppRoleBE_DeleteRoleThatExists () {
-			string rName = "roleZYX";
+			string rName = UK.GetKey("Role");
+
 			AppRole ar = new AppRole(rName);
 			Assert.True(await _ARB.CreateRole(ar));
 
@@ -125,9 +105,8 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(1000)]
 		public async Task AppRoleBE_DeleteRoleThatDoesNotExist_ReturnsTrue () {
-			string rName = "rolezzzzz";
+			string rName = UK.GetKey("Role");
 			Assert.True(await _ARB.DeleteAppRole(rName));
 		}
 
@@ -135,7 +114,7 @@ namespace VaultAgentTests
 
 		[Test, Order(1000)]
 		public async Task AppRoleBE_CreateRoleThatAlreadyExists () {
-			string rName = "gg443";
+			string rName = UK.GetKey("Role");
 			AppRole ar = new AppRole(rName) {
 				NumberOfUses = 100
 			};
@@ -160,7 +139,7 @@ namespace VaultAgentTests
 
 		// Runs thru an entire AppRole Sequence:  Create, List - Confirm its there
 		// Delete, List - Confirm its gone.
-		[Test,Order(1100)]
+		[Test]
 		public async Task AppRoleBE_CreateListDeleteList_CycleValidated () {
 			string rName = "roleCycle";
 			AppRole ar = new AppRole(rName);
@@ -182,9 +161,9 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(1000)]
+		[Test]
 		public async Task AppRoleBE_GetRoleID () {
-			string rName = "jk45";
+			string rName = UK.GetKey("Role");
 
 			AppRole ar = new AppRole(rName);
 			Assert.True(await _ARB.CreateRole(ar));
@@ -195,10 +174,9 @@ namespace VaultAgentTests
 
 
 
-		[Test,Order(1000)]
+		[Test]
 		public async Task AppRoleBE_UpdateRoleID() {
-			string rName = "krte3";
-
+			string rName = UK.GetKey("Role");
 			AppRole ar = new AppRole(rName);
 			Assert.True(await _ARB.CreateRole(ar));
 
@@ -212,10 +190,9 @@ namespace VaultAgentTests
 		}
 
 
-		[Test,Order(1000)]
+		[Test]
 		public async Task AppRoleBE_CreateSecret () {
-			string rName = "jladd5";
-
+			string rName = UK.GetKey("Role");
 			AppRole ar = new AppRole(rName);
 			Assert.True(await _ARB.CreateRole(ar));
 
@@ -227,14 +204,13 @@ namespace VaultAgentTests
 		}
 
 
-		[Test,Order(1000)]
+		[Test]
 		public async Task AppRoleBE_CreateReadAppRoleAllParams () {
-
-			string name = "hggfde95"; // Guid.NewGuid().ToString();
+			string rName = UK.GetKey("Role");
 
 			//TODO - Add All of the List objects - BoundCIDRList, TokenBoundCIDRList...
 			AppRole ar = new AppRole {
-				Name = name,
+				Name = rName,
 				IsSecretIDRequiredOnLogin = true,
 				SecretNumberOfUses = 3,
 				SecretTTL = "60",
@@ -248,7 +224,7 @@ namespace VaultAgentTests
 			Assert.True(await _ARB.CreateRole(ar));
 
 			// Read
-			AppRole rr = await _ARB.ReadAppRole(name);
+			AppRole rr = await _ARB.ReadAppRole(rName);
 
 			// Validate
 			Assert.AreEqual(ar.Name, rr.Name, "App Role Name stored in Vault is not same as we sent it!");

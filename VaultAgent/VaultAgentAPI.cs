@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using VaultAgent.Backends.System;
 using VaultAgent.Backends.SecretEngines;
+using VaultAgent.SecretEngines;
 using VaultAgent.Models;
 using System.Threading.Tasks;
 using VaultAgent.Backends;
@@ -87,7 +88,7 @@ namespace VaultAgent
 					KV2Backend kv2Backend = new KV2Backend(backendName, backendMountPath, _httpConnector);
 					return kv2Backend;
 				case EnumSecretBackendTypes.Secret:
-					SecretBackend secretBackend = new SecretBackend(backendName, backendMountPath, _httpConnector);
+					KeyValueSecretEngine secretBackend = new KeyValueSecretEngine(backendName, backendMountPath, _httpConnector);
 					return secretBackend;
 				case EnumSecretBackendTypes.Transit:
 					TransitBackend transitBackend = new TransitBackend(backendName, backendMountPath, _httpConnector);
