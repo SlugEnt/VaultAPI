@@ -1,17 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-
 using System.Globalization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-// To parse this JSON data, add NuGet 'Newtonsoft.Json' then do:
-//
-//    using VaultAgent.Backends.KV_V2;
-//
-//    var secretReadReturnObj = SecretReadReturnObj.FromJson(jsonString);
 
-namespace VaultAgent.Backends.KV_V2.KV2SecretMetaData
+
+namespace VaultAgent.SecretEngines.KV2.SecretMetaDataInfo
 {
 	public partial class KV2SecretMetaDataInfo 
 	{
@@ -51,12 +46,12 @@ namespace VaultAgent.Backends.KV_V2.KV2SecretMetaData
 
 	public partial class SecretReadReturnObj
 	{
-		public static SecretReadReturnObj FromJson(string json) => JsonConvert.DeserializeObject<SecretReadReturnObj>(json, VaultAgent.Backends.KV_V2.Converter.Settings);
+		public static SecretReadReturnObj FromJson(string json) => JsonConvert.DeserializeObject<SecretReadReturnObj>(json, Converter.Settings);
 	}
 
 	public static class Serialize
 	{
-		public static string ToJson(this SecretReadReturnObj self) => JsonConvert.SerializeObject(self, VaultAgent.Backends.KV_V2.Converter.Settings);
+		public static string ToJson(this SecretReadReturnObj self) => JsonConvert.SerializeObject(self, Converter.Settings);
 	}
 
 	internal static class Converter

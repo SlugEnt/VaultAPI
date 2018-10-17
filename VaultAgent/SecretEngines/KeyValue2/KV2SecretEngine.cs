@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VaultAgent.Backends;
-using VaultAgent.Backends.KV_V2;
-using VaultAgent.Backends.KV_V2.KV2SecretMetaData;
-
+using VaultAgent.SecretEngines.KV2;
+using VaultAgent.SecretEngines.KV2.SecretMetaDataInfo;
 namespace VaultAgent.SecretEngines
 {
 	public static class Constants
@@ -94,7 +93,7 @@ namespace VaultAgent.SecretEngines
 		/// <param name="enumKVv2SaveSecretOption"></param>
 		/// <param name="currentVersion">What the current version of the secret is.  Required if the backend is in CAS mode (Default mode).</param>
 		/// <returns></returns>
-		public async Task<bool> SaveSecret (KV2Secret secret, EnumKVv2SaveSecretOptions enumKVv2SaveSecretOption, int currentVersion = 0) {
+		public async Task<bool> SaveSecret (KV2Secret secret, KV2EnumSecretSaveOptions enumKVv2SaveSecretOption, int currentVersion = 0) {
 			string path = MountPointPath + "data/" + secret.Path;
 
 
@@ -103,10 +102,10 @@ namespace VaultAgent.SecretEngines
 
 			// Set CAS depending on option coming from caller.
 			switch (enumKVv2SaveSecretOption) {
-				case EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist:
+				case KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist:
 					options.Add("cas", "0");
 					break;
-				case EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch:
+				case KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch:
 					if (currentVersion != 0) {
 						options.Add("cas", currentVersion.ToString());
 					}

@@ -1,6 +1,5 @@
 ﻿using NUnit.Framework;
 using VaultAgentTests;
-using VaultAgent.Backends.KV_V2;
 using VaultAgent.SecretEngines;
 using VaultAgent.Models;
 

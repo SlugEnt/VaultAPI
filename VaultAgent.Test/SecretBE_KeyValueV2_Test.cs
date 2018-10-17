@@ -7,9 +7,10 @@ using VaultAgent.SecretEngines;
 using VaultAgentTests;
 using System.Threading.Tasks;
 using VaultAgent.Backends;
-using VaultAgent.Backends.KV_V2;
+using VaultAgent.SecretEngines.KV2.SecretMetaDataInfo;
 using VaultAgent;
-using VaultAgent.Backends.KV_V2.KV2SecretMetaData;
+
+using VaultAgent.SecretEngines.KV2;
 
 namespace VaultAgentTests
 {
@@ -104,7 +105,7 @@ namespace VaultAgentTests
 			secretV2.Attributes.Add("Test54", "44");
 
 			// Save Secret passing no CAS options.
-			Assert.That(() => casMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.AlwaysAllow),
+			Assert.That(() => casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.AlwaysAllow),
 				Throws.Exception
 					.TypeOf<VaultInvalidDataException>()
 					.With.Property("Message")
@@ -132,7 +133,7 @@ namespace VaultAgentTests
 
 
 			// Save Secret passing CAS option of 0 for new update.
-			Assert.True(await casMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist));
+			Assert.True(await casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist));
 
 
 			// Read the Secret back to confirm the save.
@@ -163,7 +164,7 @@ namespace VaultAgentTests
 			// Setup the test scenario:
 			// 1. Create a new key with version 1.
 			// Save Secret passing CAS option of 0 for new update.
-			Assert.True(await casMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist));
+			Assert.True(await casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist));
 
 
 			// 2. Read the secret back and get the version
@@ -175,7 +176,7 @@ namespace VaultAgentTests
 			// 3. Now attempt to save the secret back specifying the version.
 			KeyValuePair<string, string> kv2 = new KeyValuePair<string, string>("b", "2");
 			secretV2.Attributes.Add(kv2.Key, kv2.Value);
-			Assert.True(await casMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s2.Data.Metadata.Version));
+			Assert.True(await casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, s2.Data.Metadata.Version));
 		}
 
 
@@ -199,7 +200,7 @@ namespace VaultAgentTests
 			// Setup the test scenario:
 			// 1. Create a new key with version 1.
 			// Save Secret passing CAS option of 0 for new update.
-			Assert.True(await casMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist));
+			Assert.True(await casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist));
 
 
 			// 2. Read the secret back and get the version
@@ -217,7 +218,7 @@ namespace VaultAgentTests
 			KeyValuePair<string, string> kv3 = new KeyValuePair<string, string>("c", "3");
 			secretV2.Attributes.Add(kv3.Key, kv3.Value);
 
-			Assert.True(await casMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, 1),"A10: Save Secret should have failed.");
+			Assert.True(await casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, 1),"A10: Save Secret should have failed.");
 
 			// 5. Now attempt to save the secret back specifying the version.
 			KeyValuePair<string, string> kv4 = new KeyValuePair<string, string>("d", "4");
@@ -225,7 +226,7 @@ namespace VaultAgentTests
 
 
 			// 6. Save secret a third time.
-			Assert.That(() => casMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch,1),
+			Assert.That(() => casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch,1),
 				Throws.Exception
 					.TypeOf<VaultInvalidDataException>()
 					.With.Property("Message")
@@ -261,7 +262,7 @@ namespace VaultAgentTests
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("test54", "44" );
 
 			secretV2.Attributes.Add(kv1.Key,kv1.Value);
-			Assert.True(await noCasMount.SaveSecret(secretV2,EnumKVv2SaveSecretOptions.AlwaysAllow));
+			Assert.True(await noCasMount.SaveSecret(secretV2,KV2EnumSecretSaveOptions.AlwaysAllow));
 
 
 			// Read the Secret back to confirm the save.
@@ -282,7 +283,7 @@ namespace VaultAgentTests
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("test54", "44");
 
 			secretV2.Attributes.Add(kv1.Key, kv1.Value);
-			Assert.True(await noCasMount.SaveSecret(secretV2,EnumKVv2SaveSecretOptions.AlwaysAllow));
+			Assert.True(await noCasMount.SaveSecret(secretV2,KV2EnumSecretSaveOptions.AlwaysAllow));
 
 
 			// Read the Secret back to confirm the save.
@@ -293,7 +294,7 @@ namespace VaultAgentTests
 			// Now update it.
 			KeyValuePair<string, string> kv2 = new KeyValuePair<string, string>("b", "2");
 			secretV2.Attributes.Add(kv2.Key, kv2.Value);
-			Assert.True(await noCasMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.AlwaysAllow));
+			Assert.True(await noCasMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.AlwaysAllow));
 
 		}
 
@@ -320,7 +321,7 @@ namespace VaultAgentTests
 			// Setup the test scenario:
 			// 1. Create a new key with version 1.
 			// Save Secret passing CAS option of 0 for new update.
-			Assert.True(await noCasMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist),"A2: Save Secret failed.");
+			Assert.True(await noCasMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist),"A2: Save Secret failed.");
 
 
 			// 2. Read the secret back and get the version
@@ -338,7 +339,7 @@ namespace VaultAgentTests
 			KeyValuePair<string, string> kv3 = new KeyValuePair<string, string>("c", "3");
 			secretV2.Attributes.Add(kv3.Key, kv3.Value);
 
-			Assert.True(await noCasMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, 1), "A6: Save Secret was expected to be true. ");
+			Assert.True(await noCasMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, 1), "A6: Save Secret was expected to be true. ");
 
 			// 5. Now attempt to save the secret again but not with a valid version.
 			KeyValuePair<string, string> kv4 = new KeyValuePair<string, string>("d", "4");
@@ -346,7 +347,7 @@ namespace VaultAgentTests
 
 
 			// 6. Save secret a third time.
-			Assert.That(() => noCasMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, 1),
+			Assert.That(() => noCasMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, 1),
 				Throws.Exception
 					.TypeOf<VaultInvalidDataException>()
 					.With.Property("Message")
@@ -372,7 +373,7 @@ namespace VaultAgentTests
 
 
 			// Save Secret passing CAS option of 0 for new update.
-			Assert.True(await defaultMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist),"A2: SaveSecret failed to return True.");
+			Assert.True(await defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist),"A2: SaveSecret failed to return True.");
 
 			// Now read the secret back and validate the shortcuts.
 			KV2SecretWrapper s2 = await defaultMount.ReadSecret(secretV2.Path);
@@ -413,7 +414,7 @@ namespace VaultAgentTests
 			secretV2.Attributes.Add(kv2.Key,kv2.Value);
 			secretV2.Attributes.Add(kv3.Key,kv3.Value);
 
-			Assert.True(await defaultMount.SaveSecret(secretV2,EnumKVv2SaveSecretOptions.AlwaysAllow));
+			Assert.True(await defaultMount.SaveSecret(secretV2,KV2EnumSecretSaveOptions.AlwaysAllow));
 
 
 			// Read the Secret back to confirm the save.
@@ -441,7 +442,7 @@ namespace VaultAgentTests
 			secretV2.Attributes.Add(kv2.Key, kv2.Value);
 			secretV2.Attributes.Add(kv3.Key, kv3.Value);
 
-			Assert.True(await defaultMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.AlwaysAllow));
+			Assert.True(await defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.AlwaysAllow));
 
 			// Create a child secret of the first secret.
 			string secName2 = UK.GetKey();
@@ -453,7 +454,7 @@ namespace VaultAgentTests
 			secretV2B.Attributes.Add(kv5.Key, kv5.Value);
 			secretV2B.Attributes.Add(kv6.Key, kv6.Value);
 
-			Assert.True(await defaultMount.SaveSecret(secretV2B, EnumKVv2SaveSecretOptions.AlwaysAllow));
+			Assert.True(await defaultMount.SaveSecret(secretV2B, KV2EnumSecretSaveOptions.AlwaysAllow));
 
 
 			// Create a third child secret of secret 2.
@@ -466,7 +467,7 @@ namespace VaultAgentTests
 			secretV2C.Attributes.Add(kv8.Key, kv8.Value);
 			secretV2C.Attributes.Add(kv9.Key, kv9.Value);
 
-			Assert.True(await defaultMount.SaveSecret(secretV2C, EnumKVv2SaveSecretOptions.AlwaysAllow));
+			Assert.True(await defaultMount.SaveSecret(secretV2C, KV2EnumSecretSaveOptions.AlwaysAllow));
 
 
 			// Now get list of secrets at root secrt.
@@ -491,7 +492,7 @@ namespace VaultAgentTests
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("A1", "aaaa1");
 			secretV2.Attributes.Add(kv1.Key, kv1.Value);
 
-			Assert.True(await defaultMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.AlwaysAllow));
+			Assert.True(await defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.AlwaysAllow));
 
 			// Now get list of secrets at root secrt.
 			List<string> secrets = await (defaultMount.ListSecretsAtPath(secName));
@@ -519,7 +520,7 @@ namespace VaultAgentTests
 
 
 			// Save Secret
-			Assert.True(await defaultMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.AlwaysAllow), "A2: SaveSecret failed to return True.");
+			Assert.True(await defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.AlwaysAllow), "A2: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s2 = await defaultMount.ReadSecret(secretV2.Path);
@@ -528,6 +529,7 @@ namespace VaultAgentTests
 			// Now delete it.
 			Assert.True(await defaultMount.DeleteSecretVersion(secretV2.Path), "A4: Deletion of secret failed.");
 
+			//TODO this is failing tests right now.?
 			// Try to read it to confirm it is gone.
 			KV2SecretWrapper s3 = await defaultMount.ReadSecret(secretV2.Path);
 			Assert.IsNull(s3, "A5: Expected ReadSecret to return null object.  Instead it returned an object.  Seems deletion did not work.");
@@ -573,14 +575,14 @@ namespace VaultAgentTests
 
 
 			// Save Secret
-			Assert.True(await defaultMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
+			Assert.True(await defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s2 = await defaultMount.ReadSecret(secretV2.Path);
 			Assert.True(secretV2.Path == s2.Data.SecretObj.Path, "A3: Secret saved and secret read were not the same.");
 
 			// Save a new version
-			Assert.True(await defaultMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch ,s2.Data.Metadata.Version), "A4: SaveSecret failed to return True.");
+			Assert.True(await defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch ,s2.Data.Metadata.Version), "A4: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s3 = await defaultMount.ReadSecret(secretV2.Path);
@@ -589,7 +591,7 @@ namespace VaultAgentTests
 
 			// And one more time. save another version
 			// Save a new version
-			Assert.True(await defaultMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s3.Data.Metadata.Version), "A6: SaveSecret failed to return True.");
+			Assert.True(await defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, s3.Data.Metadata.Version), "A6: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s4 = await defaultMount.ReadSecret(secretV2.Path);
@@ -622,14 +624,14 @@ namespace VaultAgentTests
 
 
 			// Save Secret
-			Assert.True(await defaultMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
+			Assert.True(await defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s2 = await defaultMount.ReadSecret(secretV2.Path);
 			Assert.True(secretV2.Path == s2.Data.SecretObj.Path, "A3: Secret saved and secret read were not the same.");
 
 			// Save a new version
-			Assert.True(await defaultMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s2.Data.Metadata.Version), "A4: SaveSecret failed to return True.");
+			Assert.True(await defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, s2.Data.Metadata.Version), "A4: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s3 = await defaultMount.ReadSecret(secretV2.Path);
@@ -638,7 +640,7 @@ namespace VaultAgentTests
 
 			// And one more time. save another version
 			// Save a new version
-			Assert.True(await defaultMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s3.Data.Metadata.Version), "A6: SaveSecret failed to return True.");
+			Assert.True(await defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, s3.Data.Metadata.Version), "A6: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s4 = await defaultMount.ReadSecret(secretV2.Path);
@@ -664,14 +666,14 @@ namespace VaultAgentTests
 
 
 			// Save Secret
-			Assert.True(await defaultMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
+			Assert.True(await defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s2 = await defaultMount.ReadSecret(secretV2.Path);
 			Assert.True(secretV2.Path == s2.Data.SecretObj.Path, "A3: Secret saved and secret read were not the same.");
 
 			// Save a new version
-			Assert.True(await defaultMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s2.Data.Metadata.Version), "A4: SaveSecret failed to return True.");
+			Assert.True(await defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, s2.Data.Metadata.Version), "A4: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s3 = await defaultMount.ReadSecret(secretV2.Path);
@@ -680,7 +682,7 @@ namespace VaultAgentTests
 
 			// And one more time. save another version
 			// Save a new version
-			Assert.True(await defaultMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s3.Data.Metadata.Version), "A6: SaveSecret failed to return True.");
+			Assert.True(await defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, s3.Data.Metadata.Version), "A6: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s4 = await defaultMount.ReadSecret(secretV2.Path);
@@ -721,14 +723,14 @@ namespace VaultAgentTests
 
 
 			// Save Secret
-			Assert.True(await defaultMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
+			Assert.True(await defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s2 = await defaultMount.ReadSecret(secretV2.Path);
 			Assert.True(secretV2.Path == s2.Data.SecretObj.Path, "A3: Secret saved and secret read were not the same.");
 
 			// Save a new version
-			Assert.True(await defaultMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s2.Data.Metadata.Version), "A4: SaveSecret failed to return True.");
+			Assert.True(await defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, s2.Data.Metadata.Version), "A4: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s3 = await defaultMount.ReadSecret(secretV2.Path);
@@ -737,7 +739,7 @@ namespace VaultAgentTests
 
 			// And one more time. save another version
 			// Save a new version
-			Assert.True(await defaultMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s3.Data.Metadata.Version), "A6: SaveSecret failed to return True.");
+			Assert.True(await defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, s3.Data.Metadata.Version), "A6: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s4 = await defaultMount.ReadSecret(secretV2.Path);
@@ -771,14 +773,14 @@ namespace VaultAgentTests
 
 
 			// Save Secret
-			Assert.True(await casMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
+			Assert.True(await casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s2 = await casMount.ReadSecret(secretV2.Path);
 			Assert.True(secretV2.Path == s2.Data.SecretObj.Path, "A3: Secret saved and secret read were not the same.");
 
 			// Save a new version
-			Assert.True(await casMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s2.Data.Metadata.Version), "A4: SaveSecret failed to return True.");
+			Assert.True(await casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, s2.Data.Metadata.Version), "A4: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s3 = await casMount.ReadSecret(secretV2.Path);
@@ -787,7 +789,7 @@ namespace VaultAgentTests
 
 			// And one more time. save another version
 			// Save a new version
-			Assert.True(await casMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s3.Data.Metadata.Version), "A6: SaveSecret failed to return True.");
+			Assert.True(await casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, s3.Data.Metadata.Version), "A6: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s4 = await casMount.ReadSecret(secretV2.Path);
@@ -833,14 +835,14 @@ namespace VaultAgentTests
 
 
 			// Save Secret
-			Assert.True(await casMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
+			Assert.True(await casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s2 = await casMount.ReadSecret(secretV2.Path);
 			Assert.True(secretV2.Path == s2.Data.SecretObj.Path, "A3: Secret saved and secret read were not the same.");
 
 			// Save a new version
-			Assert.True(await casMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s2.Data.Metadata.Version), "A4: SaveSecret failed to return True.");
+			Assert.True(await casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, s2.Data.Metadata.Version), "A4: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s3 = await casMount.ReadSecret(secretV2.Path);
@@ -849,7 +851,7 @@ namespace VaultAgentTests
 
 			// And one more time. save another version
 			// Save a new version
-			Assert.True(await casMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch, s3.Data.Metadata.Version), "A6: SaveSecret failed to return True.");
+			Assert.True(await casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, s3.Data.Metadata.Version), "A6: SaveSecret failed to return True.");
 
 			// Confirm it exists:
 			KV2SecretWrapper s4 = await casMount.ReadSecret(secretV2.Path);
@@ -882,7 +884,7 @@ namespace VaultAgentTests
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("A1", "aaaa1");
 			secretV2.Attributes.Add(kv1.Key, kv1.Value);
 
-			Assert.True(await casMount.SaveSecret(secretV2, EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist),"Unable to create secret");
+			Assert.True(await casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist),"Unable to create secret");
 
 			// Now change the metadata for this secret.  
 			Assert.True(await casMount.UpdateSecretSettings(secName, 9, false));

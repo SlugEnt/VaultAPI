@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-
-
 using System.Globalization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace VaultAgent.Backends.KV_V2
+namespace VaultAgent.SecretEngines.KV2
 {
 
 	/// <summary>
@@ -182,16 +180,16 @@ namespace VaultAgent.Backends.KV_V2
 
 	public partial class KV2SecretWrapper
 	{
-		public static KV2SecretWrapper FromJson(string json) => JsonConvert.DeserializeObject<KV2SecretWrapper>(json, VaultAgent.Backends.KV_V2.Converter.Settings);
+		public static KV2SecretWrapper FromJson(string json) => JsonConvert.DeserializeObject<KV2SecretWrapper>(json, KV2Converter.Settings);
 	}
 
 	public static class Serialize
 	{
-		public static string ToJson(this KV2SecretWrapper self) => JsonConvert.SerializeObject(self, VaultAgent.Backends.KV_V2.Converter.Settings);
+		public static string ToJson(this KV2SecretWrapper self) => JsonConvert.SerializeObject(self, KV2Converter.Settings);
 	}
 
 
-	internal static class Converter
+	internal static class KV2Converter
 	{
 		public static readonly JsonSerializerSettings Settings = new JsonSerializerSettings {
 			MetadataPropertyHandling = MetadataPropertyHandling.Ignore,

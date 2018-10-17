@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 
-namespace VaultAgent.Backends.KV_V2
+namespace VaultAgent.SecretEngines.KV2
 {
 	/// <summary>
 	/// Represents a secret read from the Vault.  Secrets can have many attributes which are just Key Value Pairs of a name and some data value.
