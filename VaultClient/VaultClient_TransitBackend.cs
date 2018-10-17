@@ -19,7 +19,7 @@ namespace VaultClient
 		public VaultClient_TransitBackend (string token, string ip, int port, string db) {
 			_vault = new VaultAgentAPI("TransitVault", ip, port, token);
 
-			TB = (TransitBackend)_vault.ConnectToSecretBackend(VaultAgent.Backends.System.EnumBackendTypes.Transit, "transit", "transit");
+			TB = (TransitBackend)_vault.ConnectToSecretBackend(VaultAgent.Backends.System.EnumSecretBackendTypes.Transit, "transit", "transit");
 
 			//TB = new TransitBackend(ip, port, token,db);
 

@@ -12,20 +12,24 @@ namespace VaultAgent.Backends.AppRole
 	/// The AppRoleBackEnd represents the Vault AppRole backend authentication engine and all the service endpoints it exposes
 	/// for the creation, updating, reading and deletion of AppRole's
 	/// </summary>
-	public class AppRoleBackEnd
+	public class AppRoleBackEnd : VaultAuthenticationBackend
 	{
+/*
 		TokenInfo backendToken;
-		private VaultAPI_Http vaultHTTP;
+		private VaultAPI_Http _vaultHTTP;
 		string roleBEPath = "/v1/auth/";
 		Uri vaultAppRolePath;
-
-
+*/
+		
 
 		/// <summary>
-		/// Constructor for AppRoleBackEnd
+		/// Constructor for AppRoleBackend
 		/// </summary>
-		public AppRoleBackEnd (string vaultIP, int port, string Token, string mountPath = "approle") {
-			vaultHTTP = new VaultAPI_Http(vaultIP, port, Token);
+		public AppRoleBackEnd ( string backendMountName, string backendMountPath, VaultAPI_Http _httpConnector) : base(backendMountName, backendMountPath, _httpConnector) {
+			Type = System.EnumBackendTypes.A_AppRole;
+			this.MountPointPrefix = "/v1/auth/";
+
+/*			_vaultHTTP = new VaultAPI_Http(vaultIP, port, Token);
 			backendToken = new TokenInfo();
 			backendToken.Id = Token;
 
@@ -33,6 +37,7 @@ namespace VaultAgent.Backends.AppRole
 			roleBEPath = roleBEPath + mountPath + "/role";
 
 			vaultAppRolePath = new Uri("http://" + vaultIP + ":" + port + roleBEPath);
+*/
 		}
 
 
@@ -45,11 +50,11 @@ namespace VaultAgent.Backends.AppRole
 		/// <returns>True if successful.</returns>
 		/// <see cref="AppRole"/>
 		public async Task<bool> CreateRole (AppRole art) {
-			string path = vaultAppRolePath + "/" + art.Name;
+			string path = MountPointPath + "role/" + art.Name;
 			string json = JsonConvert.SerializeObject(art);
 
 
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "AppRoleBackEnd: CreateRole", null, json);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "AppRoleBackEnd: CreateRole", null, json);
 			if (vdro.Success) {
 				return true;
 			}
@@ -64,6 +69,8 @@ namespace VaultAgent.Backends.AppRole
 		/// </summary>
 		/// <returns>List[string] of role names.  Empty list if no roles found.</string></returns>
 		public async Task<List<string>> ListRoles () {
+			string path = MountPointPath + "role";
+
 			try {
 				// Setup List Parameter
 				Dictionary<string, string> contentParams = new Dictionary<string, string>() {
@@ -71,7 +78,7 @@ namespace VaultAgent.Backends.AppRole
 				};
 	
 
-				VaultDataResponseObject vdro = await vaultHTTP.GetAsync(roleBEPath, "ListRoles",contentParams);
+				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ListRoles",contentParams);
 				if (vdro.Success) {
 					string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
 					List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js);
@@ -92,9 +99,10 @@ namespace VaultAgent.Backends.AppRole
 		/// <returns>AppRole object.</returns>
 		public async Task<AppRole> ReadAppRole (string appRoleName) {
 			// The rolename forms the last part of the path
-			string path = vaultAppRolePath + "/" + appRoleName;
+			string path = MountPointPath + "role/" + appRoleName;
+			//string path = vaultAppRolePath + "/" + appRoleName;
 
-			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "ReadAppRole");
+			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ReadAppRole");
 			if (vdro.Success) {
 				AppRole ART = vdro.GetVaultTypedObject<AppRole>();
 				ART.Name = appRoleName;
@@ -124,11 +132,12 @@ namespace VaultAgent.Backends.AppRole
 		/// <returns>Bool:  True if deleted OR did not exist.  False otherwise.</returns>
 		public async Task<bool> DeleteAppRole (string appRoleName) {
 			// The rolename forms the last part of the path
-			string path = vaultAppRolePath + "/" + appRoleName;
+			string path = MountPointPath + "role/" + appRoleName;
+			//string path = vaultAppRolePath + "/" + appRoleName;
 
 
 			try {
-				VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "DeleteAppRole");
+				VaultDataResponseObject vdro = await _vaultHTTP.DeleteAsync(path, "DeleteAppRole");
 				if (vdro.Success) { return true; }
 				else { return false; }
 			}
@@ -156,10 +165,11 @@ namespace VaultAgent.Backends.AppRole
 		/// <returns>Returns a string representing the Role ID as stored in Vault.</returns>
 		public async Task<string> GetRoleID (string appRoleName) {
 			// The rolename forms the last part of the path
-			string path = vaultAppRolePath + "/" + appRoleName + "/role-id";
+			//string path = vaultAppRolePath + "/" + appRoleName + "/role-id";
+			string path = MountPointPath + "role/" + appRoleName + "/role-id";
 
 
-			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "GetRoleID");
+			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "GetRoleID");
 			if (vdro.Success) {
 				return  vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "role_id");
 			}
@@ -176,13 +186,14 @@ namespace VaultAgent.Backends.AppRole
 		/// <returns>True if update of RoleID was successful.</returns>
 		public async Task<bool> UpdateAppRoleID (string appRoleName, string valueOfRoleID) {
 			// The keyname forms the last part of the path
-			string path = vaultAppRolePath +"/" + appRoleName + "/role-id";
+			//string path = vaultAppRolePath +"/" + appRoleName + "/role-id";
+			string path = MountPointPath + "role/" + appRoleName + "/role-id";
 
 			Dictionary<string, string> contentParams = new Dictionary<string, string>() {
 				{ "role_id", valueOfRoleID }
 			};
 
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "UpdateAppRoleID", contentParams);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "UpdateAppRoleID", contentParams);
 			if (vdro.httpStatusCode == 204) { return true; }
 			else { return false; }
 		}
@@ -202,7 +213,9 @@ namespace VaultAgent.Backends.AppRole
 		/// <returns>AppRoleSecret representing the a secret ID Vault returned.</returns>
 		public async Task<AppRoleSecret> CreateSecretID (string appRoleName, Dictionary<string,string> metadata = null, List<string> cidrIPsAllowed = null) {
 			// The keyname forms the last part of the path
-			string path = vaultAppRolePath + "/" + appRoleName + "/secret-id";
+			//string path = vaultAppRolePath + "/" + appRoleName + "/secret-id";
+			string path = MountPointPath + "role/" + appRoleName + "/secret-id";
+
 
 			Dictionary<string, string> contentParams = new Dictionary<string, string>();
 			if (metadata != null) {
@@ -216,7 +229,7 @@ namespace VaultAgent.Backends.AppRole
 				string cidrs = JsonConvert.SerializeObject(cidrIPsAllowed);
 				contentParams.Add("cidr_list", cidrs); }
 
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "CreateSecretID", contentParams);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "CreateSecretID", contentParams);
 			if (vdro.Success) {
 				return vdro.GetVaultTypedObject<AppRoleSecret>();
 			}

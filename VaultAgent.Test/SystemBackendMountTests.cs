@@ -43,7 +43,7 @@ namespace VaultAgentTests
 			};
 
 
-			Assert.True(await VSB.SysMountCreate(key, desc, EnumBackendTypes.KeyValueV2, config),"Unable to create Mount with key name: {0}",key);
+			Assert.True(await VSB.SysMountCreate(key, desc, EnumSecretBackendTypes.KeyValueV2, config),"Unable to create Mount with key name: {0}",key);
 
 			// Now read back the mount config data.
 			VaultSysMountConfig config2 = await VSB.SysMountReadConfig(key);
@@ -70,7 +70,7 @@ namespace VaultAgentTests
 			};
 
 
-			Assert.True(await VSB.SysMountCreate(key, desc, EnumBackendTypes.KeyValueV2, config), "Unable to create Mount with key name: {0}", key);
+			Assert.True(await VSB.SysMountCreate(key, desc, EnumSecretBackendTypes.KeyValueV2, config), "Unable to create Mount with key name: {0}", key);
 
 			// Now read back the mount config data.
 			VaultSysMountConfig config2 = await VSB.SysMountReadConfig(key);
@@ -104,7 +104,7 @@ namespace VaultAgentTests
 			string desc = "Test Mount DB: " + key + "KeyValue V2";
 
 			VaultSysMountConfig config1 = new VaultSysMountConfig { DefaultLeaseTTL = "6556"	};
-			Assert.True(await VSB.SysMountCreate(key, desc, EnumBackendTypes.KeyValueV2,config1));
+			Assert.True(await VSB.SysMountCreate(key, desc, EnumSecretBackendTypes.KeyValueV2,config1));
 
 			// Ensure it was created.
 			VaultSysMountConfig config2 = await VSB.SysMountReadConfig(key);
