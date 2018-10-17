@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using VaultAgent.Backends.AppRole;
 using System.Threading.Tasks;
+using VaultAgent;
 
 namespace VaultClient
 {
@@ -11,8 +12,9 @@ namespace VaultClient
 		AppRoleBackEnd ARB;
 		private string _AppRoleName;
 
-		public VaultClient_AppRoleBackend(string token, string ip, int port) {
-			ARB = new AppRoleBackEnd(ip, port, token);
+		public VaultClient_AppRoleBackend(AppRoleBackEnd arb) {
+			ARB = arb;
+			//ARB = new AppRoleBackEnd(ip, port, token);
 			_AppRoleName = "test_appRoleA";
 		}
 

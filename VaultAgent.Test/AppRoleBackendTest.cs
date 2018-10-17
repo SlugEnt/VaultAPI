@@ -6,24 +6,52 @@ using System.Threading;
 using System.Threading.Tasks;
 using VaultAgent.Backends.System;
 using VaultAgent.Models;
+using VaultAgent;
 
 namespace VaultAgentTests
 {
+	[TestFixture]
 	[Parallelizable]
     public class AppRoleBackendTest
     {
+		private VaultAgentAPI vault;
+		private SysBackend VSB;
+		private UniqueKeys UK = new UniqueKeys();       // Unique Key generator
+
 		private AppRoleBackEnd _ARB;
-		private object _arLocker = new object();
-		private string roleName;
-		private string _authBEName = "auth2";
+
+		//private object _arLocker = new object();
+		//private string roleName;
+		//private string _authBEName = "auth2";
 
 
 
 		[OneTimeSetUp]
 		public async Task AppRoleBackendSetup () {
+			// Build Connection to Vault.
+			vault = new VaultAgentAPI("AppRoleVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+
+
+			string _AppRoleName = UK.GetKey("AppR");
+			string approleMountName = UK.GetKey("AppAuth");
+
+			// Create the AppRole Mount Point
+			_ARB = (AppRoleBackEnd) vault.ConnectAuthenticationBackend (EnumBackendTypes.A_AppRole,"AppRole",approleMountName);
+
+			
+
+			// Create an Authentication method of App Role.
+			
+			AuthMethod am = new AuthMethod(approleMountName, EnumAuthMethods.AppRole);
+
+//			_ARB = new AppRoleBackEnd(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, approleMountName);
+
+			//_ARB = (AppRoleBackEnd) await VSB.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, noCasMountName, noCasMountName, "No CAS Mount Test", config);
+
 			// Ensure we have an authentication method of AppRole enabled on the Vault.
 			SysBackend VSB = new SysBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
-			AuthMethod am = new AuthMethod(_authBEName, EnumAuthMethods.AppRole);
+
+
 			bool rc = await VSB.AuthEnable(am);
 			AppBackendTestInit();
 		}
@@ -32,12 +60,14 @@ namespace VaultAgentTests
 		[SetUp]
 		// Ensure Backend is initialized during each test.
 		protected void AppBackendTestInit() {
+/*
 			lock (_arLocker) {
 				if (_ARB == null) {
 					roleName = "roleABC";
 					_ARB = new AppRoleBackEnd(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, _authBEName);
 				}
 			}
+			*/
 		}
 
 		[Test,Order(100)]

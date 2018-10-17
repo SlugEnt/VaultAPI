@@ -47,7 +47,7 @@ namespace VaultAgentTests
 			// Create unique name for the transit Backend we will use to test with.
 			string transitMountName = UK.GetKey("TRANsit");
 
-			TB = (TransitBackend)await VSB.CreateSecretBackendMount(EnumBackendTypes.Transit, transitMountName, transitMountName, "Transit Bckend Testing");
+			TB = (TransitBackend)await VSB.CreateSecretBackendMount(EnumSecretBackendTypes.Transit, transitMountName, transitMountName, "Transit Bckend Testing");
 			Assert.NotNull(TB,"Transit Backend was returned null upon creation.");
 		}
 

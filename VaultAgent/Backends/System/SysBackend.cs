@@ -196,7 +196,7 @@ namespace VaultAgent.Backends.System
 		/// <param name="backendType">The type of secrets backend this mount is.  </param>
 		/// <param name="config">The configuration to be applied to this mount.</param>
 		/// <returns>Bool:  True if successful in creating the backend mount point.  False otherwise.</returns>
-		public async Task<bool> SysMountCreate (string mountPath, string description, EnumBackendTypes backendType, VaultSysMountConfig config = null) {
+		public async Task<bool> SysMountCreate (string mountPath, string description, EnumSecretBackendTypes backendType, VaultSysMountConfig config = null) {
 			// The keyname forms the last part of the path
 			string path = vaultSysPath + pathMounts +  mountPath;
 
@@ -210,28 +210,28 @@ namespace VaultAgent.Backends.System
 			string typeName = "";
 
 			switch (backendType) {
-				case EnumBackendTypes.Transit:
+				case EnumSecretBackendTypes.Transit:
 					typeName = "transit";		
 					break;
-				case EnumBackendTypes.Secret:
+				case EnumSecretBackendTypes.Secret:
 					typeName = "kv";
 					break;
-				case EnumBackendTypes.AWS:
+				case EnumSecretBackendTypes.AWS:
 					typeName = "aws";
 					throw new NotImplementedException();
-				case EnumBackendTypes.CubbyHole:
+				case EnumSecretBackendTypes.CubbyHole:
 					typeName = "cubbyhole";
 					throw new NotImplementedException();
-				case EnumBackendTypes.Generic:
+				case EnumSecretBackendTypes.Generic:
 					typeName = "generic";
 					throw new NotImplementedException();
-				case EnumBackendTypes.PKI:
+				case EnumSecretBackendTypes.PKI:
 					typeName = "pki";
 					throw new NotImplementedException();
-				case EnumBackendTypes.SSH:
+				case EnumSecretBackendTypes.SSH:
 					typeName = "ssh";
 					throw new NotImplementedException();
-				case EnumBackendTypes.KeyValueV2:
+				case EnumSecretBackendTypes.KeyValueV2:
 					// It is the same type as a version 1, but it has an additional config value.
 					typeName = "kv";
 					options.Add("version", "2");

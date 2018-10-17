@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
-using VaultAgent.Backends.Secret;
 using VaultAgent.Backends.System;
 using VaultAgent.Backends.SecretEngines;
 using VaultAgentTests;
@@ -14,6 +13,7 @@ using VaultAgent.Backends.KV_V2.KV2SecretMetaData;
 
 namespace VaultAgentTests
 {
+	[TestFixture]
 	[Parallelizable]
     public class SecretBE_KeyValueV2_Test
     {
@@ -39,6 +39,7 @@ namespace VaultAgentTests
 			// Build Connection to Vault.
 			VSB = new VaultAgentAPI("testa", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
 
+
 			// We will create 3 KV2 mounts in the Vault instance.  One for testing with CAS on, one with CAS off, and then a generic default (CAS off).	
 			string casMountName = UK.GetKey("CAS");
 			string noCasMountName = UK.GetKey("NoCas");
@@ -52,9 +53,9 @@ namespace VaultAgentTests
 				VisibilitySetting = "hidden"
 			};
 
-			noCasMount = (KV2Backend)await VSB.CreateSecretBackendMount(EnumBackendTypes.KeyValueV2, noCasMountName, noCasMountName, "No CAS Mount Test", config);
-			casMount = (KV2Backend)await VSB.CreateSecretBackendMount(EnumBackendTypes.KeyValueV2, casMountName, casMountName,"CAS Mount Test", config);
-			defaultMount = (KV2Backend)await VSB.CreateSecretBackendMount(EnumBackendTypes.KeyValueV2, defaultMountName, defaultMountName, "Default Mount Test", config);
+			noCasMount = (KV2Backend)await VSB.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, noCasMountName, noCasMountName, "No CAS Mount Test", config);
+			casMount = (KV2Backend)await VSB.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, casMountName, casMountName,"CAS Mount Test", config);
+			defaultMount = (KV2Backend)await VSB.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, defaultMountName, defaultMountName, "Default Mount Test", config);
 
 
 			Assert.NotNull(noCasMount);

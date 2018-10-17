@@ -7,31 +7,20 @@ using VaultAgent.Models;
 using Newtonsoft.Json;
 
 
-namespace VaultAgent.Backends.Secret
+namespace VaultAgent.Backends.SecretEngines
 {
-	public class SecretBackend
+	public class SecretBackend : VaultSecretBackend
 	{
-		TokenInfo secretToken;
-		private VaultAPI_Http vaultHTTP;
-		string secretBEPath = "/v1/secret/";
-		Uri vaultSecretPath;
-
-		
 		// ==============================================================================================================================================
 		/// <summary>
 		/// Constructor.  Initializes the connection to Vault and stores the token.
 		/// </summary>
-		/// <param name="vaultIP">The IP address of the Vault Server.</param>
-		/// <param name="port">The network port the Vault server listens on.</param>
-		/// <param name="Token">The token used to authenticate with.</param>
-		/// <param name="backendMountName">The name of the secret backend to mount.  For example for a mount at /mine/secretA use mine/secretA as value.</param>
-		public SecretBackend(string vaultIP, int port, string Token, string backendMountName = "secret") {
-			vaultHTTP = new VaultAPI_Http(vaultIP, port, Token);
-			secretToken = new TokenInfo();
-			secretToken.Id = Token;
-
-			secretBEPath = "/v1/" + backendMountName + "/";
-			vaultSecretPath = new Uri("http://" + vaultIP + ":" + port + secretBEPath);
+		/// <param name="backendName">The name of the secret backend to mount.  This is purely cosmetic.</param>
+		/// <param name="backendMountPoint">The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/ and exclude trailing slash.</param>
+		/// <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
+		public SecretBackend(string backendName, string backendMountPoint, VaultAPI_Http _httpConnector) : base(backendName, backendMountPoint, _httpConnector) {
+			Type = System.EnumBackendTypes.Secret;
+			IsSecretBackend = true;
 		}
 
 
@@ -115,7 +104,7 @@ namespace VaultAgent.Backends.Secret
 		/// <param name="secret">The Secret object with at least the secret path populated.</param>
 		/// <returns>True if successful in creating the secret in Vault, false otherwise.</returns>
 		public async Task<bool> CreateOrUpdateSecretAndReturn(Secret secret) {
-			string path = vaultSecretPath + secret.Path;
+			string path = MountPointPath + secret.Path;
 
 			// Set TTL to 4 hour if not specified explicitly
 			if (secret.RefreshInterval == 0) { secret.RefreshInterval = (4 * 3600); }
@@ -138,7 +127,7 @@ namespace VaultAgent.Backends.Secret
 			}
 			else { attrJSON = contentParamsJSON; }
 
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "CreateOrUpdateSecret",null, attrJSON);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "CreateOrUpdateSecret",null, attrJSON);
 			if (vdro.Success) {
 				return true;
 			}
@@ -156,10 +145,10 @@ namespace VaultAgent.Backends.Secret
 		/// <param name="secretPath">The full path to the secret.  Also known as the secret's full name.</param>
 		/// <returns>Secret object populated with the secret's attributes if successful.  Null if not successful.</returns>
 		public async Task<Secret> ReadSecret (string secretPath) {
-			string path = vaultSecretPath + secretPath;
+			string path = MountPointPath + secretPath;
 
 			try {
-				VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "ReadSecret");
+				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ReadSecret");
 				if (vdro.Success) {
 					Secret secret = vdro.GetVaultTypedObjectFromResponse<Secret>();
 
@@ -221,10 +210,10 @@ namespace VaultAgent.Backends.Secret
 		/// <param name="secretPath">Path that you wish to use as parent to list secrets from.  Only lists immediate children of this secret path.</param>
 		/// <returns>List of strings of the secret names.</returns>
 		public async Task<List<string>> ListSecrets (string secretPath) {
-			string path = vaultSecretPath + secretPath + "?list=true";
+			string path = MountPointPath + secretPath + "?list=true";
 
 			try {
-				VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "ListSecrets");
+				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ListSecrets");
 				if (vdro.Success) {
 					string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
 					List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js);
@@ -291,9 +280,9 @@ namespace VaultAgent.Backends.Secret
 		/// <param name="secretPath">The path to the Vault secret to permanently delete.</param>
 		/// <returns>True for success, False otherwise.</returns>
 		public async Task<bool> DeleteSecret(string secretPath) {
-			string path = vaultSecretPath + secretPath;
+			string path = MountPointPath + secretPath;
 
-			VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "DeleteSecretVersion");
+			VaultDataResponseObject vdro = await _vaultHTTP.DeleteAsync(path, "DeleteSecretVersion");
 			if (vdro.Success) { return true; }
 			else { return false; }
 		}

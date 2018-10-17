@@ -8,6 +8,7 @@ using VaultAgent.Models;
 using Newtonsoft.Json;
 using VaultAgent.Backends.System;
 using VaultAgent.Backends;
+using VaultAgent.Backends.AppRole;
 
 namespace VaultClient
 {
@@ -21,7 +22,7 @@ namespace VaultClient
 			int port;
 
 			// USe remote Vault server
-			if (2 == 2) {
+			if (2 == 3) {
 				//rootToken = "956ac20d-3516-cdd3-61fc-b50bc5763453";
 				rootToken = "19490709-7966-bd0c-8a72-3f4724283c1e";
 				lookupToken = "7d13922b-7844-85d9-fbb8-6cc8bed270f2";
@@ -30,18 +31,22 @@ namespace VaultClient
 			}
 			// Use local dev server.
 			else {
-				rootToken = "hi";
+				rootToken = "tokenA";
 				lookupToken = "hi";
 				ip = "127.0.0.1";
-				port = 8200;
+				port = 47002;
 			}
+
+			// Connect to Vault, add an authentication backend of AppRole.
+			VaultAgentAPI vaultAgent = new VaultAgentAPI("Vault", ip, port, rootToken);
+			AppRoleBackEnd ARB = (AppRoleBackEnd) vaultAgent.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, "AppRole", "approle");
 
 			// System Backend Examples:
 			VaultClient_SystemBackend sysBE = new VaultClient_SystemBackend(rootToken, ip, port);
 			await sysBE.Run();
 
 
-			VaultClient_AppRoleBackend roleBE = new VaultClient_AppRoleBackend(rootToken, ip, port);
+			VaultClient_AppRoleBackend roleBE = new VaultClient_AppRoleBackend(ARB);
 			await roleBE.Run();
 
 
@@ -56,7 +61,7 @@ namespace VaultClient
 
 			// Transit Backend
 			// Enable a new transit Backend.
-			//bool rc = await VSB.SysMountEnable(transitDB, ("transit test DB -" + transitDB), EnumBackendTypes.Transit);
+			//bool rc = await VSB.SysMountEnable(transitDB, ("transit test DB -" + transitDB), EnumSecretBackendTypes.Transit);
 
 			string transitDB = "transit";
 			VaultClient_TransitBackend transit = new VaultClient_TransitBackend(rootToken, ip, port,transitDB);
