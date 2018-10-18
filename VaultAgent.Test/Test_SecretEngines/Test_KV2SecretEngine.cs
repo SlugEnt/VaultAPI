@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using NUnit.Framework;
 using VaultAgent.Backends.System;
 using VaultAgent.SecretEngines;
-using VaultAgentTests;
 using System.Threading.Tasks;
 using VaultAgent.Backends;
 using VaultAgent.SecretEngines.KV2.SecretMetaDataInfo;
 using VaultAgent;
 
 using VaultAgent.SecretEngines.KV2;
+
 
 namespace VaultAgentTests
 {
@@ -91,11 +89,12 @@ namespace VaultAgentTests
 		}
 
 
-		[Test]
-		/// <summary>
-		/// Confirms that if the backend is set to require CAS, then a secret without CAS specified will fail.
-		/// </summary>
-		public async Task BackendWithCAS_FailsSecretSaveWithoutCasOptionSet () {
+
+        /// <summary>
+        /// Confirms that if the backend is set to require CAS, then a secret without CAS specified will fail.
+        /// </summary>
+        [Test]
+        public async Task BackendWithCAS_FailsSecretSaveWithoutCasOptionSet () {
 			KV2SecretEngineSettings s = await _casMount.GetBackendConfiguration();
 			Assert.AreEqual(true, s.CASRequired);
 
@@ -113,12 +112,13 @@ namespace VaultAgentTests
 		}
 
 
-		
-		[Test]
-		/// <summary>
 
-		/// </summary>
-		public async Task BackendWithCAS_AllowsSaveOfNewSecretWithCASSet() {
+
+        /// <summary>
+
+        /// </summary>
+        [Test]
+        public async Task BackendWithCAS_AllowsSaveOfNewSecretWithCASSet() {
 			// Setup backend to allow 6 versions of a key and requires CAS.
 			//Assert.True(await casMount.SetBackendConfiguration(6, true));
 			KV2SecretEngineSettings s = await _casMount.GetBackendConfiguration();
@@ -144,12 +144,13 @@ namespace VaultAgentTests
 
 
 
-		[Test]
-		/// <summary>
-		/// Tests that with a backend with CAS set, That an existing secret can be saved only if current version has been specified.
-		/// </summary>
-		/// <returns></returns>
-		public async Task BackendWithCAS_AllowsSaveofSecretWithNewVersion () {
+
+        /// <summary>
+        /// Tests that with a backend with CAS set, That an existing secret can be saved only if current version has been specified.
+        /// </summary>
+        /// <returns></returns>
+        [Test]
+        public async Task BackendWithCAS_AllowsSaveofSecretWithNewVersion () {
 			KV2SecretEngineSettings s = await _casMount.GetBackendConfiguration();
 			Assert.AreEqual(true, s.CASRequired);
 
@@ -180,11 +181,13 @@ namespace VaultAgentTests
 		}
 
 
-		[Test]
-		/// <summary>
-		/// Tests that with a backend with CAS set, That an existing secret can be saved only if current version has been specified.
-		/// </summary>
-		/// <returns></returns>
+
+        /// <summary>
+        /// Tests that with a backend with CAS set, That an existing secret can be saved only if current version has been specified.
+        /// </summary>
+        /// <returns></returns>
+        [Test]
+
 		public async Task BackendWithCAS_SaveSecretWithInvalidVersionNumFails() {
 			KV2SecretEngineSettings s = await _casMount.GetBackendConfiguration();
 			Assert.AreEqual(true, s.CASRequired);
@@ -300,12 +303,11 @@ namespace VaultAgentTests
 
 
 
-
-		[Test]
-		/// <summary>
-		/// Tests that with a backend withOUT CAS set, That an existing secret can be saved, even if multiple versions exist.
-		/// </summary>
-		/// <returns></returns>
+        /// <summary>
+        /// Tests that with a backend withOUT CAS set, That an existing secret can be saved, even if multiple versions exist.
+        /// </summary>
+        /// <returns></returns>
+        [Test]
 		public async Task BackendWithOUTCAS_SaveSecretWithMultipleVersionsWorks() {
 			KV2SecretEngineSettings s = await _noCasMount.GetBackendConfiguration();
 			Assert.False(s.CASRequired, "A1: CAS should not be required, but backend is set for CAS.");
@@ -896,10 +898,12 @@ namespace VaultAgentTests
 		[Test]
 		// Test that Secret shortcut access the actual backing value correctly.
 		public void SecretVersion () {
-			KV2SecretWrapper secretA = new KV2SecretWrapper();
-			secretA.Secret = new KV2Secret("test");
-			secretA.Version = 2;
-			Assert.AreEqual(2, secretA.Version);
+            KV2SecretWrapper secretA = new KV2SecretWrapper
+            {
+                Secret = new KV2Secret("test"),
+                Version = 2
+            };
+            Assert.AreEqual(2, secretA.Version);
 			Assert.AreEqual(2, secretA.Data.Metadata.Version);
 		}
 
