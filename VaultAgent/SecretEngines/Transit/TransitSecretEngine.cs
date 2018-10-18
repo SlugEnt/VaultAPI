@@ -115,7 +115,7 @@ namespace VaultAgent.SecretEngines
 			string path = MountPointPath + PathKeys + keyName;
 
 			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "CreateEncryptionKey", createParams);
-			if (vdro.httpStatusCode == 204) { return true; }
+			if (vdro.HttpStatusCode == 204) { return true; }
 			else { return false; }
 		}
 
@@ -185,7 +185,7 @@ namespace VaultAgent.SecretEngines
 
 			// Call Vault API.
 			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "EncryptToVault", contentParams);
-			if (vdro.httpStatusCode == 200) {
+			if (vdro.HttpStatusCode == 200) {
 				string js = vdro.GetDataPackageAsJSON();
 				TransitEncryptedItem data = VaultUtilityFX.ConvertJSON<TransitEncryptedItem>(js);
 				return data;
@@ -301,7 +301,7 @@ namespace VaultAgent.SecretEngines
 
 			// Call Vault API.
 			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "Decrypt", contentParams);
-			if (vdro.httpStatusCode == 200) {
+			if (vdro.HttpStatusCode == 200) {
 				string js = vdro.GetDataPackageAsJSON();
 				TransitDecryptedItem data = VaultUtilityFX.ConvertJSON<TransitDecryptedItem>(js);
 				return data;
@@ -410,7 +410,7 @@ namespace VaultAgent.SecretEngines
 
 
 			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "ReEncrypt", contentParams);
-			if (vdro.httpStatusCode == 200) {
+			if (vdro.HttpStatusCode == 200) {
 				string js = vdro.GetDataPackageAsJSON();
 				TransitEncryptedItem data = VaultUtilityFX.ConvertJSON<TransitEncryptedItem>(js);
 				return data;

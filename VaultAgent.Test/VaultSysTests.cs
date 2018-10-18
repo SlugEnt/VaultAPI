@@ -11,19 +11,22 @@ using System.Diagnostics;
 
 namespace VaultAgentTests
 {
+    [TestFixture]
 	[Parallelizable]
     public class VaultSysTests
     {
-		// Used for testing so we do not need to create the backend everytime.
-		SysBackend vsb;
-		Object vsbLocker = new Object();
+        private VaultAgentAPI _vaultAgentAPI;
+        private readonly UniqueKeys _uniqueKeys = new UniqueKeys();       // Unique Key generator     
+        private SysBackend _sysBackend;
+
+        Object vsbLocker = new Object();
 
 
 		[OneTimeSetUp]
 		public void SystemTestInit() {
-			if (vsb == null) {
+			if (_sysBackend == null) {
 				lock(vsbLocker) {
-					vsb = new SysBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+					_sysBackend = new SysBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
 				}
 			}
 		}
@@ -178,7 +181,7 @@ namespace VaultAgentTests
 			// Create a Vault Policy Item
 			VaultPolicy VP = new VaultPolicy("TestingABC");
 			VP.PolicyPaths.Add(vpi);
-			bool rc = await vsb.SysPoliciesACLCreate(VP);
+			bool rc = await _sysBackend.SysPoliciesACLCreate(VP);
 		}
 
 
@@ -211,7 +214,7 @@ namespace VaultAgentTests
 			VP.PolicyPaths.Add(vpi3);
 			VP.PolicyPaths.Add(vpi4);
 
-			Assert.True(await vsb.SysPoliciesACLCreate(VP));
+			Assert.True(await _sysBackend.SysPoliciesACLCreate(VP));
 		}
 
 
@@ -227,11 +230,11 @@ namespace VaultAgentTests
 			vpi3.SudoAllowed = true;
 			VP.PolicyPaths.Add(vpi3);
 
-			Assert.True(await vsb.SysPoliciesACLCreate(VP));
+			Assert.True(await _sysBackend.SysPoliciesACLCreate(VP));
 
 
 			// Now lets read it back. 
-			VaultPolicy vpNew = await vsb.SysPoliciesACLRead("Test2000A");
+			VaultPolicy vpNew = await _sysBackend.SysPoliciesACLRead("Test2000A");
 
 			Assert.AreEqual(1, vpNew.PolicyPaths.Count);
 			Assert.AreEqual(vpi3.ListAllowed, vpNew.PolicyPaths[0].ListAllowed);
@@ -273,11 +276,11 @@ namespace VaultAgentTests
 			vpi3.UpdateAllowed = true;
 			VP.PolicyPaths.Add(vpi3);
 
-			Assert.True(await vsb.SysPoliciesACLCreate(VP));
+			Assert.True(await _sysBackend.SysPoliciesACLCreate(VP));
 
 
 			// Now lets read it back. 
-			VaultPolicy vpNew = await vsb.SysPoliciesACLRead("Test2000B");
+			VaultPolicy vpNew = await _sysBackend.SysPoliciesACLRead("Test2000B");
 
 			Assert.AreEqual(3, vpNew.PolicyPaths.Count);
 			foreach (VaultPolicyPath item in vpNew.PolicyPaths) {
@@ -315,10 +318,10 @@ namespace VaultAgentTests
 			vpi.ListAllowed = true;
 			VP.PolicyPaths.Add(vpi);
 
-			Assert.True(await vsb.SysPoliciesACLCreate(VP));
+			Assert.True(await _sysBackend.SysPoliciesACLCreate(VP));
 
 			// Now get a list of policies.
-			List<string> polList = await vsb.SysPoliciesACLList();
+			List<string> polList = await _sysBackend.SysPoliciesACLList();
 			Assert.True(polList.Count > 0);
 		}
 
@@ -334,10 +337,10 @@ namespace VaultAgentTests
 			vpi.ListAllowed = true;
 			VP.PolicyPaths.Add(vpi);
 
-			Assert.True(await vsb.SysPoliciesACLCreate(VP));
+			Assert.True(await _sysBackend.SysPoliciesACLCreate(VP));
 
 			// Now delete it.
-			Assert.True(await vsb.SysPoliciesACLDelete(VP.Name));
+			Assert.True(await _sysBackend.SysPoliciesACLDelete(VP.Name));
 		}
 
 
@@ -346,7 +349,7 @@ namespace VaultAgentTests
 		[Test, Order(15)]
 		// Providing an invalid policy name returns false.
 		public async Task SystemBE_Policy_Delete_InvalidPolicyName_ReturnsTrue () {
-			Assert.True(await vsb.SysPoliciesACLDelete("invalidName"));
+			Assert.True(await _sysBackend.SysPoliciesACLDelete("invalidName"));
 		}
 		#endregion
 
@@ -444,7 +447,7 @@ namespace VaultAgentTests
 		[TestCase(EnumAuthMethods.TLSCertificates, "cert")]
 		[TestCase(EnumAuthMethods.UsernamePassword, "userpass")]
 		public void SystemBE_AuthMethod_ConstructViaString (EnumAuthMethods i,string val) {
-			AuthMethod am = new AuthMethod("test",val);
+			AuthMethod am = new AuthMethod(_uniqueKeys.GetKey("TST") ,val);
 			Assert.AreEqual(i, am.Type);
 		}
 
@@ -491,18 +494,20 @@ namespace VaultAgentTests
 
 			Debug.WriteLine("NBoConfig:  Path = " + sPath);
 			AuthMethod am = new AuthMethod(sPath, auth);
-			Assert.True(await vsb.AuthEnable(am));
+			Assert.True(await _sysBackend.AuthEnable(am));
 
 		}
 
 
 
 		[Test,Order(110)]
-		public async Task SystemBE_Auth_Enable_ConfigOptions () {
-			AuthMethod am = new AuthMethod("TST2110A",EnumAuthMethods.AppRole);
+		public async Task SystemBE_Auth_Enable_ConfigOptions ()
+		{
+		    string key = _uniqueKeys.GetKey("TST");
+			AuthMethod am = new AuthMethod(key,EnumAuthMethods.AppRole);
 			am.Config.DefaultLeaseTTL = "120";
 			am.Config.MaxLeaseTTL = "240";
-			Assert.True(await vsb.AuthEnable(am));
+			Assert.True(await _sysBackend.AuthEnable(am));
 		}
 
 
@@ -511,9 +516,10 @@ namespace VaultAgentTests
 		public async Task SystemBE_Auth_Disable_Works () {
 			SystemTestInit();
 			try {
-				AuthMethod am = new AuthMethod("TST2110B2", EnumAuthMethods.AppRole);
-				Assert.True(await vsb.AuthEnable(am));
-				Assert.True(await vsb.AuthDisable(am));
+			    string key = _uniqueKeys.GetKey("TST");
+                AuthMethod am = new AuthMethod(key, EnumAuthMethods.AppRole);
+				Assert.True(await _sysBackend.AuthEnable(am));
+				Assert.True(await _sysBackend.AuthDisable(am));
 			}
 			catch (Exception e) { }
 		}
@@ -522,24 +528,24 @@ namespace VaultAgentTests
 
 		[Test,Order(9)]
 		public async Task SystemBE_Auth_EnableDisableValidated () {
-			string name = "TST2BZZ3";
-			AuthMethod am = new AuthMethod(name,EnumAuthMethods.AppRole);
+			string name = _uniqueKeys.GetKey("TST");
+            AuthMethod am = new AuthMethod(name,EnumAuthMethods.AppRole);
 			string path = am.Path;
 			Debug.WriteLine("EnDisValid: Enabling first");
-			Assert.True(await vsb.AuthEnable(am));
+			Assert.True(await _sysBackend.AuthEnable(am));
 
 			// Now get listing of methods and search for our test one.
 			Debug.WriteLine("EnDisValid: Getting List.");
-			Dictionary<string, AuthMethod> authMethods = await vsb.AuthListAll();
+			Dictionary<string, AuthMethod> authMethods = await _sysBackend.AuthListAll();
 			Assert.NotNull(authMethods);
 			Assert.That(authMethods, Contains.Key(path));
 
 			
 			// Now disable and verify it is not in list.
-			Debug.WriteLine("EnDisValid:  Disableing...");
-			Assert.True(await vsb.AuthDisable(am));
+			Debug.WriteLine("EnDisValid:  Disabling...");
+			Assert.True(await _sysBackend.AuthDisable(am));
 			Debug.WriteLine("EnDisValid:  Get new list LatestMethods...");
-			Dictionary<string, AuthMethod> latestMethods = await vsb.AuthListAll();
+			Dictionary<string, AuthMethod> latestMethods = await _sysBackend.AuthListAll();
 			Debug.WriteLine("EnDisValid:  Final Asserts");
 			Assert.NotNull(latestMethods);
 			Assert.That(latestMethods, !Contains.Key(path));

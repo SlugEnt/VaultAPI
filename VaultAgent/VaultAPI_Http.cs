@@ -28,7 +28,6 @@ namespace VaultAgent
 			vaultIPAddress = new Uri("http://" + vaultIP + ":" + port);
 
 			httpClt = new HttpClient(new HttpClientHandler { MaxConnectionsPerServer = 500 }) {	BaseAddress = vaultIPAddress	};
-			//httpClt.BaseAddress = vaultIPAddress;
 			accessToken = Token;
 
 			// Set token into HTTP headers.
@@ -59,7 +58,7 @@ namespace VaultAgent
 
 			string jsonResponse = "";
 
-			var response = await httpClt.PostAsync(APIPath, contentBody);
+		    HttpResponseMessage response = await httpClt.PostAsync(APIPath, contentBody);
 			if (response.IsSuccessStatusCode) {
 				jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 			}
@@ -93,7 +92,7 @@ namespace VaultAgent
 
 			string jsonResponse = "";
 
-			var response = await httpClt.PostAsync(APIPath, contentBody);
+		    HttpResponseMessage response = await httpClt.PostAsync(APIPath, contentBody);
 			if (response.IsSuccessStatusCode) {
 				jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 			}
@@ -128,7 +127,7 @@ namespace VaultAgent
 
 			string jsonResponse = "";
 
-			var response = await httpClt.PutAsync(APIPath, contentBody);
+		    HttpResponseMessage response = await httpClt.PutAsync(APIPath, contentBody);
 			if (response.IsSuccessStatusCode) {
 				jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 			}
@@ -167,9 +166,9 @@ namespace VaultAgent
 			}
 
 			string fullURI = APIPath + httpParameters;
-			
 
-			var response = await httpClt.GetAsync(fullURI);
+
+		    HttpResponseMessage response = await httpClt.GetAsync(fullURI);
 			if (response.IsSuccessStatusCode) {
 				jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 			}
@@ -194,7 +193,7 @@ namespace VaultAgent
 			string httpParameters = "";
 
 			string fullURI = APIPath + httpParameters;
-			var response = await httpClt.DeleteAsync(fullURI);
+			HttpResponseMessage response = await httpClt.DeleteAsync(fullURI);
 
 
 			if (response.IsSuccessStatusCode) {			
@@ -218,25 +217,24 @@ namespace VaultAgent
 		protected async Task HandleVaultErrors (HttpResponseMessage response, string vaultHttpPath, string callingRoutineName) {
 			// See if Response Body Contains an Errors object.
 			string jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-			List<string> Errors = new List<string>();
+			List<string> errors = new List<string>();
 
 			try {
-				Errors = ConvertJSONArrayToList(jsonResponse, "errors");
+				errors = ConvertJSONArrayToList(jsonResponse, "errors");
 			}
 			catch (MissingFieldException e) {
 				// Swallow the error.  Latest updates to Vault V1.2.2 in KV2 do not necessarily populate the error object if object not foundf.
 			}
 
 
-			string exceptionMsg;
-			int status = (int)response.StatusCode;
+		    int status = (int)response.StatusCode;
 
 
 			// Build out exception message:  Include any error text returned by Vault.
-			exceptionMsg = "[" + callingRoutineName + "] (" +  vaultHttpPath + ") HttpStatusCode: " + status;
-			if (Errors.Count > 0) { exceptionMsg += Environment.NewLine + "Vault returned the following error(s):"; }
+			string exceptionMsg = "[" + callingRoutineName + "] (" +  vaultHttpPath + ") HttpStatusCode: " + status;
+			if (errors.Count > 0) { exceptionMsg += Environment.NewLine + "Vault returned the following error(s):"; }
 			else { exceptionMsg += Environment.NewLine + "Vault did not return any additional error text."; }
-			foreach (string error in Errors) {
+			foreach (string error in errors) {
 				exceptionMsg += Environment.NewLine + error;
 			}
 

@@ -195,7 +195,7 @@ namespace VaultAgent.Backends.AppRole
 			};
 
 			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "UpdateAppRoleID", contentParams);
-			if (vdro.httpStatusCode == 204) { return true; }
+			if (vdro.HttpStatusCode == 204) { return true; }
 			else { return false; }
 		}
 
