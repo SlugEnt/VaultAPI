@@ -90,8 +90,8 @@ namespace VaultAgent
 					KeyValueSecretEngine secretBackend = new KeyValueSecretEngine(backendName, backendMountPath, _httpConnector);
 					return secretBackend;
 				case EnumSecretBackendTypes.Transit:
-					TransitBackend transitBackend = new TransitBackend(backendName, backendMountPath, _httpConnector);
-					return transitBackend;
+					TransitSecretEngine transitSecretEngine = new TransitSecretEngine(backendName, backendMountPath, _httpConnector);
+					return transitSecretEngine;
 			}
 			return null;
 		}

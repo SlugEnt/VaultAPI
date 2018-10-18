@@ -1,28 +1,29 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using VaultAgent.Models;
-using Newtonsoft.Json;
-using VaultAgent.Backends.Transit.Models;
+using VaultAgent.Backends;
 using VaultAgent.Backends.Transit;
+using VaultAgent.Backends.Transit.Models;
+using VaultAgent.Models;
 
-namespace VaultAgent.Backends
+
+namespace VaultAgent.SecretEngines
 {
-	public class TransitBackend : VaultSecretBackend
+    public class TransitSecretEngine : VaultSecretBackend
 	{
-		const string pathKeys = "keys/";
-		const string pathEncrypt = "encrypt/";
-		const string pathDecrypt = "decrypt/";
+		const string PathKeys = "keys/";
+		const string PathEncrypt = "encrypt/";
+		const string PathDecrypt = "decrypt/";
 
 		// ==============================================================================================================================================
 		/// <summary>
 		/// Constructor.  Initializes the connection to Vault and stores the token.
 		/// </summary>
-		/// <param name="vaultIP">The IP address of the Vault Server.</param>
-		/// <param name="port">The network port the Vault server listens on.</param>
-		/// <param name="Token">The token used to authenticate with.</param>
 		/// <param name="backendMountName">The name of the transit backend to mount.  For example for a mount at /mine/transitA use mine/transitA as value.</param>
-		public TransitBackend(string backendMountName, string backendMountPath, VaultAPI_Http _httpConnector) : base(backendMountName, backendMountPath,_httpConnector) {
+		/// <param name="backendMountPath">The path to the Transit Backend mountpoint.</param>
+		/// <param name="httpConnector">The VaultAPI_http Http Connection object</param>
+		public TransitSecretEngine(string backendMountName, string backendMountPath, VaultAPI_Http httpConnector) : base(backendMountName, backendMountPath,httpConnector) {
 			Type = EnumBackendTypes.Transit;
 			IsSecretBackend = true;
 		}
@@ -47,28 +48,28 @@ namespace VaultAgent.Backends
 		/// <returns>True if successful.  However, it could also mean the key already exists, in which case the parameters you set here may not be what the key 
 		/// is set to.</returns>
 		public async Task<bool> CreateEncryptionKey(string keyName, bool canBeExported = false, bool allowPlainTextBackup = false,
-													EnumTransitKeyType keyType = EnumTransitKeyType.aes256, bool enableKeyDerivation = false, bool enableConvergentEncryption = false) {
+													TransitEnumKeyType keyType = TransitEnumKeyType.aes256, bool enableKeyDerivation = false, bool enableConvergentEncryption = false) {
 			// The keyname forms the last part of the path
-			string path = MountPointPath + pathKeys + keyName;
+			string path = MountPointPath + PathKeys + keyName;
 			string keyTypeV;
 
 			switch (keyType) {
-				case EnumTransitKeyType.aes256:
+				case TransitEnumKeyType.aes256:
 					keyTypeV = "aes256-gcm96";
 					break;
-				case EnumTransitKeyType.chacha20:
+				case TransitEnumKeyType.chacha20:
 					keyTypeV = "chacha20-poly1305";
 					break;
-				case EnumTransitKeyType.ecdsa:
+				case TransitEnumKeyType.ecdsa:
 					keyTypeV = "ecdsa-p256";
 					break;
-				case EnumTransitKeyType.ed25519:
+				case TransitEnumKeyType.ed25519:
 					keyTypeV = "ed25519";
 					break;
-				case EnumTransitKeyType.rsa2048:
+				case TransitEnumKeyType.rsa2048:
 					keyTypeV = "rsa-2048";
 					break;
-				case EnumTransitKeyType.rsa4096:
+				case TransitEnumKeyType.rsa4096:
 					keyTypeV = "rsa-4096";
 					break;
 				default:
@@ -88,7 +89,7 @@ namespace VaultAgent.Backends
 
 			// Validate:
 			if (enableKeyDerivation) {
-				if ((keyType == EnumTransitKeyType.rsa2048) || (keyType == EnumTransitKeyType.rsa4096) || (keyType == EnumTransitKeyType.ecdsa)) {
+				if ((keyType == TransitEnumKeyType.rsa2048) || (keyType == TransitEnumKeyType.rsa4096) || (keyType == TransitEnumKeyType.ecdsa)) {
 					throw new ArgumentOutOfRangeException("keyType", ("Specified keyType: " + keyTypeV + " does not support contextual encryption."));
 				}
 			}
@@ -111,7 +112,7 @@ namespace VaultAgent.Backends
 		/// <returns>True if the key is successfully created.</returns>
 		public async Task<bool> CreateEncryptionKey(string keyName, Dictionary<string, string> createParams) {
 			// The keyname forms the last part of the path
-			string path = MountPointPath + pathKeys + keyName;
+			string path = MountPointPath + PathKeys + keyName;
 
 			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "CreateEncryptionKey", createParams);
 			if (vdro.httpStatusCode == 204) { return true; }
@@ -124,7 +125,7 @@ namespace VaultAgent.Backends
 		// ==============================================================================================================================================
 		public async Task<TransitKeyInfo> ReadEncryptionKey(string keyName) {
 			// The keyname forms the last part of the path
-			string path = MountPointPath + pathKeys + keyName;
+			string path = MountPointPath + PathKeys + keyName;
 
 			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ReadEncryptionKey");
 			TransitKeyInfo TKI = vdro.GetVaultTypedObject<TransitKeyInfo>();
@@ -156,7 +157,7 @@ namespace VaultAgent.Backends
 
 		// ==============================================================================================================================================
 		public async Task<List<string>> ListEncryptionKeys() {
-			string path = MountPointPath + pathKeys;
+			string path = MountPointPath + PathKeys;
 
 			// Setup List Parameter
 			Dictionary<string, string> sendParams = new Dictionary<string, string>();
@@ -180,7 +181,7 @@ namespace VaultAgent.Backends
 		/// <param name="contentParams">Dictionary of string value pairs representing all the input parameters to be sent along with the request to the Vault API.</param>
 		/// <returns>A List of the encrypted value(s). </returns>
 		protected async Task<TransitEncryptedItem> EncryptToVault(string keyName, Dictionary<string, string> contentParams) {
-			string path = MountPointPath + pathEncrypt + keyName;
+			string path = MountPointPath + PathEncrypt + keyName;
 
 			// Call Vault API.
 			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "EncryptToVault", contentParams);
@@ -237,7 +238,7 @@ namespace VaultAgent.Backends
 		/// of the encryption key.</param>
 		/// <returns>TransitEncryptionResultsBulk which is a list or the encrypted values.</returns>
 		public async Task<TransitEncryptionResultsBulk> EncryptBulk(string keyName, List<TransitBulkItemToEncrypt> bulkItems, int keyVersion = 0) {
-			string path = MountPointPath + pathEncrypt + keyName;
+			string path = MountPointPath + PathEncrypt + keyName;
 
 
 			// Build the Posting Parameters as JSON.  We need to manually create in here as we also need to custom append the 
@@ -287,7 +288,7 @@ namespace VaultAgent.Backends
 		/// <returns>TransitDecryptedItem if the value was able to be successfully decrypted.
 		/// Throws <VaultInvalidDataException> if unable to decrypt the item due to bad key or context value.</VaultInvalidDataException></returns>
 		public async Task<TransitDecryptedItem> Decrypt(string keyName, string encryptedData, string keyDerivationContext = "") {
-			string path = MountPointPath + pathDecrypt + keyName;
+			string path = MountPointPath + PathDecrypt + keyName;
 
 
 			// Setup Post Parameters in body.
@@ -370,7 +371,7 @@ namespace VaultAgent.Backends
 		/// <param name="keyName">The name of the encryption ket to rotate.</param>
 		/// <returns>True if successfull.  Will thrown an error with the reason if unsuccesful.  </returns>
 		public async Task<bool> RotateKey(string keyName) {
-			string path = MountPointPath + pathKeys + keyName + "/rotate";
+			string path = MountPointPath + PathKeys + keyName + "/rotate";
 
 			// Call Vault API.
 			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "RotateKey");
@@ -668,22 +669,28 @@ namespace VaultAgent.Backends
 		}
 
 
-
-		public async Task<string> ComputeHash(string input, EnumHashAlgorithm hash, bool hexOutputFormat = false) {
+        /// <summary>
+        /// Returns the cryptographic hashing of given data using the specified algorithm.
+        /// </summary>
+        /// <param name="input">The data value you wish to have the hashing generated on.</param>
+        /// <param name="hashing">The hashing algorithm to use.</param>
+        /// <param name="hexOutputFormat">Boolean.  Set to true if you wish the hashing output to be returned in Hexadecimal format. False means Base64 format.</param>
+        /// <returns>The hashing of the input data returned in either hexadecimal or Base64 format.</returns>
+		public async Task<string> ComputeHash(string input, TransitEnumHashingAlgorithm hashing, bool hexOutputFormat = false) {
 			string path = MountPointPath + "hash";
 
 			string hashStr = "";
-			switch (hash) {
-				case EnumHashAlgorithm.sha2_224:
+			switch (hashing) {
+				case TransitEnumHashingAlgorithm.sha2_224:
 					hashStr = "sha2-224";
 					break;
-				case EnumHashAlgorithm.sha2_256:
+				case TransitEnumHashingAlgorithm.sha2_256:
 					hashStr = "sha2-256";
 					break;
-				case EnumHashAlgorithm.sha2_384:
+				case TransitEnumHashingAlgorithm.sha2_384:
 					hashStr = "sha2-384";
 					break;
-				case EnumHashAlgorithm.sha2_512:
+				case TransitEnumHashingAlgorithm.sha2_512:
 					hashStr = "sha2-512";
 					break;
 			}

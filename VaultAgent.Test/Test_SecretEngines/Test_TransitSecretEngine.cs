@@ -8,7 +8,7 @@ using VaultAgent.Backends.Transit.Models;
 using VaultAgent.Backends;
 using VaultAgent.Backends.System;
 using VaultAgent.Backends.Transit;
-
+using VaultAgent.SecretEngines;
 
 namespace VaultAgentTests
 {
@@ -18,7 +18,7 @@ namespace VaultAgentTests
 		private VaultAgentAPI _vaultAgentAPI;
 
 		// The Vault Transit Backend we will be using throughout our testing.
-		private TransitBackend _transitSecretEngine;
+		private TransitSecretEngine _transitSecretEngine;
 
 
 		// Encryption keys we will generally use throughout tests.
@@ -46,7 +46,7 @@ namespace VaultAgentTests
 			// Create unique name for the transit Backend we will use to test with.
 			string transitMountName = _uniqueKeys.GetKey("TRANsit");
 
-			_transitSecretEngine = (TransitBackend)await _vaultAgentAPI.CreateSecretBackendMount(EnumSecretBackendTypes.Transit, transitMountName, transitMountName, "Transit Bckend Testing");
+			_transitSecretEngine = (TransitSecretEngine)await _vaultAgentAPI.CreateSecretBackendMount(EnumSecretBackendTypes.Transit, transitMountName, transitMountName, "Transit Bckend Testing");
 			Assert.NotNull(_transitSecretEngine,"Transit Backend was returned null upon creation.");
 		}
 
@@ -59,7 +59,7 @@ namespace VaultAgentTests
 		/// <param name="keyDerivation">Boolean.  True if you want a key that supports key derivation.</param>
 		/// <param name="convergentKey">Boolean.  True if you want a key that supports convergent encryption.</param>
 		/// <returns>string value of the key name.</returns>
-		public async Task<string> Transit_InitWithKey (EnumTransitKeyType keyType = EnumTransitKeyType.aes256, bool keyDerivation = false, bool convergentKey = false) {
+		public async Task<string> Transit_InitWithKey (TransitEnumKeyType keyType = TransitEnumKeyType.aes256, bool keyDerivation = false, bool convergentKey = false) {
 			string key = _uniqueKeys.GetKey("Key");
 
 			// Create key.
@@ -74,7 +74,7 @@ namespace VaultAgentTests
 		public async Task CreateEncryptionKeyWithMethodParameters_Success() {
 			try {
 				// Try with parameters values.
-				bool rc = await _transitSecretEngine.CreateEncryptionKey(encKeyA, true, true, EnumTransitKeyType.rsa4096);
+				bool rc = await _transitSecretEngine.CreateEncryptionKey(encKeyA, true, true, TransitEnumKeyType.rsa4096);
 				Assert.AreEqual(true, rc);
 			}
 			catch (Exception e) { }
@@ -102,7 +102,7 @@ namespace VaultAgentTests
 		public async Task CreateEncryptionKey_ConvergentAndDerivedTrue() {
 			string key = _uniqueKeys.GetKey("Key");
 
-			Assert.AreEqual(true, await _transitSecretEngine.CreateEncryptionKey(key, canBeExported: true, keyType: EnumTransitKeyType.chacha20, enableConvergentEncryption: true, enableKeyDerivation: true));
+			Assert.AreEqual(true, await _transitSecretEngine.CreateEncryptionKey(key, canBeExported: true, keyType: TransitEnumKeyType.chacha20, enableConvergentEncryption: true, enableKeyDerivation: true));
 
 			// Now read key back and make sure parameters are correct.
 			TransitKeyInfo TKI = await _transitSecretEngine.ReadEncryptionKey(key);
@@ -116,18 +116,18 @@ namespace VaultAgentTests
 
 
 		// Tests to make sure that encryption keys are created with the correct encryption setting in the Vault backend based upon the enum.
-		[TestCase(EnumTransitKeyType.aes256,ExpectedResult ="aes256-gcm96")]
-		[TestCase(EnumTransitKeyType.chacha20, ExpectedResult = "chacha20-poly1305")]
-		[TestCase(EnumTransitKeyType.ed25519, ExpectedResult = "ed25519")]
-		[TestCase(EnumTransitKeyType.ecdsa, ExpectedResult = "ecdsa-p256")]
-		[TestCase(EnumTransitKeyType.rsa2048, ExpectedResult = "rsa-2048")]
-		[TestCase(EnumTransitKeyType.rsa4096, ExpectedResult = "rsa-4096")]
+		[TestCase(TransitEnumKeyType.aes256,ExpectedResult ="aes256-gcm96")]
+		[TestCase(TransitEnumKeyType.chacha20, ExpectedResult = "chacha20-poly1305")]
+		[TestCase(TransitEnumKeyType.ed25519, ExpectedResult = "ed25519")]
+		[TestCase(TransitEnumKeyType.ecdsa, ExpectedResult = "ecdsa-p256")]
+		[TestCase(TransitEnumKeyType.rsa2048, ExpectedResult = "rsa-2048")]
+		[TestCase(TransitEnumKeyType.rsa4096, ExpectedResult = "rsa-4096")]
 
 		public string EncryptionKeyMethod_CorrectBasedUponKeyType(int a) {
 
 			string key = _uniqueKeys.GetKey();
 
-			Task<bool> encKey = _transitSecretEngine.CreateEncryptionKey(key, false, false, (EnumTransitKeyType)a);
+			Task<bool> encKey = _transitSecretEngine.CreateEncryptionKey(key, false, false, (TransitEnumKeyType)a);
 			encKey.Wait();
 			Assert.IsTrue(encKey.Result);
 
@@ -139,12 +139,12 @@ namespace VaultAgentTests
 
 
 
-		[TestCase(EnumTransitKeyType.ecdsa)]
-		[TestCase(EnumTransitKeyType.rsa2048)]
-		[TestCase(EnumTransitKeyType.rsa4096)]
+		[TestCase(TransitEnumKeyType.ecdsa)]
+		[TestCase(TransitEnumKeyType.rsa2048)]
+		[TestCase(TransitEnumKeyType.rsa4096)]
 		// Validates that trying to create an encryption key with a setting of KeyDerivation enabled for a 
 		// key type that does not support Convergent or key Derivation encryption throws an exception.
-		public void CreateEncryptionKey_ErrorsOnInvalidKeyTypeKeyDerivationSetting2(EnumTransitKeyType keyType) {
+		public void CreateEncryptionKey_ErrorsOnInvalidKeyTypeKeyDerivationSetting2(TransitEnumKeyType keyType) {
 			string key = _uniqueKeys.GetKey();
 
 			
@@ -173,7 +173,7 @@ namespace VaultAgentTests
 		[Test]
 		// Validates that looking for a valid key returns true.
 		public async Task KeyExists_ReturnsTrue() {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.rsa2048);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.rsa2048);
 
 			Assert.AreEqual(true, await _transitSecretEngine.IfExists(key));
 		}
@@ -185,7 +185,7 @@ namespace VaultAgentTests
 		[Test]
 		// Validates that looking for a key that does not exist returns false.
 		public async Task KeyExists_ReturnsFalse() {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.rsa2048);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.rsa2048);
 
 			// Bump key to a new name 
 			string keyNew = _uniqueKeys.GetKey();
@@ -198,7 +198,7 @@ namespace VaultAgentTests
 		[Test]
 		// Test to ensure that when executing a change to a key's config values that all valid values are accepted.
 		public async Task ChangeEncryptionKeyInfo_ValidParameters() {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.rsa2048);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.rsa2048);
 
             // Now make changes to key.  These should all be valid.
             Dictionary<string, string> iParams = new Dictionary<string, string>
@@ -220,7 +220,7 @@ namespace VaultAgentTests
 		[Test]
 		// Test to ensure that when executing a change to a key's config values that all valid values are accepted.
 		public async Task ChangeEncryptionKeyInfo_InValidParameterThrowsException() {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.rsa2048);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.rsa2048);
 
             // Now make changes to key.  These should all be valid.
             Dictionary<string, string> iParams = new Dictionary<string, string>
@@ -255,7 +255,7 @@ namespace VaultAgentTests
 					keyName = encKeyB + i.ToString();
 
 					// Create the key.
-					await _transitSecretEngine.CreateEncryptionKey(keyName, true, false, EnumTransitKeyType.aes256);
+					await _transitSecretEngine.CreateEncryptionKey(keyName, true, false, TransitEnumKeyType.aes256);
 				}
 
 				// Now get new list of keys.
@@ -296,7 +296,7 @@ namespace VaultAgentTests
 				string encKey = Guid.NewGuid().ToString();
 
 				// Create an encryption key.
-				bool rc = await _transitSecretEngine.CreateEncryptionKey(encKey, true, true, EnumTransitKeyType.rsa4096);
+				bool rc = await _transitSecretEngine.CreateEncryptionKey(encKey, true, true, TransitEnumKeyType.rsa4096);
 				Assert.AreEqual(true, rc);
 
 				// Now encrypt with that key.
@@ -315,7 +315,7 @@ namespace VaultAgentTests
 
 		[Test]
 		public async Task DerivedEncryptDecrypt_ResultsInSameValue() {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256,true);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.aes256,true);
 
 			// Get a random value to encrypt.
 			string toEncrypt = Guid.NewGuid().ToString();
@@ -338,7 +338,7 @@ namespace VaultAgentTests
 		[Test]
 		// Test decrypting a convergent encrypted value with an invalid context.  Should throw error.
 		public async Task DerivedEncryptDecrypt_WithBadContextFails() {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256,true);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.aes256,true);
 
 			// Get a random value to encrypt.
 			string toEncrypt = "123456abcdefzyx";
@@ -363,7 +363,7 @@ namespace VaultAgentTests
 		[Test]
 		// Tests that when using convergent encryption the same encryption string value is produced for the same context key.
 		public async Task ConvergentEncryption_ResultsInSameEncryptionValue() {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256,true,true);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.aes256,true,true);
 
 			// Get a random value to encrypt.
 			string toEncrypt = "ABCXYXZ";
@@ -386,7 +386,7 @@ namespace VaultAgentTests
 		[Test]
 		// Tests that when using derivation encryption the same encryption string value is unique even with same context key.
 		public async Task KeyDerivationEncryption_ProducesEncryptionWithDifferentValue() {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256,true);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.aes256,true);
 
 			// Get a random value to encrypt.
 			string toEncrypt = "ABCXYXZ";
@@ -410,7 +410,7 @@ namespace VaultAgentTests
 		[Test]
 		public async Task RotateKey_Works() {
 			try {
-				string key = await Transit_InitWithKey(EnumTransitKeyType.aes256);
+				string key = await Transit_InitWithKey(TransitEnumKeyType.aes256);
 
 				bool rotated = await _transitSecretEngine.RotateKey(key);
 				Assert.AreEqual(rotated, true);
@@ -433,7 +433,7 @@ namespace VaultAgentTests
 				string key = _uniqueKeys.GetKey();
 
 				// Create key, validate the version and then encrypt some data with that key.
-				Assert.True(await _transitSecretEngine.CreateEncryptionKey(key, true, true, EnumTransitKeyType.aes256));
+				Assert.True(await _transitSecretEngine.CreateEncryptionKey(key, true, true, TransitEnumKeyType.aes256));
 				TransitEncryptedItem encA = await _transitSecretEngine.Encrypt(key, valA);
 				TransitKeyInfo tkiA = await _transitSecretEngine.ReadEncryptionKey(key);
 
@@ -456,7 +456,7 @@ namespace VaultAgentTests
 		[Test]
 		// Test key deletion for a key that has not been enabled for deletion.  Should return false.
 		public async Task DeleteKey_NotEnabledForDelete_Fails() {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.aes256);
 
 			// Delete Key
 			Assert.That(() => _transitSecretEngine.DeleteKey(key),
@@ -473,7 +473,7 @@ namespace VaultAgentTests
 		[Test]
 		// Test that key deletion exists for a valid key that is enabled for deletion.  Should return true.
 		public async Task DeleteKey_EnabledForDelete_Success() {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.aes256);
 
             // Change it to be deletable.
             Dictionary<string, string> delParams = new Dictionary<string, string>
@@ -512,7 +512,7 @@ namespace VaultAgentTests
 		public async Task BulkEncryptionDecryption_Works() {
 			// Create key, validate the version and then encrypt some data with that key.
 			string key = _uniqueKeys.GetKey();
-			bool fa = await _transitSecretEngine.CreateEncryptionKey(key, true, true, EnumTransitKeyType.aes256);
+			bool fa = await _transitSecretEngine.CreateEncryptionKey(key, true, true, TransitEnumKeyType.aes256);
 			Assert.True(fa);
 
 			// Confirm key is new:
@@ -604,7 +604,7 @@ namespace VaultAgentTests
 			string key = _uniqueKeys.GetKey();
 
 			// Create key.
-			bool fa = await _transitSecretEngine.CreateEncryptionKey(key, true, true, EnumTransitKeyType.aes256, true);
+			bool fa = await _transitSecretEngine.CreateEncryptionKey(key, true, true, TransitEnumKeyType.aes256, true);
 			Assert.True(fa);
 
 			// Confirm key is new:
@@ -698,7 +698,7 @@ namespace VaultAgentTests
 		[Test]
 		// Test that Data Key generation works for a basic key with cipher only.
 		public async Task GenerateDataKeyCipherTextOnly_Success() {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.aes256);
 
 			// Generate a data key.
 			TransitDataKey tdk = await _transitSecretEngine.GenerateDataKey(key);
@@ -712,7 +712,7 @@ namespace VaultAgentTests
 		[Test]
 		// Test that Data Key generation works for a basic key with full plaintext and cipher returned.
 		public async Task GenerateDataKeyCipherAndPlainText_Success() {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.aes256);
 
 			// Generate a data key.
 			TransitDataKey tdk = await _transitSecretEngine.GenerateDataKey(key, true);
@@ -727,7 +727,7 @@ namespace VaultAgentTests
 		[Test]
 		// Test that we can generate a Data Key that supports derivation encryption.
 		public async Task GenerateDataKey_Derivation_Success () {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256, true);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.aes256, true);
 
 			// Generate a data key.
 			TransitDataKey tdk = await _transitSecretEngine.GenerateDataKey(key,context:"trully");
@@ -742,7 +742,7 @@ namespace VaultAgentTests
 		[Test]
 		// Test that we get a thrown error if we supply incorrect values for bits.
 		public async Task GenerateDataKey_BadBitsValue_ThrowsError() {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256, false);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.aes256, false);
 
 			// Generate a data key.
 			Assert.That(() => _transitSecretEngine.GenerateDataKey(key, bits: 456),
@@ -757,7 +757,7 @@ namespace VaultAgentTests
 		[Test]
 		// Test that we get a thrown error if we request a data key without supplying context if key is a derivation key type.
 		public async Task GenerateDataKey_KeySupportsDerivation_NoContextSupplied_ThrowsError() {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256, true);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.aes256, true);
 
 			// Generate a data key.
 			Assert.That(() => _transitSecretEngine.GenerateDataKey(key),
@@ -772,7 +772,7 @@ namespace VaultAgentTests
 		[Test]
 		// Test that we can backup a key that is enabled for backup.
 		public async Task BackupKey_Success () {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256, true);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.aes256, true);
 
             // Allow Backup.
             Dictionary<string, string> keyconfig = new Dictionary<string, string>
@@ -797,7 +797,7 @@ namespace VaultAgentTests
 			string key = _uniqueKeys.GetKey();
 
 			// Create key.
-			bool rc = await _transitSecretEngine.CreateEncryptionKey(key, true,false, EnumTransitKeyType.aes256);
+			bool rc = await _transitSecretEngine.CreateEncryptionKey(key, true,false, TransitEnumKeyType.aes256);
 			Assert.True(rc);
 
 
@@ -817,7 +817,7 @@ namespace VaultAgentTests
 			string key = _uniqueKeys.GetKey("Key");
 
 			// Create key.
-			bool rc = await _transitSecretEngine.CreateEncryptionKey(key,false, true, EnumTransitKeyType.aes256);
+			bool rc = await _transitSecretEngine.CreateEncryptionKey(key,false, true, TransitEnumKeyType.aes256);
 			Assert.True(rc);
 
 
@@ -833,7 +833,7 @@ namespace VaultAgentTests
 		// Performs a complex set of operations to ensure a backup and restore of a key is successful. Including rotating the key
 		// encrypting with the key, etc.
 		public async Task RestoreKey_Success () {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.aes256);
 
             // A.  Enable deletion of the key.
             Dictionary<string, string> keyconfig = new Dictionary<string, string>
@@ -899,7 +899,7 @@ namespace VaultAgentTests
 		// encrypting with the key, etc.
 		// Note this tests when the key already exists.  Should Fail.
 		public async Task RestoreKey_KeyAlreadyExists_ReturnsFalse() {
-			string key = await Transit_InitWithKey(EnumTransitKeyType.aes256);
+			string key = await Transit_InitWithKey(TransitEnumKeyType.aes256);
 
 			// E.  Back it up.
 			TransitBackupRestoreItem tbri = await _transitSecretEngine.BackupKey(key);
@@ -944,7 +944,7 @@ namespace VaultAgentTests
 		[Test, Order(2103)]
 		// Compute the hash of a string.  
 		public async Task Transit_ComputeHash_Base64() {
-			string value = await _transitSecretEngine.ComputeHash("abcdefXYZ12",EnumHashAlgorithm.sha2_512);
+			string value = await _transitSecretEngine.ComputeHash("abcdefXYZ12",TransitEnumHashingAlgorithm.sha2_512);
 			Assert.AreNotEqual("", value);
 		}
 
@@ -953,7 +953,7 @@ namespace VaultAgentTests
 		[Test, Order(2103)]
 		// Generate random bytes.  string should be hexidecimal
 		public async Task Transit_ComputeHash_Hex() {
-			string value = await _transitSecretEngine.ComputeHash("abcdefXYZ",VaultAgent.Backends.Transit.EnumHashAlgorithm.sha2_384,true);
+			string value = await _transitSecretEngine.ComputeHash("abcdefXYZ",TransitEnumHashingAlgorithm.sha2_384,true);
 			Assert.AreNotEqual("", value);
 		}
 
