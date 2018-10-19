@@ -43,7 +43,7 @@ namespace VaultAgent.SecretEngines
 		/// <param name="allowPlainTextBackup">Boolean.  If you want to be able to perform a plain text backup of the key, set to True.</param>
 		/// <param name="keyType">The type of encryption key to use.  Best choices are one of the RSA keys or the AES key.</param>
 		/// <param name="enableKeyDerivation">Enables Key Derivation.  Key derivtion requires that an encryption context must be supplied with each encrypt operation.</param>
-		/// <param name="enableConvergentEncryption">Enables Convergent Encryption.  Convergent encryption means that the same plaintext value will aloways result in the
+		/// <param name="enableConvergentEncryption">Enables Convergent Encryption.  Convergent encryption means that the same plaintext value will always result in the
 		/// same encrypted ciphertext.</param>
 		/// <returns>True if successful.  However, it could also mean the key already exists, in which case the parameters you set here may not be what the key 
 		/// is set to.</returns>
@@ -146,7 +146,8 @@ namespace VaultAgent.SecretEngines
 				if (TKI != null) { return true; }
 				else { return false; }
 			}
-			catch (VaultInvalidPathException e) {
+			catch (VaultInvalidPathException e)
+			{
 				return false;
 			}
 		}

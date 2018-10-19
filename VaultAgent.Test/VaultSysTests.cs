@@ -515,13 +515,11 @@ namespace VaultAgentTests
 		[Test,Order(9)]
 		public async Task SystemBE_Auth_Disable_Works () {
 			SystemTestInit();
-			try {
-			    string key = _uniqueKeys.GetKey("TST");
-                AuthMethod am = new AuthMethod(key, EnumAuthMethods.AppRole);
-				Assert.True(await _sysBackend.AuthEnable(am));
-				Assert.True(await _sysBackend.AuthDisable(am));
-			}
-			catch (Exception e) { }
+
+			string key = _uniqueKeys.GetKey("TST");
+            AuthMethod am = new AuthMethod(key, EnumAuthMethods.AppRole);
+			Assert.True(await _sysBackend.AuthEnable(am));
+			Assert.True(await _sysBackend.AuthDisable(am));	
 		}
 
 

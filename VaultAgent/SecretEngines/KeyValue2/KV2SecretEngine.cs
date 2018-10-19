@@ -144,7 +144,7 @@ namespace VaultAgent.SecretEngines
 		/// </summary>
 		/// <param name="secretPath">The Name (path) to the secret you wish to read.</param>
 		/// <param name="secretVersion">The version of the secret to retrieve.  Leave at default of Zero to read most recent version.</param>
-		/// <returns>KV2Secret of the secret as read from Vault.  </returns>
+		/// <returns>KV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
 		public async Task<KV2SecretWrapper> ReadSecret (string secretPath, int secretVersion = 0) {
 			string path = MountPointPath + "data/" + secretPath;
 			try {
@@ -159,7 +159,8 @@ namespace VaultAgent.SecretEngines
 				throw new ApplicationException("SecretBackEnd: ReadSecret - Arrived at an unexpected code path.");
 			}
 			catch (VaultInvalidPathException e) { return null; }
-			catch (Exception e) { throw e; }
+//			catch (Exception e) { throw e; }
+
 		}
 
 

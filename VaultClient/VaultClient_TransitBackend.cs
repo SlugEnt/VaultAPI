@@ -85,10 +85,7 @@ namespace VaultClient
 			catch (Exception e) { Console.WriteLine(" Errors - {0}", e.Message); }
 
 			// Finally delete a non-existent key.
-			try {
-				await TB.DeleteKey("gggggpgg");
-			}
-			catch (Exception e) { }
+			await TB.DeleteKey("gggggpgg");
 		}
 
 

@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using VaultAgent.SecretEngines;
-using VaultAgentTests;
 using VaultAgent.Backends.System;
-using VaultAgent.SecretEngines;
 using System.Threading.Tasks;
 using VaultAgent;
 

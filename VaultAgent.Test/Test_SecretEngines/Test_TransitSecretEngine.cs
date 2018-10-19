@@ -72,12 +72,9 @@ namespace VaultAgentTests
 
 		[Test]
 		public async Task CreateEncryptionKeyWithMethodParameters_Success() {
-			try {
-				// Try with parameters values.
-				bool rc = await _transitSecretEngine.CreateEncryptionKey(encKeyA, true, true, TransitEnumKeyType.rsa4096);
-				Assert.AreEqual(true, rc);
-			}
-			catch (Exception e) { }
+			// Try with parameters values.
+			bool rc = await _transitSecretEngine.CreateEncryptionKey(encKeyA, true, true, TransitEnumKeyType.rsa4096);
+			Assert.AreEqual(true, rc);
 		}
 
 
@@ -160,12 +157,9 @@ namespace VaultAgentTests
 
 		[Test]
 		public async Task ReadEncryptionKeyInfo_Success() {
-			try {
-				TransitKeyInfo TKI = await _transitSecretEngine.ReadEncryptionKey(encKeyA);
-				Assert.AreEqual(encKeyA, TKI.Name);
-				Assert.AreEqual(1, TKI.LatestVersionNum);
-			}
-			catch (Exception e) { }
+			TransitKeyInfo TKI = await _transitSecretEngine.ReadEncryptionKey(encKeyA);
+			Assert.AreEqual(encKeyA, TKI.Name);
+			Assert.AreEqual(1, TKI.LatestVersionNum);
 		}
 
 
@@ -289,26 +283,22 @@ namespace VaultAgentTests
 		/// <returns></returns>
 		[Test]
 		public async Task EncryptDecrypt_ResultsInSameValue() {
-			try {
-				// Get a random value to encrypt.
-				string toEncrypt = Guid.NewGuid().ToString();
+			// Get a random value to encrypt.
+			string toEncrypt = Guid.NewGuid().ToString();
 
-				string encKey = Guid.NewGuid().ToString();
+			string encKey = Guid.NewGuid().ToString();
 
-				// Create an encryption key.
-				bool rc = await _transitSecretEngine.CreateEncryptionKey(encKey, true, true, TransitEnumKeyType.rsa4096);
-				Assert.AreEqual(true, rc);
+			// Create an encryption key.
+			bool rc = await _transitSecretEngine.CreateEncryptionKey(encKey, true, true, TransitEnumKeyType.rsa4096);
+			Assert.AreEqual(true, rc);
 
-				// Now encrypt with that key.
-				TransitEncryptedItem response = await _transitSecretEngine.Encrypt(encKey, toEncrypt);
-				Assert.IsNotEmpty(response.EncryptedValue);
+			// Now encrypt with that key.
+			TransitEncryptedItem response = await _transitSecretEngine.Encrypt(encKey, toEncrypt);
+			Assert.IsNotEmpty(response.EncryptedValue);
 
-				// Now decrypt it.
-				TransitDecryptedItem responseB = await _transitSecretEngine.Decrypt(encKey, response.EncryptedValue);
-				Assert.AreEqual(responseB.DecryptedValue, toEncrypt);
-
-			}
-			catch (Exception e) { }
+			// Now decrypt it.
+			TransitDecryptedItem responseB = await _transitSecretEngine.Decrypt(encKey, response.EncryptedValue);
+			Assert.AreEqual(responseB.DecryptedValue, toEncrypt);
 		}
 
 
@@ -409,17 +399,14 @@ namespace VaultAgentTests
 
 		[Test]
 		public async Task RotateKey_Works() {
-			try {
-				string key = await Transit_InitWithKey(TransitEnumKeyType.aes256);
+		    string key = await Transit_InitWithKey(TransitEnumKeyType.aes256);
 
-				bool rotated = await _transitSecretEngine.RotateKey(key);
-				Assert.AreEqual(rotated, true);
+		    bool rotated = await _transitSecretEngine.RotateKey(key);
+		    Assert.AreEqual(rotated, true);
 
-				// Retrieve key.
-				TransitKeyInfo TKI = await _transitSecretEngine.ReadEncryptionKey(key);
-				Assert.AreEqual(TKI.LatestVersionNum, 2);
-			}
-			catch (Exception e) { }
+		    // Retrieve key.
+		    TransitKeyInfo TKI = await _transitSecretEngine.ReadEncryptionKey(key);
+		    Assert.AreEqual(TKI.LatestVersionNum, 2);
 		}
 
 
@@ -428,26 +415,23 @@ namespace VaultAgentTests
 		[Test]
 		// Test that Reencrypt results in same original un-encrypted value.  
 		public async Task RencryptionResultsInSameStartingValue() {
-			try {
-				string valA = Guid.NewGuid().ToString();
-				string key = _uniqueKeys.GetKey();
+			string valA = Guid.NewGuid().ToString();
+			string key = _uniqueKeys.GetKey();
 
-				// Create key, validate the version and then encrypt some data with that key.
-				Assert.True(await _transitSecretEngine.CreateEncryptionKey(key, true, true, TransitEnumKeyType.aes256));
-				TransitEncryptedItem encA = await _transitSecretEngine.Encrypt(key, valA);
-				TransitKeyInfo tkiA = await _transitSecretEngine.ReadEncryptionKey(key);
+			// Create key, validate the version and then encrypt some data with that key.
+			Assert.True(await _transitSecretEngine.CreateEncryptionKey(key, true, true, TransitEnumKeyType.aes256));
+			TransitEncryptedItem encA = await _transitSecretEngine.Encrypt(key, valA);
+			TransitKeyInfo tkiA = await _transitSecretEngine.ReadEncryptionKey(key);
 
-				// Rotate Key, Read value of key version, Re-Encrypt data.  Decrypt Data.
-				Assert.True(await _transitSecretEngine.RotateKey(key));
-				TransitKeyInfo tkiB = await _transitSecretEngine.ReadEncryptionKey(key);
-				TransitEncryptedItem encB = await _transitSecretEngine.ReEncrypt(key, encA.EncryptedValue);
-				TransitDecryptedItem decB = await _transitSecretEngine.Decrypt(key, encB.EncryptedValue);
+			// Rotate Key, Read value of key version, Re-Encrypt data.  Decrypt Data.
+			Assert.True(await _transitSecretEngine.RotateKey(key));
+			TransitKeyInfo tkiB = await _transitSecretEngine.ReadEncryptionKey(key);
+			TransitEncryptedItem encB = await _transitSecretEngine.ReEncrypt(key, encA.EncryptedValue);
+			TransitDecryptedItem decB = await _transitSecretEngine.Decrypt(key, encB.EncryptedValue);
 
-				// Validate Results.  Key version incremented by 1.
-				Assert.AreEqual(tkiA.LatestVersionNum + 1, tkiB.LatestVersionNum,"Key Version should have been incremented.");
-				Assert.AreEqual(valA, decB.DecryptedValue,"After Key Rotation and Rencryption, expected value of encrypted item to be same, but they are different");
-			}
-			catch (Exception e) { }
+			// Validate Results.  Key version incremented by 1.
+			Assert.AreEqual(tkiA.LatestVersionNum + 1, tkiB.LatestVersionNum,"Key Version should have been incremented.");
+			Assert.AreEqual(valA, decB.DecryptedValue,"After Key Rotation and Rencryption, expected value of encrypted item to be same, but they are different");
 		}
 
 

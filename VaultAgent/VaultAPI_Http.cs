@@ -223,6 +223,7 @@ namespace VaultAgent
 				errors = ConvertJSONArrayToList(jsonResponse, "errors");
 			}
 			catch (MissingFieldException e) {
+                //TODO - Not sure what to do with this.  Need to test some more.
 				// Swallow the error.  Latest updates to Vault V1.2.2 in KV2 do not necessarily populate the error object if object not foundf.
 			}
 

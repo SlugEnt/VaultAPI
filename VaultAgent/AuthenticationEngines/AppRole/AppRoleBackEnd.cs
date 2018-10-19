@@ -88,7 +88,11 @@ namespace VaultAgent.Backends.AppRole
 				throw new ApplicationException("AppRoleBackEnd:ListRoles -> Arrived at unexpected code block.");
 			}
 			// 404 Errors mean there were no roles.  We just return an empty list.
-			catch (VaultInvalidPathException e) { return new List<string>(); }
+			catch (VaultInvalidPathException e)
+			{
+			    e = null;
+			    return new List<string>();
+			}
 		}
 
 
