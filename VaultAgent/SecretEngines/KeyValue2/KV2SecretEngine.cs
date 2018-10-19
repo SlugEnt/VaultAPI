@@ -154,13 +154,10 @@ namespace VaultAgent.SecretEngines
 				if (vdro.Success) {
 					KV2SecretWrapper secretReadReturnObj = KV2SecretWrapper.FromJson(vdro.GetResponsePackageAsJSON());
 					return secretReadReturnObj;
-					//return secretReadReturnObj.Data.SecretObj;
 				}
 				throw new ApplicationException("SecretBackEnd: ReadSecret - Arrived at an unexpected code path.");
 			}
 			catch (VaultInvalidPathException e) { return null; }
-//			catch (Exception e) { throw e; }
-
 		}
 
 

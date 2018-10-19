@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using VaultAgent.Backends.System;
 using VaultAgent.SecretEngines;
 using VaultAgent.Models;
 using System.Threading.Tasks;
 using VaultAgent.Backends;
-using VaultAgent.Backends.AppRole;
+
+using VaultAgent.AuthenticationEngines;
 
 
 namespace VaultAgent
@@ -132,8 +132,8 @@ namespace VaultAgent
 		public VaultAuthenticationBackend ConnectAuthenticationBackend (EnumBackendTypes backendType, string backendName, string backendMountPath ) {
 			switch (backendType) {
 				case EnumBackendTypes.A_AppRole:
-					AppRoleBackEnd appRoleBackend = new AppRoleBackEnd(backendName, backendMountPath, _httpConnector);
-					return appRoleBackend;
+					AppRoleAuthEngine AppRoleAuthEngine = new AppRoleAuthEngine(backendName, backendMountPath, _httpConnector);
+					return AppRoleAuthEngine;
 				default:
 					throw new ArgumentOutOfRangeException("Must supply a backendType that is derived from the VaultAuthenticationBackend class");
 			}

@@ -1,28 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
-using VaultAgent.Backends.AppRole;
 using NUnit.Framework;
-using System.Threading;
 using System.Threading.Tasks;
 using VaultAgent.Backends.System;
 using VaultAgent.Backends;
 using VaultAgent;
+using VaultAgent.AuthenticationEngines;
 
 namespace VaultAgentTests
 {
 	[TestFixture]
 	[Parallelizable]
-    public class AppRoleBackendTest
+    public class AppRoleAuthEngineTest
     {
 		private VaultAgentAPI vault;
 		private SysBackend VSB;
 		private UniqueKeys UK = new UniqueKeys();       // Unique Key generator
 
-		private AppRoleBackEnd _ARB;
+		private AppRoleAuthEngine _ARB;
 
 
 		[OneTimeSetUp]
-		public async Task AppRoleBackendSetup () {
+		public async Task AppRoleAuthEngineSetup () {
 			// Build Connection to Vault.
 			vault = new VaultAgentAPI("AppRoleVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
 
@@ -31,7 +30,7 @@ namespace VaultAgentTests
 			string approleMountName = UK.GetKey("AppAuth");
 
 			// Create the AppRole Mount Point
-			_ARB = (AppRoleBackEnd) vault.ConnectAuthenticationBackend (EnumBackendTypes.A_AppRole,"AppRole",approleMountName);
+			_ARB = (AppRoleAuthEngine) vault.ConnectAuthenticationBackend (EnumBackendTypes.A_AppRole,"AppRole",approleMountName);
 
 			
 
