@@ -14,7 +14,7 @@ namespace VaultAgentTests
     public class AppRoleAuthEngineTest
     {
 		private VaultAgentAPI vault;
-		private SysBackend VSB;
+		private VaultSystemBackend VSB;
 		private UniqueKeys UK = new UniqueKeys();       // Unique Key generator
 
 		private AppRoleAuthEngine _ARB;
@@ -39,8 +39,8 @@ namespace VaultAgentTests
 			AuthMethod am = new AuthMethod(approleMountName, EnumAuthMethods.AppRole);
 
 			// Ensure we have an authentication method of AppRole enabled on the Vault.
-			SysBackend VSB = new SysBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
-
+			//VaultSystemBackend VSB = new VaultSystemBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+		    VaultSystemBackend VSB = vault.System;
 
 			bool rc = await VSB.AuthEnable(am);
 		}

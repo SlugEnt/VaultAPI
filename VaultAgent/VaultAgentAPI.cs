@@ -16,8 +16,9 @@ namespace VaultAgent
 		private Dictionary<string, VaultSecretBackend> _secretBackends;
 		private Dictionary<string, VaultAuthenticationBackend> _authenticationBackends;
 		private VaultAPI_Http _httpConnector;               // Provides HTTP Calling Methods to the backends.
-		private SysBackend _vault;                          // Connection to the Vault Instance
+		private VaultSystemBackend _vault;                          // Connection to the Vault Instance
 
+        
 
 		/// <summary>
 		/// Constructor to create a new VaultAgentAPI object which is used to connect to a single Vault Instance.  An instance can have many backends however.
@@ -45,7 +46,7 @@ namespace VaultAgent
 			_httpConnector = new VaultAPI_Http(IP, port, token);
 
 			// Establish a connection to the backend
-			_vault = new SysBackend(IP, Port, token);
+			_vault = new VaultSystemBackend(token,_httpConnector);
 		}
 
 
@@ -71,6 +72,15 @@ namespace VaultAgent
 		/// The token to use to connect to the vault with.
 		/// </summary>
 		public TokenInfo Token { get; private set; }
+
+
+        /// <summary>
+        /// Provides access to the Vault Core System Backend which provides access to mount new engines/backends and manipulate the main Vault Store.
+        /// </summary>
+        public VaultSystemBackend System
+        {
+            get { return _vault; }
+        }
 
 
 

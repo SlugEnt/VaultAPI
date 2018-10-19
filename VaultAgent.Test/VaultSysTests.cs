@@ -16,29 +16,27 @@ namespace VaultAgentTests
     public class VaultSysTests
     {
         private VaultAgentAPI _vaultAgentAPI;
-        private readonly UniqueKeys _uniqueKeys = new UniqueKeys();       // Unique Key generator     
-        private SysBackend _sysBackend;
 
-        Object vsbLocker = new Object();
-
-
-		[OneTimeSetUp]
-		public void SystemTestInit() {
-			if (_sysBackend == null) {
-				lock(vsbLocker) {
-					_sysBackend = new SysBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
-				}
-			}
-		}
+        private VaultSystemBackend _vaultSystemBackend;
+        private UniqueKeys _uniqueKeys = new UniqueKeys();       // Unique Key generator
 
 
-        [Test, Order(1)]
-        public void VaultSetupTest()
+
+        [OneTimeSetUp]
+        public async Task Backend_Init()
         {
-			// Make sure we have a root token and an ip address.
-			Assert.AreNotEqual(VaultServerRef.rootToken, "");
-			Assert.AreNotEqual(VaultServerRef.ipAddress, "");
+            if (_vaultSystemBackend != null)
+            {
+                return;
+            }
+
+            // Build Connection to Vault.
+            _vaultAgentAPI = new VaultAgentAPI("transitVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+
+            // Create a new system Backend Mount for this series of tests.
+            _vaultSystemBackend = _vaultAgentAPI.System;
         }
+
 
 
 		//TODO Replace this test function.  VaultAPI_Http is not accessible any longer outside the VaultAgent project.
@@ -66,22 +64,24 @@ namespace VaultAgentTests
 
 
 		//[Test, Order(50)]
-		public async Task SystemBE_CanEnableTransitBackend () {
+        [Test]
+		public async Task Transit_CanEnableTransitBackend () {
 			// Utilize System Backend to mount a new Transit Engine at transit_B
-			SysBackend newBE = new SysBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
-			SysBackend oldBE = new SysBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+//			VaultSystemBackend newBE = new VaultSystemBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+//			VaultSystemBackend oldBE = new VaultSystemBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
 
 			// Generate a hopefully small unique name.
-			string beName = "transit" + Guid.NewGuid().ToString().Substring(0, 6);
-			string oldName = "tr455" + Guid.NewGuid().ToString().Substring(0, 6);
-			Assert.True(await newBE.SysMountCreate(beName, "transit test backend", EnumSecretBackendTypes.Transit));
-			Assert.True(await oldBE.SysMountCreate(oldName, "transit test backend", EnumSecretBackendTypes.Transit));
+
+		    string beName = _uniqueKeys.GetKey("TranBEN"); //"transit" + Guid.NewGuid().ToString().Substring(0, 6);
+			string oldName = _uniqueKeys.GetKey("TranBEO"); //"tr455" + Guid.NewGuid().ToString().Substring(0, 6);
+            Assert.True(await _vaultSystemBackend.SysMountCreate(beName, "transit test backend", EnumSecretBackendTypes.Transit));
+			Assert.True(await _vaultSystemBackend.SysMountCreate(oldName, "transit test backend", EnumSecretBackendTypes.Transit));
 		}
 
 
 		#region Policy_Tests
-		[Test, Order(1)]
-		public void SystemBE_VaultPolicyPath_InitialFields_AreCorrect () {
+		[Test]
+		public void Policy_VaultPolicyPath_InitialFields_AreCorrect () {
 			VaultPolicyPath vpp = new VaultPolicyPath("ABC");
 
 			Assert.False(vpp.CreateAllowed,"Create Not False");
@@ -98,9 +98,9 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(1)]
+		[Test]
 		// Test that setting capabilities to true works.
-		public void SystemBE_VaultPolicyPath_SettingTrueToFieldsWorks () {
+		public void Policy_VaultPolicyPath_SettingTrueToFieldsWorks () {
 			VaultPolicyPath vpp = new VaultPolicyPath("ABC");
 			vpp.CreateAllowed = true;
 			Assert.True(vpp.CreateAllowed, "Create Allowed was not True");
@@ -143,8 +143,8 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(1)]
-		public void SystemBE_VaultPolicyPath_SetDenied_SetsEverythingElseToFalse () {
+		[Test]
+		public void Policy_VaultPolicyPath_SetDenied_SetsEverythingElseToFalse () {
 			VaultPolicyPath vpp = new VaultPolicyPath("ABC");
 			vpp.CreateAllowed = true;
 			vpp.ReadAllowed = true;
@@ -164,16 +164,16 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(1)]
-		public void SystemBE_VaultPolicyPath_ConstructorSetsPath () {
+		[Test]
+		public void Policy_PolicyPath_ConstructorSetsPath () {
 			VaultPolicyPath vpp = new VaultPolicyPath("ABC");
 			Assert.AreEqual("ABC", vpp.Path);
 		}
 
 
 
-		[Test, Order(2001)]
-		public async Task SystemBE_CanCreateAPolicy_WithSingleVaultPolicyItem () {
+		[Test]
+		public async Task Policy_CanCreatePolicy_WithSingleVaultPolicyItem () {
 			// Create a Vault Policy Path Item
 			VaultPolicyPath vpi = new VaultPolicyPath("secret/TestA");
 			vpi.DeleteAllowed = true;
@@ -181,13 +181,13 @@ namespace VaultAgentTests
 			// Create a Vault Policy Item
 			VaultPolicy VP = new VaultPolicy("TestingABC");
 			VP.PolicyPaths.Add(vpi);
-			bool rc = await _sysBackend.SysPoliciesACLCreate(VP);
+			bool rc = await _vaultSystemBackend.SysPoliciesACLCreate(VP);
 		}
 
 
 
-		[Test, Order(2001)]
-		public async Task SystemBE_CanCreateAPolicy_WithMultipleVaultPolicyItems() {
+		[Test]
+		public async Task Policy_CanCreateAPolicy_WithMultipleVaultPolicyItems() {
 			// Create multiple Vault Policy Path Items
 			VaultPolicyPath vpi1 = new VaultPolicyPath("secret/TestA");
 			vpi1.DeleteAllowed = true;
@@ -214,13 +214,13 @@ namespace VaultAgentTests
 			VP.PolicyPaths.Add(vpi3);
 			VP.PolicyPaths.Add(vpi4);
 
-			Assert.True(await _sysBackend.SysPoliciesACLCreate(VP));
+			Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(VP));
 		}
 
 
 
-		[Test, Order(15)]
-		public async Task SystemBE_Policy_CanReadSinglePathPolicy () {
+		[Test]
+		public async Task Policy_CanReadSinglePathPolicy () {
 			VaultPolicy VP = new VaultPolicy("Test2000A");
 
 			VaultPolicyPath vpi3 = new VaultPolicyPath("secret/Test2000A");
@@ -230,11 +230,11 @@ namespace VaultAgentTests
 			vpi3.SudoAllowed = true;
 			VP.PolicyPaths.Add(vpi3);
 
-			Assert.True(await _sysBackend.SysPoliciesACLCreate(VP));
+			Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(VP));
 
 
 			// Now lets read it back. 
-			VaultPolicy vpNew = await _sysBackend.SysPoliciesACLRead("Test2000A");
+			VaultPolicy vpNew = await _vaultSystemBackend.SysPoliciesACLRead("Test2000A");
 
 			Assert.AreEqual(1, vpNew.PolicyPaths.Count);
 			Assert.AreEqual(vpi3.ListAllowed, vpNew.PolicyPaths[0].ListAllowed);
@@ -246,9 +246,9 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(15)]
+		[Test]
 		// Can read a policy that has multiple paths attached to it.
-		public async Task SystemBE_Policy_CanReadMultiplePathPolicy() {
+		public async Task Policy_CanReadMultiplePathPolicy() {
 			// Create a Vault Policy Item and add the policy paths.
 			VaultPolicy VP = new VaultPolicy("Test2000B");
 
@@ -276,11 +276,11 @@ namespace VaultAgentTests
 			vpi3.UpdateAllowed = true;
 			VP.PolicyPaths.Add(vpi3);
 
-			Assert.True(await _sysBackend.SysPoliciesACLCreate(VP));
+			Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(VP));
 
 
 			// Now lets read it back. 
-			VaultPolicy vpNew = await _sysBackend.SysPoliciesACLRead("Test2000B");
+			VaultPolicy vpNew = await _vaultSystemBackend.SysPoliciesACLRead("Test2000B");
 
 			Assert.AreEqual(3, vpNew.PolicyPaths.Count);
 			foreach (VaultPolicyPath item in vpNew.PolicyPaths) {
@@ -310,55 +310,55 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(15)]
-		public async Task SystemBE_Policy_ListReturnsPolicies () {
+		[Test]
+		public async Task Policy_ListReturnsPolicies () {
 			// Ensure there is at least one policy saved.
 			VaultPolicy VP = new VaultPolicy("listPolicyA");
 			VaultPolicyPath vpi = new VaultPolicyPath("secret/listpol2000A");
 			vpi.ListAllowed = true;
 			VP.PolicyPaths.Add(vpi);
 
-			Assert.True(await _sysBackend.SysPoliciesACLCreate(VP));
+			Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(VP));
 
 			// Now get a list of policies.
-			List<string> polList = await _sysBackend.SysPoliciesACLList();
+			List<string> polList = await _vaultSystemBackend.SysPoliciesACLList();
 			Assert.True(polList.Count > 0);
 		}
 
 
 
 
-		[Test, Order(15)]
+		[Test]
 		// Providing a valid policy name results in returning true.
-		public async Task SystemBE_Policy_CanDelete_ValidPolicyName () {
+		public async Task Policy_CanDelete_ValidPolicyName () {
 			// Create a policy to delete
 			VaultPolicy VP = new VaultPolicy("deletePolicyA");
 			VaultPolicyPath vpi = new VaultPolicyPath("secret/Test2000A");
 			vpi.ListAllowed = true;
 			VP.PolicyPaths.Add(vpi);
 
-			Assert.True(await _sysBackend.SysPoliciesACLCreate(VP));
+			Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(VP));
 
 			// Now delete it.
-			Assert.True(await _sysBackend.SysPoliciesACLDelete(VP.Name));
+			Assert.True(await _vaultSystemBackend.SysPoliciesACLDelete(VP.Name));
 		}
 
 
 
 		
-		[Test, Order(15)]
+		[Test]
 		// Providing an invalid policy name returns false.
-		public async Task SystemBE_Policy_Delete_InvalidPolicyName_ReturnsTrue () {
-			Assert.True(await _sysBackend.SysPoliciesACLDelete("invalidName"));
+		public async Task Policy_Delete_InvalidPolicyName_ReturnsTrue () {
+			Assert.True(await _vaultSystemBackend.SysPoliciesACLDelete("invalidName"));
 		}
 		#endregion
 
 
 		#region Auth_Tests
 
-		[Test, Order(0)]
+		[Test]
 		// Make sure that the JSON constructor will set the path and name value correctly.
-		public void SystemBE_AuthMethod_JSONConstructor_SetsNameAndPathCorrectly () {
+		public void AuthMethod_JSONConstructor_SetsNameAndPathCorrectly () {
 			string path = "test2/";
 			string name = path.Substring(0, path.Length - 1);
 			AuthMethod am = new AuthMethod(path, EnumAuthMethods.Kubernetes);
@@ -369,9 +369,9 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(0)]
+		[Test]
 		// Make sure that the non-JSON constructor will set the path and name value correctly.
-		public void SystemBE_AuthMethod_Constructor_SetsNameAndPathCorrectly() {
+		public void AuthMethod_Constructor_SetsNameAndPathCorrectly() {
 			string path = "test2/";
 			string name = path.Substring(0, path.Length - 1);
 			AuthMethod am = new AuthMethod(path, EnumAuthMethods.Kubernetes);
@@ -382,9 +382,9 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(0)]
+		[Test]
 		// Make sure that specifying a name value will build the appropriate path value.
-		public void SystemBE_AuthMethod_Constructor_SetsNameAndPathCorrectly_WhenProvidedName() {
+		public void AuthMethod_Constructor_SetsNameAndPathCorrectly_WhenProvidedName() {
 			string name = "test2";
 			string path = name + "/";
 			AuthMethod am = new AuthMethod(name, EnumAuthMethods.Kubernetes);
@@ -394,9 +394,9 @@ namespace VaultAgentTests
 		}
 
 
-		[Test, Order(0)]
+		[Test]
 		// Make sure we can set path and name properties and they will update the other property.
-		public void SystemBE_AuthMethod_PathAndNameProperties_SetCorrectly () {
+		public void AuthMethod_PathAndNameProperties_SetCorrectly () {
 			string name = "test2";
 			string path = name + "/";
 			AuthMethod am = new AuthMethod(name, EnumAuthMethods.Kubernetes);
@@ -414,9 +414,9 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(0)]
+		[Test]
 		// we do not allow an empty path/name value when calling the non JSON constructor.
-		public void SystemBE_AuthMethod_NormlConstructor_ThrowsOnInvalidPathArgument () {
+		public void AuthMethod_NormlConstructor_ThrowsOnInvalidPathArgument () {
 			string path = "";
 			Assert.Throws<ArgumentException>(() => new AuthMethod(path, EnumAuthMethods.GitHub));
 
@@ -425,16 +425,16 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(0)]
+		[Test]
 		// The JSON constructor must accept a null value for path as the Vault API does not return the path value inside the objects JSON value, but rather
 		// outside it as the dictionary key...
-		public void SystemBE_AuthMethod_JSONConstructor_AcceptsNullPath() {
+		public void AuthMethod_JSONConstructor_AcceptsNullPath() {
 			Assert.DoesNotThrow(() => new AuthMethod(null, AuthMethodEnumConverters.EnumAuthMethodsToString(EnumAuthMethods.AppRole)));
 		}
 
 
 
-		[Test,Order(1)]
+		[Test]
 		// Make sure the enum to string converters are working correctly.
 		[TestCase(EnumAuthMethods.AppRole,"approle")]
 		[TestCase(EnumAuthMethods.AWS, "aws")]
@@ -443,17 +443,16 @@ namespace VaultAgentTests
 		[TestCase(EnumAuthMethods.Kubernetes, "kubernetes")]
 		[TestCase(EnumAuthMethods.LDAP, "ldap")]
 		[TestCase(EnumAuthMethods.Okta, "okta")]
-		//[TestCase(EnumAuthMethods.Radius, "radius")]
 		[TestCase(EnumAuthMethods.TLSCertificates, "cert")]
 		[TestCase(EnumAuthMethods.UsernamePassword, "userpass")]
-		public void SystemBE_AuthMethod_ConstructViaString (EnumAuthMethods i,string val) {
+		public void AuthMethod_ConstructViaString (EnumAuthMethods i,string val) {
 			AuthMethod am = new AuthMethod(_uniqueKeys.GetKey("TST") ,val);
 			Assert.AreEqual(i, am.Type);
 		}
 
 
 
-		[Test,Order(1)]
+		[Test]
 		[TestCase(EnumAuthMethods.AppRole, "approle")]
 		[TestCase(EnumAuthMethods.AWS, "aws")]
 		[TestCase(EnumAuthMethods.GoogleCloud, "gcp")]
@@ -461,10 +460,9 @@ namespace VaultAgentTests
 		[TestCase(EnumAuthMethods.Kubernetes, "kubernetes")]
 		[TestCase(EnumAuthMethods.LDAP, "ldap")]
 		[TestCase(EnumAuthMethods.Okta, "okta")]
-		//[TestCase(EnumAuthMethods.Radius, "radius")]
 		[TestCase(EnumAuthMethods.TLSCertificates, "cert")]
 		[TestCase(EnumAuthMethods.UsernamePassword, "userpass")]
-		public void SystemBE_AuthMethod_ConstructViaEnum (EnumAuthMethods i, string val) {
+		public void AuthMethod_ConstructViaEnum_Success (EnumAuthMethods i, string val) {
 			string sPath = "GHI" + i.ToString();
 			AuthMethod am = new AuthMethod(sPath,i);
 			Assert.AreEqual(am.TypeAsString,val);
@@ -472,78 +470,73 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(0)]
+		[Test]
 		[TestCase(EnumAuthMethods.LDAP)]
 		[TestCase(EnumAuthMethods.Okta)]
-		//[TestCase(EnumAuthMethods.Radius)]
 		[TestCase(EnumAuthMethods.TLSCertificates)]
 		[TestCase(EnumAuthMethods.UsernamePassword)]
 		[TestCase(EnumAuthMethods.AppRole)]
-		// Token can no longer be instantiated.  It is an automatic entry.
-		//[TestCase(EnumAuthMethods.Token)]
 		[TestCase(EnumAuthMethods.AWS)]
 		[TestCase(EnumAuthMethods.GoogleCloud)]
 		[TestCase(EnumAuthMethods.GitHub)]
 		[TestCase(EnumAuthMethods.Kubernetes)]
 		// Test that we can enable an authentication method with the provided name and no config options.  We test all possible authentication methods.
 		//public async Task SystemBE_Auth_Enable_NoConfigOptions_Works([Range((int)EnumAuthMethods.AppRole, (int)EnumAuthMethods.Token)] EnumAuthMethods auth) {
-		public async Task SystemBE_Auth_Enable_NoConfigOptions_Works (EnumAuthMethods auth) {
+		public async Task Auth_Enable_NoConfigOptions_Works (EnumAuthMethods auth) {
 			string a = Guid.NewGuid().ToString();
 			string c = a.Substring(0, 5);
 			string sPath = c + (int)auth;
 
 			Debug.WriteLine("NBoConfig:  Path = " + sPath);
 			AuthMethod am = new AuthMethod(sPath, auth);
-			Assert.True(await _sysBackend.AuthEnable(am));
+			Assert.True(await _vaultSystemBackend.AuthEnable(am));
 
 		}
 
 
 
-		[Test,Order(110)]
-		public async Task SystemBE_Auth_Enable_ConfigOptions ()
+		[Test]
+		public async Task Auth_Enable_ConfigOptions ()
 		{
 		    string key = _uniqueKeys.GetKey("TST");
 			AuthMethod am = new AuthMethod(key,EnumAuthMethods.AppRole);
 			am.Config.DefaultLeaseTTL = "120";
 			am.Config.MaxLeaseTTL = "240";
-			Assert.True(await _sysBackend.AuthEnable(am));
+			Assert.True(await _vaultSystemBackend.AuthEnable(am));
 		}
 
 
 
-		[Test,Order(9)]
-		public async Task SystemBE_Auth_Disable_Works () {
-			SystemTestInit();
-
+		[Test]
+		public async Task Auth_Disable_Works () {
 			string key = _uniqueKeys.GetKey("TST");
             AuthMethod am = new AuthMethod(key, EnumAuthMethods.AppRole);
-			Assert.True(await _sysBackend.AuthEnable(am));
-			Assert.True(await _sysBackend.AuthDisable(am));	
+			Assert.True(await _vaultSystemBackend.AuthEnable(am));
+			Assert.True(await _vaultSystemBackend.AuthDisable(am));	
 		}
 
 
 
-		[Test,Order(9)]
-		public async Task SystemBE_Auth_EnableDisableValidated () {
+		[Test]
+		public async Task Auth_EnableDisableValidated () {
 			string name = _uniqueKeys.GetKey("TST");
             AuthMethod am = new AuthMethod(name,EnumAuthMethods.AppRole);
 			string path = am.Path;
 			Debug.WriteLine("EnDisValid: Enabling first");
-			Assert.True(await _sysBackend.AuthEnable(am));
+			Assert.True(await _vaultSystemBackend.AuthEnable(am));
 
 			// Now get listing of methods and search for our test one.
 			Debug.WriteLine("EnDisValid: Getting List.");
-			Dictionary<string, AuthMethod> authMethods = await _sysBackend.AuthListAll();
+			Dictionary<string, AuthMethod> authMethods = await _vaultSystemBackend.AuthListAll();
 			Assert.NotNull(authMethods);
 			Assert.That(authMethods, Contains.Key(path));
 
 			
 			// Now disable and verify it is not in list.
 			Debug.WriteLine("EnDisValid:  Disabling...");
-			Assert.True(await _sysBackend.AuthDisable(am));
+			Assert.True(await _vaultSystemBackend.AuthDisable(am));
 			Debug.WriteLine("EnDisValid:  Get new list LatestMethods...");
-			Dictionary<string, AuthMethod> latestMethods = await _sysBackend.AuthListAll();
+			Dictionary<string, AuthMethod> latestMethods = await _vaultSystemBackend.AuthListAll();
 			Debug.WriteLine("EnDisValid:  Final Asserts");
 			Assert.NotNull(latestMethods);
 			Assert.That(latestMethods, !Contains.Key(path));
