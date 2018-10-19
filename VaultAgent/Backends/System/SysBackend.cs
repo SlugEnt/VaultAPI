@@ -138,7 +138,7 @@ namespace VaultAgent.Backends.System
 
 				return methods;
 			}
-			throw new ApplicationException("SecretBackend:ListSecrets  Arrived at unexpected code block.");
+			throw new ApplicationException("KeyValueSecretEngine:ListSecrets  Arrived at unexpected code block.");
 		}
 		#endregion
 
@@ -176,7 +176,7 @@ namespace VaultAgent.Backends.System
 
 
 			VaultDataResponseObject vdro = await vaultHTTP.PutAsync(path, "SysAuditEnable", null, bulkJSON);
-			if (vdro.httpStatusCode == 204) { return true; }
+			if (vdro.HttpStatusCode == 204) { return true; }
 			else { return false; }
 
 
@@ -248,7 +248,7 @@ namespace VaultAgent.Backends.System
 
 
 			VaultDataResponseObject vdro = await vaultHTTP.PostAsync2(path, "SysMountEnable", createParams);
-			if (vdro.httpStatusCode == 204) { return true; }
+			if (vdro.HttpStatusCode == 204) { return true; }
 			else { return false; }
 		}
 
@@ -326,7 +326,7 @@ namespace VaultAgent.Backends.System
 
 			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "SysMountUpdateConfig", content);
 
-			if (vdro.httpStatusCode == 204) { return true; }
+			if (vdro.HttpStatusCode == 204) { return true; }
 			else { return false; }
 
 		}

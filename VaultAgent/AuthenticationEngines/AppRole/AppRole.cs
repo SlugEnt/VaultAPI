@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 
 
-namespace VaultAgent.Backends.AppRole
+namespace VaultAgent.AuthenticationEngines
 {
 	/// <summary>
 	/// Represents a Vault AppRole.
@@ -22,28 +19,25 @@ namespace VaultAgent.Backends.AppRole
 		private bool _enableLocalSecretIDs = false;
 
 
-		/// <summary>
-		/// Creates an AppRole object with the specified name.  Number of uses is set to unlimited AND a Secret ID is required to login.
-		/// </summary>
-		/// <param name="name">Name to be given to the App Role.  It will be converted to Lower Case, since Vault only deals with lower case.</param>
-		public AppRole (string name) {
-			_name = name.ToLower();
-			IsSecretIDRequiredOnLogin = true;
-			NumberOfUses = 0;
-			SecretNumberOfUses = 0;
-		}
+	    /// <summary>
+	    /// Creates an AppRole object with the specified name.  Number of uses is set to unlimited AND a Secret ID is required to login.
+	    /// </summary>
+	    /// <param name="name">Name to be given to the App Role.  It will be converted to Lower Case, since Vault only deals with lower case.</param>
+	    public AppRole (string name) {
+	        _name = name.ToLower();
+	        IsSecretIDRequiredOnLogin = true;
+	        NumberOfUses = 0;
+	        SecretNumberOfUses = 0;
+	    }
 
-
-
-		/// <summary>
+	    /// <summary>
 		/// Creates an empty Vault AppRole object
 		/// </summary>
 		[JsonConstructor]
 		public AppRole () { }
 
 
-
-		/// <summary>
+	    /// <summary>
 		/// The name of the App Role.
 		/// </summary>
 		[JsonProperty("role_name")]
@@ -53,8 +47,7 @@ namespace VaultAgent.Backends.AppRole
 		}
 
 
-
-		/// <summary>
+	    /// <summary>
 		/// Determines whether the secret ID is required when logging in with this App Role.
 		/// Default: True (Secret ID is required)
 		/// </summary>

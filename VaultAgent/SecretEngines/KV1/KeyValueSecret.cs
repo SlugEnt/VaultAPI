@@ -1,27 +1,27 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
 
-namespace VaultAgent.Backends.SecretEngines
+namespace VaultAgent.SecretEngines
 {
 	/// <summary>
-	/// Represents a secret read from the Vault.  Secrets can have many attributes which are just Key Value Pairs of a name and some data value.
+	/// Represents a KeyValue Version 1 secret read from the Vault.  Secrets can have many attributes which are just Key Value Pairs of a name and some data value.
 	/// Important is that when saving a secret, you must save it with all it's attributes or else any that are missing on the save will be removed from 
 	/// the vault.  So, if upon reading a secret it has attributes of canDelete:True and connection:db1 and you save it, but the only attribute in the 
 	/// list upon save is connection:db1 then canDelete will no longer exist after the save.  
 	/// </summary>
-	public class Secret
+	public class KeyValueSecret
 	{
-		public Secret() {
+		public KeyValueSecret() {
 			Attributes = new Dictionary<string, string>();
 		}
 
-		public Secret(string nameAndPath) {
+		public KeyValueSecret(string nameAndPath) {
 			Path = nameAndPath;
 			Attributes = new Dictionary<string, string>();
 		}
 
 
-		public Secret (string nameAndPath, int refreshInterval) {
+		public KeyValueSecret (string nameAndPath, int refreshInterval) {
 			Path = nameAndPath;
 			RefreshInterval = refreshInterval;
 			Attributes = new Dictionary<string, string>();

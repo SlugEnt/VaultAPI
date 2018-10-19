@@ -11,12 +11,12 @@ using System.Threading.Tasks;
 namespace VaultAgent
 {
 	public class VaultDataResponseObject {
-		private string responseJSON;		// Raw JSON data that was provided by called API.
-		private string responseData;		// This is populated the first time we are asked for this data from the Raw JSON.
-		private Dictionary<string, object> responseJSONDict;
-		private Dictionary<string, object> responseDataDict;
+		private string _responseJSON;		// Raw JSON data that was provided by called API.
+		private string _responseData;		// This is populated the first time we are asked for this data from the Raw JSON.
+		private Dictionary<string, object> _responseJSONDict;
+		private Dictionary<string, object> _responseDataDict;
 
-		public int httpStatusCode { get; }			// The status code returned from the Vault API.
+		public int HttpStatusCode { get; }			// The status code returned from the Vault API.
 		public bool Success { get; }
 
 
@@ -26,14 +26,14 @@ namespace VaultAgent
 		/// </summary>
 		/// <param name="JSONresponse">The JSON string returned by the called Vault API.</param>
 		public VaultDataResponseObject(string JSONresponse, System.Net.HttpStatusCode statusCode) {
-			responseJSON = JSONresponse;
-			httpStatusCode = (int)statusCode;
+			_responseJSON = JSONresponse;
+			HttpStatusCode = (int)statusCode;
 
 
 			// Vault at this time only returns 2 successful codes:
 			//  200 - Success with data returned.
 			//  204 - Success with no data returned.
-			if (httpStatusCode <= 204) { Success = true; }
+			if (HttpStatusCode <= 204) { Success = true; }
 			else { Success = false; }
 		}
 
@@ -47,7 +47,7 @@ namespace VaultAgent
 		/// </summary>
 		/// <returns></returns>
 		public string GetResponsePackageAsJSON () {
-			return responseJSON;
+			return _responseJSON;
 		}
 
 
@@ -61,10 +61,10 @@ namespace VaultAgent
 		/// <returns>string represenation in JSON of the data element.</returns>
 		public string GetDataPackageAsJSON () {
 			// Convert the Data out of the JSON if we have not done this before.  IE.  do this once - the first time it's requested.
-			if (responseData == null) {
-				responseData =  GetJSONPropertyValue(responseJSON, "data");
+			if (_responseData == null) {
+				_responseData =  GetJSONPropertyValue(_responseJSON, "data");
 			}
-			return responseData;
+			return _responseData;
 		}
 
 
@@ -76,11 +76,11 @@ namespace VaultAgent
 		/// </summary>
 		/// <returns>Dictionary [string, object]</returns>
 		public Dictionary<string, object> GetResponsePackageAsDictionary () {
-			if (responseJSONDict == null) {
-				responseJSONDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(responseJSON);
+			if (_responseJSONDict == null) {
+				_responseJSONDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(_responseJSON);
 			}
 
-			return responseJSONDict;
+			return _responseJSONDict;
 		}
 
 
@@ -92,16 +92,16 @@ namespace VaultAgent
 		/// </summary>
 		/// <returns>Dictionary [string, object]</returns>
 		public Dictionary<string, object> GetDataPackageAsDictionary () {
-			if (responseDataDict == null) {
+			if (_responseDataDict == null) {
 				Dictionary<string, object> respDict = GetResponsePackageAsDictionary();
 
-				if (responseJSONDict.ContainsKey("data")) {
-					string val = responseJSONDict["data"].ToString();
-					responseDataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(val);
+				if (_responseJSONDict.ContainsKey("data")) {
+					string val = _responseJSONDict["data"].ToString();
+					_responseDataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(val);
 				}
 			}
 
-			return responseDataDict;
+			return _responseDataDict;
 		}
 
 
@@ -115,7 +115,7 @@ namespace VaultAgent
 		/// <returns>The field as JSON, both the field name and data.</returns>
 		public string GetResponsePackageFieldAsJSON (string fieldName)
 		{
-			return GetJSONPropertyValue(this.responseJSON, fieldName);
+			return GetJSONPropertyValue(this._responseJSON, fieldName);
 		}
 
 
@@ -142,7 +142,7 @@ namespace VaultAgent
 		/// <returns>True if the field was found.  False otherwise.</returns>
 		public bool DoesResponseFieldExist(string fieldName) {
 			try {
-				string value = GetJSONPropertyValue(this.responseJSON, fieldName);
+				string value = GetJSONPropertyValue(this._responseJSON, fieldName);
 				return true;
 			}
 			catch (Exception e) {
@@ -161,7 +161,7 @@ namespace VaultAgent
 		/// <returns>True if the field was found.  False otherwise.</returns>
 		public bool DoesDataFieldExist (string fieldName) {
 			try {
-				string value = GetJSONPropertyValue(this.responseData, fieldName);
+				string value = GetJSONPropertyValue(this._responseData, fieldName);
 				return true;
 			}
 			catch (Exception e) {

@@ -2,7 +2,6 @@
 using VaultAgent.Backends.System;
 using System.Collections.Generic;
 using System;
-using VaultAgent.Backends.AppRole;
 
 namespace VaultClient
 {

@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using VaultAgent.Backends.System;
-using VaultAgent.Backends.SecretEngines;
+using VaultAgent.SecretEngines;
 using VaultAgent.Models;
 using System.Threading.Tasks;
 using VaultAgent.Backends;
-using VaultAgent.Backends.AppRole;
+
+using VaultAgent.AuthenticationEngines;
 
 
 namespace VaultAgent
@@ -84,14 +84,14 @@ namespace VaultAgent
 		public VaultBackend ConnectToSecretBackend(EnumSecretBackendTypes secretBackendType, string backendName, string backendMountPath) {
 			switch (secretBackendType) {
 				case EnumSecretBackendTypes.KeyValueV2:
-					KV2Backend kv2Backend = new KV2Backend(backendName, backendMountPath, _httpConnector);
+					KV2SecretEngine kv2Backend = new KV2SecretEngine(backendName, backendMountPath, _httpConnector);
 					return kv2Backend;
 				case EnumSecretBackendTypes.Secret:
-					SecretBackend secretBackend = new SecretBackend(backendName, backendMountPath, _httpConnector);
+					KeyValueSecretEngine secretBackend = new KeyValueSecretEngine(backendName, backendMountPath, _httpConnector);
 					return secretBackend;
 				case EnumSecretBackendTypes.Transit:
-					TransitBackend transitBackend = new TransitBackend(backendName, backendMountPath, _httpConnector);
-					return transitBackend;
+					TransitSecretEngine transitSecretEngine = new TransitSecretEngine(backendName, backendMountPath, _httpConnector);
+					return transitSecretEngine;
 			}
 			return null;
 		}
@@ -132,8 +132,8 @@ namespace VaultAgent
 		public VaultAuthenticationBackend ConnectAuthenticationBackend (EnumBackendTypes backendType, string backendName, string backendMountPath ) {
 			switch (backendType) {
 				case EnumBackendTypes.A_AppRole:
-					AppRoleBackEnd appRoleBackend = new AppRoleBackEnd(backendName, backendMountPath, _httpConnector);
-					return appRoleBackend;
+					AppRoleAuthEngine AppRoleAuthEngine = new AppRoleAuthEngine(backendName, backendMountPath, _httpConnector);
+					return AppRoleAuthEngine;
 				default:
 					throw new ArgumentOutOfRangeException("Must supply a backendType that is derived from the VaultAuthenticationBackend class");
 			}

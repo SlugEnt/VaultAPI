@@ -6,28 +6,28 @@ using System.Threading.Tasks;
 using VaultAgent;
 using VaultAgent.Models;
 using VaultAgent.Backends.Transit.Models;
-using VaultAgent.Backends.Transit;
+using VaultAgent.SecretEngines;
 
 
 namespace VaultClient
 {
     public class VaultClient_TransitBackend
     {
-		TransitBackend TB;
+		TransitSecretEngine TB;
 		VaultAgentAPI _vault;
 
 		public VaultClient_TransitBackend (string token, string ip, int port, string db) {
 			_vault = new VaultAgentAPI("TransitVault", ip, port, token);
 
-			TB = (TransitBackend)_vault.ConnectToSecretBackend(VaultAgent.Backends.System.EnumSecretBackendTypes.Transit, "transit", "transit");
+			TB = (TransitSecretEngine)_vault.ConnectToSecretBackend(VaultAgent.Backends.System.EnumSecretBackendTypes.Transit, "transit", "transit");
 
-			//TB = new TransitBackend(ip, port, token,db);
+			//TB = new TransitSecretEngine(ip, port, token,db);
 
 		}
 
 		public async Task Run(bool runRotateTest = false, bool runRekeyTest = true) {
 			try {
-				Console.WriteLine("Running thru Vault TransitBackend exercises.");
+				Console.WriteLine("Running thru Vault TransitSecretEngine exercises.");
 
 				string eKey = Guid.NewGuid().ToString();
 
@@ -85,10 +85,7 @@ namespace VaultClient
 			catch (Exception e) { Console.WriteLine(" Errors - {0}", e.Message); }
 
 			// Finally delete a non-existent key.
-			try {
-				await TB.DeleteKey("gggggpgg");
-			}
-			catch (Exception e) { }
+			await TB.DeleteKey("gggggpgg");
 		}
 
 
@@ -177,7 +174,7 @@ namespace VaultClient
 			//if (rc == true) { Console.WriteLine("Success - Encryption Key written.  It may now be used to encrypt data."); }
 
 			// Try with parameters values.
-			bool rc = await TB.CreateEncryptionKey(key, true, true, EnumTransitKeyType.rsa4096);
+			bool rc = await TB.CreateEncryptionKey(key, true, true, TransitEnumKeyType.rsa4096);
 			if (rc == true) { Console.WriteLine("Success - Encryption Key written.  It may now be used to encrypt data."); }
 
 
