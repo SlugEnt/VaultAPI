@@ -21,33 +21,36 @@ namespace VaultAgent.Models
 		public string AccessorTokenID { get; set; }
 
 		[JsonProperty("creation_time")]
-		public string CreationTime { get; set; }
+		public long CreationTime { get; set; }
 
 		[JsonProperty("creation_ttl")]
-		public string CreationTTL { get; set; }
+		public long CreationTTL { get; set; }
 
 		[JsonProperty("entity_id")]
 		public string EntityId { get; set; }
 
-
+		//TODO figure out what type of value this is, long, DateTimeOffset?
 		[JsonProperty("expire_time")]
 		public string ExpireTimeStr { get; set; }
 
 		[JsonProperty("explicit_max_ttl")]
-		public string TokenExplicitMaxTTL { get; set; }
+		public long TokenExplicitMaxTTL { get; set; }
 
 		[JsonProperty("issue_time")]
-		public string IssueTimeStr { get; set; }
+		public DateTimeOffset IssueTime { get; set; }
+
+		[JsonProperty("meta")]
+		public object Meta { get; set; }
 
 		[JsonProperty("num_uses")]
-		public string NumberOfUses { get; set; }
+		public long NumberOfUses { get; set; }
 
 		[JsonProperty("orphan")]
 		public bool IsOrphan { get; set; }
-
+/* Deprecated
 		[JsonProperty("period")]
 		public string Period { get; set; }
-
+*/
 		[JsonProperty("policies")]
 		public List<string> Policies { get; set; }
 
@@ -55,7 +58,7 @@ namespace VaultAgent.Models
 		public bool IsRenewable { get; set; }
 
 		[JsonProperty("ttl")]
-		public string TTL { get; set; }
+		public long TTL { get; set; }
 
 
 
