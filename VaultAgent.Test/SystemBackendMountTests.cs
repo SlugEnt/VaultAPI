@@ -8,22 +8,27 @@ using VaultAgent;
 
 namespace VaultAgentTests
 {
+    [TestFixture]
 	[Parallelizable]
 	class SystemBackendMountTests
     {
-		private SysBackend VSB;
-		private UniqueKeys UK = new UniqueKeys();       // Unique Key generator
+        private VaultAgentAPI _vaultAgentAPI;
+
+        private VaultSystemBackend _vaultSystemBackend;
+		private UniqueKeys _uniqueKeys = new UniqueKeys();       // Unique Key generator
 
 
 		[OneTimeSetUp]
 		public async Task Backend_Init() {
-			if (VSB != null) {
+			if (_vaultSystemBackend != null) {
 				return;
 			}
 
+		    // Build Connection to Vault.
+		    _vaultAgentAPI = new VaultAgentAPI("transitVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
 
-			// Create a new system Backend Mount for this series of tests.
-			VSB = new SysBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+            // Create a new system Backend Mount for this series of tests.
+		    _vaultSystemBackend = _vaultAgentAPI.System;
 		}
 
 
@@ -33,7 +38,7 @@ namespace VaultAgentTests
 			int defaultTTL = 600;       // 10min
 			string vis = "hidden";		// should not show up in ui lists.
 
-			string key = UK.GetKey("SYSM");
+			string key = _uniqueKeys.GetKey("SYSM");
 			string desc = "Test Mount DB: " + key + "KeyValue V2";
 
 			VaultSysMountConfig config = new VaultSysMountConfig {
@@ -43,10 +48,10 @@ namespace VaultAgentTests
 			};
 
 
-			Assert.True(await VSB.SysMountCreate(key, desc, EnumSecretBackendTypes.KeyValueV2, config),"Unable to create Mount with key name: {0}",key);
+			Assert.True(await _vaultSystemBackend.SysMountCreate(key, desc, EnumSecretBackendTypes.KeyValueV2, config),"Unable to create Mount with key name: {0}",key);
 
 			// Now read back the mount config data.
-			VaultSysMountConfig config2 = await VSB.SysMountReadConfig(key);
+			VaultSysMountConfig config2 = await _vaultSystemBackend.SysMountReadConfig(key);
 			Assert.AreEqual(config.DefaultLeaseTTL, config2.DefaultLeaseTTL,"Default Lease TTL's are not the same.");
 			Assert.AreEqual(config.MaxLeaseTTL, config2.MaxLeaseTTL,"Max Lease TTL's are not the same.");
 			Assert.AreEqual(config.VisibilitySetting, config2.VisibilitySetting, "Visibility Settings are not the same.");
@@ -60,7 +65,7 @@ namespace VaultAgentTests
 			int defaultTTL = 600;       // 10min
 			string vis = "hidden";      // should not show up in ui lists.
 
-			string key = UK.GetKey("SYSM");
+			string key = _uniqueKeys.GetKey("SYSM");
 			string desc = "Test Mount DB: " + key + "KeyValue V2";
 
 			VaultSysMountConfig config = new VaultSysMountConfig {
@@ -70,10 +75,10 @@ namespace VaultAgentTests
 			};
 
 
-			Assert.True(await VSB.SysMountCreate(key, desc, EnumSecretBackendTypes.KeyValueV2, config), "Unable to create Mount with key name: {0}", key);
+			Assert.True(await _vaultSystemBackend.SysMountCreate(key, desc, EnumSecretBackendTypes.KeyValueV2, config), "Unable to create Mount with key name: {0}", key);
 
 			// Now read back the mount config data.
-			VaultSysMountConfig config2 = await VSB.SysMountReadConfig(key);
+			VaultSysMountConfig config2 = await _vaultSystemBackend.SysMountReadConfig(key);
 			Assert.AreEqual(config.DefaultLeaseTTL, config2.DefaultLeaseTTL, "Default Lease TTL's are not the same.");
 			Assert.AreEqual(config.MaxLeaseTTL, config2.MaxLeaseTTL, "Max Lease TTL's are not the same.");
 			Assert.AreEqual(config.VisibilitySetting, config2.VisibilitySetting, "Visibility Settings are not the same.");
@@ -86,11 +91,11 @@ namespace VaultAgentTests
 				VisibilitySetting = "unauth"
 			};
 
-			Assert.True(await VSB.SysMountUpdateConfig(key, config3, "changed"), "Unable to successfully change the config of {0} with config3 settings",key);
+			Assert.True(await _vaultSystemBackend.SysMountUpdateConfig(key, config3, "changed"), "Unable to successfully change the config of {0} with config3 settings",key);
 
 			// Now retrieve and compare.
 			// Now read back the mount config data.
-			VaultSysMountConfig config4 = await VSB.SysMountReadConfig(key);
+			VaultSysMountConfig config4 = await _vaultSystemBackend.SysMountReadConfig(key);
 			Assert.AreEqual(config3.DefaultLeaseTTL, config4.DefaultLeaseTTL, "Default Lease TTL's are not the same.");
 			Assert.AreEqual(config3.MaxLeaseTTL, config4.MaxLeaseTTL, "Max Lease TTL's are not the same.");
 			Assert.AreEqual(config3.VisibilitySetting, config4.VisibilitySetting, "Visibility Settings are not the same.");
@@ -100,18 +105,18 @@ namespace VaultAgentTests
 
 		[Test]
 		public async Task DeleteMount () {
-			string key = UK.GetKey("SYSM");
+			string key = _uniqueKeys.GetKey("SYSM");
 			string desc = "Test Mount DB: " + key + "KeyValue V2";
 
 			VaultSysMountConfig config1 = new VaultSysMountConfig { DefaultLeaseTTL = "6556"	};
-			Assert.True(await VSB.SysMountCreate(key, desc, EnumSecretBackendTypes.KeyValueV2,config1));
+			Assert.True(await _vaultSystemBackend.SysMountCreate(key, desc, EnumSecretBackendTypes.KeyValueV2,config1));
 
 			// Ensure it was created.
-			VaultSysMountConfig config2 = await VSB.SysMountReadConfig(key);
+			VaultSysMountConfig config2 = await _vaultSystemBackend.SysMountReadConfig(key);
 			Assert.AreEqual(config1.DefaultLeaseTTL, config2.DefaultLeaseTTL, "Default Lease TTL's are not the same.");
 
 			// Delete it.
-			Assert.True(await VSB.SysMountDelete(key), "Deletion of mount did not complete Successfully.");
+			Assert.True(await _vaultSystemBackend.SysMountDelete(key), "Deletion of mount did not complete Successfully.");
 
 			// Make sure it is gone.
 		}
@@ -123,13 +128,13 @@ namespace VaultAgentTests
 		/// </summary>
 		[Test]
 		public void ReadInvalidMountName_ThrowsError () {
-			string key = UK.GetKey("SYSM");
+			string key = _uniqueKeys.GetKey("SYSM");
 			string desc = "Test Mount DB: " + key + "KeyValue V2";
 
 			// This mount should not exist as it was never created.
 
-			//Assert.ThrowsAsync<VaultAgent.VaultInvalidDataException>(VaultSysMountConfig config = await VSB.SysMountReadConfig(key);
-			Assert.That(() => VSB.SysMountReadConfig(key),
+			//Assert.ThrowsAsync<VaultAgent.VaultInvalidDataException>(VaultSysMountConfig config = await _vaultSystemBackend.SysMountReadConfig(key);
+			Assert.That(() => _vaultSystemBackend.SysMountReadConfig(key),
 				Throws.Exception
 				.TypeOf<VaultInvalidDataException>()
 				//.With.Property("ParamName")
@@ -143,7 +148,7 @@ namespace VaultAgentTests
 		/// </summary>
 		[Test]
 		public void ChangeConfigInvalidMountName_ThrowsError() {
-			string key = UK.GetKey("SYSM");
+			string key = _uniqueKeys.GetKey("SYSM");
 			string desc = "Test Mount DB: " + key + "KeyValue V2";
 
 
@@ -155,9 +160,9 @@ namespace VaultAgentTests
 				VisibilitySetting = "unauth"
 			};
 
-			//Assert.True(await VSB.SysMountUpdateConfig(key, config, "changed"), "Unable to successfully change the config of {0} with config3 settings", key);
+			//Assert.True(await _vaultSystemBackend.SysMountUpdateConfig(key, config, "changed"), "Unable to successfully change the config of {0} with config3 settings", key);
 
-			Assert.That(() => VSB.SysMountUpdateConfig(key,config,"changed"),
+			Assert.That(() => _vaultSystemBackend.SysMountUpdateConfig(key,config,"changed"),
 				Throws.Exception
 				.TypeOf<VaultInvalidDataException>()
 				);
