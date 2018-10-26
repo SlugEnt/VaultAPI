@@ -32,7 +32,7 @@ namespace VaultAgent
 			IP = vaultIP;
 			Port = port;
 
-			TokenInfo tokenValue = new TokenInfo(token);
+			Token tokenValue = new Token(token);
 			Token = tokenValue;
 
 
@@ -74,7 +74,7 @@ namespace VaultAgent
 		/// <summary>
 		/// The token to use to connect to the vault with.
 		/// </summary>
-		public TokenInfo Token { get; private set; }
+		public Token Token { get; private set; }
 
 
         /// <summary>

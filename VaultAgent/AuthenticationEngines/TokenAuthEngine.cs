@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,20 +22,54 @@ namespace VaultAgent.AuthenticationEngines
 
 		//TODO public async Task<List<string>> ListTokenAccessors () /auth/token/accessors
 
-		//TODO public async Task<bool> CreateToken (params) /auth/token/create
+		public async Task<bool> CreateToken(TokenNewSettings tokenSettings) {
+			string path = MountPointPath + "create";
+
+			string json = JsonConvert.SerializeObject(tokenSettings, Formatting.None);
+
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "CreateToken",null,json);
+			if (vdro.Success) {
+				return true;
+			}
+			throw new ApplicationException("TokenAuthEngine:  CreateToken returned an unexpected error.");
+		}
+
+
 
 		//TODO public async Task<bool> CreateOrphanToken (params) /auth/token/create-orphan
 
-		//TODO public async Task<token OBject> GetTokenInfo (params)  /auth/token/lookup
+
+		public async Task<Token> GetToken(string tokenID) {
+			string path = MountPointPath + "lookup";
+
+			Dictionary<string, string> contentParams = new Dictionary<string, string>() {
+				{ "token", tokenID}
+			};
+
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "GetToken",contentParams);
+			if (vdro.Success) {
+				string js = vdro.GetDataPackageAsJSON();
+				Token token = VaultUtilityFX.ConvertJSON<Token>(js);
+				return token;
+			}
+			return null;
+
+		}
 
 
 
-		public async Task<TokenInfo> GetCurrentTokenInfo() { // /auth/token/lookup-self 
+
+
+		/// <summary>
+		/// Returns a Token object of the Token that is currently being used to access Vault with.
+		/// </summary>
+		/// <returns>Token object of the current token used to access Vault Instance with.</returns>
+		public async Task<Token> GetCurrentTokenInfo() { // /auth/token/lookup-self 
 			string path = MountPointPath + "lookup-self";
 				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "GetCurrentTokenInfo");
 				if (vdro.Success) {
 					string js = vdro.GetDataPackageAsJSON();
-					TokenInfo tokenInfo = VaultUtilityFX.ConvertJSON<TokenInfo>(js);
+					Token tokenInfo = VaultUtilityFX.ConvertJSON<Token>(js);
 					return tokenInfo;
 				}
 				throw new ApplicationException("TokenAuthEngine:  GetCurrentTokenInfo returned an unexpected error.");

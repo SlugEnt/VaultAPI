@@ -122,7 +122,7 @@ namespace VaultClient
 
 				// Now see if we can build an object.
 				string JsonA = vdr.GetDataPackageAsJSON();
-				TokenInfo t = JsonConvert.DeserializeObject<TokenInfo>(JsonA);
+				Token t = JsonConvert.DeserializeObject<Token>(JsonA);
 				Console.WriteLine("Token is orphan? {0}", t.IsOrphan);
 				Console.WriteLine("Token has parent? {0}", t.HasParent);
 				Console.WriteLine("Token is renewable? {0}", t.IsRenewable);

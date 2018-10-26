@@ -13,7 +13,7 @@ namespace VaultAgent.AuthenticationEngines
 	public class AppRoleAuthEngine : VaultAuthenticationBackend
 	{
 /*
-		TokenInfo backendToken;
+		Token backendToken;
 		private VaultAPI_Http _vaultHTTP;
 		string roleBEPath = "/v1/auth/";
 		Uri vaultAppRolePath;
