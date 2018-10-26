@@ -21,6 +21,8 @@ namespace VaultAgent.AuthenticationEngines
 
 
 		//TODO public async Task<List<string>> ListTokenAccessors () /auth/token/accessors
+		//TODO public async Task<bool> CreateOrphanToken (params) /auth/token/create-orphan
+
 
 		public async Task<bool> CreateToken(TokenNewSettings tokenSettings) {
 			string path = MountPointPath + "create";
@@ -36,9 +38,12 @@ namespace VaultAgent.AuthenticationEngines
 
 
 
-		//TODO public async Task<bool> CreateOrphanToken (params) /auth/token/create-orphan
 
-
+		/// <summary>
+		/// Retrieves the requested token.  Returns Null if the token could not be found.
+		/// </summary>
+		/// <param name="tokenID">The ID of the token to retrieve.</param>
+		/// <returns>Token object of the requested token.</returns>
 		public async Task<Token> GetToken(string tokenID) {
 			string path = MountPointPath + "lookup";
 
@@ -46,14 +51,21 @@ namespace VaultAgent.AuthenticationEngines
 				{ "token", tokenID}
 			};
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "GetToken",contentParams);
-			if (vdro.Success) {
-				string js = vdro.GetDataPackageAsJSON();
-				Token token = VaultUtilityFX.ConvertJSON<Token>(js);
-				return token;
+			try {
+				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "GetToken", contentParams);
+				if (vdro.Success) {
+					string js = vdro.GetDataPackageAsJSON();
+					Token token = VaultUtilityFX.ConvertJSON<Token>(js);
+					return token;
+				}
+				else { throw new VaultUnexpectedCodePathException(); }
 			}
-			return null;
 
+			// If Vault is telling us it is a bad token, then return null.
+			catch (VaultForbiddenException e) {
+				if (e.Message.Contains("bad token")) { return null; }
+				else { throw e; }
+			}
 		}
 
 
@@ -64,20 +76,60 @@ namespace VaultAgent.AuthenticationEngines
 		/// Returns a Token object of the Token that is currently being used to access Vault with.
 		/// </summary>
 		/// <returns>Token object of the current token used to access Vault Instance with.</returns>
-		public async Task<Token> GetCurrentTokenInfo() { // /auth/token/lookup-self 
+		public async Task<Token> GetCurrentTokenInfo() { 
 			string path = MountPointPath + "lookup-self";
+			
+			try { 
 				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "GetCurrentTokenInfo");
 				if (vdro.Success) {
 					string js = vdro.GetDataPackageAsJSON();
 					Token tokenInfo = VaultUtilityFX.ConvertJSON<Token>(js);
 					return tokenInfo;
 				}
-				throw new ApplicationException("TokenAuthEngine:  GetCurrentTokenInfo returned an unexpected error.");
+				else { throw new VaultUnexpectedCodePathException(); }
+			}
+
+			// If Vault is telling us it is a bad token, then return null.
+			catch (VaultForbiddenException e) {
+				if (e.Message.Contains("bad token")) { return null; }
+				else { throw e; }
+			}
 		}
 
 
 
-		//TODO public async Task<accessor or token object?> GetTokenAccessorInfo () /auth/token/lookup-accessor
+		/// <summary>
+		/// Retrieves the token associated with the provided accessor ID.
+		/// </summary>
+		/// <param name="accessorID">Accessor ID tied to the token you wish to retrieve.</param>
+		/// <returns>Token object of the token.  Null if invalid accessor token specified.</returns>
+		public async Task<Token> GetTokenViaAccessor(string accessorID) {
+			string path = MountPointPath + "lookup-accessor";
+
+
+			Dictionary<string, string> contentParams = new Dictionary<string, string>() {
+				{ "accessor", accessorID}
+			};
+
+			try {
+				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "GetTokenViaAccessor", contentParams);
+				if (vdro.Success) {
+					string js = vdro.GetDataPackageAsJSON();
+					Token token = VaultUtilityFX.ConvertJSON<Token>(js);
+					token.TokenType = EnumTokenType.Accessor;
+					return token;
+				}
+				else { throw new VaultUnexpectedCodePathException(); }
+			}
+
+			// If Vault is telling us it is a bad token, then return null.
+			catch (VaultInvalidDataException e) {
+				if (e.Message.Contains("invalid accessor")) { return null; }
+				else { throw e; }
+			}
+		}
+
+
 
 		//TODO public async Task<bool> RenewAToken () /auth/token/renew
 
@@ -96,7 +148,7 @@ namespace VaultAgent.AuthenticationEngines
 		//TODO public async Task<List<string>> ListTokenRoles () /auth/token/roles
 
 		//TODO public async Task<bool> SaveTokenRole () /auth/token/roles/:role_name
-		
+
 		//Todo public async Task<bool> DeleteTokenRole () /auth/token/roles/:role_name
 
 		//TODO public async Task<bool> TidyMaintenance () /auth/token/tidy

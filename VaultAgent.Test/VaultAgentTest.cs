@@ -83,7 +83,7 @@ namespace VaultAgent.Test
 		public void TokenInfo_ConstructorSetsID () {
 			string id = "abcDEFZ";
 			Token tokenInfo = new Token(id);
-			Assert.AreEqual(tokenInfo.Id, id);
+			Assert.AreEqual(tokenInfo.ID, id);
 		}
 
 

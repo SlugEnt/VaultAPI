@@ -8,13 +8,18 @@ using Newtonsoft.Json;
 
 namespace VaultAgent.Models
 {
+	/// <summary>
+	/// Represents a Vault token.  
+	/// 
+	/// Note:  An Accessor Token does not have an ID value.
+	/// </summary>
 	public class Token {
 		// The Time To Live value for this token in seconds.
 		private long _ttl;	
 
 
 		[JsonProperty("id")]
-		public string Id { get; set; }
+		public string ID { get; set; }
 
 		[JsonProperty("display_name")]
 		public string DisplayName { get; set; }
@@ -95,13 +100,18 @@ namespace VaultAgent.Models
 		public bool ReadFromVault { get; private set; }
 
 
+		/// <summary>
+		/// This value should never be set by a caller.  Only read.
+		/// </summary>
+		public EnumTokenType TokenType { get; set; }
+
 
 		/// <summary>
 		/// Default JSON Constructor
 		/// </summary>
 		[JsonConstructor]
 		public Token (string id, string accessor, long creation_time, long creation_ttl, string entity_id, DateTimeOffset issue_time) {
-			Id = id;
+			ID = id;
 			AccessorTokenID = accessor;
 			CreationTime = creation_time;
 			CreationTTL = creation_ttl;
@@ -123,7 +133,7 @@ namespace VaultAgent.Models
 		/// </summary>
 		/// <param name="tokenValue"></param>
 		public Token (string tokenID) {
-			Id = tokenID;
+			ID = tokenID;
 			ReadFromVault = false;
 		}
 

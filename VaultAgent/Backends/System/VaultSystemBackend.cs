@@ -38,7 +38,7 @@ namespace VaultAgent
 		public VaultSystemBackend(string token, VaultAPI_Http vaultAPI_Http, string name = "System") : base (name,"sys",vaultAPI_Http){
 
 			sysToken = new Token() {
-				Id = token
+				ID = token
 			};
 		}
 
