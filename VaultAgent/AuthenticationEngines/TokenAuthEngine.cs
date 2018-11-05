@@ -305,10 +305,10 @@ namespace VaultAgent.AuthenticationEngines
 
 
 		/// <summary>
-		/// Revokes the token associated with a given accessor.  Meant for purposes where there is no access to the token, but there is a need to revoke it.
+		/// Revokes the token associated with a given accessor AND all child tokens.  Meant for purposes where there is no access to the token, but there is a need to revoke it.
 		/// </summary>
-		/// <param name="AccessorID"></param>
-		/// <returns></returns>
+		/// <param name="AccessorID">The ID of the accessor token that has access to the token you wish to revoke.</param>
+		/// <returns>True if the token was revoked.  False if the token could not be found.</returns>
 		public async Task<bool> RevokeTokenViaAccessor (string AccessorID) {
 			string path = MountPointPath + "revoke-accessor";
 
@@ -317,12 +317,17 @@ namespace VaultAgent.AuthenticationEngines
 				{ "accessor",AccessorID}
 			};
 
-
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "RevokeTokenViaAccessor",contentParams);
-			if (vdro.Success) {
-				return true;
+			try {
+				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "RevokeTokenViaAccessor", contentParams);
+				if (vdro.Success) {
+					return true;
+				}
+				else { throw new VaultUnexpectedCodePathException(); }
 			}
-			else { throw new VaultUnexpectedCodePathException(); }
+			catch (VaultInvalidDataException e) {
+				if (e.Message.Contains("invalid accessor") ) { return false; }
+				throw e;
+			}
 		}
 
 		//TODO public async Task<RoleInfoObject?> GetTokenRole () /auth/token/roles/:role_name

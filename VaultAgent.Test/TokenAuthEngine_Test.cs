@@ -288,8 +288,8 @@ namespace VaultAgentTests
 
 			// We test 2 attempts. The reason is that as of Vaule 1.11 Revoke and Revoke-Orphan produce different results if the token is not found.
 			// Try to revoke an invalid token without the Orphan children set to true. 
-			Assert.True (await _tokenAuthEngine.RevokeToken(badID), "M1:  Revocation of token returned an unexpected value.  Expected false.");
-			Assert.True(await _tokenAuthEngine.RevokeToken(badID,true), "M2:  Revocation of token and orphaning children returned an unexpected value.  Expected false.");
+			Assert.True (await _tokenAuthEngine.RevokeToken(badID), "M1:  Revocation of token returned an unexpected value.  Expected True.");
+			Assert.True(await _tokenAuthEngine.RevokeToken(badID,true), "M2:  Revocation of token and orphaning children returned an unexpected value.  Expected True.");
 		}
 
 
@@ -324,6 +324,24 @@ namespace VaultAgentTests
 			Token token2 = await _tokenAuthEngine.GetTokenWithID(tokenID);
 			Assert.IsNull(token2);
 		}
+
+
+
+
+		// Validates that trying to revoke a token with an invalid accessor ID (ID does not exist) returns false.
+		[Test]
+		public async Task RevokeTokenViaAccessor_WithBadAccessor_Succeeds() {
+			string tokenID = UK.GetKey("RevNotExists");
+			string tokenName = "Name" + tokenID.ToString();
+
+
+			// Revoke and validate it is gone.
+			Assert.False(await _tokenAuthEngine.RevokeTokenViaAccessor(tokenID), "M1:  Revocation of token via invalid accessor failed.");
+		}
+
+
+
+
 
 
 		[Test]
