@@ -20,7 +20,7 @@ namespace VaultAgent
 		private string sysPath = "/v1/sys/";
 		private Uri MountPointPath;
         */
-		TokenInfo sysToken;
+		Token sysToken;
 
 		const string pathMounts = "mounts/";
 
@@ -37,8 +37,8 @@ namespace VaultAgent
 		/// </summary>
 		public VaultSystemBackend(string token, VaultAPI_Http vaultAPI_Http, string name = "System") : base (name,"sys",vaultAPI_Http){
 
-			sysToken = new TokenInfo() {
-				Id = token
+			sysToken = new Token() {
+				ID = token
 			};
 		}
 

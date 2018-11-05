@@ -17,7 +17,7 @@ namespace VaultAgent
 		private Dictionary<string, VaultAuthenticationBackend> _authenticationBackends;
 		private VaultAPI_Http _httpConnector;               // Provides HTTP Calling Methods to the backends.
 		private VaultSystemBackend _vault;                          // Connection to the Vault Instance
-
+		private TokenAuthEngine _tokenEngine;			// Connects to token backend to retrieve token information.
         
 
 		/// <summary>
@@ -32,14 +32,14 @@ namespace VaultAgent
 			IP = vaultIP;
 			Port = port;
 
-			TokenInfo tokenValue = new TokenInfo(token);
+			Token tokenValue = new Token(token);
 			Token = tokenValue;
 
 
 			// Create the Secret Backend list.
 			_secretBackends = new Dictionary<string, VaultSecretBackend>();
 
-			// Create the Authenticatore backends
+			// Create the Authentication backends Dictionary
 			_authenticationBackends = new Dictionary<string, VaultAuthenticationBackend>();
 
 			// Create HTTP Connector object
@@ -47,6 +47,9 @@ namespace VaultAgent
 
 			// Establish a connection to the backend
 			_vault = new VaultSystemBackend(token,_httpConnector);
+
+			// Establish a connection to the token backend.
+			_tokenEngine = (TokenAuthEngine) ConnectAuthenticationBackend(EnumBackendTypes.A_Token, "", "");
 		}
 
 
@@ -71,7 +74,7 @@ namespace VaultAgent
 		/// <summary>
 		/// The token to use to connect to the vault with.
 		/// </summary>
-		public TokenInfo Token { get; private set; }
+		public Token Token { get; private set; }
 
 
         /// <summary>
@@ -138,12 +141,21 @@ namespace VaultAgent
 
 
 
-
+		/// <summary>
+		/// Connects to the specified Authentication backend.
+		/// </summary>
+		/// <param name="backendType">The type of backend to connect</param>
+		/// <param name="backendName">Name of the backend</param>
+		/// <param name="backendMountPath">Mount path to the backend.</param>
+		/// <returns></returns>
 		public VaultAuthenticationBackend ConnectAuthenticationBackend (EnumBackendTypes backendType, string backendName, string backendMountPath ) {
 			switch (backendType) {
 				case EnumBackendTypes.A_AppRole:
 					AppRoleAuthEngine AppRoleAuthEngine = new AppRoleAuthEngine(backendName, backendMountPath, _httpConnector);
 					return AppRoleAuthEngine;
+				case EnumBackendTypes.A_Token:
+					TokenAuthEngine tokenAuthEngine = new TokenAuthEngine(_httpConnector);
+					return tokenAuthEngine;
 				default:
 					throw new ArgumentOutOfRangeException("Must supply a backendType that is derived from the VaultAuthenticationBackend class");
 			}
