@@ -1,7 +1,6 @@
 ﻿using NUnit.Framework;
 using VaultAgentTests;
-using VaultAgent.Backends.KV_V2;
-using VaultAgent.Backends.SecretEngines;
+using VaultAgent.SecretEngines;
 using VaultAgent.Models;
 
 namespace VaultAgent.Test
@@ -73,7 +72,7 @@ namespace VaultAgent.Test
 			string beName = _uk.GetKey("kv2");
 
 			//VaultAgentAPI vaultAgentAPI = new VaultAgentAPI("vault");
-//			vaultAgentAPI.AddBackend(new KV2Backend ()
+//			vaultAgentAPI.AddBackend(new KV2SecretEngine ()
 		}
 
 
@@ -83,8 +82,8 @@ namespace VaultAgent.Test
 		[Test]
 		public void TokenInfo_ConstructorSetsID () {
 			string id = "abcDEFZ";
-			TokenInfo tokenInfo = new TokenInfo(id);
-			Assert.AreEqual(tokenInfo.Id, id);
+			Token tokenInfo = new Token(id);
+			Assert.AreEqual(tokenInfo.ID, id);
 		}
 
 
@@ -92,7 +91,7 @@ namespace VaultAgent.Test
 		[Test]
 		public void TokenInfo_HasParentSameAsIsOrphan () {
 			string id = "abcde";
-			TokenInfo tokenInfo = new TokenInfo(id);
+			Token tokenInfo = new Token(id);
 			Assert.AreEqual(tokenInfo.HasParent, tokenInfo.IsOrphan);
 			bool value = !tokenInfo.HasParent;
 			Assert.AreNotEqual(value, tokenInfo.HasParent);

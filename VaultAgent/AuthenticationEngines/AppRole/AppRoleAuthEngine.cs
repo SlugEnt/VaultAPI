@@ -1,21 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using VaultAgent.Models;
 using Newtonsoft.Json;
-using VaultAgent.Models;
+using VaultAgent.Backends;
 
-namespace VaultAgent.Backends.AppRole
+namespace VaultAgent.AuthenticationEngines
 {
 	/// <summary>
-	/// The AppRoleBackEnd represents the Vault AppRole backend authentication engine and all the service endpoints it exposes
+	/// The AppRoleAuthEngine represents the Vault AppRole backend authentication engine and all the service endpoints it exposes
 	/// for the creation, updating, reading and deletion of AppRole's
 	/// </summary>
-	public class AppRoleBackEnd : VaultAuthenticationBackend
+	public class AppRoleAuthEngine : VaultAuthenticationBackend
 	{
 /*
-		TokenInfo backendToken;
+		Token backendToken;
 		private VaultAPI_Http _vaultHTTP;
 		string roleBEPath = "/v1/auth/";
 		Uri vaultAppRolePath;
@@ -23,21 +21,11 @@ namespace VaultAgent.Backends.AppRole
 		
 
 		/// <summary>
-		/// Constructor for AppRoleBackend
+		/// Constructor for AppRoleAuthEngine
 		/// </summary>
-		public AppRoleBackEnd ( string backendMountName, string backendMountPath, VaultAPI_Http _httpConnector) : base(backendMountName, backendMountPath, _httpConnector) {
-			Type = System.EnumBackendTypes.A_AppRole;
-			this.MountPointPrefix = "/v1/auth/";
-
-/*			_vaultHTTP = new VaultAPI_Http(vaultIP, port, Token);
-			backendToken = new TokenInfo();
-			backendToken.Id = Token;
-
-			// Mount the AppRole backend at the specified mount point.
-			roleBEPath = roleBEPath + mountPath + "/role";
-
-			vaultAppRolePath = new Uri("http://" + vaultIP + ":" + port + roleBEPath);
-*/
+		public AppRoleAuthEngine ( string backendMountName, string backendMountPath, VaultAPI_Http httpConnector) : base(backendMountName, backendMountPath, httpConnector) {
+			Type = EnumBackendTypes.A_AppRole;
+			MountPointPrefix = "/v1/auth/";
 		}
 
 
@@ -54,7 +42,7 @@ namespace VaultAgent.Backends.AppRole
 			string json = JsonConvert.SerializeObject(art);
 
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "AppRoleBackEnd: CreateRole", null, json);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "AppRoleAuthEngine: CreateRole", null, json);
 			if (vdro.Success) {
 				return true;
 			}
@@ -84,10 +72,14 @@ namespace VaultAgent.Backends.AppRole
 					List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js);
 					return keys;
 				}
-				throw new ApplicationException("AppRoleBackEnd:ListRoles -> Arrived at unexpected code block.");
+				throw new ApplicationException("AppRoleAuthEngine:ListRoles -> Arrived at unexpected code block.");
 			}
 			// 404 Errors mean there were no roles.  We just return an empty list.
-			catch (VaultInvalidPathException e) { return new List<string>(); }
+			catch (VaultInvalidPathException e)
+			{
+			    e = null;
+			    return new List<string>();
+			}
 		}
 
 
@@ -194,7 +186,7 @@ namespace VaultAgent.Backends.AppRole
 			};
 
 			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "UpdateAppRoleID", contentParams);
-			if (vdro.httpStatusCode == 204) { return true; }
+			if (vdro.HttpStatusCode == 204) { return true; }
 			else { return false; }
 		}
 

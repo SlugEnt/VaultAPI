@@ -2,30 +2,28 @@
 using VaultAgent.Backends.System;
 using System.Collections.Generic;
 using System;
-using VaultAgent.Backends.AppRole;
+using VaultAgent;
 
 namespace VaultClient
 {
     public class VaultClient_SystemBackend
     {
-		SysBackend VSB;
+        private VaultAgentAPI _vault;
+        private readonly VaultSystemBackend _vaultSystemBackend;
 
 		private string _token;
-		private string _ip;
-		private int _port;
 
 		public VaultClient_SystemBackend(string token, string ip, int port) {
-			VSB = new SysBackend(ip, port, token);
+            _vault = new VaultAgentAPI("VaultSys",ip,port,token);
 			_token = token;
-			_ip = ip;
-			_port = port;
+		    _vaultSystemBackend = _vault.System;
 
-		}
-
+        }
 
 
-		public async Task Run() {
-			// Not Working - bool rc = await VSB.SysAuditEnable("testABC");
+
+        public async Task Run() {
+			// Not Working - bool rc = await _vaultSystemBackend.SysAuditEnable("testABC");
 			//await AuthEnableExample();
 			return;
 	//		await PolicyCreateExamples();
@@ -42,7 +40,7 @@ namespace VaultClient
 
 		private async Task PolicyReadExamples () {
 			VaultPolicy vp;
-			vp = await VSB.SysPoliciesACLRead("TestingABC");
+			vp = await _vaultSystemBackend.SysPoliciesACLRead("TestingABC");
 		}
 
 
@@ -75,7 +73,7 @@ namespace VaultClient
 //			VP.PolicyPaths.Add(vpi3);
 
 
-			var rc = await VSB.SysPoliciesACLCreate(VP);
+			var rc = await _vaultSystemBackend.SysPoliciesACLCreate(VP);
 
 
 
@@ -84,7 +82,7 @@ namespace VaultClient
 
 
 		private async Task PolicyListExamples () {
-			List<string> policies = await VSB.SysPoliciesACLList();
+			List<string> policies = await _vaultSystemBackend.SysPoliciesACLList();
 
 			foreach (string policy in policies) {
 				Console.WriteLine("Policy: {0}",policy);
@@ -93,7 +91,7 @@ namespace VaultClient
 
 
 		private async Task PolicyDeleteExamples () {
-			bool rc = await VSB.SysPoliciesACLDelete("n");
+			bool rc = await _vaultSystemBackend.SysPoliciesACLDelete("n");
 		}
 	}
 }

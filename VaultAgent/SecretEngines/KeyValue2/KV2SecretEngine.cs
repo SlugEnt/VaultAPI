@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using VaultAgent.Models;
-using VaultAgent.Backends.SecretEngines.KVV2;
-using VaultAgent.Backends.KV_V2;
-using Newtonsoft.Json;
-using System.Text;
-using VaultAgent.Backends.KV_V2.KV2SecretMetaData;
-
-namespace VaultAgent.Backends.SecretEngines
+using VaultAgent.Backends;
+using VaultAgent.SecretEngines.KV2;
+using VaultAgent.SecretEngines.KV2.SecretMetaDataInfo;
+namespace VaultAgent.SecretEngines
 {
 	public static class Constants
 	{
@@ -25,7 +21,7 @@ namespace VaultAgent.Backends.SecretEngines
 	/// One of the unique things is that there are different root mounts within the given backend depending on what you want to do.  So having
 	/// a std BackEnd path does not really work with this class.  It generally builds the unique path in each member method.
 	/// </summary>
-	public class KV2Backend : VaultSecretBackend
+	public class KV2SecretEngine : VaultSecretBackend
 	{
 		// ==============================================================================================================================================
 		/// <summary>
@@ -34,8 +30,8 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <param name="backendName">The name of the secret backend to mount.  This is purely cosmetic.</param>
 		/// <param name="backendMountPoint">The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/ and exclude trailing slash.</param>
 		/// <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
-		public KV2Backend(string backendName,string backendMountPoint, VaultAPI_Http _httpConnector) : base (backendName, backendMountPoint, _httpConnector) {
-			Type = System.EnumBackendTypes.KeyValueV2;
+		public KV2SecretEngine(string backendName,string backendMountPoint, VaultAPI_Http _httpConnector) : base (backendName, backendMountPoint, _httpConnector) {
+			Type = EnumBackendTypes.KeyValueV2;
 			IsSecretBackend = true;
 		}
 
@@ -72,14 +68,14 @@ namespace VaultAgent.Backends.SecretEngines
 		/// Returns the configuration settings of the current KeyValue V2 secret store. 
 		/// </summary>
 		/// <returns>KV2BackendSettings object with the values of the current configuration.</returns>
-		public async Task<KV2BackendSettings> GetBackendConfiguration () {
+		public async Task<KV2SecretEngineSettings> GetBackendConfiguration () {
 			try {
 
 				// V2 Secret stores have a unique config path...
 				string path = MountPointPath + "config";
 
 				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "GetBackendConfiguration");
-				KV2BackendSettings settings = vdro.GetVaultTypedObject<KV2BackendSettings>();
+				KV2SecretEngineSettings settings = vdro.GetVaultTypedObject<KV2SecretEngineSettings>();
 				return settings;
 			}
 			catch (Exception e) { throw e; }
@@ -97,7 +93,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <param name="enumKVv2SaveSecretOption"></param>
 		/// <param name="currentVersion">What the current version of the secret is.  Required if the backend is in CAS mode (Default mode).</param>
 		/// <returns></returns>
-		public async Task<bool> SaveSecret (KV2Secret secret, EnumKVv2SaveSecretOptions enumKVv2SaveSecretOption, int currentVersion = 0) {
+		public async Task<bool> SaveSecret (KV2Secret secret, KV2EnumSecretSaveOptions enumKVv2SaveSecretOption, int currentVersion = 0) {
 			string path = MountPointPath + "data/" + secret.Path;
 
 
@@ -106,10 +102,10 @@ namespace VaultAgent.Backends.SecretEngines
 
 			// Set CAS depending on option coming from caller.
 			switch (enumKVv2SaveSecretOption) {
-				case EnumKVv2SaveSecretOptions.OnlyIfKeyDoesNotExist:
+				case KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist:
 					options.Add("cas", "0");
 					break;
-				case EnumKVv2SaveSecretOptions.OnlyOnExistingVersionMatch:
+				case KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch:
 					if (currentVersion != 0) {
 						options.Add("cas", currentVersion.ToString());
 					}
@@ -148,7 +144,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// </summary>
 		/// <param name="secretPath">The Name (path) to the secret you wish to read.</param>
 		/// <param name="secretVersion">The version of the secret to retrieve.  Leave at default of Zero to read most recent version.</param>
-		/// <returns>KV2Secret of the secret as read from Vault.  </returns>
+		/// <returns>KV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
 		public async Task<KV2SecretWrapper> ReadSecret (string secretPath, int secretVersion = 0) {
 			string path = MountPointPath + "data/" + secretPath;
 			try {
@@ -158,12 +154,10 @@ namespace VaultAgent.Backends.SecretEngines
 				if (vdro.Success) {
 					KV2SecretWrapper secretReadReturnObj = KV2SecretWrapper.FromJson(vdro.GetResponsePackageAsJSON());
 					return secretReadReturnObj;
-					//return secretReadReturnObj.Data.SecretObj;
 				}
 				throw new ApplicationException("SecretBackEnd: ReadSecret - Arrived at an unexpected code path.");
 			}
 			catch (VaultInvalidPathException e) { return null; }
-			catch (Exception e) { throw e; }
 		}
 
 
@@ -216,7 +210,7 @@ namespace VaultAgent.Backends.SecretEngines
 					List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js);
 					return keys;
 				}
-				throw new ApplicationException("KV2Backend:ListSecretsAtPath  Arrived at unexpected code block.");
+				throw new ApplicationException("KV2SecretEngine:ListSecretsAtPath  Arrived at unexpected code block.");
 			}
 			// 404 Errors mean there were no sub paths.  We just return an empty list.
 			catch (VaultInvalidPathException e) { return new List<string>(); }

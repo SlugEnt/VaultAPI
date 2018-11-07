@@ -5,11 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 using VaultAgent.Models;
 using Newtonsoft.Json;
+using VaultAgent.Backends;
 
 
-namespace VaultAgent.Backends.SecretEngines
+namespace VaultAgent.SecretEngines
 {
-	public class SecretBackend : VaultSecretBackend
+	public class KeyValueSecretEngine : VaultSecretBackend
 	{
 		// ==============================================================================================================================================
 		/// <summary>
@@ -18,8 +19,8 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <param name="backendName">The name of the secret backend to mount.  This is purely cosmetic.</param>
 		/// <param name="backendMountPoint">The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/ and exclude trailing slash.</param>
 		/// <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
-		public SecretBackend(string backendName, string backendMountPoint, VaultAPI_Http _httpConnector) : base(backendName, backendMountPoint, _httpConnector) {
-			Type = System.EnumBackendTypes.Secret;
+		public KeyValueSecretEngine(string backendName, string backendMountPoint, VaultAPI_Http _httpConnector) : base(backendName, backendMountPoint, _httpConnector) {
+			Type = EnumBackendTypes.Secret;
 			IsSecretBackend = true;
 		}
 
@@ -30,10 +31,10 @@ namespace VaultAgent.Backends.SecretEngines
 		/// Creates the given Secret, ONLY if there is not already a secret by this path already.  Returns NULL if secret already exists.  Returns Secret object otherwise.
 		/// </summary>
 		/// <param name="secret">Secret object to create in Vault.</param>
-		/// <returns>New Secret object if it was created in Vault, NULL if it already exists.</returns>
-		public async Task<Secret> CreateSecret(Secret secret) {
+		/// <returns>new KeyValueSecret object if it was created in Vault, NULL if it already exists.</returns>
+		public async Task<KeyValueSecret> CreateSecret(KeyValueSecret secret) {
 			// Ensure secret does not exist currently.
-			Secret exists = await ReadSecret(secret.Path);
+			KeyValueSecret exists = await ReadSecret(secret.Path);
 			if (exists != null) { return null; }
 
 			// Create it.
@@ -49,8 +50,8 @@ namespace VaultAgent.Backends.SecretEngines
 		/// </summary>
 		/// <param name="secretPath">Where to create the secret at.</param>
 		/// <returns>Secret object if it was created.  Null if it already exists.</returns>
-		public async Task<Secret> CreateSecret (string secretPath) {
-			Secret secret = new Secret(secretPath);
+		public async Task<KeyValueSecret> CreateSecret (string secretPath) {
+			KeyValueSecret secret = new KeyValueSecret(secretPath);
 			return await CreateSecret(secret);
 		}
 
@@ -63,8 +64,8 @@ namespace VaultAgent.Backends.SecretEngines
 		/// </summary>
 		/// <param name="secretPath">The name or full path of the secret.</param>
 		/// <returns>Secret object if successful.  Null otherwise</returns>
-		public async Task<Secret> CreateOrUpdateSecret (string secretPath) {
-			Secret secret = new Secret(secretPath);
+		public async Task<KeyValueSecret> CreateOrUpdateSecret (string secretPath) {
+			KeyValueSecret secret = new KeyValueSecret(secretPath);
 			return await CreateOrUpdateSecret(secret);
 		}
 
@@ -76,7 +77,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// </summary>
 		/// <param name="secret">Secret object that contains the secret path to be created.</param>
 		/// <returns>Secret object populated with the Secret info as read from the Vault.</returns>
-		public async Task<Secret> CreateOrUpdateSecret(Secret secret) {
+		public async Task<KeyValueSecret> CreateOrUpdateSecret(KeyValueSecret secret) {
 			if (await CreateOrUpdateSecretAndReturn(secret)) {
 				return (await ReadSecret(secret.Path));
 			}
@@ -91,7 +92,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <param name="secretPath">The name or full path of the secret.</param>
 		/// <returns>True if successful in creating, false otherwise.</returns>
 		public async Task<bool> CreateOrUpdateSecretAndReturn (string secretPath) {
-			Secret secret = new Secret(secretPath);
+			KeyValueSecret secret = new KeyValueSecret(secretPath);
 			return await CreateOrUpdateSecretAndReturn(secret);
 		}
 
@@ -103,7 +104,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// </summary>
 		/// <param name="secret">The Secret object with at least the secret path populated.</param>
 		/// <returns>True if successful in creating the secret in Vault, false otherwise.</returns>
-		public async Task<bool> CreateOrUpdateSecretAndReturn(Secret secret) {
+		public async Task<bool> CreateOrUpdateSecretAndReturn(KeyValueSecret secret) {
 			string path = MountPointPath + secret.Path;
 
 			// Set TTL to 4 hour if not specified explicitly
@@ -144,13 +145,13 @@ namespace VaultAgent.Backends.SecretEngines
 		/// </summary>
 		/// <param name="secretPath">The full path to the secret.  Also known as the secret's full name.</param>
 		/// <returns>Secret object populated with the secret's attributes if successful.  Null if not successful.</returns>
-		public async Task<Secret> ReadSecret (string secretPath) {
+		public async Task<KeyValueSecret> ReadSecret (string secretPath) {
 			string path = MountPointPath + secretPath;
 
 			try {
 				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ReadSecret");
 				if (vdro.Success) {
-					Secret secret = vdro.GetVaultTypedObjectFromResponse<Secret>();
+					KeyValueSecret secret = vdro.GetVaultTypedObjectFromResponse<KeyValueSecret>();
 
 					// Vault does not populate the path variable.  We need to set.
 					secret.Path = secretPath;
@@ -166,11 +167,11 @@ namespace VaultAgent.Backends.SecretEngines
 
 
 		/// <summary>
-		/// Reads the secret for the Secret passed in and returns a new Secret object.  Returns NULL if the secret was not found.
+		/// Reads the secret for the Secret passed in and returns a new KeyValueSecret object.  Returns NULL if the secret was not found.
 		/// </summary>
 		/// <param name="secret">A Secret Object with at least the secret Path specified.</param>
 		/// <returns>Secret Object as read from Vault.</returns>
-		public async Task<Secret> ReadSecret (Secret secret) {
+		public async Task<KeyValueSecret> ReadSecret (KeyValueSecret secret) {
 			return await ReadSecret(secret.Path);
 		}
 
@@ -183,7 +184,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// </summary>
 		/// <param name="secret"></param>
 		/// <returns></returns>
-		public async Task<bool> IfExists (Secret secret) {
+		public async Task<bool> IfExists (KeyValueSecret secret) {
 			return (await IfExists(secret.Path));
 		}
 
@@ -195,7 +196,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// <param name="secretPath">The name of the secret to determine if it exists.</param>
 		/// <returns>True if the secret exists.  False if it was not found.</returns>
 		public async Task<bool> IfExists (string secretPath) {
-			Secret exists = await ReadSecret(secretPath);
+			KeyValueSecret exists = await ReadSecret(secretPath);
 			if (exists != null) { return true; }
 			else { return false; }
 		}
@@ -219,7 +220,7 @@ namespace VaultAgent.Backends.SecretEngines
 					List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js);
 					return keys;
 				}
-				throw new ApplicationException("SecretBackend:ListSecrets  Arrived at unexpected code block.");
+				throw new ApplicationException("KeyValueSecretEngine:ListSecrets  Arrived at unexpected code block.");
 			}
 			// 404 Errors mean there were no sub paths.  We just return an empty list.
 			catch (VaultInvalidPathException e) { return new List<string>(); }
@@ -235,7 +236,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// </summary>
 		/// <param name="secret">Secret that you wish to use as parent to list secrets from.  Only lists immediate children of this secret.</param>
 		/// <returns>List of strings of the secret names.</returns>
-		public async Task<List<string>> ListSecrets (Secret secret) {
+		public async Task<List<string>> ListSecrets (KeyValueSecret secret) {
 			return await ListSecrets(secret.Path);
 		}
 
@@ -247,7 +248,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// </summary>
 		/// <param name="secret">Secret that should be updated.</param>
 		/// <returns>Secret Object with the updated values.</returns>
-		public async Task<Secret> UpdateSecret (Secret secret) {
+		public async Task<KeyValueSecret> UpdateSecret (KeyValueSecret secret) {
 			return await CreateOrUpdateSecret(secret);
 			throw new NotImplementedException();
 		}
@@ -262,7 +263,7 @@ namespace VaultAgent.Backends.SecretEngines
 		/// </summary>
 		/// <param name="secret">True for success.  False otherwise.</param>
 		/// <returns></returns>
-		public async Task<bool> DeleteSecret (Secret secret) {
+		public async Task<bool> DeleteSecret (KeyValueSecret secret) {
 			if ((await DeleteSecret(secret.Path))) {
 				secret.Path = "";
 				secret.Attributes.Clear();

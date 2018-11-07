@@ -1,14 +1,9 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using VaultAgent;
-using VaultAgent.Models;
-using Newtonsoft.Json;
-using VaultAgent.Backends.System;
+using VaultAgent.AuthenticationEngines;
 using VaultAgent.Backends;
-using VaultAgent.Backends.AppRole;
+
 
 namespace VaultClient
 {
@@ -39,14 +34,14 @@ namespace VaultClient
 
 			// Connect to Vault, add an authentication backend of AppRole.
 			VaultAgentAPI vaultAgent = new VaultAgentAPI("Vault", ip, port, rootToken);
-			AppRoleBackEnd ARB = (AppRoleBackEnd) vaultAgent.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, "AppRole", "approle");
+			AppRoleAuthEngine ARB = (AppRoleAuthEngine) vaultAgent.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, "AppRole", "approle");
 
 			// System Backend Examples:
 			VaultClient_SystemBackend sysBE = new VaultClient_SystemBackend(rootToken, ip, port);
 			await sysBE.Run();
 
 
-			VaultClient_AppRoleBackend roleBE = new VaultClient_AppRoleBackend(ARB);
+			VaultClient_AppRoleAuthEngine roleBE = new VaultClient_AppRoleAuthEngine(ARB);
 			await roleBE.Run();
 
 
@@ -127,7 +122,7 @@ namespace VaultClient
 
 				// Now see if we can build an object.
 				string JsonA = vdr.GetDataPackageAsJSON();
-				TokenInfo t = JsonConvert.DeserializeObject<TokenInfo>(JsonA);
+				Token t = JsonConvert.DeserializeObject<Token>(JsonA);
 				Console.WriteLine("Token is orphan? {0}", t.IsOrphan);
 				Console.WriteLine("Token has parent? {0}", t.HasParent);
 				Console.WriteLine("Token is renewable? {0}", t.IsRenewable);

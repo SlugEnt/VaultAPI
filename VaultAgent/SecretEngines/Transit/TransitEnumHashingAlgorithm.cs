@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VaultAgent.Backends.Transit
+namespace VaultAgent.Backends
 {
-	public enum EnumHashAlgorithm
+	public enum TransitEnumHashingAlgorithm
 	{
 		sha2_224 = 0,
 		sha2_256 = 1,

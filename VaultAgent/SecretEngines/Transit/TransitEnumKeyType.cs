@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace VaultAgent.Backends
 {
-	public enum EnumTransitKeyType
+	public enum TransitEnumKeyType
 	{
 		aes256 = 0,
 		chacha20 = 1,

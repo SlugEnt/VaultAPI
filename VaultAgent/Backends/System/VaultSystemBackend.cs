@@ -2,24 +2,28 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Text;
-using System.IO;
-
 using VaultAgent.Models;
 using Newtonsoft.Json;
+using VaultAgent.Backends.System;
 
-namespace VaultAgent.Backends.System
+namespace VaultAgent
 {
 
-	public class SysBackend
+    /// <summary>
+    /// This class represents core Vault System Backend object.  This object is used to control the main Vault system such as mounting and enabling
+    /// SecretEngines and AuthenticationEngines, policies, etc.
+    /// </summary>
+	public class VaultSystemBackend : VaultBackend
 	{
-		private VaultAPI_Http vaultHTTP;
+        /*
+		private VaultAPI_Http _vaultHTTP;
 		private string sysPath = "/v1/sys/";
-		private Uri vaultSysPath;
-		TokenInfo sysToken;
+		private Uri MountPointPath;
+        */
+		Token sysToken;
 
 		const string pathMounts = "mounts/";
-		const string pathEncrypt = "encrypt/";
-		const string pathDecrypt = "decrypt/";
+
 
 
 
@@ -27,18 +31,15 @@ namespace VaultAgent.Backends.System
 		// ==============================================================================================================================================
 		/// <summary>
 		/// Constructor.  Initializes the connection to Vault and stores the token.
+		/// <param name="token">Token value that has permissions to Vault.</param>
+		/// <param name="vaultAPI_Http">The Vault API Connector</param>
+		/// <param name="name">The name you wish to give the Vault System backend.  At the present time this is purely cosmetic and does nothing.</param>
 		/// </summary>
-		/// <param name="vaultIP">The IP address of the Vault Server.</param>
-		/// <param name="port">The network port the Vault server listens on.</param>
-		/// <param name="Token">The token used to authenticate with.</param>
-		public SysBackend(string vaultIP, int port, string Token) {
-			vaultHTTP = new VaultAPI_Http(vaultIP, port, Token);
-			sysToken = new TokenInfo() {
-				Id = Token
+		public VaultSystemBackend(string token, VaultAPI_Http vaultAPI_Http, string name = "System") : base (name,"sys",vaultAPI_Http){
+
+			sysToken = new Token() {
+				ID = token
 			};
-
-
-			vaultSysPath = new Uri("http://" + vaultIP + ":" + port + sysPath);
 		}
 
 
@@ -47,14 +48,10 @@ namespace VaultAgent.Backends.System
 		/// <summary>
 		/// Enables the provided Authentication backend.
 		/// </summary>
-		/// <param name="authPath">The path that the new authorization backend should be found at.  Do not provide leading or trailing slashes.</param>
-		/// <param name="description">A brief description of the authorization path.</param>
-		/// <param name="type">The type of authorization backend to create.</param>
-		/// <param name="config">AuthConfig object of optional values.  Null is valid if there are no defaults you want provided.</param>
-		/// <param name="plugin_name"></param>
-		/// <returns></returns>
+		/// <param name="am">The AuthMethod object that represents the authentication engine to enable.</param>
+		/// <returns>True if authentication engine was successfully enabled. False otherwise.</returns>
 		public async Task<bool> AuthEnable (AuthMethod am) {
-			string path = vaultSysPath + "auth/" + am.Name;
+			string path = MountPointPath + "auth/" + am.Name;
 
 			Dictionary<string, string> contentParams = new Dictionary<string, string>();
 			contentParams.Add("path", am.Path);
@@ -86,7 +83,7 @@ namespace VaultAgent.Backends.System
 
 			
 			//string json = contentJSON;
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "SysBackend:AuthEnable", null,json);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "VaultSystemBackend:AuthEnable", null,json);
 			if (vdro.Success) { return true; }
 			return false;
 		}
@@ -100,9 +97,9 @@ namespace VaultAgent.Backends.System
 		/// <param name="authName"></param>
 		/// <returns></returns>
 		public async Task<bool> AuthDisable(string authName) {
-			string path = vaultSysPath + "auth/" + authName;
+			string path = MountPointPath + "auth/" + authName;
 
-			VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "AuthDisable");
+			VaultDataResponseObject vdro = await _vaultHTTP.DeleteAsync(path, "AuthDisable");
 			if (vdro.Success) { return true; }
 			else { return false; }
 		}
@@ -121,9 +118,9 @@ namespace VaultAgent.Backends.System
 		/// </summary>
 		/// <returns>Dictionary\<string,AuthMethod> containing all Authentication Methods</string></returns>
 		public async Task<Dictionary<string,AuthMethod>> AuthListAll () {
-			string path = vaultSysPath + "auth";
+			string path = MountPointPath + "auth";
 
-			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "AuthListAll");
+			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "AuthListAll");
 			if (vdro.Success) {
 				string js = vdro.GetDataPackageAsJSON();
 				//string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "");
@@ -138,14 +135,14 @@ namespace VaultAgent.Backends.System
 
 				return methods;
 			}
-			throw new ApplicationException("SecretBackend:ListSecrets  Arrived at unexpected code block.");
+			throw new ApplicationException("KeyValueSecretEngine:ListSecrets  Arrived at unexpected code block.");
 		}
 		#endregion
 
 
 		#region SysAudit
 		 public async Task<bool> SysAuditEnable (string Name) {
-			string path = vaultSysPath + "audit/" + Name;
+			string path = MountPointPath + "audit/" + Name;
 
 			Dictionary<string, string> contentParams = new Dictionary<string, string>() {
 				{  "description", "Send to file" },
@@ -175,8 +172,8 @@ namespace VaultAgent.Backends.System
 
 
 
-			VaultDataResponseObject vdro = await vaultHTTP.PutAsync(path, "SysAuditEnable", null, bulkJSON);
-			if (vdro.httpStatusCode == 204) { return true; }
+			VaultDataResponseObject vdro = await _vaultHTTP.PutAsync(path, "SysAuditEnable", null, bulkJSON);
+			if (vdro.HttpStatusCode == 204) { return true; }
 			else { return false; }
 
 
@@ -198,7 +195,7 @@ namespace VaultAgent.Backends.System
 		/// <returns>Bool:  True if successful in creating the backend mount point.  False otherwise.</returns>
 		public async Task<bool> SysMountCreate (string mountPath, string description, EnumSecretBackendTypes backendType, VaultSysMountConfig config = null) {
 			// The keyname forms the last part of the path
-			string path = vaultSysPath + pathMounts +  mountPath;
+			string path = MountPointPath + pathMounts +  mountPath;
 
 
 			// Build out the parameters dictionary.
@@ -247,8 +244,8 @@ namespace VaultAgent.Backends.System
 			}
 
 
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync2(path, "SysMountEnable", createParams);
-			if (vdro.httpStatusCode == 204) { return true; }
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync2(path, "SysMountEnable", createParams);
+			if (vdro.HttpStatusCode == 204) { return true; }
 			else { return false; }
 		}
 
@@ -257,7 +254,7 @@ namespace VaultAgent.Backends.System
 
 		public List<string> SysMountListSecretEngines () {
 			// Build Path
-			string path = vaultSysPath + pathMounts;
+			string path = MountPointPath + pathMounts;
 
 			throw new NotImplementedException("SysMountListSecretEngines Not implemented Yet");
 		}
@@ -270,9 +267,9 @@ namespace VaultAgent.Backends.System
 		/// <param name="Name">Name of the mount to delete.</param>
 		/// <returns>True if successful.  False otherwise.</returns>
 		public async Task<bool> SysMountDelete(string name) {
-			string path = vaultSysPath + pathMounts + name;
+			string path = MountPointPath + pathMounts + name;
 
-			VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "SysMountDelete");
+			VaultDataResponseObject vdro = await _vaultHTTP.DeleteAsync(path, "SysMountDelete");
 			if (vdro.Success) { return true; }
 			return false;
 		}
@@ -287,9 +284,9 @@ namespace VaultAgent.Backends.System
 		/// <returns><see cref="VaultSysMountConfig"/>VaultSysMountConfig object containing the configuration settings.</returns>
 		public async Task<VaultSysMountConfig> SysMountReadConfig (string mountPath) {
 			// Build Path
-			string path = vaultSysPath + pathMounts + mountPath + "/tune";
+			string path = MountPointPath + pathMounts + mountPath + "/tune";
 
-			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "SysMountReadConfig");
+			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "SysMountReadConfig");
 			if (vdro.Success) {
 				VaultSysMountConfig config = vdro.GetVaultTypedObject<VaultSysMountConfig>();
 				return config;
@@ -309,7 +306,7 @@ namespace VaultAgent.Backends.System
 		/// <param name="description">If set, the description will be updated.  </param>
 		/// <returns>True if successfull.  False otherwise.</returns>
 		public async Task<bool> SysMountUpdateConfig(string Name, VaultSysMountConfig config, string description = null) {
-			string path = vaultSysPath + pathMounts + Name + "/tune";
+			string path = MountPointPath + pathMounts + Name + "/tune";
 
 			Dictionary<string, string> content = new Dictionary<string, string> {
 				{ "default_lease_ttl", config.DefaultLeaseTTL },
@@ -324,9 +321,9 @@ namespace VaultAgent.Backends.System
 
 			if (description != null ) { content.Add("description", description); }
 
-			VaultDataResponseObject vdro = await vaultHTTP.PostAsync(path, "SysMountUpdateConfig", content);
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "SysMountUpdateConfig", content);
 
-			if (vdro.httpStatusCode == 204) { return true; }
+			if (vdro.HttpStatusCode == 204) { return true; }
 			else { return false; }
 
 		}
@@ -342,13 +339,13 @@ namespace VaultAgent.Backends.System
 		/// <returns>List[string] of all ACL policies by name.</returns>
 		public async Task<List<string>> SysPoliciesACLList() {
 			// Build Path
-			string path = vaultSysPath + "policies/acl";
+			string path = MountPointPath + "policies/acl";
 
 			// Setup List Parameters
 			Dictionary<string, string> sendParams = new Dictionary<string, string>();
 			sendParams.Add("list", "true");
 
-			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "SysPoliciesACLList", sendParams);
+			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "SysPoliciesACLList", sendParams);
 
 			string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
 
@@ -360,11 +357,11 @@ namespace VaultAgent.Backends.System
 
 		public async Task<bool> SysPoliciesACLDelete (string policyName) {
 			// Build Path
-			string path = vaultSysPath + "policies/acl/" + policyName;
+			string path = MountPointPath + "policies/acl/" + policyName;
 
 
 			try {
-				VaultDataResponseObject vdro = await vaultHTTP.DeleteAsync(path, "SysPoliciesACLDelete");
+				VaultDataResponseObject vdro = await _vaultHTTP.DeleteAsync(path, "SysPoliciesACLDelete");
 				if (vdro.Success) { return true; }
 				else { return false; }
 			}
@@ -414,7 +411,7 @@ namespace VaultAgent.Backends.System
 
 		public async Task<bool> SysPoliciesACLCreate(VaultPolicy policyItem) {
 			// Build Path
-			string path = vaultSysPath + "policies/acl/" + policyItem.Name;
+			string path = MountPointPath + "policies/acl/" + policyItem.Name;
 
 			int count = policyItem.PolicyPaths.Count;
 
@@ -440,7 +437,7 @@ namespace VaultAgent.Backends.System
 
 			string json = jsonSB.ToString();
 
-			VaultDataResponseObject vdro = await vaultHTTP.PutAsync(path, "SysPoliciesACLCreate", null, json);
+			VaultDataResponseObject vdro = await _vaultHTTP.PutAsync(path, "SysPoliciesACLCreate", null, json);
 			if (vdro.Success) {
 				return true;
 			}
@@ -470,10 +467,10 @@ namespace VaultAgent.Backends.System
 		/// <returns>A VaultPolicy object with the values read from Vault.</returns>
 		public async Task<VaultPolicy> SysPoliciesACLRead(string policyName) {
 			// Build Path
-			string path = vaultSysPath + "policies/acl/" + policyName;
+			string path = MountPointPath + "policies/acl/" + policyName;
 
 
-			VaultDataResponseObject vdro = await vaultHTTP.GetAsync(path, "SysPoliciesACLRead");
+			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "SysPoliciesACLRead");
 			vdro.GetDataPackageAsDictionary();
 
 
