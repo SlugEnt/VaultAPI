@@ -6,6 +6,7 @@ using VaultAgent;
 using VaultAgent.AuthenticationEngines;
 using VaultAgent.Models;
 using CommonFunctions;
+using System.Collections.Generic;
 
 namespace VaultAgentTests
 {
@@ -383,6 +384,126 @@ namespace VaultAgentTests
 			// Revoke and validate it is gone.
 			Assert.True(await _tokenAuthEngine.RevokeToken(tokenID,true), "M2:  Revocation of token failed.");
 
+		}
+
+
+
+		// Validate we can create a token role.
+		[Test]
+		public async Task CreateTokenRole_Simple_Success () {
+			string roleID = UK.GetKey("TokRole");
+
+			TokenRole tokenRole = new TokenRole();
+
+			tokenRole.Name = roleID;
+
+			Assert.True(await _tokenAuthEngine.SaveTokenRole(tokenRole),"M1:  Creation of TokenRole in Vault failed.");
+		}
+
+
+
+		// Validate we can create a token role With Policies that do not exist yet.
+		[Test]
+		public async Task CreateTokenRole_WithNonExistentPolicies_Success() {
+			string roleID = UK.GetKey("TokRole");
+
+			TokenRole tokenRole = new TokenRole(roleID);
+			tokenRole.AllowedPolicies.Add("Pol1");
+			tokenRole.AllowedPolicies.Add("Pol2");
+
+			tokenRole.DisallowedPolicies.Add("DisPol1");
+			tokenRole.DisallowedPolicies.Add("DisPol2");
+
+			Assert.True(await _tokenAuthEngine.SaveTokenRole(tokenRole), "M1:  Creation of TokenRole in Vault failed.");
+
+		}
+
+
+
+		// Validate we can create a token role With Policies that do not exist yet.
+		[Test]
+		public async Task CreateTokenRole_WithMinimalFieldsSet_Success() {
+			string roleID = UK.GetKey("TokRole");
+
+			TokenRole tokenRole = new TokenRole(roleID);
+
+			Assert.True(await _tokenAuthEngine.SaveTokenRole(tokenRole), "M1:  Creation of TokenRole in Vault failed.");
+
+			// Now read the token role...
+			TokenRole role2 = await _tokenAuthEngine.GetTokenRole(roleID);
+
+			// Validate The token Role and its properties.
+			Assert.AreEqual(roleID, role2.Name,"M2:  RoleToken Name does not match expected value.");
+			Assert.IsNotNull(role2.AllowedPolicies);
+			Assert.AreEqual(0, role2.AllowedPolicies.Count);
+
+			// Disallowed Policies
+			Assert.IsNotNull(role2.DisallowedPolicies);
+			Assert.AreEqual(0, role2.DisallowedPolicies.Count);
+
+			Assert.IsNotNull(role2.BoundCidrs);
+			Assert.AreEqual(0, role2.BoundCidrs);
+		}
+
+
+
+		// Validates that we can retrieve a list of all token roles.
+		[Test]
+		public async Task ListTokenRoles_Success() {
+			string roleID = UK.GetKey("TokRole");
+
+			TokenRole tokenRole = new TokenRole(roleID);
+			Assert.True(await _tokenAuthEngine.SaveTokenRole(tokenRole), "M1:  Creation of TokenRole in Vault failed.");
+
+			string roleID2 = UK.GetKey("TokRole");
+
+			TokenRole tokenRole2 = new TokenRole(roleID2);
+			Assert.True(await _tokenAuthEngine.SaveTokenRole(tokenRole2), "M2:  Creation of TokenRole in Vault failed.");
+
+			List<string> roles = await _tokenAuthEngine.ListTokenRoles();
+			Assert.GreaterOrEqual(roles.Count, 2);
+		}
+
+
+
+		// Validates that we can delete a role.
+		[Test]
+		public async Task DeleteValidTokenRole_Success () {
+			string roleID = UK.GetKey("DelRole");
+			TokenRole tokenRole = new TokenRole(roleID);
+			Assert.True(await _tokenAuthEngine.SaveTokenRole(tokenRole), "M1:  Creation of TokenRole in Vault Failed.");
+
+			// Validate token exists.
+			TokenRole tokenRole2 = await _tokenAuthEngine.GetTokenRole(roleID);
+			Assert.IsNotNull(tokenRole2, "M2:  Retrieval of token role failed.  Expected it to exist.");
+
+			// Delete and validate
+			Assert.IsTrue(await _tokenAuthEngine.DeleteTokenRole(roleID),"Deletion of token role failed.");
+			TokenRole tokenRole3 = await _tokenAuthEngine.GetTokenRole(roleID);
+			Assert.IsNull(tokenRole3, "M3:  Retrieval of token role was successful.  Expected it to be null if deletion had been successful.");
+		}
+
+
+		// Deleting a tokenRole that does not exist still returns success.
+		[Test]
+		public async Task DeleteInvalidTokenRole_Success () {
+			string roleID = UK.GetKey("DelRole");
+			TokenRole tokenRole = new TokenRole(roleID);
+
+			Assert.IsTrue(await _tokenAuthEngine.DeleteTokenRole(roleID), "Deletion of token role failed.");
+		}
+
+
+
+		// Validates that We can retrieve a list of token Accessors.
+		[Test]
+		public async Task ListTokenAccessors_Success () {
+			string roleID = UK.GetKey("ListAcc");
+			TokenRole tokenRole = new TokenRole(roleID);
+			Assert.True(await _tokenAuthEngine.SaveTokenRole(tokenRole), "M1:  Creation of TokenRole in Vault Failed.");
+
+			List<string> Accessors = await _tokenAuthEngine.ListTokenAccessors();
+			Assert.GreaterOrEqual(1, Accessors.Count);
 		}
 	}
 }

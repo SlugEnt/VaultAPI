@@ -21,7 +21,22 @@ namespace VaultAgent.AuthenticationEngines
 
 
 
-		//TODO public async Task<List<string>> ListTokenAccessors () /auth/token/accessors
+
+		/// <summary>
+		/// Returns all Token Accessors in the Vault database.  
+		/// </summary>
+		/// <returns>List<string>> of all token accessors.</string></returns>
+		public async Task<List<string>> ListTokenAccessors () {
+			string path = MountPointPath + "accessors?list=true";
+
+			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ListTokenAccessors");
+			if (vdro.Success) {
+				string js = vdro.GetDataPackageFieldAsJSON("keys");
+				List<string> tokenAccessors = VaultUtilityFX.ConvertJSON<List<string>>(js);
+				return tokenAccessors;
+			}
+			return null;
+		}
 
 
 		/// <summary>
@@ -197,25 +212,12 @@ namespace VaultAgent.AuthenticationEngines
 			}
 
 
-//			try {
-				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "RenewToken", contentParams);
-				if (vdro.Success) {
-					//string js = vdro.GetResponsePackageFieldAsJSON("auth");
-					//string js = vdro.GetResponsePackageAsJSON();
-					//string js = vdro.GetDataPackageAsJSON();
-					return true;
-				}
-				else { throw new VaultUnexpectedCodePathException(); }
-/*
- *}
+			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "RenewToken", contentParams);
+			if (vdro.Success) {
 
-			// If Vault is telling us it is a bad token, then return null.
-			catch (VaultForbiddenException e) {
-				if (e.Message.Contains("bad token")) { return null; }
-				else { throw e; }
+				return true;
 			}
-
-*/
+			else { throw new VaultUnexpectedCodePathException(); }
 		}
 
 
@@ -330,14 +332,89 @@ namespace VaultAgent.AuthenticationEngines
 			}
 		}
 
-		//TODO public async Task<RoleInfoObject?> GetTokenRole () /auth/token/roles/:role_name
 
-		//TODO public async Task<List<string>> ListTokenRoles () /auth/token/roles
 
-		//TODO public async Task<bool> SaveTokenRole () /auth/token/roles/:role_name
+		/// <summary>
+		/// Creates / Saves a token role.  
+		/// </summary>
+		/// <param name="tokenRole">The TokenRole object that contains the Token Role to be created / updated.</param>
+		/// <returns>True if token Role was successfully created.</returns>
+		public async Task<bool> SaveTokenRole (TokenRole tokenRole) {
+			string path = MountPointPath + "roles/" + tokenRole.Name;
+			string json = JsonConvert.SerializeObject(tokenRole, Formatting.None);
 
-		//Todo public async Task<bool> DeleteTokenRole () /auth/token/roles/:role_name
+			try {
+				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "SaveTokenRole",null,json);
+				if (vdro.Success) {
+					return true;
+				}
+				else { throw new VaultUnexpectedCodePathException(); }
+			}
+			catch (VaultInvalidDataException e) {
+				if (e.Message.Contains("invalid accessor")) { return false; }
+				throw e;
+			}
 
+		}
+
+
+
+		/// <summary>
+		/// Retrieves a TokenRole object from Vault with the specified name.
+		/// </summary>
+		/// <param name="tokenRoleName">Name of the tokenRole to retrieve.</param>
+		/// <returns>TokenRole object requested if valid name provided.</returns>
+		public async Task<TokenRole> GetTokenRole (string tokenRoleName) {
+			string path = MountPointPath + "roles/" + tokenRoleName;
+
+			try {
+				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "GetTokenRole");
+				if (vdro.Success) {			
+					string js = vdro.GetDataPackageAsJSON();
+					TokenRole tokenRole = VaultUtilityFX.ConvertJSON<TokenRole>(js);
+					return tokenRole;
+				}
+				else { throw new VaultUnexpectedCodePathException(); }
+			}
+
+			// If Vault could not find the tokenRole then return null.
+			catch (VaultInvalidPathException e) {
+				return null;
+			}
+		}
+
+
+
+		public async Task<List<string>> ListTokenRoles () {
+			string path = MountPointPath + "roles?list=true";
+
+			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ListTokenRoles");
+			if (vdro.Success) {
+				string js = vdro.GetDataPackageFieldAsJSON("keys");
+				List<string> tokenRoles = VaultUtilityFX.ConvertJSON<List<string>>(js);
+				return tokenRoles;
+			}
+			return null;
+		}
+
+
+
+		/// <summary>
+		/// Deletes the specified tokenRoleName
+		/// </summary>
+		/// <param name="tokenRoleName">Token Role to be deleted. </param>
+		/// <returns>True if token role has been deleted.</returns>
+		public async Task<bool> DeleteTokenRole (string tokenRoleName) {
+			string path = MountPointPath + "roles/" + tokenRoleName;
+
+			VaultDataResponseObject vdro = await _vaultHTTP.DeleteAsync(path, "DeleteTokenRole");
+			if (vdro.Success) {	return true; }
+			else { return false; }
+		}
+		
+
+
+		// No need to implement at this time.
 		//TODO public async Task<bool> TidyMaintenance () /auth/token/tidy
 
 
