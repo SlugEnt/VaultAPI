@@ -66,14 +66,9 @@ namespace VaultAgentTests
 		//[Test, Order(50)]
         [Test]
 		public async Task Transit_CanEnableTransitBackend () {
-			// Utilize System Backend to mount a new Transit Engine at transit_B
-//			VaultSystemBackend newBE = new VaultSystemBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
-//			VaultSystemBackend oldBE = new VaultSystemBackend(VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
-
 			// Generate a hopefully small unique name.
-
-		    string beName = _uniqueKeys.GetKey("TranBEN"); //"transit" + Guid.NewGuid().ToString().Substring(0, 6);
-			string oldName = _uniqueKeys.GetKey("TranBEO"); //"tr455" + Guid.NewGuid().ToString().Substring(0, 6);
+		    string beName = _uniqueKeys.GetKey("TranBEN"); 
+			string oldName = _uniqueKeys.GetKey("TranBEO"); 
             Assert.True(await _vaultSystemBackend.SysMountCreate(beName, "transit test backend", EnumSecretBackendTypes.Transit));
 			Assert.True(await _vaultSystemBackend.SysMountCreate(oldName, "transit test backend", EnumSecretBackendTypes.Transit));
 		}
@@ -541,6 +536,20 @@ namespace VaultAgentTests
 			Assert.NotNull(latestMethods);
 			Assert.That(latestMethods, !Contains.Key(path));
 		}
+		#endregion
+
+
+		#region "AuditTests"
+		[Test]
+		public async Task CanEnableAndDisableAuditing () {
+			string name = _uniqueKeys.GetKey("audit");
+			string path = @"C:\temp\" + DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss_audit.log");
+
+			Assert.True(await _vaultSystemBackend.AuditEnableFileDevice(name, path),"M1: Unable to enable audit device");
+
+			Assert.True(await _vaultSystemBackend.AuditDisable(name), "M2: Unable to delete the audit device");
+		}
+
 		#endregion
 	}
 

@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System;
+using NUnit.Framework;
 using System.Threading.Tasks;
 using VaultAgent.Backends.System;
 using VaultAgent.Backends;
@@ -54,7 +55,7 @@ namespace VaultAgent.Test
 
 		// Validates that Creation Time in Seconds results in correct DateTime.
 		[Test]
-		public void TokenCreationTimes_AreCorrect () {
+		public void TokenCreationConvertsToDateTime_Correctly () {
 			int seconds = 59;
 
 			string t_id = "5kgvkg";
@@ -69,5 +70,8 @@ namespace VaultAgent.Test
 
 			Assert.AreEqual(dateAD, b.CreationTime_AsDateTime,"Creation Times are not the same");
 		}
+
+
+
 	}
 }

@@ -82,6 +82,7 @@ namespace VaultAgentTests
 				VSI = new VaultServerInstance();
 				VSI.StartVaultServer();
 			}
+
 		}
 
 
