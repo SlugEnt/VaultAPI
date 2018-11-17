@@ -15,11 +15,6 @@ namespace VaultAgent
     /// </summary>
 	public class VaultSystemBackend : VaultBackend
 	{
-        /*
-		private VaultAPI_Http _vaultHTTP;
-		private string sysPath = "/v1/sys/";
-		private Uri MountPointPath;
-        */
 		Token sysToken;
 
 		const string pathMounts = "mounts/";
@@ -141,19 +136,27 @@ namespace VaultAgent
 
 
 		#region SysAudit
-		 public async Task<bool> SysAuditEnable (string Name) {
-			string path = MountPointPath + "audit/" + Name;
+
+		/// <summary>
+		/// Creates a new audit device with the specified name.
+		/// </summary>
+		/// <param name="auditDeviceName">A name to be given to the audit device</param>
+		/// <param name="filePath">A full path and filename specification of where the audit entries should be written.</param>
+		/// <param name="description">A description of the audit device.</param>
+		/// <returns>True if successfully created.</returns>
+		 public async Task<bool> AuditEnableFileDevice (string auditorName, string filePath, string description = "Audit to file") {
+			string path = MountPointPath + "audit/" + auditorName;
 
 			Dictionary<string, string> contentParams = new Dictionary<string, string>() {
-				{  "description", "Send to file" },
+				{  "description", description },
 				{ "type", "file" }
-
 			};
 
 
 			string inputVarsJSON = JsonConvert.SerializeObject(contentParams, Formatting.None);
 			Dictionary<string, string> optionsList = new Dictionary<string, string>() {
-				{ "path",@"c:\temp\avault.log" }
+				//{ "path",@"c:\temp\avault.log" }
+				{"path", filePath }
 			};
 
 			// Build entire JSON Body:  Input Params + Bulk Items List.
@@ -170,14 +173,24 @@ namespace VaultAgent
 			}
 
 
-
-
-			VaultDataResponseObject vdro = await _vaultHTTP.PutAsync(path, "SysAuditEnable", null, bulkJSON);
+			VaultDataResponseObject vdro = await _vaultHTTP.PutAsync(path, "SysAuditEnableFileDevice", null, bulkJSON);
 			if (vdro.HttpStatusCode == 204) { return true; }
 			else { return false; }
+		}
 
 
 
+		/// <summary>
+		/// Disables (deletes? Not Sure) the specified audit device
+		/// </summary>
+		/// <param name="auditDeviceName">Name of the Audit device to delete.</param>
+		/// <returns>True if audit device successfully deleted.  False otherwise.</returns>
+		public async Task<bool> AuditDisable (string auditDeviceName) {
+			string path = MountPointPath + "audit/" + auditDeviceName;
+
+			VaultDataResponseObject vdro = await _vaultHTTP.DeleteAsync(path, "SysAuditDisable");
+			if (vdro.Success) { return true; }
+			else { return false; }
 		}
 		#endregion
 

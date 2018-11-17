@@ -7,7 +7,12 @@ namespace VaultAgent.Models
     public class TokenRole
     {
 		[JsonConstructor()]
-		public TokenRole () { }
+		public TokenRole () {			
+			// This is required for now as Vault has not implemented the BoundCIDRS functionality yet, so it comes back null.  This 
+			// prevents errors until it does.
+			BoundCidrs = new List<string>();
+		}
+
 
 		/// <summary>
 		/// Constructor for non-JSON

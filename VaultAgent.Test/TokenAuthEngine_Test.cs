@@ -15,7 +15,6 @@ namespace VaultAgentTests
 	class TokenAuthEngine_Test
 	{
 		private VaultAgentAPI vault;
-		private VaultSystemBackend VSB;
 		private UniqueKeys UK = new UniqueKeys();       // Unique Key generator
 		private TokenAuthEngine _tokenAuthEngine;
 
@@ -25,6 +24,9 @@ namespace VaultAgentTests
 		public void TokenEngineSetup() {
 			// Build Connection to Vault.
 			vault = new VaultAgentAPI("TokenEngineVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+
+			// How to turn on logging.
+			//vault.System.AuditEnableFileDevice("VaultLog", "C:/temp/vault.log");
 
 			_tokenAuthEngine = (TokenAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_Token, "", "");
 		}
@@ -228,7 +230,6 @@ namespace VaultAgentTests
 				Name = tokenName,
 				NumberOfUses = numUses,
 				Renewable = true,
-//				RenewalPeriod = "1800",
 				MaxTTL = "86400"
 			};
 
@@ -247,13 +248,15 @@ namespace VaultAgentTests
 
 
 			// Renew token
-			TimeUnit tu = new TimeUnit("12h");
-			bool result = await _tokenAuthEngine.RenewToken (token.ID,tu);
+			TimeUnit timeUnit12Hrs = new TimeUnit("12h");
+			bool result = await _tokenAuthEngine.RenewToken (token.ID, timeUnit12Hrs);
 			Assert.IsTrue(result, "M5:  Token was unable to be renewed successfully.");
 
 			// Retrieve token and validate lease time.
 			Token token2 = await _tokenAuthEngine.GetTokenWithID(tokenID);
-			Assert.AreEqual(43200, token2.TTL,"M6:  Token lease was not set to expected value.");
+			// Token should be very close to 12 hrs.  
+			Assert.LessOrEqual(token2.TTL,43200,"M6:  Token lease was not set to expected value.");
+			Assert.GreaterOrEqual(token2.TTL, 43190, "M7: Token lease was not close to 12hours.");
 		}
 
 
@@ -433,16 +436,17 @@ namespace VaultAgentTests
 			TokenRole role2 = await _tokenAuthEngine.GetTokenRole(roleID);
 
 			// Validate The token Role and its properties.
-			Assert.AreEqual(roleID, role2.Name,"M2:  RoleToken Name does not match expected value.");
-			Assert.IsNotNull(role2.AllowedPolicies);
-			Assert.AreEqual(0, role2.AllowedPolicies.Count);
+			Assert.AreEqual(roleID, role2.Name,"M2:  RoleToken Name does not match expected value. TokeRole={0}",roleID);
+			Assert.IsNotNull(role2.AllowedPolicies, "M3:  Allowed Policies seems to be null.  Expected no value.  TokeRole={0}", roleID);
+			Assert.AreEqual(0, role2.AllowedPolicies.Count, "M4:  Allowed policies count was expected to be zero, but was something else.   TokeRole={0}", roleID);
 
 			// Disallowed Policies
-			Assert.IsNotNull(role2.DisallowedPolicies);
-			Assert.AreEqual(0, role2.DisallowedPolicies.Count);
+			Assert.IsNotNull(role2.DisallowedPolicies, "M10:  Disallowed Policies seems to be null.  Expected No value. TokeRole={0}", roleID);
+			Assert.AreEqual(0, role2.DisallowedPolicies.Count, "M11:  DisallowedPolicies count is not correct. TokeRole={0}", roleID);
 
-			Assert.IsNotNull(role2.BoundCidrs);
-			Assert.AreEqual(0, role2.BoundCidrs);
+			Assert.IsNotNull(role2.BoundCidrs, "M20:  BoundCidrs seems to be null, Expected no value. TokeRole={0}", roleID);
+			Assert.AreEqual(0, role2.BoundCidrs.Count, "M21:  BoundCidrs count is not correct.  Expected zero. TokeRole={0}", roleID);
+
 		}
 
 
@@ -503,7 +507,7 @@ namespace VaultAgentTests
 			Assert.True(await _tokenAuthEngine.SaveTokenRole(tokenRole), "M1:  Creation of TokenRole in Vault Failed.");
 
 			List<string> Accessors = await _tokenAuthEngine.ListTokenAccessors();
-			Assert.GreaterOrEqual(1, Accessors.Count);
+			Assert.GreaterOrEqual(Accessors.Count,1);
 		}
 	}
 }

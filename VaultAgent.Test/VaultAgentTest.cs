@@ -2,13 +2,16 @@
 using VaultAgentTests;
 using VaultAgent.SecretEngines;
 using VaultAgent.Models;
+using VaultAgent;
 
-namespace VaultAgent.Test
+namespace VaultAgentTests
 {
+	[TestFixture]
 	[Parallelizable]
 	class VaultAgentTest {
-
+		private VaultAgentAPI vault;
 		private UniqueKeys _uk;
+		private string name;
 
 		/// <summary>
 		/// One Time Setup - Run once per a single Test run exection.
@@ -17,6 +20,9 @@ namespace VaultAgent.Test
 		[OneTimeSetUp]
 		public void VaultAgentTest_OneTimeSetup() {
 			_uk = new UniqueKeys();
+			name = _uk.GetKey("vlt");
+			vault = new VaultAgentAPI(name, VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+			
 		}
 
 
@@ -28,52 +34,13 @@ namespace VaultAgent.Test
 
 
 		[Test]
-		public void ValidateNameAndMountPointNameonBackends() {
-/*			BETest b = new Test.BETest();
-			Assert.AreEqual("test", b.Name);
-			Assert.AreEqual("testmount", b.MountPoint);
-*/
-		}
-
-
-		[Test]
 		public void ValidateVaultInstanceBaseSettings () {
-			throw new System.NotImplementedException("Needs to be fully implemented.");
-/*
-			string name = "testa";
-			string IP = "localhost";
-			int port = 56000;
 			//VaultAgentAPI a = new VaultAgentAPI(name,IP,port);
-			Assert.AreEqual(name, a.Name);
-			Assert.AreEqual(IP, a.IP);
-			Assert.AreEqual(port, a.Port);
-*/
+			Assert.AreEqual(name, vault.Name);
+			Assert.AreEqual(VaultServerRef.ipAddress, vault.IP);
+			Assert.AreEqual(VaultServerRef.ipPort, vault.Port);			
 		}
 
-
-		// Confirms we can succesfully create the VaultAgentAPI object.
-		[Test]
-		public void CanCreateVaultAPIObject () {
-			throw new System.NotImplementedException("Needs to be fully implemented.");
-/*
-			string vault = _uk.GetKey("vault");
-			string ip = "10.20.60.2";
-			int port = 12000;
-			//VaultAgentAPI api = new VaultAgentAPI(vault, ip,port);
-			Assert.AreEqual(vault, api.Name);
-			Assert.AreEqual(ip, api.IP);
-			Assert.AreEqual(port, api.Port);
-*/
-		}
-
-
-		[Test]
-		public void CreateKV2Backend () {
-			string beName = _uk.GetKey("kv2");
-
-			//VaultAgentAPI vaultAgentAPI = new VaultAgentAPI("vault");
-//			vaultAgentAPI.AddBackend(new KV2SecretEngine ()
-		}
 
 
 
@@ -92,14 +59,13 @@ namespace VaultAgent.Test
 		public void TokenInfo_HasParentSameAsIsOrphan () {
 			string id = "abcde";
 			Token tokenInfo = new Token(id);
-			Assert.AreEqual(tokenInfo.HasParent, tokenInfo.IsOrphan);
-			bool value = !tokenInfo.HasParent;
-			Assert.AreNotEqual(value, tokenInfo.HasParent);
+			Assert.AreNotEqual(tokenInfo.HasParent, tokenInfo.IsOrphan,"M1: IsOrphan and HasParent cannot both be the same value.");
 
-			tokenInfo.IsOrphan = value;
-			Assert.AreEqual(tokenInfo.HasParent, tokenInfo.IsOrphan);
-			Assert.AreEqual(value, tokenInfo.HasParent);
-
+			// Now change one, the other value should also change.
+			bool oldHasParent = tokenInfo.HasParent;
+			tokenInfo.IsOrphan = !tokenInfo.IsOrphan;
+			Assert.AreNotEqual(oldHasParent, tokenInfo.HasParent,"M2: HasParent property should have changed values when the IsOrphan property was changed.");
+			Assert.AreNotEqual(tokenInfo.HasParent, tokenInfo.IsOrphan, "M3: IsOrphan and HasParent cannot both be the same value.");
 		}
 		#endregion
 
