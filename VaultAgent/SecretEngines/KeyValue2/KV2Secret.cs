@@ -25,12 +25,13 @@ namespace VaultAgent.SecretEngines.KV2
 			Attributes = new Dictionary<string, string>();
 		}
 
-//TODO Need to split namePath into Name and Path attributes.  Makes more sense and easier to use.
+
 
 		/// <summary>
 		/// Creates a new secret with the specified Name (Path)
 		/// </summary>
-		/// <param name="namePath">The secret's name or more precisely in Vault terms the path of the secret.</param>
+		/// <param name="secretName">The name of the secret.</param>
+		/// <param name="path">The path to the secret to be stored.  apps/appA/config   apps/appA is the path.</param>
 		public KV2Secret(string secretName, string path = "") {
 		    Name = secretName;
 		    Path = path;
