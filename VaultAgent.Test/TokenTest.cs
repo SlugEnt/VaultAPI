@@ -9,7 +9,8 @@ using VaultAgent.Models;
 
 namespace VaultAgent.Test
 {
-	// Validates the token object
+	// Validates the token object - Note, this only performs local Token actions, this does not test the ability of the Vault API commands to read a token from Vault
+    // and make sure the proper fields are filled out.  That testing will be in the TokenAuthEngine_Test class.
 	[Parallelizable]
 	[TestFixture]
     public class TokenTest

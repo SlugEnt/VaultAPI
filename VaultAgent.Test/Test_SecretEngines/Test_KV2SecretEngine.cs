@@ -36,7 +36,7 @@ namespace VaultAgentTests
 			}
 
 			// Build Connection to Vault.
-			_vaultAgentAPI = new VaultAgentAPI("testa", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+			_vaultAgentAPI = new VaultAgentAPI("testa", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
 
 
 			// We will create 3 KV2 mounts in the Vault instance.  One for testing with CAS on, one with CAS off, and then a generic default (CAS off).	
@@ -864,7 +864,6 @@ namespace VaultAgentTests
 			KV2SecretMetaDataInfo k1 = await _casMount.GetSecretMetaData(s3.Secret.Path);
 			Assert.NotNull(k1,"A8:  Unable to retrieve Secret MetaData");
 			Assert.AreEqual(3, k1.Versions.Count,"A9:  Expected 3 versions to be retrieved.");
-
 		}
 
 

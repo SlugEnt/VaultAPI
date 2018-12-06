@@ -17,6 +17,7 @@ namespace VaultAgent.AuthenticationEngines
 	{
 		private string _name;
 		private bool _enableLocalSecretIDs = false;
+		private string _roleID = "";						// This property is never returned by Vault Instance, it must be manually updated.
 
 
 	    /// <summary>
@@ -28,10 +29,12 @@ namespace VaultAgent.AuthenticationEngines
 	        IsSecretIDRequiredOnLogin = true;
 	        NumberOfUses = 0;
 	        SecretNumberOfUses = 0;
+
+			Policies = new List<string>();
 	    }
 
 	    /// <summary>
-		/// Creates an empty Vault AppRole object
+		/// Creates an empty Vault AppRole object.  This should only be used by internal routines.  Callers should use the one with the name parameter.
 		/// </summary>
 		[JsonConstructor]
 		public AppRole () { }
@@ -148,5 +151,15 @@ namespace VaultAgent.AuthenticationEngines
 				}
 		}
 
+
+
+		/// <summary>
+		/// This property is never returned by Vault directly.  We have added this property value as it is useful within some apps to have the RoleID available with the rest
+		/// of its contents vs storing in a separate variable somewhere.  But it is up to the calling apps to ensure they set this property correctly.
+		/// </summary>
+		public string RoleID {
+			get { return _roleID; }
+			set { _roleID = value; }
+		}
 	}
 }

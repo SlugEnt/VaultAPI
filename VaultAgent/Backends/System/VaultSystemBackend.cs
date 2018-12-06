@@ -30,7 +30,7 @@ namespace VaultAgent
 		/// <param name="vaultAPI_Http">The Vault API Connector</param>
 		/// <param name="name">The name you wish to give the Vault System backend.  At the present time this is purely cosmetic and does nothing.</param>
 		/// </summary>
-		public VaultSystemBackend(string token, VaultAPI_Http vaultAPI_Http, string name = "System") : base (name,"sys",vaultAPI_Http){
+		public VaultSystemBackend(string token, VaultAgentAPI vaultAgentAPI, string name = "System") : base (name,"sys",vaultAgentAPI){
 
 			sysToken = new Token() {
 				ID = token
@@ -40,12 +40,15 @@ namespace VaultAgent
 
 
 		#region SysAuths
+
 		/// <summary>
 		/// Enables the provided Authentication backend.
 		/// </summary>
 		/// <param name="am">The AuthMethod object that represents the authentication engine to enable.</param>
-		/// <returns>True if authentication engine was successfully enabled. False otherwise.</returns>
-		public async Task<bool> AuthEnable (AuthMethod am) {
+		/// <returns>True if authentication engine was successfully enabled. False otherwise.
+		/// Throws exception: VaultException with SpecificErrorCode set to BackendMountAlreadyExists if a mount already exists at that location.
+		/// </returns>
+		public async Task<bool> AuthEnable(AuthMethod am) {
 			string path = MountPointPath + "auth/" + am.Name;
 
 			Dictionary<string, string> contentParams = new Dictionary<string, string>();
@@ -55,7 +58,7 @@ namespace VaultAgent
 
 			string contentJSON = JsonConvert.SerializeObject(contentParams, Formatting.None);
 
-			
+
 			StringBuilder jsonConfig;
 			string json = "";
 			if (am.Config != null) {
@@ -73,16 +76,30 @@ namespace VaultAgent
 
 				json = jsonParams.ToString();
 			}
-			else { json = contentJSON; }
+			else {
+				json = contentJSON;
+			}
 
 
-			
-			//string json = contentJSON;
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "VaultSystemBackend:AuthEnable", null,json);
-			if (vdro.Success) { return true; }
-			return false;
+			try {
+				VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "VaultSystemBackend:AuthEnable", null, json);
+
+				if (vdro.Success) {
+					return true;
+				}
+
+				return false;
+			}
+			catch (VaultInvalidDataException e) {
+				if (e.Message.Contains("path is already in use")) {
+					VaultException ex =
+						new VaultException("The authentication backend mount point already exists.  Cannot enable another mount point at that location.");
+					ex.SpecificErrorCode = EnumVaultExceptionCodes.BackendMountAlreadyExists;
+					throw ex;
+				}
+				else throw e;
+			}
 		}
-
 
 
 
@@ -94,7 +111,7 @@ namespace VaultAgent
 		public async Task<bool> AuthDisable(string authName) {
 			string path = MountPointPath + "auth/" + authName;
 
-			VaultDataResponseObject vdro = await _vaultHTTP.DeleteAsync(path, "AuthDisable");
+			VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync(path, "AuthDisable");
 			if (vdro.Success) { return true; }
 			else { return false; }
 		}
@@ -115,7 +132,7 @@ namespace VaultAgent
 		public async Task<Dictionary<string,AuthMethod>> AuthListAll () {
 			string path = MountPointPath + "auth";
 
-			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "AuthListAll");
+			VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "AuthListAll");
 			if (vdro.Success) {
 				string js = vdro.GetDataPackageAsJSON();
 				//string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "");
@@ -173,7 +190,7 @@ namespace VaultAgent
 			}
 
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PutAsync(path, "SysAuditEnableFileDevice", null, bulkJSON);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PutAsync(path, "SysAuditEnableFileDevice", null, bulkJSON);
 			if (vdro.HttpStatusCode == 204) { return true; }
 			else { return false; }
 		}
@@ -188,25 +205,26 @@ namespace VaultAgent
 		public async Task<bool> AuditDisable (string auditDeviceName) {
 			string path = MountPointPath + "audit/" + auditDeviceName;
 
-			VaultDataResponseObject vdro = await _vaultHTTP.DeleteAsync(path, "SysAuditDisable");
+			VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync(path, "SysAuditDisable");
 			if (vdro.Success) { return true; }
 			else { return false; }
 		}
-		#endregion
+        #endregion
 
 
-		#region SysMounts
-		// ==============================================================================================================================================
+        #region SysMounts
+        // ==============================================================================================================================================
 
-		/// <summary>
-		/// Creates (Enables in Vault terminology) a new backend secrets engine with the given name, type and configuration settings.
-		/// </summary>
-		/// <param name="mountPath">The root path to this secrets engine that it will be mounted at.  Is a part of every URL to this backend.
-		/// <param name="description">Brief human friendly name for the mount.</param>
-		/// <param name="backendType">The type of secrets backend this mount is.  </param>
-		/// <param name="config">The configuration to be applied to this mount.</param>
-		/// <returns>Bool:  True if successful in creating the backend mount point.  False otherwise.</returns>
-		public async Task<bool> SysMountCreate (string mountPath, string description, EnumSecretBackendTypes backendType, VaultSysMountConfig config = null) {
+        /// <summary>
+        /// Creates (Enables in Vault terminology) a new backend secrets engine with the given name, type and configuration settings.
+        /// Throws:  [VaultInvalidDataException] when the mount point already exists.  SpecificErrorCode will be set to: [BackendMountAlreadyExists]
+        /// </summary>
+        /// <param name="mountPath">The root path to this secrets engine that it will be mounted at.  Is a part of every URL to this backend.
+        /// <param name="description">Brief human friendly name for the mount.</param>
+        /// <param name="backendType">The type of secrets backend this mount is.  </param>
+        /// <param name="config">The configuration to be applied to this mount.</param>
+        /// <returns>Bool:  True if successful in creating the backend mount point.  False otherwise.</returns>
+        public async Task<bool> SysMountCreate (string mountPath, string description, EnumSecretBackendTypes backendType, VaultSysMountConfig config = null) {
 			// The keyname forms the last part of the path
 			string path = MountPointPath + pathMounts +  mountPath;
 
@@ -256,10 +274,27 @@ namespace VaultAgent
 				createParams.Add("config", config);
 			}
 
+		    try
+		    {
+		        VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync2 (path, "SysMountEnable", createParams);
+		        if (vdro.HttpStatusCode == 204)
+		        {
+		            return true;
+		        }
+		        else
+		        {
+		            return false;
+		        }
+		    }
+		    catch (VaultInvalidDataException e)
+		    {
+		        if (e.Message.Contains ("existing mount at "))
+		        {
+		            e.SpecificErrorCode = EnumVaultExceptionCodes.BackendMountAlreadyExists;
+		        }
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync2(path, "SysMountEnable", createParams);
-			if (vdro.HttpStatusCode == 204) { return true; }
-			else { return false; }
+		        throw e;
+		    }
 		}
 
 
@@ -282,7 +317,7 @@ namespace VaultAgent
 		public async Task<bool> SysMountDelete(string name) {
 			string path = MountPointPath + pathMounts + name;
 
-			VaultDataResponseObject vdro = await _vaultHTTP.DeleteAsync(path, "SysMountDelete");
+			VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync(path, "SysMountDelete");
 			if (vdro.Success) { return true; }
 			return false;
 		}
@@ -299,7 +334,7 @@ namespace VaultAgent
 			// Build Path
 			string path = MountPointPath + pathMounts + mountPath + "/tune";
 
-			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "SysMountReadConfig");
+			VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "SysMountReadConfig");
 			if (vdro.Success) {
 				VaultSysMountConfig config = vdro.GetVaultTypedObject<VaultSysMountConfig>();
 				return config;
@@ -334,7 +369,7 @@ namespace VaultAgent
 
 			if (description != null ) { content.Add("description", description); }
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "SysMountUpdateConfig", content);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "SysMountUpdateConfig", content);
 
 			if (vdro.HttpStatusCode == 204) { return true; }
 			else { return false; }
@@ -345,9 +380,10 @@ namespace VaultAgent
 
 		#endregion
 
+
 		#region SysPolicies
 		/// <summary>
-		/// Returns a list of all ACL Policies.
+		/// Returns a list of all ACL Policies in the Vault Instance
 		/// </summary>
 		/// <returns>List[string] of all ACL policies by name.</returns>
 		public async Task<List<string>> SysPoliciesACLList() {
@@ -358,7 +394,7 @@ namespace VaultAgent
 			Dictionary<string, string> sendParams = new Dictionary<string, string>();
 			sendParams.Add("list", "true");
 
-			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "SysPoliciesACLList", sendParams);
+			VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "SysPoliciesACLList", sendParams);
 
 			string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
 
@@ -368,13 +404,18 @@ namespace VaultAgent
 
 
 
+		/// <summary>
+		/// Deletes a given policy.  
+		/// </summary>
+		/// <param name="policyName">The name of the policy to delete.</param>
+		/// <returns>True if successful in deleting.</returns>
 		public async Task<bool> SysPoliciesACLDelete (string policyName) {
 			// Build Path
 			string path = MountPointPath + "policies/acl/" + policyName;
 
 
 			try {
-				VaultDataResponseObject vdro = await _vaultHTTP.DeleteAsync(path, "SysPoliciesACLDelete");
+				VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync(path, "SysPoliciesACLDelete");
 				if (vdro.Success) { return true; }
 				else { return false; }
 			}
@@ -386,23 +427,27 @@ namespace VaultAgent
 
 
 
-
-		private string BuildPolicyPathJSON (VaultPolicyPath policyPath) {
+		/// <summary>
+		/// Internal method that is used to build the Vault HCL formatted policy from the VaultPolicyPathItem object.
+		/// </summary>
+		/// <param name="policyPathItemPath"></param>
+		/// <returns></returns>
+		private string BuildPolicyPathJSON (VaultPolicyPathItem policyPathItemPath) {
 			StringBuilder jsonSB = new StringBuilder();
 
 
-			jsonSB.Append("path \\\"" + policyPath.Path);
+			jsonSB.Append("path \\\"" + policyPathItemPath.Path);
 			jsonSB.Append("\\\" { capabilities = [");
 
-			if (policyPath.Denied) { jsonSB.Append("\\\"deny\\\""); }
+			if (policyPathItemPath.Denied) { jsonSB.Append("\\\"deny\\\""); }
 			else {
-				if (policyPath.CreateAllowed) { jsonSB.Append("\\\"create\\\","); }
-				if (policyPath.ReadAllowed) { jsonSB.Append("\\\"read\\\","); }
-				if (policyPath.DeleteAllowed) { jsonSB.Append("\\\"delete\\\","); }
-				if (policyPath.ListAllowed) { jsonSB.Append("\\\"list\\\","); }
-				if (policyPath.RootAllowed) { jsonSB.Append("\\\"root\\\","); }
-				if (policyPath.SudoAllowed) { jsonSB.Append("\\\"sudo\\\","); }
-				if (policyPath.UpdateAllowed) { jsonSB.Append("\\\"update\\\","); }
+				if (policyPathItemPath.CreateAllowed) { jsonSB.Append("\\\"create\\\","); }
+				if (policyPathItemPath.ReadAllowed) { jsonSB.Append("\\\"read\\\","); }
+				if (policyPathItemPath.DeleteAllowed) { jsonSB.Append("\\\"delete\\\","); }
+				if (policyPathItemPath.ListAllowed) { jsonSB.Append("\\\"list\\\","); }
+				if (policyPathItemPath.RootAllowed) { jsonSB.Append("\\\"root\\\","); }
+				if (policyPathItemPath.SudoAllowed) { jsonSB.Append("\\\"sudo\\\","); }
+				if (policyPathItemPath.UpdateAllowed) { jsonSB.Append("\\\"update\\\","); }
 
 				// Remove last comma if there.
 				if (jsonSB.Length > 1) {
@@ -422,11 +467,16 @@ namespace VaultAgent
 
 
 
-		public async Task<bool> SysPoliciesACLCreate(VaultPolicy policyItem) {
+		/// <summary>
+		/// Creates or Updates a given policy object.  
+		/// </summary>
+		/// <param name="policyContainerItem">The VaultPolicyContainer item that should be persisted into the Vault Instance Store.</param>
+		/// <returns>True if successfully saved into Vault Instance.  False otherwise.</returns>
+		public async Task<bool> SysPoliciesACLCreate(VaultPolicyContainer policyContainerItem) {
 			// Build Path
-			string path = MountPointPath + "policies/acl/" + policyItem.Name;
+			string path = MountPointPath + "policies/acl/" + policyContainerItem.Name;
 
-			int count = policyItem.PolicyPaths.Count;
+			int count = policyContainerItem.PolicyPaths.Count;
 
 			// If no policy paths defined, then return - nothing to do.
 			if (count == 0) { return false; }
@@ -439,7 +489,7 @@ namespace VaultAgent
 			// Build the header for JSON Policy.
 			jsonSB.Append("{\"policy\": \"");
 
-			foreach (VaultPolicyPath item in policyItem.PolicyPaths) {
+			foreach (VaultPolicyPathItem item in policyContainerItem.PolicyPaths) {
 				jsonSB.Append(BuildPolicyPathJSON(item));
 			}
 
@@ -450,7 +500,7 @@ namespace VaultAgent
 
 			string json = jsonSB.ToString();
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PutAsync(path, "SysPoliciesACLCreate", null, json);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PutAsync(path, "SysPoliciesACLCreate", null, json);
 			if (vdro.Success) {
 				return true;
 			}
@@ -464,10 +514,10 @@ namespace VaultAgent
 		/// Updates a given policy.  Is merely a wrapper for SysPoliciesACLCreate since Vault has no update function.
 		/// </summary>
 		/// <param name="policyName">The name of the policy to update.</param>
-		/// <param name="policyItem">The VaultPolicyPath object that should be updated in Vault.</param>
-		/// <returns></returns>
-		public async Task<bool> SysPoliciesACLUpdate (VaultPolicy policyItem) {
-			return await SysPoliciesACLCreate(policyItem);
+		/// <param name="policyContainerItem">The VaultPolicyPathItem object that should be updated in Vault.</param>
+		/// <returns>True if successful.  False otherwise.</returns>
+		public async Task<bool> SysPoliciesACLUpdate (VaultPolicyContainer policyContainerItem) {
+			return await SysPoliciesACLCreate(policyContainerItem);
 		}
 
 
@@ -477,15 +527,20 @@ namespace VaultAgent
 		/// Reads the Vault policy with the given name.
 		/// </summary>
 		/// <param name="policyName">Name of the policy to retrieve.</param>
-		/// <returns>A VaultPolicy object with the values read from Vault.</returns>
-		public async Task<VaultPolicy> SysPoliciesACLRead(string policyName) {
+		/// <returns>A VaultPolicyContainer object with the values read from Vault.</returns>
+		public async Task<VaultPolicyContainer> SysPoliciesACLRead(string policyName) {
 			// Build Path
 			string path = MountPointPath + "policies/acl/" + policyName;
+			VaultDataResponseObject vdro;
 
-
-			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "SysPoliciesACLRead");
-			vdro.GetDataPackageAsDictionary();
-
+			try {
+				vdro = await _parent._httpConnector.GetAsync(path, "SysPoliciesACLRead");
+				vdro.GetDataPackageAsDictionary();
+			}
+			catch (VaultInvalidPathException e) {		
+				e.SpecificErrorCode = EnumVaultExceptionCodes.ObjectDoesNotExist;
+				throw e;
+			}
 
 
 			// Now we need to cleanup the returned data and then parse it.
@@ -512,7 +567,7 @@ namespace VaultAgent
 
 
 			// Create a policy object and load the paths
-			VaultPolicy vp = new VaultPolicy(policyName);
+			VaultPolicyContainer vp = new VaultPolicyContainer(policyName);
 
 
 			// Now we need to parse the Paths.  
@@ -524,12 +579,12 @@ namespace VaultAgent
 
 
 		/// <summary>
-		/// Internal routine that processes the returned string from Vault and parses it into a VaultPolicy object.
+		/// Internal routine that processes the returned string from Vault and parses it into a VaultPolicyContainer object.
 		/// </summary>
 		/// <param name="data">The string data returned by Vault.</param>
-		/// <param name="vp">VaultPolicy object that should be filled in with the values from Vault.</param>
+		/// <param name="vp">VaultPolicyContainer object that should be filled in with the values from Vault.</param>
 		/// <returns>True if successful.</returns>
-		private bool ParseACLPaths (string data, VaultPolicy vp) {
+		private bool ParseACLPaths (string data, VaultPolicyContainer vp) {
 			string[] strDelimiters = { " ", "," };
 			string[] pathObjects = data.Split(strDelimiters, StringSplitOptions.RemoveEmptyEntries);
 
@@ -557,8 +612,8 @@ namespace VaultAgent
 
 
 
-//			List<VaultPolicyPath> vpp = new List<VaultPolicyPath>();
-			VaultPolicyPath newPathObj = new VaultPolicyPath("");
+//			List<VaultPolicyPathItem> vpp = new List<VaultPolicyPathItem>();
+			VaultPolicyPathItem newPathObj = new VaultPolicyPathItem("");
 
 			short iStep = iSTARTING;
 
@@ -577,7 +632,7 @@ namespace VaultAgent
 								throw new FormatException("Found path keyword, but no value supplied for path NAME");
 							}
 							else {
-								newPathObj = new VaultPolicyPath(pathObjects[i]);
+								newPathObj = new VaultPolicyPathItem(pathObjects[i]);
 								vp.PolicyPaths.Add(newPathObj);
 								//vpp.Add(newPathObj);
 							}

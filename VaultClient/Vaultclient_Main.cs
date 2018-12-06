@@ -33,25 +33,23 @@ namespace VaultClient
 			}
 
 			// Connect to Vault, add an authentication backend of AppRole.
-			VaultAgentAPI vaultAgent = new VaultAgentAPI("Vault", ip, port, rootToken);
-			AppRoleAuthEngine ARB = (AppRoleAuthEngine) vaultAgent.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, "AppRole", "approle");
+			VaultAgentAPI vaultAgent = new VaultAgentAPI("Vault", ip, port, rootToken, true);
+			
+
+
+
+			VC_AppRoleAuthEngine roleBE = new VC_AppRoleAuthEngine(vaultAgent);
+			await roleBE.Run();
+
 
 			// System Backend Examples:
 			VaultClient_SystemBackend sysBE = new VaultClient_SystemBackend(rootToken, ip, port);
 			await sysBE.Run();
 
 
-			VaultClient_AppRoleAuthEngine roleBE = new VaultClient_AppRoleAuthEngine(ARB);
-			await roleBE.Run();
-
 
 			Console.ReadKey();
 			return;
-
-
-
-
-
 
 
 			// Transit Backend

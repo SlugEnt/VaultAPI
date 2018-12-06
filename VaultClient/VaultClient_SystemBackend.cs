@@ -25,8 +25,8 @@ namespace VaultClient
         public async Task Run() {
 			// Not Working - bool rc = await _vaultSystemBackend.SysAuditEnable("testABC");
 			//await AuthEnableExample();
-			return;
-	//		await PolicyCreateExamples();
+			
+			await PolicyCreateExamples();
 			await PolicyReadExamples();
 			await PolicyListExamples();
 			await PolicyDeleteExamples();
@@ -39,7 +39,7 @@ namespace VaultClient
 
 
 		private async Task PolicyReadExamples () {
-			VaultPolicy vp;
+			VaultPolicyContainer vp;
 			vp = await _vaultSystemBackend.SysPoliciesACLRead("TestingABC");
 		}
 
@@ -49,10 +49,10 @@ namespace VaultClient
 		private async Task PolicyCreateExamples () {
 
 			// Create a policy with multiple sub path objects.
-			VaultPolicy VP = new VaultPolicy("TestingABC");
+			VaultPolicyContainer VP = new VaultPolicyContainer("TestingABC");
 
 
-			VaultPolicyPath vpi = new VaultPolicyPath("secret/TestA") {
+			VaultPolicyPathItem vpi = new VaultPolicyPathItem("secret/TestA") {
 				DeleteAllowed = true,
 				ReadAllowed = true,
 				CreateAllowed = true
@@ -60,12 +60,12 @@ namespace VaultClient
 			VP.PolicyPaths.Add(vpi);
 
 
-			VaultPolicyPath vpi2 = new VaultPolicyPath("secret/TestB");
+			VaultPolicyPathItem vpi2 = new VaultPolicyPathItem("secret/TestB");
 			vpi2.ListAllowed = true;
 			VP.PolicyPaths.Add(vpi2);
 
 
-			VaultPolicyPath vpi3 = new VaultPolicyPath("secret/TestC");
+			VaultPolicyPathItem vpi3 = new VaultPolicyPathItem("secret/TestC");
 			vpi3.ListAllowed = true;
 			vpi3.DeleteAllowed = true;
 			vpi3.ReadAllowed = true;

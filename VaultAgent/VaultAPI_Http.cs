@@ -11,12 +11,13 @@ using VaultAgent;
 
 namespace VaultAgent
 {
-
+    /// <summary>
+    /// This class represents the HTTP connection object for the Vault Agent Interface.  It handles all the connections to Vault Instance as well as all error handling.
+    /// </summary>
 	public class VaultAPI_Http
 	{
-		private Uri vaultIPAddress;
-		private string accessToken;
-		private HttpClient httpClt;
+		private Uri _vaultIPAddress;
+		private HttpClient _httpClt;
 		
 
 		/// <summary>
@@ -24,14 +25,23 @@ namespace VaultAgent
 		/// </summary>
 		/// <param name="vaultIP">IP Address of the Vault server</param>
 		/// <param name="port">The network Port the Vault server is listening on</param>
-		public VaultAPI_Http(string vaultIP, int port, string Token) {
-			vaultIPAddress = new Uri("http://" + vaultIP + ":" + port);
+		public VaultAPI_Http(string vaultIP, int port) {
+			_vaultIPAddress = new Uri("http://" + vaultIP + ":" + port);
 
-			httpClt = new HttpClient(new HttpClientHandler { MaxConnectionsPerServer = 500 }) {	BaseAddress = vaultIPAddress	};
-			accessToken = Token;
+			_httpClt = new HttpClient(new HttpClientHandler { MaxConnectionsPerServer = 500 }) {	BaseAddress = _vaultIPAddress	};
+		}
 
-			// Set token into HTTP headers.
-			httpClt.DefaultRequestHeaders.Add("X-Vault-Token", accessToken);
+
+
+
+		/// <summary>
+		/// Sets the Vault Access token used to access Vault with.  This should be called by the VaultAgent any time the token changes.
+		/// </summary>
+		/// <param name="tokenID"></param>
+		internal void SetTokenHeader (string tokenID) {
+				// Set token into HTTP headers.
+				_httpClt.DefaultRequestHeaders.Remove("X-Vault-Token");
+				_httpClt.DefaultRequestHeaders.Add("X-Vault-Token", tokenID);
 		}
 
 
@@ -58,7 +68,7 @@ namespace VaultAgent
 
 			string jsonResponse = "";
 
-		    HttpResponseMessage response = await httpClt.PostAsync(APIPath, contentBody);
+		    HttpResponseMessage response = await _httpClt.PostAsync(APIPath, contentBody);
 			if (response.IsSuccessStatusCode) {
 				jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 			}
@@ -92,7 +102,7 @@ namespace VaultAgent
 
 			string jsonResponse = "";
 
-		    HttpResponseMessage response = await httpClt.PostAsync(APIPath, contentBody);
+		    HttpResponseMessage response = await _httpClt.PostAsync(APIPath, contentBody);
 			if (response.IsSuccessStatusCode) {
 				jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 			}
@@ -127,7 +137,7 @@ namespace VaultAgent
 
 			string jsonResponse = "";
 
-		    HttpResponseMessage response = await httpClt.PutAsync(APIPath, contentBody);
+		    HttpResponseMessage response = await _httpClt.PutAsync(APIPath, contentBody);
 			if (response.IsSuccessStatusCode) {
 				jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 			}
@@ -168,7 +178,7 @@ namespace VaultAgent
 			string fullURI = APIPath + httpParameters;
 
 
-		    HttpResponseMessage response = await httpClt.GetAsync(fullURI);
+		    HttpResponseMessage response = await _httpClt.GetAsync(fullURI);
 			if (response.IsSuccessStatusCode) {
 				jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 			}
@@ -193,7 +203,7 @@ namespace VaultAgent
 			string httpParameters = "";
 
 			string fullURI = APIPath + httpParameters;
-			HttpResponseMessage response = await httpClt.DeleteAsync(fullURI);
+			HttpResponseMessage response = await _httpClt.DeleteAsync(fullURI);
 
 
 			if (response.IsSuccessStatusCode) {			

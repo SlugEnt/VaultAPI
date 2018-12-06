@@ -5,35 +5,39 @@ using VaultAgent.Backends;
 
 namespace VaultAgent
 {
-	public abstract class VaultBackend {
-		protected  VaultAPI_Http _vaultHTTP;
+	public abstract class VaultBackend
+	{
+	    protected VaultAgentAPI _parent;
+		//protected  VaultAPI_Http _vaultHTTP;
 		private string _mountPrefix;
 
 
-		/// <summary>
-		/// Constructor for the Backend.  
-		/// </summary>
-		/// <param name="name">The name used to identify this backend, this is not the mount point!</param>
-		/// <param name="mountPointName">The name of the mount point in vault to connect to.</param>
-		/// <param name="mountPointPrefix">If the path is prefixed in vault with some value, specify it here.  It defaults to /v1/ which is typical Vault default value.</param>
-		/// <param name="vaultAPI_Http">The VaultAPI_Http object that should be used to make API calls to the Vault Instance.</param>
-		public VaultBackend( string name, string mountPointName, VaultAPI_Http vaultAPI_Http, string mountPointPrefix = "/v1/") {
+        /// <summary>
+        /// Constructor for the Backend.  
+        /// </summary>
+        /// <param name="name">The name used to identify this backend, this is not the mount point!</param>
+        /// <param name="mountPoint">The name of the mount point in vault to connect to.</param>
+        /// <param name="vaultAgentAPI">This should be a reference to the VaultAgentAPI object.</param>
+        /// <param name="mountPointPrefix">If the path is prefixed in vault with some value, specify it here.  It defaults to /v1/ which is typical Vault default value.</param>
+        public VaultBackend( string name, string mountPoint, VaultAgentAPI vaultAgentAPI,  string mountPointPrefix = "/v1/") {
 			Name = name;
-			MountPoint = mountPointName;
+			MountPoint = mountPoint;
 			MountPointPrefix = mountPointPrefix;
-			_vaultHTTP = vaultAPI_Http;
+			//_vaultHTTP = vaultAPI_Http;
+		    _parent = vaultAgentAPI;
+            
 			Type = EnumBackendTypes.NotDefined;
 		}
 
 
 		/// <summary>
-		/// The name to be used to identify the backend.
+		/// The cosmetic name to be used to identify the backend.  This is not used internally in Vault.
 		/// </summary>
 		public string Name { get; private set; }
 
 
 		/// <summary>
-		/// The "name" of the mount point in Vault for the backend.  This must be exact and capitalization matters.
+		/// The "name" of the mount point in Vault for the backend.  This must be exact and capitalization matters.  This is the Name as far as Vault is concerned.
 		/// </summary>
 		public string MountPoint { get; private set; }
 

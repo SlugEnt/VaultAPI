@@ -40,7 +40,7 @@ namespace VaultAgentTests
 
 
 			// Build Connection to Vault.
-			_vaultAgentAPI = new VaultAgentAPI("transitVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+			_vaultAgentAPI = new VaultAgentAPI("transitVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
 
 
 			// Create unique name for the transit Backend we will use to test with.

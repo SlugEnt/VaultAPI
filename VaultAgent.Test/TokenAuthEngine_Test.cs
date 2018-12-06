@@ -23,12 +23,12 @@ namespace VaultAgentTests
 		[OneTimeSetUp]
 		public void TokenEngineSetup() {
 			// Build Connection to Vault.
-			vault = new VaultAgentAPI("TokenEngineVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+			vault = new VaultAgentAPI("TokenEngineVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
 
 			// How to turn on logging.
 			//vault.System.AuditEnableFileDevice("VaultLog", "C:/temp/vault.log");
 
-			_tokenAuthEngine = (TokenAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_Token, "", "");
+			_tokenAuthEngine = (TokenAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_Token);
 		}
 
 
@@ -68,10 +68,12 @@ namespace VaultAgentTests
 				NoParentToken = parent
 			};
 
-			Assert.True(await _tokenAuthEngine.CreateToken(tokenNewSettings));
+		    Token token = await _tokenAuthEngine.CreateToken (tokenNewSettings);
+            Assert.NotNull(token,"A1:  Expected to receive the new token back, instead we received a null value.");
+			//Assert.True(await _tokenAuthEngine.CreateToken(tokenNewSettings));
 
 			// Read the token we just created.
-			Token token = await _tokenAuthEngine.GetTokenWithID(tokenID);
+			//Token token = await _tokenAuthEngine.GetTokenWithID(tokenID);
 			Assert.IsNotNull(token, "M1: No Token returned.  Was expecting one.");
 
 			// Vault seems to prepend the auth backends name to the display name.
@@ -100,10 +102,12 @@ namespace VaultAgentTests
 				NoParentToken = parent
 			};
 
-			Assert.True(await _tokenAuthEngine.CreateToken(tokenNewSettings), "M1: Error creating the token");
+		    Token token = await _tokenAuthEngine.CreateToken(tokenNewSettings);
+		    Assert.NotNull(token, "A1:  Error creating a new token - expected to receive the new token back, instead we received a null value.");
 
-			// Read the token we just created.
-			Token token = await _tokenAuthEngine.GetTokenWithID(tokenID);
+
+            // Read the token we just created.
+//            Token token = await _tokenAuthEngine.GetTokenWithID(tokenID);
 			Assert.IsNotNull(token, "M2: No Token returned.  Was expecting one.");
 			string tDisplayName = "token-" + tokenName;
 			Assert.AreEqual(tDisplayName, token.DisplayName,"M3: Token Display name is not what was expected.  Expected {0}, but got {1}",tDisplayName,token.DisplayName);
@@ -114,9 +118,6 @@ namespace VaultAgentTests
 			Assert.AreEqual(token.DisplayName, tokenAcc.DisplayName, "M5: Token Accessor did not retrieve the correct token.  Something bad happened.");
 
 		}
-
-
-
 
 
 
@@ -135,13 +136,10 @@ namespace VaultAgentTests
 				NumberOfUses = numUses,
 				NoParentToken = parent
 			};
+		    Token token = await _tokenAuthEngine.CreateToken(tokenNewSettings);
+		    Assert.NotNull(token, "A1:  Error creating a new token - expected to receive the new token back, instead we received a null value.");
 
-			Assert.True(await _tokenAuthEngine.CreateToken(tokenNewSettings), "M1: Error creating the token");
-
-			// Read the token we just created.
-			Token token = await _tokenAuthEngine.GetTokenWithID(tokenID);
-			Assert.IsNotNull(token, "M2: No Token returned.  Was expecting one.");
-			string tDisplayName = "token-" + tokenName;
+		    string tDisplayName = "token-" + tokenName;
 			Assert.AreEqual(tDisplayName, token.DisplayName, "M3: Token Display name is not what was expected.  Expected {0}, but got {1}", tDisplayName, token.DisplayName);
 
 			// Now try and retrieve via the accessor.
@@ -196,14 +194,12 @@ namespace VaultAgentTests
 				RenewalPeriod = "1800"
 			};
 
-			Assert.True(await _tokenAuthEngine.CreateToken(tokenNewSettings));
+		    Token token = await _tokenAuthEngine.CreateToken(tokenNewSettings);
+		    Assert.NotNull(token, "A1:  Error creating a new token - expected to receive the new token back, instead we received a null value.");
 
-			// Read the token we just created.
-			Token token = await _tokenAuthEngine.GetTokenWithID(tokenID);
-			Assert.IsNotNull(token, "M1: No Token returned.  Was expecting one.");
 
-			// Vault seems to prepend the auth backends name to the display name.
-			Assert.AreEqual("token-" + tokenName, token.DisplayName, "M2: Token names are not equal");
+            // Vault seems to prepend the auth backends name to the display name.
+            Assert.AreEqual("token-" + tokenName, token.DisplayName, "M2: Token names are not equal");
 
 			Assert.AreEqual(tokenID, token.ID, "M3: Token ID's are not equal");
 			Assert.AreEqual(numUses, token.NumberOfUses, "M4: Token number of uses are not equal");
@@ -211,6 +207,7 @@ namespace VaultAgentTests
 
 
 			// Renew token
+            //TODO - is this correct test?
 			bool result = await _tokenAuthEngine.RenewToken(token.ID);
 			Assert.IsTrue(result, "Token was unable to be renewed.");
 			
@@ -233,14 +230,12 @@ namespace VaultAgentTests
 				MaxTTL = "86400"
 			};
 
-			Assert.True(await _tokenAuthEngine.CreateToken(tokenNewSettings));
+		    Token token = await _tokenAuthEngine.CreateToken(tokenNewSettings);
+		    Assert.NotNull(token, "A1:  Error creating a new token - expected to receive the new token back, instead we received a null value.");
 
-			// Read the token we just created.
-			Token token = await _tokenAuthEngine.GetTokenWithID(tokenID);
-			Assert.IsNotNull(token, "M1: No Token returned.  Was expecting one.");
 
-			// Vault seems to prepend the auth backends name to the display name.
-			Assert.AreEqual("token-" + tokenName, token.DisplayName, "M2: Token names are not equal");
+            // Vault seems to prepend the auth backends name to the display name.
+            Assert.AreEqual("token-" + tokenName, token.DisplayName, "M2: Token names are not equal");
 
 			Assert.AreEqual(tokenID, token.ID, "M3: Token ID's are not equal");
 			Assert.AreEqual(numUses, token.NumberOfUses, "M4: Token number of uses are not equal");
@@ -272,11 +267,11 @@ namespace VaultAgentTests
 				Name = tokenName,
 			};
 
-			Assert.True(await _tokenAuthEngine.CreateToken(tokenNewSettings),"M1:  Token was not created successfully.");
-			Token token = await _tokenAuthEngine.GetTokenWithID(tokenID);
+		    Token token = await _tokenAuthEngine.CreateToken(tokenNewSettings);
+		    Assert.NotNull(token, "A1:  Error creating a new token - expected to receive the new token back, instead we received a null value.");
 
-			// Revoke and validate it is gone.
-			Assert.True(await _tokenAuthEngine.RevokeToken(tokenID),"M2:  Revocation of token failed.");
+            // Revoke and validate it is gone.
+            Assert.True(await _tokenAuthEngine.RevokeToken(tokenID),"M2:  Revocation of token failed.");
 
 			// If token is null then it has been revoked successfully.
 			Token token2 = await _tokenAuthEngine.GetTokenWithID(tokenID);
@@ -302,7 +297,29 @@ namespace VaultAgentTests
 		// Validates that a token can revoke itself.
 		[Test]
 		public async Task RevokeSelfTokenSucceeds() {
-			throw new System.NotImplementedException("This test case has not been implemented yet.");
+            VaultAgentAPI v1 = new VaultAgentAPI("TempVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+		    string tokenName = UK.GetKey ("tmpTok");
+
+            // Create a new token.
+		    TokenNewSettings tokenNewSettings = new TokenNewSettings()
+		    {
+		        Name = tokenName,
+		    };
+
+            Token token = await _tokenAuthEngine.CreateToken(tokenNewSettings);
+		    Assert.NotNull(token, "A1:  Error creating a new token - expected to receive the new token back, instead we received a null value.");
+
+            // Now set vault to use the new token.
+		    v1.Token = token;
+            Assert.AreNotEqual(VaultServerRef.rootToken,token.ID, "A2:  Expected the Vault object to have a different token.  But was still set at initial token.");
+
+            // And then revoke.
+		    Assert.IsTrue(await v1.RevokeActiveToken());
+            Assert.IsNull(v1.Token);
+
+            // Now try and reset the Vault to use the old token. It should fail.
+		    v1.Token = token;
+		    Assert.ThrowsAsync<VaultForbiddenException> (async () => await v1.RefreshActiveToken());
 		}
 
 
@@ -318,11 +335,11 @@ namespace VaultAgentTests
 				Name = tokenName,
 			};
 
-			Assert.True(await _tokenAuthEngine.CreateToken(tokenNewSettings), "M1:  Token was not created successfully.");
-			Token token = await _tokenAuthEngine.GetTokenWithID(tokenID);
+		    Token token = await _tokenAuthEngine.CreateToken(tokenNewSettings);
+		    Assert.NotNull(token, "A1:  Error creating a new token - expected to receive the new token back, instead we received a null value.");
 
-			// Revoke and validate it is gone.
-			Assert.True(await _tokenAuthEngine.RevokeTokenViaAccessor(token.AccessorTokenID), "M2:  Revocation of token failed.");
+            // Revoke and validate it is gone.
+            Assert.True(await _tokenAuthEngine.RevokeTokenViaAccessor(token.AccessorTokenID), "M2:  Revocation of token failed.");
 
 			// If token is null then it has been revoked successfully.
 			Token token2 = await _tokenAuthEngine.GetTokenWithID(tokenID);
@@ -348,46 +365,106 @@ namespace VaultAgentTests
 
 
 
-		[Test]
-		public async Task RevokeTokenWithChildren_ChildrenOrphaned () {
-			throw new System.NotImplementedException("This test has not been implemented yet.");
+        // Validates that revoking a parent token and requesting that the children still remain, results in the children being orphaned.
+	    [Test]
+	    public async Task RevokeTokenWithChildren_ChildrenOrphaned() {
+     
+	            // Create a new token.
+	            string tokenName = UK.GetKey ("ParentOrp");
+	            TokenNewSettings tokenNewSettings = new TokenNewSettings()
+	            {
+	                Name = tokenName,
+	            };
+	            Token parent = await _tokenAuthEngine.CreateToken (tokenNewSettings);
+	            Assert.NotNull (parent, "A1:  Error creating the parent token - expected to receive the new token back, instead we received a null value.");
 
-			string tokenID = UK.GetKey("Rev");
-			string tokenName = "Name" + tokenID.ToString();
-
-			TokenNewSettings tokenNewSettings = new TokenNewSettings() {
-				ID = tokenID,
-				Name = tokenName,
-			};
-
-			Assert.True(await _tokenAuthEngine.CreateToken(tokenNewSettings), "M1:  Token was not created successfully.");
-			Token token = await _tokenAuthEngine.GetTokenWithID(tokenID);
-
-			// Revoke and validate it is gone.
-			Assert.True(await _tokenAuthEngine.RevokeToken(tokenID), "M2:  Revocation of token failed.");
-
-		}
+	            VaultAgentAPI v1 = new VaultAgentAPI ("TempVault2", VaultServerRef.ipAddress, VaultServerRef.ipPort, parent.ID);
+	            TokenAuthEngine TAE = (TokenAuthEngine) v1.ConnectAuthenticationBackend (EnumBackendTypes.A_Token);
 
 
-		[Test]
+	            // Now create 3 child tokens.
+
+	            Token token1 = await TAE.CreateToken (tokenNewSettings);
+	            Assert.NotNull (token1, "A2:  Error creating a new token - expected to receive the new token back, instead we received a null value.");
+
+	            // Token 2.
+	            tokenNewSettings.Name = "Token2";
+	            Token token2 = await TAE.CreateToken (tokenNewSettings);
+	            Assert.NotNull (token2, "A3:  Error creating a new token - expected to receive the new token back, instead we received a null value.");
+
+	            // Token 3.
+	            tokenNewSettings.Name = "Token3";
+	            Token token3 = await TAE.CreateToken (tokenNewSettings);
+	            Assert.NotNull (token3, "A4:  Error creating a new token - expected to receive the new token back, instead we received a null value.");
+
+
+	            // Now revoke the Parent token.
+	            Assert.IsTrue (await _tokenAuthEngine.RevokeToken (parent.ID, false), "A5:  Revocation of parent token was not successful.");
+
+	            Token parent2 = await _tokenAuthEngine.GetTokenWithID (parent.ID);
+	            Assert.IsNull (parent2, "A6:  The parent token should have been revoked.  But it still exists.");
+
+	            // Validate that each of the child tokens is revoked as well.
+	            Token a1 = await _tokenAuthEngine.GetTokenWithID (token1.ID);
+	            Token a2 = await _tokenAuthEngine.GetTokenWithID (token2.ID);
+	            Token a3 = await _tokenAuthEngine.GetTokenWithID (token3.ID);
+	            Assert.IsNotNull (a1, "A7:  Expected the child token to still exist.  But it is null");
+	            Assert.IsNotNull (a2, "A8:  Expected the child token to still exist.  But it is null");
+	            Assert.IsNotNull (a3, "A9:  Expected the child token to still exist.  But it is null");
+            Assert.IsTrue(a1.IsOrphan,"A10: Expected token to be marked as an orphan.");
+	        Assert.IsTrue(a2.IsOrphan, "A11: Expected token to be marked as an orphan.");
+	        Assert.IsTrue(a3.IsOrphan, "A12: Expected token to be marked as an orphan.");
+        }
+
+
+
+	    // Validates that if we revoke a token and request all if its children to be revoked, that all of the tokens (parent+children) are revoked.
+        [Test]
 		public async Task RevokeTokenWithChildren_ChildrenRevokedAlso() {
-			throw new System.NotImplementedException("This test has not been implemented yet.");
+            // Create a new token.
+		    string tokenName = UK.GetKey("Parent");
+            TokenNewSettings tokenNewSettings = new TokenNewSettings()
+		    {
+		        Name = tokenName,
+		    };
+		    Token parent = await _tokenAuthEngine.CreateToken(tokenNewSettings);
+		    Assert.NotNull(parent, "A1:  Error creating the parent token - expected to receive the new token back, instead we received a null value.");
 
-			string tokenID = UK.GetKey("Rev");
-			string tokenName = "Name" + tokenID.ToString();
+		    VaultAgentAPI v1 = new VaultAgentAPI("TempVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, parent.ID);
+		    TokenAuthEngine TAE = (TokenAuthEngine)v1.ConnectAuthenticationBackend (EnumBackendTypes.A_Token);
 
-			TokenNewSettings tokenNewSettings = new TokenNewSettings() {
-				ID = tokenID,
-				Name = tokenName,
-			};
 
-			Assert.True(await _tokenAuthEngine.CreateToken(tokenNewSettings), "M1:  Token was not created successfully.");
-			Token token = await _tokenAuthEngine.GetTokenWithID(tokenID);
 
-			// Revoke and validate it is gone.
-			Assert.True(await _tokenAuthEngine.RevokeToken(tokenID,true), "M2:  Revocation of token failed.");
 
-		}
+            // Now create 3 child tokens.
+
+            Token token1 = await TAE.CreateToken(tokenNewSettings);
+		    Assert.NotNull(token1, "A2:  Error creating a new token - expected to receive the new token back, instead we received a null value.");
+
+            // Token 2.
+		    tokenNewSettings.Name = "Token2";
+		    Token token2 = await TAE.CreateToken(tokenNewSettings);
+		    Assert.NotNull(token2, "A3:  Error creating a new token - expected to receive the new token back, instead we received a null value.");
+
+		    // Token 3.
+		    tokenNewSettings.Name = "Token3";
+		    Token token3 = await TAE.CreateToken(tokenNewSettings);
+		    Assert.NotNull(token3, "A4:  Error creating a new token - expected to receive the new token back, instead we received a null value.");
+
+            // Now revoke the Parent token.
+		    Assert.IsTrue(await _tokenAuthEngine.RevokeToken(parent.ID, true),"A5:  Revocation of parent token was not successful.");
+
+		    Token parent2 = await _tokenAuthEngine.GetTokenWithID (parent.ID);
+            Assert.IsNull(parent2,"A6:  The parent token should have been revoked.  But it still exists.");
+
+            // Validate that each of the child tokens is revoked as well.
+		    Token a1 = await _tokenAuthEngine.GetTokenWithID(token1.ID);
+            Token a2 = await _tokenAuthEngine.GetTokenWithID(token2.ID);
+            Token a3 = await _tokenAuthEngine.GetTokenWithID(token3.ID);
+            Assert.IsNull(a1,"A7:  Expected the child token to be null.  But it still has a value.");
+		    Assert.IsNull(a2, "A8:  Expected the child token to be null.  But it still has a value.");
+		    Assert.IsNull(a3, "A9:  Expected the child token to be null.  But it still has a value.");
+        }
 
 
 

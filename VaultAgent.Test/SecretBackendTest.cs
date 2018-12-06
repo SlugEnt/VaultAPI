@@ -28,7 +28,7 @@ namespace VaultAgentTests
 			}
 
 			// Build Connection to Vault.
-			_vaultAgentAPI = new VaultAgentAPI("testa", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+			_vaultAgentAPI = new VaultAgentAPI("testa", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
 			string mountName = _uniqueKeys.GetKey("SEC");
 
 			// Create a secret Backend Mount for this series of tests.
@@ -349,7 +349,7 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(400)]
+		[Test]
 		public async Task Secret_UpdateSecret_Success () {
 			KeyValueSecret A = new KeyValueSecret();
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("test", "testValue");
@@ -379,7 +379,7 @@ namespace VaultAgentTests
 
 
 
-		[Test, Order(800)]
+		[Test]
 		public async Task Secret_DeleteSecret_SpecifyingPath_Success() {
 			// Create a Secret that has attributes.
 			KeyValueSecret A = new KeyValueSecret();

@@ -31,7 +31,7 @@ namespace VaultAgentTests
             }
 
             // Build Connection to Vault.
-            _vaultAgentAPI = new VaultAgentAPI("transitVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+            _vaultAgentAPI = new VaultAgentAPI("transitVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
 
             // Create a new system Backend Mount for this series of tests.
             _vaultSystemBackend = _vaultAgentAPI.System;
@@ -77,7 +77,8 @@ namespace VaultAgentTests
 		#region Policy_Tests
 		[Test]
 		public void Policy_VaultPolicyPath_InitialFields_AreCorrect () {
-			VaultPolicyPath vpp = new VaultPolicyPath("ABC");
+			string polName = _uniqueKeys.GetKey("Pol");
+			VaultPolicyPathItem vpp = new VaultPolicyPathItem(polName);
 
 			Assert.False(vpp.CreateAllowed,"Create Not False");
 			Assert.False(vpp.DeleteAllowed, "Delete Not False");
@@ -92,118 +93,150 @@ namespace VaultAgentTests
 		}
 
 
+		
 
 		[Test]
-		// Test that setting capabilities to true works.
-		public void Policy_VaultPolicyPath_SettingTrueToFieldsWorks () {
-			VaultPolicyPath vpp = new VaultPolicyPath("ABC");
-			vpp.CreateAllowed = true;
-			Assert.True(vpp.CreateAllowed, "Create Allowed was not True");
-			Assert.False(vpp.Denied, "Denied should have been set to false on Create true");
+		[TestCase("C","Create")]
+		[TestCase("R", "Read")]
+		[TestCase("U", "Update")]
+		[TestCase("D", "Delete")]
+		[TestCase("L", "List")]
+		[TestCase("T", "Root")]
+		[TestCase("S", "Sudo")]
+		// Test that setting capabilities to true works and removes the denied setting if set.01
+		public void Policy_VaultPolicyPath_SettingTrueToFieldsWorks (string type, string value) {
+			string polName = _uniqueKeys.GetKey("Pol");
+			VaultPolicyPathItem vpp = new VaultPolicyPathItem(polName);
+			vpp.Denied = true;
 
-			VaultPolicyPath vpp2 = new VaultPolicyPath("ABC");
-			vpp2.DeleteAllowed = true;
-			Assert.True(vpp2.DeleteAllowed, "Delete Allowed was not True");
-			Assert.False(vpp.Denied, "Denied should have been set to false on Delete true");
+			switch (type)
+			{
+				case "C":
+					vpp.CreateAllowed = true;
+					Assert.True(vpp.CreateAllowed, value + " Allowed was not True");
+					break;
+				case "R":
+					vpp.ReadAllowed = true;
+					Assert.True(vpp.ReadAllowed, value + " Allowed was not True");
+					break;
+				case "U":
+					vpp.UpdateAllowed = true;
+					Assert.True(vpp.UpdateAllowed, value + " Allowed was not True");
+					break;
+				case "D":
+					vpp.DeleteAllowed = true;
+					Assert.True(vpp.DeleteAllowed, value + " Allowed was not True");
+					break;
+				case "L":
+					vpp.ListAllowed = true;
+					Assert.True(vpp.ListAllowed, value + " Allowed was not True");
+					break;
+				case "T":
+					vpp.RootAllowed = true;
+					Assert.True(vpp.RootAllowed, value + " Allowed was not True");
+					break;
+				case "S":
+					vpp.SudoAllowed = true;
+					Assert.True(vpp.SudoAllowed, value + " Allowed was not True");
+					break;
 
-			VaultPolicyPath vpp3 = new VaultPolicyPath("ABC");
-			vpp3.Denied = true;
-			Assert.True(vpp3.Denied, "Denied was not True after explicitly setting it");
-
-			VaultPolicyPath vpp4 = new VaultPolicyPath("ABC");
-			vpp4.ListAllowed = true;
-			Assert.True(vpp4.ListAllowed, "List Allowed was not True");
-			Assert.False(vpp.Denied, "Denied should have been set to false on list true");
-
-			VaultPolicyPath vpp5 = new VaultPolicyPath("ABC");
-			vpp5.ReadAllowed = true;
-			Assert.True(vpp5.ReadAllowed, "Read Allowed was not True");
-			Assert.False(vpp.Denied, "Denied should have been set to false on read true");
-
-			VaultPolicyPath vpp6 = new VaultPolicyPath("ABC");
-			vpp6.RootAllowed = true;
-			Assert.True(vpp6.RootAllowed, "Root Allowed was not True");
-			Assert.False(vpp.Denied, "Denied should have been set to false on root true");
-
-			VaultPolicyPath vpp7 = new VaultPolicyPath("ABC");
-			vpp7.SudoAllowed = true;
-			Assert.True(vpp7.SudoAllowed, "SUDO Allowed was not True");
-			Assert.False(vpp.Denied, "Denied should have been set to false on sudo true");
-
-			VaultPolicyPath vpp8 = new VaultPolicyPath("ABC");
-			vpp8.UpdateAllowed = true;
-			Assert.True(vpp8.UpdateAllowed, "Update Allowed was not True");
-			Assert.False(vpp.Denied, "Denied should have been set to false on update true");
+			}
+			Assert.False(vpp.Denied, "Denied should have been set to false.");
 		}
 
 
 
+		// Denied on a policy must set everything else to false.
 		[Test]
 		public void Policy_VaultPolicyPath_SetDenied_SetsEverythingElseToFalse () {
-			VaultPolicyPath vpp = new VaultPolicyPath("ABC");
+			string polName = _uniqueKeys.GetKey("Pol");
+			VaultPolicyPathItem vpp = new VaultPolicyPathItem(polName);
+
 			vpp.CreateAllowed = true;
 			vpp.ReadAllowed = true;
 			vpp.UpdateAllowed = true;
-			
+			vpp.DeleteAllowed = true;
+			vpp.ListAllowed = true;
+			vpp.RootAllowed = true;
+			vpp.SudoAllowed = true;
 
 			Assert.True(vpp.CreateAllowed, "Create Allowed was not True");
 			Assert.True(vpp.ReadAllowed, "Read Allowed was not True");
 			Assert.True(vpp.UpdateAllowed, "Update Allowed was not True");
+			Assert.True(vpp.DeleteAllowed, "Delete Allowed was not True");
+			Assert.True(vpp.ListAllowed, "List Allowed was not True");
+			Assert.True(vpp.RootAllowed, "Root Allowed was not True");
+			Assert.True(vpp.SudoAllowed, "Sudo Allowed was not True");
+
 
 			// Now set Denied.  Make sure the above are false.
 			vpp.Denied = true;
 			Assert.False(vpp.CreateAllowed, "Create Allowed was not set to False");
 			Assert.False(vpp.ReadAllowed, "Read Allowed was not set to False");
 			Assert.False(vpp.UpdateAllowed, "Update Allowed was not set to False");
+			Assert.False(vpp.DeleteAllowed, "Delete Allowed was not set to False");
+			Assert.False(vpp.ListAllowed, "List Allowed was not set to False");
+			Assert.False(vpp.RootAllowed, "Root Allowed was not set to False");
+			Assert.False(vpp.SudoAllowed, "Sudo Allowed was not set to False");
 		}
 
 
 
+		// Validates that PolicyName gets set in Constructor
 		[Test]
 		public void Policy_PolicyPath_ConstructorSetsPath () {
-			VaultPolicyPath vpp = new VaultPolicyPath("ABC");
-			Assert.AreEqual("ABC", vpp.Path);
+			string polName = _uniqueKeys.GetKey("Pol");
+			VaultPolicyPathItem vpp = new VaultPolicyPathItem(polName);
+			Assert.AreEqual(polName, vpp.Path);
 		}
 
 
 
+		//TODO this needs some finishing work.../
 		[Test]
 		public async Task Policy_CanCreatePolicy_WithSingleVaultPolicyItem () {
+
 			// Create a Vault Policy Path Item
-			VaultPolicyPath vpi = new VaultPolicyPath("secret/TestA");
+			string polName = _uniqueKeys.GetKey("secret/Pol");
+			VaultPolicyPathItem vpi = new VaultPolicyPathItem(polName);
 			vpi.DeleteAllowed = true;
 
 			// Create a Vault Policy Item
-			VaultPolicy VP = new VaultPolicy("TestingABC");
+			VaultPolicyContainer VP = new VaultPolicyContainer("TestingABC");
 			VP.PolicyPaths.Add(vpi);
 			bool rc = await _vaultSystemBackend.SysPoliciesACLCreate(VP);
 		}
 
 
 
+		// Validates we can create a policy container object with multiple PolicyPathItems and they are all saved to Vault Instance
 		[Test]
 		public async Task Policy_CanCreateAPolicy_WithMultipleVaultPolicyItems() {
 			// Create multiple Vault Policy Path Items
-			VaultPolicyPath vpi1 = new VaultPolicyPath("secret/TestA");
+			string polName = _uniqueKeys.GetKey("secret/Pol");
+			VaultPolicyPathItem vpi1 = new VaultPolicyPathItem(polName);
 			vpi1.DeleteAllowed = true;
 			vpi1.ReadAllowed = true;
 			vpi1.CreateAllowed = true;
 
-			VaultPolicyPath vpi2 = new VaultPolicyPath("secret/TestB");
+			string pol2Name = _uniqueKeys.GetKey("secret/Pol");
+			VaultPolicyPathItem vpi2 = new VaultPolicyPathItem(pol2Name);
 			vpi2.ListAllowed = true;
 
-			VaultPolicyPath vpi3 = new VaultPolicyPath("secret/TestC");
+			string pol3Name = _uniqueKeys.GetKey("secret/Pol");
+			VaultPolicyPathItem vpi3 = new VaultPolicyPathItem(pol3Name);
 			vpi3.ListAllowed = true;
 			vpi3.DeleteAllowed = true;
 			vpi3.ReadAllowed = true;
 			vpi3.SudoAllowed = true;
 
-			VaultPolicyPath vpi4 = new VaultPolicyPath("secret/TestD");
+			string pol4Name = _uniqueKeys.GetKey("secret/Pol");
+			VaultPolicyPathItem vpi4 = new VaultPolicyPathItem(pol3Name);
 			vpi4.DeleteAllowed = true;
 
 
 			// Create a Vault Policy Item and add the policy paths.
-			VaultPolicy VP = new VaultPolicy("TestingABCD");
+			VaultPolicyContainer VP = new VaultPolicyContainer("TestingABCD");
 			VP.PolicyPaths.Add(vpi1);
 			VP.PolicyPaths.Add(vpi2);
 			VP.PolicyPaths.Add(vpi3);
@@ -214,11 +247,12 @@ namespace VaultAgentTests
 
 
 
+		// Validates that we can read a Policy object from Vault that contains just a single path permission object.
 		[Test]
 		public async Task Policy_CanReadSinglePathPolicy () {
-			VaultPolicy VP = new VaultPolicy("Test2000A");
+			VaultPolicyContainer VP = new VaultPolicyContainer("Test2000A");
 
-			VaultPolicyPath vpi3 = new VaultPolicyPath("secret/Test2000A");
+			VaultPolicyPathItem vpi3 = new VaultPolicyPathItem("secret/Test2000A");
 			vpi3.ListAllowed = true;
 			vpi3.DeleteAllowed = true;
 			vpi3.ReadAllowed = true;
@@ -229,7 +263,7 @@ namespace VaultAgentTests
 
 
 			// Now lets read it back. 
-			VaultPolicy vpNew = await _vaultSystemBackend.SysPoliciesACLRead("Test2000A");
+			VaultPolicyContainer vpNew = await _vaultSystemBackend.SysPoliciesACLRead("Test2000A");
 
 			Assert.AreEqual(1, vpNew.PolicyPaths.Count);
 			Assert.AreEqual(vpi3.ListAllowed, vpNew.PolicyPaths[0].ListAllowed);
@@ -240,16 +274,15 @@ namespace VaultAgentTests
 
 
 
-
 		[Test]
 		// Can read a policy that has multiple paths attached to it.
 		public async Task Policy_CanReadMultiplePathPolicy() {
 			// Create a Vault Policy Item and add the policy paths.
-			VaultPolicy VP = new VaultPolicy("Test2000B");
+			VaultPolicyContainer VP = new VaultPolicyContainer("Test2000B");
 
 
 			string path1 = "secret/Test2000B1";
-			VaultPolicyPath vpi1 = new VaultPolicyPath(path1);
+			VaultPolicyPathItem vpi1 = new VaultPolicyPathItem(path1);
 			vpi1.ListAllowed = true;
 			vpi1.DeleteAllowed = true;
 			vpi1.ReadAllowed = true;
@@ -258,14 +291,14 @@ namespace VaultAgentTests
 
 			// 2nd policy path
 			string path2 = "secret/Test2000B2";
-			VaultPolicyPath vpi2 = new VaultPolicyPath(path2);
+			VaultPolicyPathItem vpi2 = new VaultPolicyPathItem(path2);
 			vpi2.Denied = true;
 			VP.PolicyPaths.Add(vpi2);
 
 
 			// 3rd policy path
 			string path3 = "secret/Test2000B3";
-			VaultPolicyPath vpi3 = new VaultPolicyPath(path3);
+			VaultPolicyPathItem vpi3 = new VaultPolicyPathItem(path3);
 			vpi3.ListAllowed = true;
 			vpi3.ReadAllowed = true;
 			vpi3.UpdateAllowed = true;
@@ -275,10 +308,10 @@ namespace VaultAgentTests
 
 
 			// Now lets read it back. 
-			VaultPolicy vpNew = await _vaultSystemBackend.SysPoliciesACLRead("Test2000B");
+			VaultPolicyContainer vpNew = await _vaultSystemBackend.SysPoliciesACLRead("Test2000B");
 
 			Assert.AreEqual(3, vpNew.PolicyPaths.Count);
-			foreach (VaultPolicyPath item in vpNew.PolicyPaths) {
+			foreach (VaultPolicyPathItem item in vpNew.PolicyPaths) {
 				if (item.Path == path1) {
 					Assert.AreEqual(vpi1.ListAllowed, item.ListAllowed);
 					Assert.AreEqual(vpi1.DeleteAllowed, item.DeleteAllowed);
@@ -304,12 +337,20 @@ namespace VaultAgentTests
 
 
 
+		// Validates that Attempting to read a non-existent policy returns the expected VaultException and the SpecificErrorCode value is set to ObjectDoesNotExist.
+	    [Test]
+	    public void Policy_ReadOfNonExistentPolicy_ResultsInExpectedError() {
+		    VaultInvalidPathException e = Assert.ThrowsAsync<VaultInvalidPathException>(async() => await _vaultSystemBackend.SysPoliciesACLRead("NonExistentPolicy"));
+			Assert.AreEqual(EnumVaultExceptionCodes.ObjectDoesNotExist,e.SpecificErrorCode);
+	    }
+
+
 
 		[Test]
 		public async Task Policy_ListReturnsPolicies () {
 			// Ensure there is at least one policy saved.
-			VaultPolicy VP = new VaultPolicy("listPolicyA");
-			VaultPolicyPath vpi = new VaultPolicyPath("secret/listpol2000A");
+			VaultPolicyContainer VP = new VaultPolicyContainer("listPolicyA");
+			VaultPolicyPathItem vpi = new VaultPolicyPathItem("secret/listpol2000A");
 			vpi.ListAllowed = true;
 			VP.PolicyPaths.Add(vpi);
 
@@ -327,8 +368,8 @@ namespace VaultAgentTests
 		// Providing a valid policy name results in returning true.
 		public async Task Policy_CanDelete_ValidPolicyName () {
 			// Create a policy to delete
-			VaultPolicy VP = new VaultPolicy("deletePolicyA");
-			VaultPolicyPath vpi = new VaultPolicyPath("secret/Test2000A");
+			VaultPolicyContainer VP = new VaultPolicyContainer("deletePolicyA");
+			VaultPolicyPathItem vpi = new VaultPolicyPathItem("secret/Test2000A");
 			vpi.ListAllowed = true;
 			VP.PolicyPaths.Add(vpi);
 
@@ -346,6 +387,87 @@ namespace VaultAgentTests
 		public async Task Policy_Delete_InvalidPolicyName_ReturnsTrue () {
 			Assert.True(await _vaultSystemBackend.SysPoliciesACLDelete("invalidName"));
 		}
+
+
+
+	    [Test]
+		[TestCase("appA/",true,"appA/",true)]
+	    [TestCase("appA", true, "appA/", true)]
+	    [TestCase("appA/", false, "appA", false)]
+	    [TestCase("appA", false, "appA", false)]
+	    [TestCase("appA/settingB", false, "appA/settingB", false)]
+	    [TestCase("appA/settingB", true, "appA/settingB/", true)]
+	    [TestCase("appA/settingB/", false, "appA/settingB", false)]
+	    [TestCase("appA/settingB/", true, "appA/settingB/", true)]
+
+		// Validates the Prefix Constructor works correctly by removing/adding trailing path slash depending on IsPrefix setting.
+		public void Policy_IsPrefixConstructor_WorksCorrectly(string pathParam, bool prefixParam, string pathValue, bool prefixValue) {
+			VaultPolicyPathItem vaultPolicyPathItem = new VaultPolicyPathItem(pathParam,prefixParam);
+			Assert.AreEqual(vaultPolicyPathItem.Path,pathValue);
+			Assert.AreEqual(vaultPolicyPathItem.IsPrefixType,prefixValue);
+	    }
+
+
+
+
+		[Test]
+		[TestCase("appA", true, "appA/", true)]
+		[TestCase("appA/", true, "appA", false)]
+		[TestCase("appA", false, "appA/", true)]
+		[TestCase("appA/", false, "appA", false)]
+		[TestCase("appA/settingB", true, "appA/settingC", false)]
+		[TestCase("appA/SettingB/", true, "appA/settingC", false)]
+		[TestCase("appA/settingB", false, "appA/settingC", false)]
+		[TestCase("appA/settingB", false, "appA/settingC/", true)]
+		public void Policy_PathWithPrefix_Sets_IsPrefixType(string pathParam,bool prefixParam,string newPath,bool isPrefixValue) {
+			VaultPolicyPathItem vaultPolicyPathItem = new VaultPolicyPathItem(pathParam, prefixParam);
+
+
+			// Since we called constructor with the prefix parameter, no matter what the path has (trailing slash or not) the prefix parameter 
+			// determines the type of path object and the IsPrefix setting.
+			Assert.AreEqual(prefixParam,vaultPolicyPathItem.IsPrefixType, "A1: policy IsPrefixType setting is not expected value.");
+
+
+			// Now change the path to be something different.  Confirm IsPrefix setting changes appropriately
+			vaultPolicyPathItem.Path = newPath;
+
+			Assert.AreEqual(isPrefixValue,vaultPolicyPathItem.IsPrefixType,"A2: New policy IsPrefix property is not expected value.");
+			Assert.AreEqual(newPath,vaultPolicyPathItem.Path, "A3: New policy path is not the expected value.");
+		}
+
+
+
+		// Validates that the CRUD property sets the Create, Read, Update and Delete properties as expected.
+	    [Test]
+	    public void Policy_CRUDSetOperation_Works() {
+			VaultPolicyPathItem vaultPolicyPathItem = new VaultPolicyPathItem("itemA");
+
+			// Validate initial CRUD items are all false.
+			Assert.False(vaultPolicyPathItem.CreateAllowed);
+			Assert.False(vaultPolicyPathItem.ReadAllowed);
+			Assert.False(vaultPolicyPathItem.UpdateAllowed);
+			Assert.False(vaultPolicyPathItem.DeleteAllowed);
+
+			// Now Set CRUD
+		    vaultPolicyPathItem.CRUDAllowed = true;
+
+		    // Validate CRUD items are now true
+		    Assert.True(vaultPolicyPathItem.CreateAllowed);
+		    Assert.True(vaultPolicyPathItem.ReadAllowed);
+		    Assert.True(vaultPolicyPathItem.UpdateAllowed);
+		    Assert.True(vaultPolicyPathItem.DeleteAllowed);
+
+			// Now Set CRUD to False.
+		    vaultPolicyPathItem.CRUDAllowed = false;
+
+		    // Validate CRUD items are all false.
+		    Assert.False(vaultPolicyPathItem.CreateAllowed);
+		    Assert.False(vaultPolicyPathItem.ReadAllowed);
+		    Assert.False(vaultPolicyPathItem.UpdateAllowed);
+		    Assert.False(vaultPolicyPathItem.DeleteAllowed);
+
+		}
+
 		#endregion
 
 

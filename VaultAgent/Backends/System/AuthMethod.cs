@@ -14,16 +14,18 @@ namespace VaultAgent.Backends.System
 		private string _type;
 		private string _name;
 		private string _path;
-		
 
-		[JsonConstructor]
+
+
 		/// <summary>
 		/// Constructor for AuthMethod.  This is the only method that accepts the actual Vault String value.  The path value can be
 		/// either the Name or Path.  It's a path if it has the trailing slash.
 		/// </summary>
 		/// <param name="path">String - Either the path or the name of the method.  Constructor determines which by the last character.
-		/// If the last character is a trailing slash then it is a path.  If not it is a name.  </param>
+		/// If the last character is a trailing slash then it is a path.  If not it is a name.
+		/// </param>
 		/// <param name="type">String - Type of authentication method to create, specified as the backend Vault name.</param>
+		[JsonConstructor]
 		public AuthMethod (string path, string type) {
 			// We do not call the actual property setters here, because of an endless loop situation.
 			_type = type;
@@ -93,6 +95,9 @@ namespace VaultAgent.Backends.System
 		}
 
 
+		/// <summary>
+		/// Name of this authentication backend.
+		/// </summary>
 		public string Name
 		{
 			get { return _name; }

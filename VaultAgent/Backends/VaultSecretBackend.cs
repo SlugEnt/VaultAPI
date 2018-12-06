@@ -9,7 +9,7 @@ namespace VaultAgent
 	/// </summary>
     public abstract class VaultSecretBackend : VaultBackend
     {
-		internal VaultSecretBackend (string backendName, string backendMountPoint, VaultAPI_Http httpConnector) : base (backendName, backendMountPoint, httpConnector) {
+		internal VaultSecretBackend (string backendName, string backendMountPoint, VaultAgentAPI vaultAgentAPI) : base (backendName, backendMountPoint, vaultAgentAPI) {
 			IsSecretBackend = true;
 		}
 }

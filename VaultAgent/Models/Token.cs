@@ -158,7 +158,7 @@ namespace VaultAgent.Models
 		/// <summary>
 		/// Returns the CreationTime of the token as a DateTime Object
 		/// </summary>
-		public DateTime CreationTimeAsDatetime {
+		public DateTime CreationTime_AsDateTime {
 			get {
 				return VaultUtilityFX.ConvertUnixTimeStamp(CreationTime);
 			}
@@ -240,6 +240,7 @@ namespace VaultAgent.Models
 		}
 
 
+/*  Not Necessary - defined as a property up above.
 		/// <summary>
 		/// Returns Creation Time of Token as a DateTime value
 		/// </summary>
@@ -248,5 +249,6 @@ namespace VaultAgent.Models
 				return VaultUtilityFX.ConvertUnixTimeStamp(CreationTime);
 			}
 		}
+  */
 	}
 }

@@ -23,7 +23,7 @@ namespace VaultAgent.SecretEngines
 		/// <param name="backendMountName">The name of the transit backend to mount.  For example for a mount at /mine/transitA use mine/transitA as value.</param>
 		/// <param name="backendMountPath">The path to the Transit Backend mountpoint.</param>
 		/// <param name="httpConnector">The VaultAPI_http Http Connection object</param>
-		public TransitSecretEngine(string backendMountName, string backendMountPath, VaultAPI_Http httpConnector) : base(backendMountName, backendMountPath,httpConnector) {
+		public TransitSecretEngine(string backendMountName, string backendMountPath, VaultAgentAPI vaultAgentAPI) : base(backendMountName, backendMountPath, vaultAgentAPI) {
 			Type = EnumBackendTypes.Transit;
 			IsSecretBackend = true;
 		}
@@ -114,7 +114,7 @@ namespace VaultAgent.SecretEngines
 			// The keyname forms the last part of the path
 			string path = MountPointPath + PathKeys + keyName;
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "CreateEncryptionKey", createParams);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "CreateEncryptionKey", createParams);
 			if (vdro.HttpStatusCode == 204) { return true; }
 			else { return false; }
 		}
@@ -127,7 +127,7 @@ namespace VaultAgent.SecretEngines
 			// The keyname forms the last part of the path
 			string path = MountPointPath + PathKeys + keyName;
 
-			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ReadEncryptionKey");
+			VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "ReadEncryptionKey");
 			TransitKeyInfo TKI = vdro.GetVaultTypedObject<TransitKeyInfo>();
 			return TKI;
 		}
@@ -164,7 +164,7 @@ namespace VaultAgent.SecretEngines
 			Dictionary<string, string> sendParams = new Dictionary<string, string>();
 			sendParams.Add("list", "true");
 
-			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ListEncryptionKeys", sendParams);
+			VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "ListEncryptionKeys", sendParams);
 
 			string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
 
@@ -185,7 +185,7 @@ namespace VaultAgent.SecretEngines
 			string path = MountPointPath + PathEncrypt + keyName;
 
 			// Call Vault API.
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "EncryptToVault", contentParams);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "EncryptToVault", contentParams);
 			if (vdro.HttpStatusCode == 200) {
 				string js = vdro.GetDataPackageAsJSON();
 				TransitEncryptedItem data = VaultUtilityFX.ConvertJSON<TransitEncryptedItem>(js);
@@ -266,7 +266,7 @@ namespace VaultAgent.SecretEngines
 
 
 			// Call Vault API.
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "EncryptBulk", null, bulkJSON);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "EncryptBulk", null, bulkJSON);
 
 
 			// Pull out the results and send back.  
@@ -301,7 +301,7 @@ namespace VaultAgent.SecretEngines
 
 
 			// Call Vault API.
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "Decrypt", contentParams);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "Decrypt", contentParams);
 			if (vdro.HttpStatusCode == 200) {
 				string js = vdro.GetDataPackageAsJSON();
 				TransitDecryptedItem data = VaultUtilityFX.ConvertJSON<TransitDecryptedItem>(js);
@@ -353,7 +353,7 @@ namespace VaultAgent.SecretEngines
 
 
 			// Call Vault API.
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "DecryptBulk", null, bulkJSON);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "DecryptBulk", null, bulkJSON);
 
 
 			// Pull out the results and send back.  
@@ -375,7 +375,7 @@ namespace VaultAgent.SecretEngines
 			string path = MountPointPath + PathKeys + keyName + "/rotate";
 
 			// Call Vault API.
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "RotateKey");
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "RotateKey");
 			if (!vdro.Success) {
 				// This should not be able to happen.  If it errored, it should have been handled in the PostAsync call.  
 				throw new VaultUnexpectedCodePathException("Unexpected response in RotateKey");
@@ -410,7 +410,7 @@ namespace VaultAgent.SecretEngines
 			if (keyVersion > 0) { contentParams.Add("key_version", keyVersion.ToString()); }
 
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "ReEncrypt", contentParams);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "ReEncrypt", contentParams);
 			if (vdro.HttpStatusCode == 200) {
 				string js = vdro.GetDataPackageAsJSON();
 				TransitEncryptedItem data = VaultUtilityFX.ConvertJSON<TransitEncryptedItem>(js);
@@ -459,7 +459,7 @@ namespace VaultAgent.SecretEngines
 
 
 			// Call Vault API.
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "ReEncryptBulk", null, bulkJSON);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "ReEncryptBulk", null, bulkJSON);
 
 
 			// Pull out the results and send back.  
@@ -493,7 +493,7 @@ namespace VaultAgent.SecretEngines
 				}
 			}  // Foreach KeyValuePair
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "UpdateKey", contentParams);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "UpdateKey", contentParams);
 
 			if (vdro.Success) {
 				// Read the key and return.
@@ -516,7 +516,7 @@ namespace VaultAgent.SecretEngines
 			string path = MountPointPath + "keys/" + keyName;
 
 			try {
-				VaultDataResponseObject vdro = await _vaultHTTP.DeleteAsync(path, "DeleteKey");
+				VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync(path, "DeleteKey");
 				if (vdro.Success) { return true; }
 				else { return false; }
 			}
@@ -565,7 +565,7 @@ namespace VaultAgent.SecretEngines
 			string path = MountPointPath + "datakey/" + sType + "/" + keyName;
 
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "GenerateDataKey", contentParams);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "GenerateDataKey", contentParams);
 
 			// Pull out the results and send back.  
 			string js = vdro.GetDataPackageAsJSON();
@@ -588,7 +588,7 @@ namespace VaultAgent.SecretEngines
 			string path = MountPointPath + "backup/" + keyName;
 
 			try {
-				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "BackupKey");
+				VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "BackupKey");
 
 				// Pull out the results and send back.  
 				string js = vdro.GetDataPackageAsJSON();
@@ -633,7 +633,7 @@ namespace VaultAgent.SecretEngines
 			try {
 				// Build the parameter list.
 				contentParams.Add("backup", tbri.KeyBackup);
-				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "RestoreKey", contentParams);
+				VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "RestoreKey", contentParams);
 				return vdro.Success;
 			}
 			catch (VaultInternalErrorException e) {
@@ -660,7 +660,7 @@ namespace VaultAgent.SecretEngines
 			if (hexOutputFormat) { encodeFormat = "hex"; }
 
 			contentParams.Add("format", encodeFormat);
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "GenerateRandomBytes", contentParams);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "GenerateRandomBytes", contentParams);
 			if (vdro.Success) {
 				string bytes = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "random_bytes");
 				if (hexOutputFormat) { return bytes; }
@@ -705,7 +705,7 @@ namespace VaultAgent.SecretEngines
 
 			string inputBase64 = VaultUtilityFX.Base64EncodeAscii(input);
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "ComputeHash", contentParams);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "ComputeHash", contentParams);
 			if (vdro.Success) {
 				return vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "sum");
 			}

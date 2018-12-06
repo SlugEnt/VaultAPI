@@ -30,7 +30,7 @@ namespace VaultAgent.SecretEngines
 		/// <param name="backendName">The name of the secret backend to mount.  This is purely cosmetic.</param>
 		/// <param name="backendMountPoint">The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/ and exclude trailing slash.</param>
 		/// <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
-		public KV2SecretEngine(string backendName,string backendMountPoint, VaultAPI_Http _httpConnector) : base (backendName, backendMountPoint, _httpConnector) {
+		public KV2SecretEngine(string backendName,string backendMountPoint, VaultAgentAPI vaultAgentAPI) : base (backendName, backendMountPoint, vaultAgentAPI) {
 			Type = EnumBackendTypes.KeyValueV2;
 			IsSecretBackend = true;
 		}
@@ -55,7 +55,7 @@ namespace VaultAgent.SecretEngines
 				contentParams.Add("max_versions", maxVersions.ToString());
 				contentParams.Add("cas_required", casRequired.ToString());
 
-				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "ConfigureBackend", contentParams);
+				VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "ConfigureBackend", contentParams);
 				if (vdro.Success) { return true; }
 				return false;
 			}
@@ -74,7 +74,7 @@ namespace VaultAgent.SecretEngines
 				// V2 Secret stores have a unique config path...
 				string path = MountPointPath + "config";
 
-				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "GetBackendConfiguration");
+				VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "GetBackendConfiguration");
 				KV2SecretEngineSettings settings = vdro.GetVaultTypedObject<KV2SecretEngineSettings>();
 				return settings;
 			}
@@ -120,7 +120,7 @@ namespace VaultAgent.SecretEngines
 			reqData.Add("data", secret);
 
 			try {
-				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync2(path, "SaveSecret", reqData);
+				VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync2(path, "SaveSecret", reqData);
 				if (vdro.Success) { return true; }
 				return false;
 			}
@@ -150,7 +150,7 @@ namespace VaultAgent.SecretEngines
 			try {
 				Dictionary<string, string> contentParams = new Dictionary<string, string>() {{ "version", secretVersion.ToString() }};
 
-				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ReadSecret",contentParams);
+				VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "ReadSecret",contentParams);
 				if (vdro.Success) {
 					KV2SecretWrapper secretReadReturnObj = KV2SecretWrapper.FromJson(vdro.GetResponsePackageAsJSON());
 					return secretReadReturnObj;
@@ -178,11 +178,11 @@ namespace VaultAgent.SecretEngines
 
 				// Add the version parameter
 				string jsonParams = "{\"versions\": [" + version.ToString() + "]}";
-				vdro = await _vaultHTTP.PostAsync(path, "DeleteSecretVersion",null,jsonParams);
+				vdro = await _parent._httpConnector.PostAsync(path, "DeleteSecretVersion",null,jsonParams);
 			}
 			else {
 				path = MountPointPath + "data/" + secretPath;
-				vdro = await _vaultHTTP.DeleteAsync(path, "DeleteSecretVersion");
+				vdro = await _parent._httpConnector.DeleteAsync(path, "DeleteSecretVersion");
 			}	
 
 			
@@ -204,7 +204,7 @@ namespace VaultAgent.SecretEngines
 			string path = MountPointPath + "metadata/" + namePath + "?list=true";
 
 			try {
-				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ListSecrets");
+				VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "ListSecrets");
 				if (vdro.Success) {
 					string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
 					List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js);
@@ -237,7 +237,7 @@ namespace VaultAgent.SecretEngines
 				contentParams.Add("max_versions", maxVersions.ToString());
 				contentParams.Add("cas_required", casRequired.ToString());
 
-				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "UpdateSecretSettings", contentParams);
+				VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "UpdateSecretSettings", contentParams);
 				if (vdro.Success) { return true; }
 				return false;
 			}
@@ -261,7 +261,7 @@ namespace VaultAgent.SecretEngines
 				Dictionary<string, string> contentParams = new Dictionary<string, string>();
 				contentParams.Add("versions", version.ToString());
 
-				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "UndeleteSecretVersion", contentParams);
+				VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "UndeleteSecretVersion", contentParams);
 				if (vdro.Success) { return true; }
 				return false;
 			}
@@ -286,7 +286,7 @@ namespace VaultAgent.SecretEngines
 				Dictionary<string, string> contentParams = new Dictionary<string, string>();
 				contentParams.Add("versions", version.ToString());
 
-				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "DestroySecretVersion", contentParams);
+				VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "DestroySecretVersion", contentParams);
 				if (vdro.Success) { return true; }
 				return false;
 			}
@@ -301,7 +301,7 @@ namespace VaultAgent.SecretEngines
 				// we need to use the MetaData Path
 				string path = MountPointPath + "metadata/" + namePath;
 
-				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "GetSecretMetaData");
+				VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "GetSecretMetaData");
 				if (vdro.Success) {
 					string ks = vdro.GetDataPackageAsJSON();
 					KV2SecretMetaDataInfo kvData = VaultUtilityFX.ConvertJSON<KV2SecretMetaDataInfo>(ks);
@@ -325,7 +325,7 @@ public async Task<bool> DestroySecretCompletely (string namePath) {
 				// we need to use the MetaData Path
 				string path = MountPointPath + "metadata/" + namePath;
 
-				VaultDataResponseObject vdro = await _vaultHTTP.DeleteAsync(path, "DestroySecretCompletely");
+				VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync(path, "DestroySecretCompletely");
 				if (vdro.Success) { return true; }
 				return false;
 			}

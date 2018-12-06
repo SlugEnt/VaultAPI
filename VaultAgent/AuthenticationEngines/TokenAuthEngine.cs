@@ -14,7 +14,7 @@ namespace VaultAgent.AuthenticationEngines
 		/// Constructor for the TokenAuthEngine
 		/// </summary>
 		/// <param name="httpConnector">VaultAPI_Http object used to communicate with the Vault Instance.</param>
-		public TokenAuthEngine (VaultAPI_Http httpConnector) : base ("Token","token", httpConnector) {
+		public TokenAuthEngine (VaultAgentAPI vaultAgentAPI) : base ("Token","token", vaultAgentAPI) {
 			Type = Backends.EnumBackendTypes.A_Token;
 			MountPointPrefix = "/v1/auth/";
 		}
@@ -29,7 +29,7 @@ namespace VaultAgent.AuthenticationEngines
 		public async Task<List<string>> ListTokenAccessors () {
 			string path = MountPointPath + "accessors?list=true";
 
-			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ListTokenAccessors");
+			VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "ListTokenAccessors");
 			if (vdro.Success) {
 				string js = vdro.GetDataPackageFieldAsJSON("keys");
 				List<string> tokenAccessors = VaultUtilityFX.ConvertJSON<List<string>>(js);
@@ -49,7 +49,7 @@ namespace VaultAgent.AuthenticationEngines
 
 			string json = JsonConvert.SerializeObject(tokenSettings, Formatting.None);
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "CreateOrphanToken", null, json);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "CreateOrphanToken", null, json);
 			if (vdro.Success) {
 				return true;
 			}
@@ -65,16 +65,23 @@ namespace VaultAgent.AuthenticationEngines
 		/// </summary>
 		/// <param name="tokenSettings">A TokenNewSettings object with the options you would like the new token to have. </param>
 		/// <returns>True if token was created successfully.</returns>
-		public async Task<bool> CreateToken(TokenNewSettings tokenSettings) {
+		public async Task<Token> CreateToken(TokenNewSettings tokenSettings) {
 			string path = MountPointPath + "create";
 
 			string json = JsonConvert.SerializeObject(tokenSettings, Formatting.None);
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "CreateToken",null,json);
-			if (vdro.Success) {
-				return true;
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "CreateToken",null,json);
+		    if (vdro.Success)
+		    {
+		        string js = vdro.GetResponsePackageFieldAsJSON ("auth");
+		        LoginResponse loginResponse = VaultUtilityFX.ConvertJSON<LoginResponse> (js);
+
+		        // Now read the token.back.
+		        return (await this.GetTokenWithID (loginResponse.ClientToken));
+		    }
+		    else {
+			    return null;		   
 			}
-			throw new ApplicationException("TokenAuthEngine:  CreateToken returned an unexpected error.");
 		}
 
 
@@ -93,7 +100,7 @@ namespace VaultAgent.AuthenticationEngines
 			};
 
 			try {
-				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "GetToken", contentParams);
+				VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "GetToken", contentParams);
 				if (vdro.Success) {
 					string js = vdro.GetDataPackageAsJSON();
 					Token token = VaultUtilityFX.ConvertJSON<Token>(js);
@@ -111,17 +118,17 @@ namespace VaultAgent.AuthenticationEngines
 
 
 
-
-
+        
 		/// <summary>
-		/// Returns a Token object of the Token that is currently being used to access Vault with.
+		/// Returns a Token object of the Token that is currently being used to access Vault with.  This routine also exists within the VaultAuthentication Backend.
 		/// </summary>
+		/// <remarks>This routine and the one in VaultAuthenticationBackend should be kept in sync.</remarks>
 		/// <returns>Token object of the current token used to access Vault Instance with.</returns>
 		public async Task<Token> GetCurrentTokenInfo() { 
 			string path = MountPointPath + "lookup-self";
 			
 			try { 
-				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "GetCurrentTokenInfo");
+				VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "GetCurrentTokenInfo");
 				if (vdro.Success) {
 					string js = vdro.GetDataPackageAsJSON();
 					Token tokenInfo = VaultUtilityFX.ConvertJSON<Token>(js);
@@ -153,7 +160,7 @@ namespace VaultAgent.AuthenticationEngines
 			};
 
 			try {
-				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "GetTokenViaAccessor", contentParams);
+				VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "GetTokenViaAccessor", contentParams);
 				if (vdro.Success) {
 					string js = vdro.GetDataPackageAsJSON();
 					Token token = VaultUtilityFX.ConvertJSON<Token>(js);
@@ -186,7 +193,7 @@ namespace VaultAgent.AuthenticationEngines
 			};
 
 
-				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "RenewToken", contentParams);
+				VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "RenewToken", contentParams);
 				if (vdro.Success) {
 					return true;
 				}
@@ -196,7 +203,7 @@ namespace VaultAgent.AuthenticationEngines
 
 
 		/// <summary>
-		/// Renews the current token being used to access the Vault Instance with using the specified TimeUnit for the new lease period.  This lease period may or may not be honored by the Vault system.
+		/// Renews the specified token using the specified TimeUnit for the new lease period.  This lease period may or may not be honored by the Vault system.
 		/// </summary>
 		/// <param name="tokenID">ID of the token to be renewed.</param>
 		/// <param name="renewalTimeAmount">A suggested amount of time to renew the token for.  Vault has a complex algorithm that is determined at renewal time what the actual Lease Time will be.</param>
@@ -212,7 +219,7 @@ namespace VaultAgent.AuthenticationEngines
 			}
 
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "RenewToken", contentParams);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "RenewToken", contentParams);
 			if (vdro.Success) {
 
 				return true;
@@ -230,7 +237,7 @@ namespace VaultAgent.AuthenticationEngines
 		public async Task<bool> RenewTokenSelf () {
 			string path = MountPointPath + "renew-self";
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "RenewTokenSelf");
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "RenewTokenSelf");
 			if (vdro.Success) { return true; }
 			else { throw new VaultUnexpectedCodePathException(); }
 		}
@@ -251,7 +258,7 @@ namespace VaultAgent.AuthenticationEngines
 			};
 
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "RenewTokenSelf", contentParams);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "RenewTokenSelf", contentParams);
 			if (vdro.Success) {	return true; }
 			else { throw new VaultUnexpectedCodePathException(); }
 		}
@@ -276,7 +283,7 @@ namespace VaultAgent.AuthenticationEngines
 
 
 			try {
-				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "RevokeToken", contentParams);
+				VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "RevokeToken", contentParams);
 				if (vdro.Success) {	return true; }
 				else { throw new VaultUnexpectedCodePathException(); }
 			}
@@ -297,7 +304,7 @@ namespace VaultAgent.AuthenticationEngines
 			string path = MountPointPath + "revoke-self";
 
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "RevokeTokenSelf");
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "RevokeTokenSelf");
 			if (vdro.Success) {
 				return true;
 			}
@@ -320,7 +327,7 @@ namespace VaultAgent.AuthenticationEngines
 			};
 
 			try {
-				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "RevokeTokenViaAccessor", contentParams);
+				VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "RevokeTokenViaAccessor", contentParams);
 				if (vdro.Success) {
 					return true;
 				}
@@ -344,7 +351,7 @@ namespace VaultAgent.AuthenticationEngines
 			string json = JsonConvert.SerializeObject(tokenRole, Formatting.None);
 
 			try {
-				VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "SaveTokenRole",null,json);
+				VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "SaveTokenRole",null,json);
 				if (vdro.Success) {
 					return true;
 				}
@@ -368,7 +375,7 @@ namespace VaultAgent.AuthenticationEngines
 			string path = MountPointPath + "roles/" + tokenRoleName;
 
 			try {
-				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "GetTokenRole");
+				VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "GetTokenRole");
 				if (vdro.Success) {			
 					string js = vdro.GetDataPackageAsJSON();
 					TokenRole tokenRole = VaultUtilityFX.ConvertJSON<TokenRole>(js);
@@ -388,7 +395,7 @@ namespace VaultAgent.AuthenticationEngines
 		public async Task<List<string>> ListTokenRoles () {
 			string path = MountPointPath + "roles?list=true";
 
-			VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ListTokenRoles");
+			VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "ListTokenRoles");
 			if (vdro.Success) {
 				string js = vdro.GetDataPackageFieldAsJSON("keys");
 				List<string> tokenRoles = VaultUtilityFX.ConvertJSON<List<string>>(js);
@@ -407,7 +414,7 @@ namespace VaultAgent.AuthenticationEngines
 		public async Task<bool> DeleteTokenRole (string tokenRoleName) {
 			string path = MountPointPath + "roles/" + tokenRoleName;
 
-			VaultDataResponseObject vdro = await _vaultHTTP.DeleteAsync(path, "DeleteTokenRole");
+			VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync(path, "DeleteTokenRole");
 			if (vdro.Success) {	return true; }
 			else { return false; }
 		}

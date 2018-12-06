@@ -19,7 +19,7 @@ namespace VaultAgent.SecretEngines
 		/// <param name="backendName">The name of the secret backend to mount.  This is purely cosmetic.</param>
 		/// <param name="backendMountPoint">The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/ and exclude trailing slash.</param>
 		/// <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
-		public KeyValueSecretEngine(string backendName, string backendMountPoint, VaultAPI_Http _httpConnector) : base(backendName, backendMountPoint, _httpConnector) {
+		public KeyValueSecretEngine(string backendName, string backendMountPoint, VaultAgentAPI vaultAgentAPI) : base(backendName, backendMountPoint, vaultAgentAPI) {
 			Type = EnumBackendTypes.Secret;
 			IsSecretBackend = true;
 		}
@@ -128,7 +128,7 @@ namespace VaultAgent.SecretEngines
 			}
 			else { attrJSON = contentParamsJSON; }
 
-			VaultDataResponseObject vdro = await _vaultHTTP.PostAsync(path, "CreateOrUpdateSecret",null, attrJSON);
+			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "CreateOrUpdateSecret",null, attrJSON);
 			if (vdro.Success) {
 				return true;
 			}
@@ -149,7 +149,7 @@ namespace VaultAgent.SecretEngines
 			string path = MountPointPath + secretPath;
 
 			try {
-				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ReadSecret");
+				VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "ReadSecret");
 				if (vdro.Success) {
 					KeyValueSecret secret = vdro.GetVaultTypedObjectFromResponse<KeyValueSecret>();
 
@@ -214,7 +214,7 @@ namespace VaultAgent.SecretEngines
 			string path = MountPointPath + secretPath + "?list=true";
 
 			try {
-				VaultDataResponseObject vdro = await _vaultHTTP.GetAsync(path, "ListSecrets");
+				VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "ListSecrets");
 				if (vdro.Success) {
 					string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
 					List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js);
@@ -283,7 +283,7 @@ namespace VaultAgent.SecretEngines
 		public async Task<bool> DeleteSecret(string secretPath) {
 			string path = MountPointPath + secretPath;
 
-			VaultDataResponseObject vdro = await _vaultHTTP.DeleteAsync(path, "DeleteSecretVersion");
+			VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync(path, "DeleteSecretVersion");
 			if (vdro.Success) { return true; }
 			else { return false; }
 		}

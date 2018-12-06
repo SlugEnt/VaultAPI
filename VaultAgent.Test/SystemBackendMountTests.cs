@@ -25,13 +25,15 @@ namespace VaultAgentTests
 			}
 
 		    // Build Connection to Vault.
-		    _vaultAgentAPI = new VaultAgentAPI("transitVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+		    _vaultAgentAPI = new VaultAgentAPI("transitVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
 
             // Create a new system Backend Mount for this series of tests.
 		    _vaultSystemBackend = _vaultAgentAPI.System;
 		}
 
 
+
+        // Validate that the Mount point config options we passed in were indeed saved and set to the Vault Mount.
 		[Test]
 		public async Task ValidateConfigOptions () {
 			int maxTTL = 1800;			// 30min
@@ -59,6 +61,7 @@ namespace VaultAgentTests
 
 
 
+        // Validate we can change Mount Configuration options after initial creation.
 		[Test]
 		public async Task ChangeMountConfigOptions() {
 			int maxTTL = 1800;          // 30min
@@ -103,7 +106,22 @@ namespace VaultAgentTests
 		}
 
 
-		[Test]
+
+        // Validates that the appropriate error codes are set when trying to create a mount point that already exists.
+        [Test]
+        public async Task CreateMountBackend_Fails_IfAlreadyExists()
+        {
+            string mountName = _uniqueKeys.GetKey ("DupMnt");
+            Assert.True(await _vaultSystemBackend.SysMountCreate(mountName, "test", EnumSecretBackendTypes.KeyValueV2), "Unable to create Mount with key name: {0}", mountName);
+            VaultInvalidDataException e = Assert.ThrowsAsync<VaultInvalidDataException>(async () => await _vaultSystemBackend.SysMountCreate(mountName, "test", EnumSecretBackendTypes.KeyValueV2), "Unable to create Mount with key name: {0}", mountName);
+                
+            Assert.AreEqual(EnumVaultExceptionCodes.BackendMountAlreadyExists, e.SpecificErrorCode, "A2: Expected the exception Specific Code to be BackendMountAlreadyExists, but it was set to: " + e.SpecificErrorCode);
+
+        }
+
+
+        // Validate we can actualy delete a mount point backend.
+        [Test]
 		public async Task DeleteMount () {
 			string key = _uniqueKeys.GetKey("SYSM");
 			string desc = "Test Mount DB: " + key + "KeyValue V2";
