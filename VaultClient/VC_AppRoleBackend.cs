@@ -168,7 +168,7 @@ namespace VaultClient
 			    ///
 			    /// 
                 // Now attempt to create some secrets.
-                KV2Secret secA1 = new KV2Secret("apps/" + appNameA + "/config");
+                KV2Secret secA1 = new KV2Secret("config",("apps/" + appNameA ));
                 secA1.Attributes.Add("RegisteredBy","Scott Herrmann");
 			    secA1.Attributes.Add("CreatedBy", "Grand Negus");
 
