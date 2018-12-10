@@ -12,6 +12,11 @@ namespace VaultAgent.SecretEngines {
 
         public const string Error_CAS_InvalidVersion = "The backend storage engine has the CAS property set.  This requires that all secret saves must " +
                                                        "specify the current version of the key in order to update it.  The calling routine provided an incorrect version.";
+
+	    public const string Error_CAS_SecretAlreadyExists =
+		    "The backend storage engine has the CAS property set.  In addition, the calling routine specified that the secret save should " +
+		    "only happen if the secret does not exist.  The secret already exists and thus cannot be saved.";
+
     }
 
 
@@ -83,19 +88,28 @@ namespace VaultAgent.SecretEngines {
             catch (Exception e) { throw e; }
         }
 
-        #endregion
+		#endregion
 
 
 
-        //TODO - Elaborate on summary - describe the enum options.
-        /// <summary>
-        /// Saves the provided KV2Secret object.  You must specify a save option and optionally what the current version of the secret is.
-        /// </summary>
-        /// <param name="secret">KV2Secret object to be saved.  This must contain minimally the Name and the Path of the secret and one or more optional attributes.</param>
-        /// <param name="enumKVv2SaveSecretOption"></param>
-        /// <param name="currentVersion">What the current version of the secret is.  Required if the backend is in CAS mode (Default mode).</param>
-        /// <returns></returns>
-        public async Task<bool> SaveSecret (KV2Secret secret, KV2EnumSecretSaveOptions enumKVv2SaveSecretOption, int currentVersion = 0) {
+		/// <summary>
+		/// Saves the provided KV2Secret object.  You must specify a save option and optionally what the current version of the secret is.
+		/// If the CAS setting is set on the backend then the following errors may be returned:
+		/// [VaultInvalidDataException]
+		///    [SpecificErrorCode] = EnumVaultExceptionCodes.CheckAndSetMissing - You specified an invalid casSaveOption (AlwaysAllow is not valid for backend with CAS Set)
+		///			or the currentVersion parameter was invalid.
+		///    [SpecificErrorCode] = EnumVaultExceptionCodes.CAS_SecretExistsAlready - You set the casSaveOption to only allow save to succeed if the secret does not yet exist.
+		///    [SpecificErrorCode] = EnumVaultExceptionCodes.CAS_VersionMissing - The version you specified was invalid.  It must be equal to the current version number of the secret.
+		/// </summary>
+		/// <param name="secret">KV2Secret object to be saved.  This must contain minimally the Name and the Path of the secret and one or more optional attributes.</param>
+		/// <param name="casSaveOption">This must be set to the CAS option you desired:
+		///   - OnlyIfKeyDoesNotExist = 0,
+	    ///   - OnlyOnExistingVersionMatch = 1,
+	    ///   - AlwaysAllow = 2  - Set to this value if the backend is not CAS enabled.  If CAS is enabled then this option will result in an error.
+		/// </param>
+		/// <param name="currentVersion">What the current version of the secret is.  Required if the backend is in CAS mode (Default mode).</param>
+		/// <returns></returns>
+		public async Task<bool> SaveSecret (KV2Secret secret, KV2EnumSecretSaveOptions casSaveOption, int currentVersion = 0) {
             string path = MountPointPath + "data/" + secret.FullPath;
 
 
@@ -103,7 +117,7 @@ namespace VaultAgent.SecretEngines {
             Dictionary<string, string> options = new Dictionary<string, string>();
 
             // Set CAS depending on option coming from caller.
-            switch (enumKVv2SaveSecretOption) {
+            switch (casSaveOption) {
                 case KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist:
                     options.Add ("cas", "0");
                     break;
@@ -119,7 +133,6 @@ namespace VaultAgent.SecretEngines {
 
 
             // CAS - Check and Set needs to be passed in from caller.
-            //options.Add("cas", "");
             reqData.Add ("options", options);
             reqData.Add ("data", secret);
 
@@ -131,11 +144,28 @@ namespace VaultAgent.SecretEngines {
             }
             catch (VaultInvalidDataException e) {
                 if (e.Message.Contains ("check-and-set parameter required for this call")) {
-                    throw new VaultInvalidDataException (Constants.Error_CAS_Set + " | Original Error message was: " + e.Message);
+					VaultInvalidDataException eNew = new VaultInvalidDataException(Constants.Error_CAS_Set + " | Original Error message was: " + e.Message);
+	                eNew.SpecificErrorCode = EnumVaultExceptionCodes.CheckAndSetMissing;
+	                throw eNew;                   
                 }
+				// Check for Version errors:
                 else if (e.Message.Contains ("did not match the current version")) {
-                    throw new VaultInvalidDataException (Constants.Error_CAS_InvalidVersion + " Version specified was: " + currentVersion +
-                                                         " | Original Error message was: " + e.Message);
+					// If user requested that the save happen only if the key does not already exist then return customized error message.
+	                if (casSaveOption == KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist) {
+		                VaultInvalidDataException eNew = new VaultInvalidDataException(Constants.Error_CAS_SecretAlreadyExists +
+		                                                                               " | Original Error message was: " + e.Message);
+		                eNew.SpecificErrorCode = EnumVaultExceptionCodes.CAS_SecretExistsAlready;
+		                throw eNew;
+					}
+
+					// Customize the version discrepancy message
+					else {
+		                VaultInvalidDataException eNew = new VaultInvalidDataException(Constants.Error_CAS_InvalidVersion + " Version specified was: " +
+		                                                                               currentVersion +
+		                                                                               " | Original Error message was: " + e.Message);
+		                eNew.SpecificErrorCode = EnumVaultExceptionCodes.CAS_VersionMissing;
+		                throw eNew;
+	                }
                 }
                 else { throw new VaultInvalidDataException (e.Message); }
             }
@@ -147,6 +177,9 @@ namespace VaultAgent.SecretEngines {
         /// <summary>
         /// Reads the secret from Vault.  It defaults to reading the most recent version.  Set secretVersion to non zero to retrieve a
         /// specific version.
+        /// Returns [VaultForbiddenException] if you do not have permission to read from the path.
+        /// Returns the KV2SecretWrapper if a secret was found at the location.
+        /// Returns Null if no secret found at location.
         /// </summary>
         /// <param name="secretPath">The Name (path) to the secret you wish to read.</param>
         /// <param name="secretVersion">The version of the secret to retrieve.  Leave at default of Zero to read most recent version.</param>
@@ -164,8 +197,31 @@ namespace VaultAgent.SecretEngines {
 
                 throw new ApplicationException ("SecretBackEnd: ReadSecret - Arrived at an unexpected code path.");
             }
+
+			// VaultInvalidPathExceptions are not permission problems - despite what the error text hints at.  Instead they just mean no secret exists at that path.  We return null.
+			// Vault with throw a VaultForbiddenException on permission errors - and we do not catch that here.
             catch (VaultInvalidPathException e) { return null; }
         }
+
+
+
+		 
+		/// <summary>
+		/// Version of Read Secret that returns a tuple.  First Tuple Value is a boolean and is True if the Secret exists and was able to be read.  Returns false, if it does not exist.
+		/// By default it checks against the current version of a secret.
+		/// </summary>
+		/// <param name="secretPath">The path to the secret to check for existence and retrieve if it does exist.</param>
+		/// <returns></returns>
+		public async Task<(bool IsSuccess, KV2SecretWrapper Secret)> TryReadSecret(string secretPath, int secretVersion = 0) {
+		    KV2SecretWrapper secret = await ReadSecret(secretPath, secretVersion);
+		    if (secret == null) {
+			    return (false, null);
+		    }
+		    else {
+			    return (true, secret);
+		    }
+	    }
+
 
 
 
@@ -360,7 +416,13 @@ namespace VaultAgent.SecretEngines {
             return await ReadSecret (secretObj.FullPath, secretVersion);
         }
 
-        public async Task<KV2SecretMetaDataInfo> GetSecretMetaData (KV2Secret secretObj) { return await GetSecretMetaData (secretObj.FullPath); }
+	    public async Task<(bool IsSuccess, KV2SecretWrapper Secret)> TryReadSecret(KV2Secret secretObj, int secretVersion = 0) {
+			var result = await TryReadSecret(secretObj.FullPath, secretVersion);
+		    return (result.IsSuccess, result.Secret);
+		}
+
+
+		public async Task<KV2SecretMetaDataInfo> GetSecretMetaData (KV2Secret secretObj) { return await GetSecretMetaData (secretObj.FullPath); }
 
         #endregion
 

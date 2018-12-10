@@ -468,12 +468,47 @@ namespace VaultAgentTests
 
 		}
 
-		#endregion
+
+        // Validates that the FullControl property sets the Create, Read, Update, Delete and List properties as expected.
+        [Test]
+        public void Policy_FullControlSetOperation_Works()
+        {
+            VaultPolicyPathItem vaultPolicyPathItem = new VaultPolicyPathItem("itemB");
+
+            // Validate initial FullControl items are all false.
+            Assert.False(vaultPolicyPathItem.CreateAllowed);
+            Assert.False(vaultPolicyPathItem.ReadAllowed);
+            Assert.False(vaultPolicyPathItem.UpdateAllowed);
+            Assert.False(vaultPolicyPathItem.DeleteAllowed);
+            Assert.False(vaultPolicyPathItem.ListAllowed);
+
+            // Now Set Full Control
+            vaultPolicyPathItem.FullControl = true;
+
+            // Validate FullControl items are now true
+            Assert.True(vaultPolicyPathItem.CreateAllowed);
+            Assert.True(vaultPolicyPathItem.ReadAllowed);
+            Assert.True(vaultPolicyPathItem.UpdateAllowed);
+            Assert.True(vaultPolicyPathItem.DeleteAllowed);
+            Assert.True(vaultPolicyPathItem.ListAllowed);
+
+            // Now Set FullControl to False.
+            vaultPolicyPathItem.FullControl = false;
+
+            // Validate final FullControl items are all false.
+            Assert.False(vaultPolicyPathItem.CreateAllowed);
+            Assert.False(vaultPolicyPathItem.ReadAllowed);
+            Assert.False(vaultPolicyPathItem.UpdateAllowed);
+            Assert.False(vaultPolicyPathItem.DeleteAllowed);
+            Assert.False(vaultPolicyPathItem.ListAllowed);
+
+        }
+        #endregion
 
 
-		#region Auth_Tests
+        #region Auth_Tests
 
-		[Test]
+        [Test]
 		// Make sure that the JSON constructor will set the path and name value correctly.
 		public void AuthMethod_JSONConstructor_SetsNameAndPathCorrectly () {
 			string path = "test2/";

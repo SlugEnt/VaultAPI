@@ -14,7 +14,10 @@ namespace VaultAgent
 		BackendMountAlreadyExists = 1,		// Indicates that there is already a backend mounted at the specified location.
 		ObjectDoesNotExist = 2,				// Indicates that a given path, policy, secret does not exist in Vault.
         LoginRoleID_NotFound = 3,           // Indicates that login failed because the login RoleID was invalid.
-        LoginSecretID_NotFound = 4          // Indicates that the login failed because the login SecretID supplied is not valid.
+        LoginSecretID_NotFound = 4,         // Indicates that the login failed because the login SecretID supplied is not valid.
+		CheckAndSetMissing = 5,				// The Check and Set (CAS) parameter was missing.  This is required on some KV2 keystores depending on config.
+		CAS_VersionMissing = 6,				// The Check and Set (CAS) secret version was missing OR the secret already exists, but was told it should only save if it does not exist.
+		CAS_SecretExistsAlready = 7			// The Check and Set (CAS) is set && User requested that the Save only happen if the secret does not already exist.  Secret exists and so this error.
 	}
 
 

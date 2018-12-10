@@ -33,7 +33,8 @@ namespace VaultAgent.SecretEngines.KV2
 
 
 		/// <summary>
-		/// Tells you if this Secret was read from the Vault storage engine or if it was created outside of Vault.  
+		/// Tells you if this Secret was read from the Vault storage engine or if it was created outside of Vault.  If it was not read from Vault then
+		/// the version number and some of the other informational data is invalid.
 		/// </summary>
 		public bool WasReadFromVault { get; private set; }
 

@@ -1,4 +1,7 @@
-﻿
+﻿//TODO - This only partially works for KV2 backends.  
+// Need to figure out how we would do this for KV2.
+
+
 namespace VaultAgent.Backends.System
 {
 	/// <summary>
@@ -228,7 +231,26 @@ namespace VaultAgent.Backends.System
 
 
 
+        /// <summary>
+        /// A Shortcut method to setting full control for a given path.  This sets Create, Read, Update, Delete AND List to the value specified.
+        /// </summary>
+	    public bool FullControl {
+	        get {
+	            if ((_createAllowed) && (_readAllowed) && (_updateAllowed) && (_deleteAllowed) && (_listAllowed))
+	            {
+	                return true;
+	            }
+	            else
+	            {
+	                return false;
+	            }
 
+            }
+            set {
+	            CRUDAllowed = value;
+	            ListAllowed = value;
+	        }
+	    }
 
 	}
 }

@@ -84,8 +84,8 @@ namespace VaultAgentTests
 		[Test]
 		public async Task Validate_BackendSettings_CAS_Set() {
 			KV2SecretEngineSettings s = await _casMount.GetBackendConfiguration();
-			Assert.AreEqual(true, s.CASRequired);
-			Assert.AreEqual(6, s.MaxVersions);
+			Assert.AreEqual(true, s.CASRequired, "A1: Expected the Backend to be mounted in CAS Mode, but it was not.  Cannot test further.");
+			Assert.AreEqual(6, s.MaxVersions, "A10: Expected the backend to have the property MaxVersions set to 6.  But it was: " + s.MaxVersions.ToString());
 		}
 
 
@@ -96,7 +96,7 @@ namespace VaultAgentTests
         [Test]
         public async Task BackendWithCAS_FailsSecretSaveWithoutCasOptionSet () {
 			KV2SecretEngineSettings s = await _casMount.GetBackendConfiguration();
-			Assert.AreEqual(true, s.CASRequired);
+	        Assert.AreEqual(true, s.CASRequired, "A1: Expected the Backend to be mounted in CAS Mode, but it was not.  Cannot test further.");
 
 			string secName = _uniqueKey.GetKey();
 			KV2Secret secretV2 = new KV2Secret(secName,"/");
@@ -114,15 +114,13 @@ namespace VaultAgentTests
 
 
 
-        /// <summary>
-
-        /// </summary>
+		// Validate that we can save a secret with CAS set.
         [Test]
         public async Task BackendWithCAS_AllowsSaveOfNewSecretWithCASSet() {
 			// Setup backend to allow 6 versions of a key and requires CAS.
 			//Assert.True(await casMount.SetBackendConfiguration(6, true));
 			KV2SecretEngineSettings s = await _casMount.GetBackendConfiguration();
-			Assert.AreEqual(true, s.CASRequired);
+	        Assert.AreEqual(true, s.CASRequired, "A1: Expected the Backend to be mounted in CAS Mode, but it was not.  Cannot test further.");
 
 
 			// Generate a key.
@@ -130,16 +128,19 @@ namespace VaultAgentTests
 			KV2Secret secretV2 = new KV2Secret(secName,"");
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
 			secretV2.Attributes.Add(kv1.Key,kv1.Value);
+	        KeyValuePair<string, string> kv2 = new KeyValuePair<string, string>("b", "2");
+	        secretV2.Attributes.Add(kv2.Key, kv2.Value);
 
 
 			// Save Secret passing CAS option of 0 for new update.
-			Assert.True(await _casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist));
+			Assert.True(await _casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist),"A10: Expected the secret to be saved and return True, but it returned False instead.");
 
 
 			// Read the Secret back to confirm the save.
 			KV2SecretWrapper s2 = await _casMount.ReadSecret(secretV2);
-			Assert.True(secretV2.Path == s2.Data.SecretObj.Path);
-			Assert.Contains(kv1, s2.Data.SecretObj.Attributes);
+			Assert.AreEqual(secretV2.Path, s2.Data.SecretObj.Path,"A20: Expected the secret paths to be the same.  They were different.");
+			Assert.Contains(kv1, s2.Data.SecretObj.Attributes,"A30:  The secret appears to be missing some Attributes that we requested be saved.");
+	        Assert.Contains(kv2, s2.Data.SecretObj.Attributes, "A40:  The secret appears to be missing some Attributes that we requested be saved.");
 		}
 
 
@@ -152,7 +153,7 @@ namespace VaultAgentTests
         [Test]
         public async Task BackendWithCAS_AllowsSaveofSecretWithNewVersion () {
 			KV2SecretEngineSettings s = await _casMount.GetBackendConfiguration();
-			Assert.AreEqual(true, s.CASRequired);
+	        Assert.AreEqual(true, s.CASRequired, "A1: Expected the Backend to be mounted in CAS Mode, but it was not.  Cannot test further.");
 
 
 			// Generate a key.
@@ -183,14 +184,15 @@ namespace VaultAgentTests
 
 
         /// <summary>
-        /// Tests that with a backend with CAS set, That an existing secret can be saved only if current version has been specified.
+        /// Tests that with a backend with CAS set, That attempting to save a secret without specifying the previous version of that secret
+        /// results in an exception being thrown.
         /// </summary>
         /// <returns></returns>
         [Test]
 
 		public async Task BackendWithCAS_SaveSecretWithInvalidVersionNumFails() {
 			KV2SecretEngineSettings s = await _casMount.GetBackendConfiguration();
-			Assert.AreEqual(true, s.CASRequired);
+	        Assert.AreEqual(true, s.CASRequired, "A1: Expected the Backend to be mounted in CAS Mode, but it was not.  Cannot test further.");
 
 
 			// Generate a key.
@@ -212,29 +214,81 @@ namespace VaultAgentTests
 			Assert.Contains(kv1, s2.Data.SecretObj.Attributes);
 			Assert.AreEqual(1, s2.Data.Metadata.Version);
 
-			// 3. Now attempt to save the secret back specifying the version.
+			// 3. Now  Update the secret attributes.
 			KeyValuePair<string, string> kv2 = new KeyValuePair<string, string>("b", "2");
 			secretV2.Attributes.Add(kv2.Key, kv2.Value);
-
-
-			// 4. Save secret a second time.
 			KeyValuePair<string, string> kv3 = new KeyValuePair<string, string>("c", "3");
 			secretV2.Attributes.Add(kv3.Key, kv3.Value);
 
+	        // 4. Save secret a second time.
 			Assert.True(await _casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, 1),"A10: Save Secret should have succeeded.");
 
-			// 5. Now attempt to save the secret back specifying the version.
+
+	        // 5. Update secret attributes
 			KeyValuePair<string, string> kv4 = new KeyValuePair<string, string>("d", "4");
 			secretV2.Attributes.Add(kv4.Key, kv4.Value);
 
-
-			// 6. Save secret again.
+			// 6. Save Secret, but do not change the version number.  Should fail.
 			Assert.That(() => _casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch,1),
 				Throws.Exception
 					.TypeOf<VaultInvalidDataException>()
 					.With.Property("Message")
 					.Contains("did not match the current version"));
-			
+
+			var ex = Assert.ThrowsAsync<VaultInvalidDataException>( () => _casMount.SaveSecret(secretV2,KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch,1),"A11: Expected exception VaultInvalidDataException to be thrown.");		
+	        Assert.That(ex, Has.Property("SpecificErrorCode"),"A12: Expected the thrown exception to contain the Property SpecificErrorCode, but it was missing.");
+			Assert.AreEqual(EnumVaultExceptionCodes.CAS_VersionMissing,ex.SpecificErrorCode,"A13: Expected the Specific Error Code to be " + EnumVaultExceptionCodes.CAS_VersionMissing + ", but instead it was value: " + ex.SpecificErrorCode);
+			Assert.That(ex,Has.Property("Message").Contains("did not match the current version"), "Expected the Thrown Exception message to contain certain version text, but it was not in the exception message.");
+        }
+
+
+
+		/// <summary>
+		/// Tests that with a backend with CAS set, That attempting to save a secret with the option - OnlyIfKeyDoesNotExist set results in an exception being thrown if that
+		/// secret already exists.
+		/// </summary>
+		/// <returns></returns>
+		[Test]
+
+		public async Task BackendWithCAS_SaveSecretWith_OnlyIfKeyDoesNotExistOption_ResultsInException() {
+			KV2SecretEngineSettings s = await _casMount.GetBackendConfiguration();
+			Assert.AreEqual(true, s.CASRequired, "A1: Expected the Backend to be mounted in CAS Mode, but it was not.  Cannot test further.");
+
+
+			// Setup the test scenario:
+			// 1. Create a new key with version 1.
+			// Save Secret passing CAS option of 0 for new update.
+			string secName = _uniqueKey.GetKey();
+			KV2Secret secretV2 = new KV2Secret(secName);
+			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
+			secretV2.Attributes.Add(kv1.Key, kv1.Value);
+			Assert.True(await _casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist), "A10:  Saving of initial Secret Value failed.");
+
+
+			// 2. Read the secret back and get the version - just to confirm we do actually have a saved secret.
+			KV2SecretWrapper s2 = await _casMount.ReadSecret(secretV2);
+			Assert.True(secretV2.Path == s2.Data.SecretObj.Path);
+			Assert.Contains(kv1, s2.Data.SecretObj.Attributes, "A20:  Secret read from the Vault Instance did not contain the attributes we saved to it. ");
+			Assert.AreEqual(1, s2.Data.Metadata.Version, "A30:  The version number of the secret that we read back was not what we expected.  It should have been: 1");
+
+
+			// 3. Now Update the secret attributes.
+			KeyValuePair<string, string> kv2 = new KeyValuePair<string, string>("b", "2");
+			secretV2.Attributes.Add(kv2.Key, kv2.Value);
+
+
+			// 4. Attempt to save Secret, Should fail with SecretAlreadyExists message.
+			var ex = Assert.ThrowsAsync<VaultInvalidDataException>(() => _casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist, 1), "A40: Expected exception VaultInvalidDataException to be thrown.");
+			Assert.That(ex, Has.Property("SpecificErrorCode"), "A42: Expected the thrown exception to contain the Property SpecificErrorCode, but it was missing.");
+			Assert.AreEqual(EnumVaultExceptionCodes.CAS_SecretExistsAlready, ex.SpecificErrorCode, "A44: Expected the Specific Error Code to be " + EnumVaultExceptionCodes.CAS_SecretExistsAlready + ", but instead it was value: " + ex.SpecificErrorCode);
+			Assert.That(ex, Has.Property("Message").Contains("The secret already exists"), "A46:  Expected the Thrown Exception message to contain certain version text, but it was not in the exception message.");
+
+
+			// 5. Attempt to save Secret again, but this time with a correct version number.  Should still fail because we set option to .
+			var ex2 = Assert.ThrowsAsync<VaultInvalidDataException>(() => _casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist, 2), "A50: Expected exception VaultInvalidDataException to be thrown.");
+			Assert.That(ex2, Has.Property("SpecificErrorCode"), "A52: Expected the thrown exception to contain the Property SpecificErrorCode, but it was missing.");
+			Assert.AreEqual(EnumVaultExceptionCodes.CAS_SecretExistsAlready, ex.SpecificErrorCode, "A54: Expected the Specific Error Code to be " + EnumVaultExceptionCodes.CAS_SecretExistsAlready + ", but instead it was value: " + ex.SpecificErrorCode);
+			Assert.That(ex, Has.Property("Message").Contains("The secret already exists"), "A56:  Expected the Thrown Exception message to contain certain version text, but it was not in the exception message.");
 		}
 
 		#endregion
@@ -618,7 +672,7 @@ namespace VaultAgentTests
 			KV2SecretEngineSettings s = await _casMount.GetBackendConfiguration();
 			Assert.True(s.CASRequired, "A1: Backend settings are not what was expected.");
 
-			// Generate a key.
+			// Generate a secret key.
 			string secName = _uniqueKey.GetKey();
 			KV2Secret secretV2 = new KV2Secret(secName);
 			KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
@@ -894,6 +948,39 @@ namespace VaultAgentTests
 
 
 
+	    [Test]
+	    // Validate that we can read a secret if it exists or it returns false.
+	    public async Task TryReadSecret() {
+		    KV2SecretEngineSettings s = await _casMount.GetBackendConfiguration();
+		    Assert.True(s.CASRequired, "A1: Backend settings are not what was expected.");
+
+		    // Generate a secret key.
+		    string secName = _uniqueKey.GetKey();
+		    KV2Secret secretV2 = new KV2Secret(secName);
+			secretV2.Attributes.Add("a","1");
+
+		    // Save Secret
+		    Assert.True(await _casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist), "A20: SaveSecret failed to return True.");
+
+		    // Confirm it exists:
+		    KV2SecretWrapper s2 = await _casMount.ReadSecret(secretV2);
+		    Assert.True(secretV2.Path == s2.Data.SecretObj.Path, "A30: Secret saved and secret read were not the same.");
+
+
+			// Now try the TryVersion.  Should have success.
+		    var result = await _casMount.TryReadSecret(secretV2.FullPath);
+			Assert.True(result.IsSuccess,"A40:  Unable to read the secret back.");
+			Assert.IsInstanceOf<KV2SecretWrapper>(result.Secret);
+
+
+			// Now try one that does not exist.  It should fail.
+		    var resultF = await _casMount.TryReadSecret(secretV2.FullPath + "jhjhhmvmf");
+		    Assert.False(resultF.IsSuccess, "A50:  Unable to read the secret back.");
+		    Assert.IsNull(resultF.Secret);
+		}
+
+
+
 		[Test]
 		// Test that Secret shortcut access the actual backing value correctly.
 		public void SecretVersion () {
@@ -931,5 +1018,8 @@ namespace VaultAgentTests
             Assert.AreEqual(name, secret.Name);
         }
 
+
+
+		//TODO - Need a whole section on Policy based permission testing.
     }
 }
