@@ -6,11 +6,30 @@ using System;
 
 namespace VaultAgent.Backends.System
 {
+
 	/// <summary>
 	/// The VaultPolicyPathItem class is the C# object representation of a Vault Policy object.
-	/// A Vault Policy consists of 2 main items:
+	/// A Vault Policy consists of several items:  Broadly speaking it is:
 	///   - The Name or Path which is the location in Vault that is to be protected.
 	///   - A List of attributes that determine the rights that the policy conveys upon that path.
+	/// The path consists of:
+	///   |part1|/|part2|/|part3|
+	///   Part1 is mandatory and is a part of every Vault Policy object.  It is the backend mount name that is being protected.  For example secret.
+	///   Part3 is also mandatory and is the actual data path the policy applies to.
+	///   Part2 is optional/mandatory depending on whether the policy applies to a KeyValue Version 2 path or any other path.
+	///     - If the path is not a KeyValue Version 2 path, then essentially part 2 does not exist.
+	///     - If it does apply to a KeyValue Version 2 path then part 2 will be one of:
+	///        : metadata
+	///        : data
+	///        : delete
+	///        : undelete
+	///        : destroy
+	///
+	/// The property setters and constructor on this class will automatically set the IsKV2Policy flag to true if it finds any of those keywords as the first 
+	/// part of the path (after the backend mount name).  It is critical that users not use those prefixes AT ALL in ANY backend.
+	/// Likewise it will insert these setters if the policy is flagged as KV2Policy type.
+	///  
+	/// However, with the advent of KeyValue2 paths some changes needed to be made.
 	/// There are 8 supported attributes that a Vault Policy can have.
 	///   Create  - Allows creating data at the given path. Very few parts of Vault distinguish between create and update, so most operations require both
 	///				create and update capabilities. Parts of Vault that provide such a distinction are noted in documentation.
@@ -24,8 +43,17 @@ namespace VaultAgent.Backends.System
 	///   Root    -  //TODO - seems to be gone...
 	///   Deny    - Overrides all other attributes.  Prevents any access to the protected path.
 	/// </summary>
-	public class VaultPolicyPathItem
-	{
+	public class VaultPolicyPathItem {
+	    private static string[] KV2Keywords = new string[]
+	    {
+	        "data",
+	        "metadata",
+	        "delete",
+	        "undelete",
+	        "destroy"
+	    };
+
+
 		private bool _createAllowed = false;
 		private bool _readAllowed = false;
 		private bool _updateAllowed = false;
@@ -39,13 +67,26 @@ namespace VaultAgent.Backends.System
 	    private string _backendMount;
 	    private string _protectedPath;
 
+	    private bool _isKV2Policy = false;
+
+        // Extended Property
+	    private bool _extKV2_DeleteLatestKeyVersion = false;
+	    private bool _extKV2_DeleteAnyKeyVersion = false;
+	    private bool _extKV2_UnDelete = false;
+	    private bool _extKV2_DestroyVersions = false;
+	    private bool _extKV2_ViewMetadata = false;
+	    private bool _extKV2_DeleteMetaData = false;
+
+
+        #region "Constructors"
+
         /// <summary>
         /// The preferred constructor.
         /// </summary>
         /// <param name="backendMount"></param>
         /// <param name="protectedPath"></param>
         /// <param name="isPrefixPolicyType"></param>
-	    public VaultPolicyPathItem (string backendMount, string protectedPath, bool isPrefixPolicyType) {
+        public VaultPolicyPathItem (string backendMount, string protectedPath, bool isPrefixPolicyType) {
 	        BackendMountName = backendMount;
 	        ProtectedPath = protectedPath;
 	        IsPrefixType = isPrefixPolicyType;
@@ -84,6 +125,10 @@ namespace VaultAgent.Backends.System
 	    public VaultPolicyPathItem() { IsPrefixType = false; }
 
 
+        #endregion
+
+
+        #region "Normal Properties"
 
         /// <summary>
         /// The backend mount name is always the first "folder" in the Vault Instance policy path.  It is a required item.  Cannot contain any slashes.  Leading and Trailing slashes are
@@ -101,6 +146,9 @@ namespace VaultAgent.Backends.System
 
         /// <summary>
         /// The ProtectedPath is the Vault path (excluding the mount name) that the policy applies to.
+        /// There are some words of Caution:
+        ///   You should never use any of the restricted KV2Policy prefixes as the start of any path in ANY backend.  Doing so will cause the policies to not work.
+        ///   You have been warned.  These are:  metadata, data, destroy, delete, undelete.
         /// Important Note:  If you provide a trailing slash then the IsPrefixType flag is set to true.  However, the opposite is not true.  If you do not specify
         /// a trailing slash then the IsPrefixType is not set to false, but rather remains unchanged.  You should use the IsPrefixType property to unset the value.
         /// </summary>
@@ -109,15 +157,30 @@ namespace VaultAgent.Backends.System
             set {
                 // Remove any leading slash.
                 string tempPath = value.TrimStart ('/');
+                
+
+
+                // Now see if the string starts with any KV2 reserved words.  If it does we remove the reserved word and set the KV2 flag.
+                foreach (string s in KV2Keywords)
+                {
+                    if (tempPath.StartsWith(s))
+                    {
+                        IsKV2Policy = true;
+                        tempPath = tempPath.Substring(s.Length + 1);
+                    }
+                }
+
+
                 int length = tempPath.Length;
 
                 // See if trailing slash.  Then it is a prefix type.
                 if (value.EndsWith ("/")) {
                     IsPrefixType = true;
-                    length = length - 1;
+                    length--;
                     tempPath = tempPath.TrimEnd ('/');
                 }
 
+                
                 _protectedPath = tempPath.Substring(0,length);
             }           
         }
@@ -160,7 +223,22 @@ namespace VaultAgent.Backends.System
 			}
 		}
 
+    
 
+        /// <summary>
+        /// Sets/Gets whether a policy Item refers to a Vault KeyValue2 policy.  This is important because KV2 paths are different than all other backend type paths.
+        /// Specifically all data is stored at backendMount/data/|rest of path|.  When this flag is set to true, it turns on the extended security settings that
+        /// KV2 backends support.  In addition the fullPath that is returned is altered to include the KV2 security prefix inside of it.  The KV2 security prefix is
+        /// the 2nd path from the left.  So backend1/data/path/pathb/pathc.  data is the KV2 security prefix.
+        /// </summary>
+	    public bool IsKV2Policy
+	    {
+	        get => _isKV2Policy;
+	        set { _isKV2Policy = value; }
+	    }
+
+    #endregion
+ 
 
         #region "Security Settings"
 
@@ -169,7 +247,7 @@ namespace VaultAgent.Backends.System
         /// Sets the Create allowed attribute.
         /// </summary>
         public bool CreateAllowed {
-			get => _createAllowed; //{ return _createAllowed; }
+			get => _createAllowed; 
 			set {
 				_denied = false;
 				_createAllowed = value;
@@ -322,8 +400,71 @@ namespace VaultAgent.Backends.System
 	            ListAllowed = value;
 	        }
 	    }
-        #endregion 
+        #endregion
 
+
+        #region "Extended Properties"
+
+
+        /// <summary>
+        /// Only applies to KeyValue2 policy paths.  When true the permission to delete the latest version of a secret is enabled.
+        /// </summary>
+	    public bool ExtKV2_DeleteLatestKeyVersion {
+	        get => _extKV2_DeleteLatestKeyVersion;
+	        set { _extKV2_DeleteLatestKeyVersion = value; }
+	    }
+
+
+
+	    /// <summary>
+	    /// Only applies to KeyValue2 policy paths.  When true the permission to delete any version of a secret is enabled.
+	    /// </summary>
+	    public bool ExtKV2_DeleteAnyKeyVersion {
+	        get => _extKV2_DeleteAnyKeyVersion;
+	        set { _extKV2_DeleteAnyKeyVersion = value; }
+	    }
+
+
+
+	    /// <summary>
+	    /// Only applies to KeyValue2 policy paths.  When true the permission to undelete a secret is enabled.
+	    /// </summary>
+        public bool ExtKV2_UndeleteSecret {
+	        get => _extKV2_UnDelete;
+	        set { _extKV2_UnDelete = value; }
+	    }
+
+
+
+	    /// <summary>
+	    /// Only applies to KeyValue2 policy paths.  When true the permission to destroy the versions of a secret is enabled.
+	    /// </summary>
+        public bool ExtKV2_DestroySecret {
+	        get => _extKV2_DestroyVersions;
+	        set { _extKV2_DestroyVersions = value; }
+	    }
+
+
+
+	    /// <summary>
+	    /// Only applies to KeyValue2 policy paths.  When true the permission to view the metadata for a given secret is enabled.
+	    /// </summary>
+        public bool ExtKV2_ViewMetaData {
+	        get => _extKV2_ViewMetadata;
+	        set { _extKV2_ViewMetadata = value; }
+	    }
+
+
+
+
+	    /// <summary>
+	    /// Only applies to KeyValue2 policy paths.  When true the permission to delete the metadata for a given secret is enabled.
+	    /// </summary>
+	    public bool ExtKV2_DeleteMetaData {
+            get => _extKV2_DeleteMetaData;
+	        set { _extKV2_DeleteMetaData = value; }
+	    }
+        #endregion
 
         /// <summary>
         /// This routine is used to break out a single path item into its separate components - BackendMount and ProtectedPath as well as set the IsPrefixType flag.  

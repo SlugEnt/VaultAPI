@@ -552,5 +552,19 @@ namespace VaultAgentTests {
         #endregion
 
 
+        #region "KV2 Policies"
+
+        [Test]
+        [TestCase("secret/metadata/path1/path2")]
+        [TestCase("secret/data/path1/path2")]
+        [TestCase("secret/data/path3/path2")]
+        [TestCase("secret/destroy/path1/path2")]
+        [TestCase("secret/delete/path1/path2")]
+        [TestCase("secret/undelete/path1/path2")]
+        public void KV2_SinglePathConstructor_IsKV2Property_IsSet (string path) {
+            VaultPolicyPathItem vppi = new VaultPolicyPathItem(path);
+            Assert.IsTrue(vppi.IsKV2Policy,"A10:  Expected the IsKV2Policy property to be true.");
+        }
+        #endregion
     }
 }
