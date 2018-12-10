@@ -63,7 +63,6 @@ namespace VaultAgentTests
 */
 
 
-		//[Test, Order(50)]
         [Test]
 		public async Task Transit_CanEnableTransitBackend () {
 			// Generate a hopefully small unique name.

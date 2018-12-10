@@ -39,7 +39,12 @@ namespace VaultAgent.Backends.System
 	    private string _backendMount;
 	    private string _protectedPath;
 
-
+        /// <summary>
+        /// The preferred constructor.
+        /// </summary>
+        /// <param name="backendMount"></param>
+        /// <param name="protectedPath"></param>
+        /// <param name="isPrefixPolicyType"></param>
 	    public VaultPolicyPathItem (string backendMount, string protectedPath, bool isPrefixPolicyType) {
 	        BackendMountName = backendMount;
 	        ProtectedPath = protectedPath;
@@ -74,6 +79,13 @@ namespace VaultAgent.Backends.System
 
 
         /// <summary>
+        /// Empty Constructor.
+        /// </summary>
+	    public VaultPolicyPathItem() { IsPrefixType = false; }
+
+
+
+        /// <summary>
         /// The backend mount name is always the first "folder" in the Vault Instance policy path.  It is a required item.  Cannot contain any slashes.  Leading and Trailing slashes are
         /// automatically removed.
         /// </summary>
@@ -89,6 +101,8 @@ namespace VaultAgent.Backends.System
 
         /// <summary>
         /// The ProtectedPath is the Vault path (excluding the mount name) that the policy applies to.
+        /// Important Note:  If you provide a trailing slash then the IsPrefixType flag is set to true.  However, the opposite is not true.  If you do not specify
+        /// a trailing slash then the IsPrefixType is not set to false, but rather remains unchanged.  You should use the IsPrefixType property to unset the value.
         /// </summary>
         public string ProtectedPath {
             get => _protectedPath;
@@ -105,14 +119,24 @@ namespace VaultAgent.Backends.System
                 }
 
                 _protectedPath = tempPath.Substring(0,length);
-            }
-
-            
+            }           
         }
 
 
+        // Returns the entire Policy path for this item.  This is what Vault expects to see as the path.
+	    public string FullPath {
+	        get {
+	            string trailer;
 
-		/// <summary>
+	            if (IsPrefixType) { trailer = "/"; }
+	            else { trailer = "";}
+
+	            return _backendMount + "/" + _protectedPath + trailer;
+	        }
+	    }
+
+
+	    /// <summary>
 		/// The path to the object being protected by this policy.  If the path contains a trailing slash it is considered a Prefix Type.  This will automatically
 		/// be determined by this method and the IsPrefixType property will be set accordingly.
 		/// </summary>

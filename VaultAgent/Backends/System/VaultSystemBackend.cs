@@ -436,7 +436,7 @@ namespace VaultAgent
 			StringBuilder jsonSB = new StringBuilder();
 
 
-			jsonSB.Append("path \\\"" + policyPathItemPath.Path);
+			jsonSB.Append("path \\\"" + policyPathItemPath.FullPath);
 			jsonSB.Append("\\\" { capabilities = [");
 
 			if (policyPathItemPath.Denied) { jsonSB.Append("\\\"deny\\\""); }
@@ -611,9 +611,7 @@ namespace VaultAgent
 			};
 
 
-
-//			List<VaultPolicyPathItem> vpp = new List<VaultPolicyPathItem>();
-			VaultPolicyPathItem newPathObj = new VaultPolicyPathItem("");
+			VaultPolicyPathItem newPathObj = new VaultPolicyPathItem();
 
 			short iStep = iSTARTING;
 

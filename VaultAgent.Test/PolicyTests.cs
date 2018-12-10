@@ -38,7 +38,7 @@ namespace VaultAgentTests {
         [Test]
         public void Policy_VaultPolicyPath_InitialFields_AreCorrect()
         {
-            string polName = _uniqueKeys.GetKey("Pol");
+            string polName = _uniqueKeys.GetKey("Pol/");
             VaultPolicyPathItem vpp = new VaultPolicyPathItem(polName);
 
             Assert.False(vpp.CreateAllowed, "Create Not False");
@@ -74,9 +74,9 @@ namespace VaultAgentTests {
         [Test]
         [TestCase("secret","path1",true,"secret","path1")]
         [TestCase("secret2", "path1", false, "secret2", "path1")]
-        [TestCase("/secret3", "/path1", true, "secret", "path1")]
-        [TestCase("secret4/", "path1/", false, "secret", "path1")]
-        [TestCase("secret5", "path1/path2/path3/", true, "secret", "path1/path2/path3")]
+        [TestCase("/secret3", "/path1", true, "secret3", "path1")]
+        [TestCase("secret4/", "path1/", false, "secret4", "path1")]
+        [TestCase("secret5", "path1/path2/path3/", true, "secret5", "path1/path2/path3")]
         public void DefaultConstructor_BackendPathIsPrefix_Works (string backend, string path, bool IsPrefix, string expectedBE, string expectedPath) {
             VaultPolicyPathItem vppi = new VaultPolicyPathItem(backend,path,IsPrefix);
             Assert.AreEqual(expectedBE, vppi.BackendMountName, "A10: Backend Mount Name is not expected value.");
@@ -121,6 +121,20 @@ namespace VaultAgentTests {
 
 
         [Test]
+        [TestCase("secret", "path1", true, "secret/path1/")]
+        [TestCase("secret2", "path1", false, "secret2/path1")]
+        [TestCase("/secret3", "/path1", true, "secret3/path1/")]
+        [TestCase("secret4/", "path1/", false,"secret4/path1")]
+        [TestCase("secret5", "path1/path2/path3/", true, "secret5/path1/path2/path3/")]
+        public void FullPath_ReturnsCorrectValues(string backend, string path, bool IsPrefix, string expectedPath)
+        {
+            VaultPolicyPathItem vppi = new VaultPolicyPathItem(backend, path, IsPrefix);
+            Assert.AreEqual(expectedPath, vppi.FullPath, "A10: Full path is not expected value.");
+        }
+
+
+
+        [Test]
         [TestCase("C", "Create")]
         [TestCase("R", "Read")]
         [TestCase("U", "Update")]
@@ -129,9 +143,9 @@ namespace VaultAgentTests {
         [TestCase("T", "Root")]
         [TestCase("S", "Sudo")]
         // Test that setting capabilities to true works and removes the denied setting if set.01
-        public void Policy_VaultPolicyPath_SettingTrueToFieldsWorks(string type, string value)
+        public void SettingTrueToFields_Success(string type, string value)
         {
-            string polName = _uniqueKeys.GetKey("Pol");
+            string polName = _uniqueKeys.GetKey("Pol/");
             VaultPolicyPathItem vpp = new VaultPolicyPathItem(polName);
             vpp.Denied = true;
 
@@ -174,9 +188,9 @@ namespace VaultAgentTests {
 
         // Denied on a policy must set everything else to false.
         [Test]
-        public void Policy_VaultPolicyPath_SetDenied_SetsEverythingElseToFalse()
+        public void SetDenied_SetsEverythingElseTo_False()
         {
-            string polName = _uniqueKeys.GetKey("Pol");
+            string polName = _uniqueKeys.GetKey("Pol/");
             VaultPolicyPathItem vpp = new VaultPolicyPathItem(polName);
 
             vpp.CreateAllowed = true;
@@ -207,16 +221,6 @@ namespace VaultAgentTests {
             Assert.False(vpp.SudoAllowed, "Sudo Allowed was not set to False");
         }
 
-
-
-        // Validates that PolicyName gets set in Constructor
-        [Test]
-        public void Policy_PolicyPath_ConstructorSetsPath()
-        {
-            string polName = _uniqueKeys.GetKey("Pol");
-            VaultPolicyPathItem vpp = new VaultPolicyPathItem(polName);
-            Assert.AreEqual(polName, vpp.Path);
-        }
 
 
 
@@ -345,18 +349,18 @@ namespace VaultAgentTests {
             Assert.AreEqual(3, vpNew.PolicyPaths.Count);
             foreach (VaultPolicyPathItem item in vpNew.PolicyPaths)
             {
-                if (item.Path == path1)
+                if (item.FullPath == path1)
                 {
                     Assert.AreEqual(vpi1.ListAllowed, item.ListAllowed);
                     Assert.AreEqual(vpi1.DeleteAllowed, item.DeleteAllowed);
                     Assert.AreEqual(vpi1.ReadAllowed, item.ReadAllowed);
                     Assert.AreEqual(vpi1.SudoAllowed, item.SudoAllowed);
                 }
-                else if (item.Path == path2)
+                else if (item.FullPath == path2)
                 {
                     Assert.AreEqual(vpi2.Denied, item.Denied);
                 }
-                else if (item.Path == path3)
+                else if (item.FullPath == path3)
                 {
                     Assert.AreEqual(vpi3.ListAllowed, item.ListAllowed);
                     Assert.AreEqual(vpi3.ReadAllowed, item.ReadAllowed);
@@ -367,7 +371,7 @@ namespace VaultAgentTests {
                     Assert.AreEqual(vpi3.Denied, false);
                 }
                 // If here, something is wrong.
-                else { Assert.True(false, "invalid path returned of {0}", item.Path); }
+                else { Assert.True(false, "invalid path returned of {0}", item.FullPath); }
             }
         }
 
@@ -431,20 +435,19 @@ namespace VaultAgentTests {
 
 
         [Test]
-        [TestCase("appA/", true, "appA/", true)]
-        [TestCase("appA", true, "appA/", true)]
-        [TestCase("appA/", false, "appA", false)]
-        [TestCase("appA", false, "appA", false)]
-        [TestCase("appA/settingB", false, "appA/settingB", false)]
-        [TestCase("appA/settingB", true, "appA/settingB/", true)]
-        [TestCase("appA/settingB/", false, "appA/settingB", false)]
-        [TestCase("appA/settingB/", true, "appA/settingB/", true)]
-
+        [TestCase("secret/appA/", true, "secret/appA/", true)]
+        [TestCase("secret/appA", true, "secret/appA/", true)]
+        [TestCase("secret/appA/", false, "secret/appA", false)]
+        [TestCase("secret/appA", false, "secret/appA", false)]
+        [TestCase("secret/appA/settingB", false, "secret/appA/settingB", false)]
+        [TestCase("secret/appA/settingB", true, "secret/appA/settingB/", true)]
+        [TestCase("secret/appA/settingB/", false, "secret/appA/settingB", false)]
+        [TestCase("secret/appA/settingB/", true, "secret/appA/settingB/", true)]
         // Validates the Prefix Constructor works correctly by removing/adding trailing path slash depending on IsPrefix setting.
-        public void Policy_IsPrefixConstructor_WorksCorrectly(string pathParam, bool prefixParam, string pathValue, bool prefixValue)
+        public void IsPrefixConstructor_WorksCorrectly(string pathParam, bool prefixParam, string pathValue, bool prefixValue)
         {
             VaultPolicyPathItem vaultPolicyPathItem = new VaultPolicyPathItem(pathParam, prefixParam);
-            Assert.AreEqual(vaultPolicyPathItem.Path, pathValue);
+            Assert.AreEqual(vaultPolicyPathItem.FullPath, pathValue);
             Assert.AreEqual(vaultPolicyPathItem.IsPrefixType, prefixValue);
         }
 
@@ -452,15 +455,15 @@ namespace VaultAgentTests {
 
 
         [Test]
-        [TestCase("appA", true, "appA/", true)]
-        [TestCase("appA/", true, "appA", false)]
-        [TestCase("appA", false, "appA/", true)]
-        [TestCase("appA/", false, "appA", false)]
-        [TestCase("appA/settingB", true, "appA/settingC", false)]
-        [TestCase("appA/SettingB/", true, "appA/settingC", false)]
-        [TestCase("appA/settingB", false, "appA/settingC", false)]
-        [TestCase("appA/settingB", false, "appA/settingC/", true)]
-        public void Policy_PathWithPrefix_Sets_IsPrefixType(string pathParam, bool prefixParam, string newPath, bool isPrefixValue)
+        [TestCase("secret/appA", true, "appA/", true)]
+        [TestCase("secret/appA/", true, "appA", true)]
+        [TestCase("secret/appA", false, "appA/", true)]
+        [TestCase("secret/appA/", false, "appA", false)]
+        [TestCase("secret/appA/settingB", true, "appA/settingC", true)]
+        [TestCase("secret/appA/SettingB/", true, "appA/settingC", true)]
+        [TestCase("secret/appA/settingB", false, "appA/settingC", false)]
+        [TestCase("secret/appA/settingB", false, "appA/settingC/", true)]
+        public void PathWithPrefix_Sets_IsPrefixType_Correctly(string pathParam, bool prefixParam, string newPath, bool isPrefixValue)
         {
             VaultPolicyPathItem vaultPolicyPathItem = new VaultPolicyPathItem(pathParam, prefixParam);
 
@@ -471,10 +474,10 @@ namespace VaultAgentTests {
 
 
             // Now change the path to be something different.  Confirm IsPrefix setting changes appropriately
-            vaultPolicyPathItem.Path = newPath;
+            vaultPolicyPathItem.ProtectedPath = newPath;
 
             Assert.AreEqual(isPrefixValue, vaultPolicyPathItem.IsPrefixType, "A2: New policy IsPrefix property is not expected value.");
-            Assert.AreEqual(newPath, vaultPolicyPathItem.Path, "A3: New policy path is not the expected value.");
+            
         }
 
 
@@ -483,7 +486,7 @@ namespace VaultAgentTests {
         [Test]
         public void Policy_CRUDSetOperation_Works()
         {
-            VaultPolicyPathItem vaultPolicyPathItem = new VaultPolicyPathItem("itemA");
+            VaultPolicyPathItem vaultPolicyPathItem = new VaultPolicyPathItem("secret/itemA");
 
             // Validate initial CRUD items are all false.
             Assert.False(vaultPolicyPathItem.CreateAllowed);
@@ -516,7 +519,7 @@ namespace VaultAgentTests {
         [Test]
         public void Policy_FullControlSetOperation_Works()
         {
-            VaultPolicyPathItem vaultPolicyPathItem = new VaultPolicyPathItem("itemB");
+            VaultPolicyPathItem vaultPolicyPathItem = new VaultPolicyPathItem("secret/itemB");
 
             // Validate initial FullControl items are all false.
             Assert.False(vaultPolicyPathItem.CreateAllowed);
