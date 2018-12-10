@@ -2,6 +2,8 @@
 // Need to figure out how we would do this for KV2.
 
 
+using System;
+
 namespace VaultAgent.Backends.System
 {
 	/// <summary>
@@ -34,27 +36,79 @@ namespace VaultAgent.Backends.System
 		private bool _denied = true;
 		private bool _isPrefixType = false;
 		private string _path;
+	    private string _backendMount;
+	    private string _protectedPath;
+
+
+	    public VaultPolicyPathItem (string backendMount, string protectedPath, bool isPrefixPolicyType) {
+	        BackendMountName = backendMount;
+	        ProtectedPath = protectedPath;
+	        IsPrefixType = isPrefixPolicyType;
+	    }
+
+
 
 		/// <summary>
-		/// Createa a VaultPolicyPathItem object that will protect the given path.
+		/// Creates a VaultPolicyPathItem object that will protect the given path.  The very first "path item" (Everything up to the first slash) is marked as the backendMount.
+		/// This is the legacy constructor for backward compatibility.  Preference should be given to using the new constructor whenever possible.
 		/// </summary>
 		/// <param name="path">The path in Vault that this policy applies to.</param>
 		public VaultPolicyPathItem (string path) {
-			Path = path;
-			//_isPrefixType = path.EndsWith("/") ? true : false;
+            SeparatePathIntoComponents(path);
 		}
+
 
 
 		/// <summary>
 		/// Creates a Vault Policy object that will protect a given Prefix Path.  This is a path that ends with slash.
 		/// The isPrefixPolicyType setting overrides the trailing slash on the path statement and is what determines if the Path is a PrefixType
+		/// An IsPrefixPolicy contains a trailing slash.
 		/// </summary>
 		/// <param name="path"></param>
 		/// <param name="isPrefixPolicyType"></param>
 		public VaultPolicyPathItem(string path, bool isPrefixPolicyType) {
-				Path = path;
-				IsPrefixType = isPrefixPolicyType;
+            SeparatePathIntoComponents(path);
+			IsPrefixType = isPrefixPolicyType;
 		}
+
+
+
+        /// <summary>
+        /// The backend mount name is always the first "folder" in the Vault Instance policy path.  It is a required item.  Cannot contain any slashes.  Leading and Trailing slashes are
+        /// automatically removed.
+        /// </summary>
+        public string BackendMountName { get => _backendMount;
+            set {
+                // We remove any trailing or leading slashed.
+                _backendMount = value.Trim('/');
+                if (_backendMount.Contains("/")) { throw new ArgumentException("The backendMount cannot be a path.  You provided " + value + " as the value for the backendMount."); }
+            }
+        }
+
+
+
+        /// <summary>
+        /// The ProtectedPath is the Vault path (excluding the mount name) that the policy applies to.
+        /// </summary>
+        public string ProtectedPath {
+            get => _protectedPath;
+            set {
+                // Remove any leading slash.
+                string tempPath = value.TrimStart ('/');
+                int length = tempPath.Length;
+
+                // See if trailing slash.  Then it is a prefix type.
+                if (value.EndsWith ("/")) {
+                    IsPrefixType = true;
+                    length = length - 1;
+                    tempPath = tempPath.TrimEnd ('/');
+                }
+
+                _protectedPath = tempPath.Substring(0,length);
+            }
+
+            
+        }
 
 
 
@@ -62,42 +116,35 @@ namespace VaultAgent.Backends.System
 		/// The path to the object being protected by this policy.  If the path contains a trailing slash it is considered a Prefix Type.  This will automatically
 		/// be determined by this method and the IsPrefixType property will be set accordingly.
 		/// </summary>
+		[Obsolete]
 		public string Path {
-			get => _path ;
+			get => _protectedPath;
 			set {
-				_path = value;
-
-				// If object contains a trailing slash then set IsPrefixType
-				_isPrefixType = value.EndsWith("/") ? true : false;
+			    ProtectedPath = value;
 			}
 		}
 
 
 
+        /// <summary>
+        /// The IsPrefix property is used to determine if a Vault policy is a prefixed policy. This just means does it apply to just a 
+        /// </summary>
 		public bool IsPrefixType {
 			get => _isPrefixType;
 			set {
-				if (value) {
-					// Make sure the path contains a single trailing slash.
-					if (Path.EndsWith("/")) { return; }
-
-					Path = Path + "/";
-				}
-
-				// Not a Prefix type - remove any trailing slash.
-				else {
-					Path = Path.TrimEnd('/');
-					_isPrefixType = false;
-				}
+			    _isPrefixType = value;
 			}
 		}
 
 
 
-		/// <summary>
-		/// Sets the Create allowed attribute.
-		/// </summary>
-		public bool CreateAllowed {
+        #region "Security Settings"
+
+
+        /// <summary>
+        /// Sets the Create allowed attribute.
+        /// </summary>
+        public bool CreateAllowed {
 			get => _createAllowed; //{ return _createAllowed; }
 			set {
 				_denied = false;
@@ -251,6 +298,23 @@ namespace VaultAgent.Backends.System
 	            ListAllowed = value;
 	        }
 	    }
+        #endregion 
 
-	}
+
+        /// <summary>
+        /// This routine is used to break out a single path item into its separate components - BackendMount and ProtectedPath as well as set the IsPrefixType flag.  
+        /// </summary>
+        /// <param name="path"></param>
+        private void SeparatePathIntoComponents (string path) {
+            string tempPath = path.TrimStart('/');
+
+            // Now find first slash.  Everything up to it becomes the backendMount name.
+            int pos = tempPath.IndexOf('/');
+            _backendMount = tempPath.Substring(0, pos);
+
+
+            // Everything after is the path.
+            ProtectedPath = path.Substring (pos+1);
+        }
+    }
 }
