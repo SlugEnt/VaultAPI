@@ -57,12 +57,12 @@ namespace VaultClient
 				ReadAllowed = true,
 				CreateAllowed = true
 			};
-			VP.PolicyPaths.Add(vpi);
+			VP.AddPolicyPathObject(vpi);
 
 
 			VaultPolicyPathItem vpi2 = new VaultPolicyPathItem("secret/TestB");
 			vpi2.ListAllowed = true;
-			VP.PolicyPaths.Add(vpi2);
+			VP.AddPolicyPathObject(vpi2);
 
 
 			VaultPolicyPathItem vpi3 = new VaultPolicyPathItem("secret/TestC");

@@ -169,25 +169,25 @@ namespace VaultClient
             // RoleMaster Policy.
             VaultPolicyPathItem vpItem1 = new VaultPolicyPathItem("shKV2/data/*");
             vpItem1.FullControl = true;
-            _polRoleMaster.PolicyPaths.Add (vpItem1);
+            _polRoleMaster.AddPolicyPathObject(vpItem1);
             if (!( await _vaultAgent.System.SysPoliciesACLCreate(_polRoleMaster))) { Console.WriteLine("Unable to save the policies for the CreateRoles method"); }
 
             // Role1 Policy.  FC on path1 and AppData
             VaultPolicyPathItem vpItem2 = new VaultPolicyPathItem("shKV2/data/path1/*");
             vpItem2.FullControl = true;
-            _polRole1.PolicyPaths.Add(vpItem2);
+            _polRole1.AddPolicyPathObject(vpItem2);
             VaultPolicyPathItem vpItem2B = new VaultPolicyPathItem("shKV2/data/path1");
             vpItem2B.FullControl = true;
-            _polRole1.PolicyPaths.Add(vpItem2B);
+            _polRole1.AddPolicyPathObject(vpItem2B);
 			//VaultPolicyPathItem vpItem2C = new VaultPolicyPathItem("shKV2/data/" + Constants.appData);
 			//vpItem2C.FullControl = true;
 			//_polRole1.PolicyPaths.Add(vpItem2C);
 			VaultPolicyPathItem vpItem2D = new VaultPolicyPathItem("shKV2/data/" + Constants.appData + "/*");
 	        vpItem2D.CreateAllowed = true;
-	        _polRole1.PolicyPaths.Add(vpItem2D);
+	        _polRole1.AddPolicyPathObject(vpItem2D);
 	        VaultPolicyPathItem vpItem2E = new VaultPolicyPathItem("shKV2/metadata/" + Constants.appData + "/*");
 	        vpItem2E.ListAllowed = true;
-	        _polRole1.PolicyPaths.Add(vpItem2E);
+	        _polRole1.AddPolicyPathObject(vpItem2E);
 
 			if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRole1))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRole1.Name); }
 
@@ -195,29 +195,29 @@ namespace VaultClient
             // Role2 Policy.  RO on path1
             VaultPolicyPathItem vpItem3 = new VaultPolicyPathItem("shKV2/data/path1/*");
             vpItem3.ReadAllowed = true;
-            _polRole2.PolicyPaths.Add(vpItem3);
+            _polRole2.AddPolicyPathObject(vpItem3);
             if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRole2))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRole2.Name); }
 
             // RoleAppA Policy.  FC on apps/AppA
             VaultPolicyPathItem vpItemA1 = new VaultPolicyPathItem("shKV2/data/appData/appA/*");
             vpItemA1.FullControl = true;
-            _polRoleAppA.PolicyPaths.Add(vpItemA1);
+            _polRoleAppA.AddPolicyPathObject(vpItemA1);
             if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRoleAppA))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRoleAppA.Name); }
 
             // RoleAppB Policy.  FC on apps/AppB
             VaultPolicyPathItem vpItemB1 = new VaultPolicyPathItem("shKV2/data/appData/appB/*");
             vpItemB1.FullControl = true;
-            _polRoleAppB.PolicyPaths.Add(vpItemB1);
+            _polRoleAppB.AddPolicyPathObject(vpItemB1);
             if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRoleAppB))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRoleAppB.Name); }
 
             // Shared DB Policy
             VaultPolicyPathItem vpITemDB = new VaultPolicyPathItem("shKV2/data/shared/dbConfig");
-            _polSharedDB.PolicyPaths.Add (vpITemDB);
+            _polSharedDB.AddPolicyPathObject(vpITemDB);
             if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polSharedDB))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polSharedDB.Name); }
 
             // Shared Email Policy
             VaultPolicyPathItem vpItemEmail = new VaultPolicyPathItem("shKV2/data/shared/Email");
-            _polSharedEmail.PolicyPaths.Add(vpItemEmail);
+            _polSharedEmail.AddPolicyPathObject(vpItemEmail);
             if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polSharedEmail))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polSharedEmail.Name); }
         }
 

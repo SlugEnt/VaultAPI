@@ -480,7 +480,7 @@ namespace VaultAgentTests {
 
             // Create a Vault Policy Item
             VaultPolicyContainer VP = new VaultPolicyContainer("TestingABC");
-            VP.PolicyPaths.Add(vpi);
+            VP.AddPolicyPathObject (vpi);
             bool rc = await _vaultSystemBackend.SysPoliciesACLCreate(VP);
         }
 
@@ -515,10 +515,10 @@ namespace VaultAgentTests {
 
             // Create a Vault Policy Item and add the policy paths.
             VaultPolicyContainer VP = new VaultPolicyContainer("TestingABCD");
-            VP.PolicyPaths.Add(vpi1);
-            VP.PolicyPaths.Add(vpi2);
-            VP.PolicyPaths.Add(vpi3);
-            VP.PolicyPaths.Add(vpi4);
+            VP.AddPolicyPathObject (vpi1);
+            VP.AddPolicyPathObject(vpi2);
+            VP.AddPolicyPathObject(vpi3);
+            VP.AddPolicyPathObject(vpi4);
 
             Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(VP));
 
@@ -539,7 +539,7 @@ namespace VaultAgentTests {
             vpi3.DeleteAllowed = true;
             vpi3.ReadAllowed = true;
             vpi3.SudoAllowed = true;
-            VP.PolicyPaths.Add(vpi3);
+            VP.AddPolicyPathObject (vpi3);
 
             Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(VP));
 
@@ -548,17 +548,22 @@ namespace VaultAgentTests {
             VaultPolicyContainer vpNew = await _vaultSystemBackend.SysPoliciesACLRead("Test2000A");
 
             Assert.AreEqual(1, vpNew.PolicyPaths.Count);
-            Assert.AreEqual(vpi3.ListAllowed, vpNew.PolicyPaths[0].ListAllowed);
-            Assert.AreEqual(vpi3.DeleteAllowed, vpNew.PolicyPaths[0].DeleteAllowed);
-            Assert.AreEqual(vpi3.ReadAllowed, vpNew.PolicyPaths[0].ReadAllowed);
-            Assert.AreEqual(vpi3.SudoAllowed, vpNew.PolicyPaths[0].SudoAllowed);
+
+            VaultPolicyPathItem vppiFound;
+
+            Assert.True (vpNew.PolicyPaths.TryGetValue (vpi3.Key, out vppiFound),"A10:  Did not find the VaultPolicyPathItem in the internal dictionary.");
+
+            Assert.AreEqual(vpi3.ListAllowed, vppiFound.ListAllowed);
+            Assert.AreEqual(vpi3.DeleteAllowed, vppiFound.DeleteAllowed);
+            Assert.AreEqual(vpi3.ReadAllowed, vppiFound.ReadAllowed);
+            Assert.AreEqual(vpi3.SudoAllowed, vppiFound.SudoAllowed);
         }
 
 
 
         [Test]
         // Can read a policy that has multiple paths attached to it.
-        public async Task Policy_CanReadMultiplePathPolicy()
+        public async Task Vault_CanReadMultiplePathPolicy()
         {
             // Create a Vault Policy Item and add the policy paths.
             VaultPolicyContainer VP = new VaultPolicyContainer("Test2000B");
@@ -570,14 +575,13 @@ namespace VaultAgentTests {
             vpi1.DeleteAllowed = true;
             vpi1.ReadAllowed = true;
             vpi1.SudoAllowed = true;
-            VP.PolicyPaths.Add(vpi1);
+            VP.AddPolicyPathObject(vpi1);
 
             // 2nd policy path
             string path2 = "secret/Test2000B2";
             VaultPolicyPathItem vpi2 = new VaultPolicyPathItem(path2);
             vpi2.Denied = true;
-            VP.PolicyPaths.Add(vpi2);
-
+            VP.AddPolicyPathObject(vpi2);
 
             // 3rd policy path
             string path3 = "secret/Test2000B3";
@@ -585,7 +589,8 @@ namespace VaultAgentTests {
             vpi3.ListAllowed = true;
             vpi3.ReadAllowed = true;
             vpi3.UpdateAllowed = true;
-            VP.PolicyPaths.Add(vpi3);
+            VP.AddPolicyPathObject(vpi3);
+
 
             Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(VP));
 
@@ -594,7 +599,7 @@ namespace VaultAgentTests {
             VaultPolicyContainer vpNew = await _vaultSystemBackend.SysPoliciesACLRead("Test2000B");
 
             Assert.AreEqual(3, vpNew.PolicyPaths.Count);
-            foreach (VaultPolicyPathItem item in vpNew.PolicyPaths)
+            foreach (VaultPolicyPathItem item in vpNew.PolicyPaths.Values)
             {
                 if (item.FullPath == path1)
                 {
@@ -641,7 +646,7 @@ namespace VaultAgentTests {
             VaultPolicyContainer VP = new VaultPolicyContainer("listPolicyA");
             VaultPolicyPathItem vpi = new VaultPolicyPathItem("secret/listpol2000A");
             vpi.ListAllowed = true;
-            VP.PolicyPaths.Add(vpi);
+            VP.AddPolicyPathObject(vpi);
 
             Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(VP));
 
@@ -661,7 +666,8 @@ namespace VaultAgentTests {
             VaultPolicyContainer VP = new VaultPolicyContainer("deletePolicyA");
             VaultPolicyPathItem vpi = new VaultPolicyPathItem("secret/Test2000A");
             vpi.ListAllowed = true;
-            VP.PolicyPaths.Add(vpi);
+            VP.AddPolicyPathObject(vpi);
+            
 
             Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(VP));
 

@@ -489,7 +489,8 @@ namespace VaultAgent
 			// Build the header for JSON Policy.
 			jsonSB.Append("{\"policy\": \"");
 
-			foreach (VaultPolicyPathItem item in policyContainerItem.PolicyPaths) {
+
+			foreach (VaultPolicyPathItem item in policyContainerItem.PolicyPaths.Values) {
 			    jsonSB.Append (item.ToVaultHCLPolicyFormat());
 			    //jsonSB.Append(BuildPolicyPathJSON(item));
 			}
@@ -632,8 +633,14 @@ namespace VaultAgent
 								throw new FormatException("Found path keyword, but no value supplied for path NAME");
 							}
 							else {
-								newPathObj = new VaultPolicyPathItem(pathObjects[i]);
-								vp.PolicyPaths.Add(newPathObj);
+                                // Now we need to determine if this is a new path object that should be added to the Dictionary OR
+                                // Can be combined with an already existing path object.  For instance Vault stores KeyValue V2 secret permissions
+                                // in several paths.  But we treat internally as a single path.                              
+								//newPathObj = new VaultPolicyPathItem(pathObjects[i]);
+							    newPathObj = vp.TryAddPath (pathObjects[i]);
+                                //vp.TryAddPath()
+								//vp.PolicyPaths.Add(newPathObj.Key,newPathObj);
+
 								//vpp.Add(newPathObj);
 							}
 						}
