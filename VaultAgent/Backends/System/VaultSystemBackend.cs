@@ -426,7 +426,7 @@ namespace VaultAgent
 
 
 
-
+/* - This logic has been moved into the VaultPolicyPathItem class.
 		/// <summary>
 		/// Internal method that is used to build the Vault HCL formatted policy from the VaultPolicyPathItem object.
 		/// </summary>
@@ -464,7 +464,7 @@ namespace VaultAgent
 
 			return jsonSB.ToString();
 		}
-
+*/
 
 
 		/// <summary>
@@ -490,7 +490,8 @@ namespace VaultAgent
 			jsonSB.Append("{\"policy\": \"");
 
 			foreach (VaultPolicyPathItem item in policyContainerItem.PolicyPaths) {
-				jsonSB.Append(BuildPolicyPathJSON(item));
+			    jsonSB.Append (item.ToVaultHCLPolicyFormat());
+			    //jsonSB.Append(BuildPolicyPathJSON(item));
 			}
 
 
@@ -611,7 +612,8 @@ namespace VaultAgent
 			};
 
 
-			VaultPolicyPathItem newPathObj = new VaultPolicyPathItem();
+            // We need to create a default object or else it will not compile.  
+			VaultPolicyPathItem newPathObj = new VaultPolicyPathItem("dummy/dummy2");
 
 			short iStep = iSTARTING;
 

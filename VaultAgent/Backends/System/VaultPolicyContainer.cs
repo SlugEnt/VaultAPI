@@ -12,7 +12,8 @@ namespace VaultAgent.Backends.System
 		public VaultPolicyContainer(string name) {
             
 			Name = name;
-			PolicyPaths = new List<VaultPolicyPathItem>();
+			PolicyPaths = //new Dictionary<string,VaultPolicyPathItem>();
+            new List<VaultPolicyPathItem>();
 		}
 
 
@@ -22,6 +23,32 @@ namespace VaultAgent.Backends.System
 	        set { _name = value.ToLower(); }
 	    }
 
-	    public List<VaultPolicyPathItem> PolicyPaths { get; private set; }
+
+
+        public List<VaultPolicyPathItem> PolicyPaths { get; private set; }
+        /// <summary>
+	    /// Provides access to the set of policy paths that make up this overall security policy.
+	    /// Callers should typicall only use this to loop thru list.  They should call AddPolicyPathItem and GetPolicyPathItem to add/retrieve a specific policy path item.
+        /// </summary>
+	    //public Dictionary<string,VaultPolicyPathItem> PolicyPaths { get; private set; }
+
+
+
+        /// <summary>
+        /// Will add a new defaulted VaultPolicyPathItem to the PolicyPaths list OR return a reference to an already existing VaultPolicyPathItem if the path is already
+        /// in the PolicyPaths dictionary.  This is necessary to handle the KV2 ACL policies which have different path prefixes, but which we want to handle as a single object.
+        /// The VaultPolicyPathItem class now handles for this situation.  When reading policies from a Vault Instance this should be the method used to create the
+        /// VaultPolicyPathItem objects.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+	    //public VaultPolicyPathItem AddNewPolicyPath (string path) {
+        //    if (PolicyPaths.TryGetValue())
+	    //}
+
+/*        public VaultPolicyPathItem TryAddPath (string pathKey) {
+            if (PolicyPaths.Contains())
+	    }
+*/
 	}
 }
