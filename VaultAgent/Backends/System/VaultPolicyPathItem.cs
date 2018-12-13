@@ -46,6 +46,24 @@ namespace VaultAgent.Backends.System
 	///				(in addition to the other necessary capabilities for performing an operation against that path, such as read or delete).
 	///   Root    -  //TODO - seems to be gone...
 	///   Deny    - Overrides all other attributes.  Prevents any access to the protected path.
+	///
+	///
+	/// <para>
+	/// Vault Inner workings.  Vault can store the permissions for a GIVEN path in one of 3 manners and in some instances requires that a given object be split
+	/// across several paths in order to assign permissions and in fact with KV2 permissions this gets assigned as many as 6 different paths.
+	/// </para>
+	/// <para>In essence there are 3 path endings that determine how a particular set of permissions applies: </para>
+	/// <para>  - backend/secretA/*  /* pattern = Means the permission applies to all SubSecrets of secretA, but NOT secretA itself.
+	/// List can also be specified with this pattern.</para>
+	/// <para>  - backend/secretA/   /  pattern = This is only valid when setting the list permission.  Note /* pattern also works for List permission.</para>
+	/// <para>  - backend/secretA    secret pattern = This means the permissions only apply directly to secretA and NOT ANY subsecrets.</para>
+	/// <para></para>
+	/// <para> With the above knowledge.  We are making the following rules:</para>
+	/// <para>   - We will always save List permissions with the /* pattern as it applies to other permissions as well.</para>
+	/// <para>   - We will never save List permission with the / pattern.</para>
+	/// <para>   - When saving attributes of a secret we always use the secret pattern (no trailing anything).</para>
+	/// <para>   - When saving subsecrets we always use /* pattern.</para>
+	/// <para>   - We will interpret policies read from Vault with the / or /* pattern and  list permission, but always store the path as the /* upon a save.</para>
 	/// </summary>
 	public class VaultPolicyPathItem {
 	    private static string[] KV2Keywords = new string[]
@@ -638,13 +656,10 @@ namespace VaultAgent.Backends.System
 	    /// <param name="isPrefix">True if the path object represents sub items of the current path.</param>
 	    /// <returns></returns>
 	    private static string CalculateKeyValue (string backend, string protectedPath, bool isKV2, bool isPrefix) {
-	        string iKV2 = isKV2 ? "1" : "0";
-	        string iPrefix = isPrefix ? "/" : "";
+	        string iPrefix = isPrefix ? "/*" : "";
 
             //TODO - validate that this new entry is correct.
 	        return backend + "/" + protectedPath + iPrefix;
-
-	        //return backend + "/" + protectedPath + iPrefix + "::" + iKV2;
 	    }
 
 

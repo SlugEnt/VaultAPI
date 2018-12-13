@@ -64,12 +64,18 @@ namespace VaultAgentTests {
         [TestCase(4,"/secret4/path1/path2/path3/", "secret4", "path1/path2/path3",true)]
         [TestCase(5,"secret5/path1/path2/path3/", "secret5", "path1/path2/path3",true)]
         [TestCase(6,"sA/metadata/pathA/path2","sA","pathA/path2",false)]
+        [TestCase(7, "sA/undelete/pathA/path2", "sA", "pathA/path2", false)]
+        [TestCase(8, "sA/delete/pathA/path2", "sA", "pathA/path2", false)]
+        [TestCase(9, "sA/destroy/pathA/path2", "sA", "pathA/path2", false)]
+        [TestCase(10, "sA/data/pathA/path2", "sA", "pathA/path2", false)]
         public void VPPI_PathSeparatedCorrectlyIntoComponentParts (int id, string path, string expectedBE, string expectedPath, bool expectedPrefix) {
             VaultPolicyPathItem vppi = new VaultPolicyPathItem(path);
             Assert.AreEqual(expectedBE,vppi.BackendMountName,"A10: Backend Mount Name is not expected value.");
             Assert.AreEqual(expectedPath,vppi.ProtectedPath,"A20:  Protected Path is not expected value.");
             Assert.AreEqual(expectedPrefix, vppi.IsPrefixType, "A30:  IsPrefixType is not expected value.");
         }
+
+
 
 
         [Test]
@@ -105,6 +111,36 @@ namespace VaultAgentTests {
             Assert.AreEqual(expectedPath, vppi.FullPath, "A10: Full path is not expected value.");
             Assert.AreEqual(expectedKVPath,vppi.KV2_PathID, "A20:  The KeyValue Version 2 path prefix was not expected value.");
         }
+
+
+
+        // Validates that the key for a VaultPolicyPathItem object is generated correctly.
+        [Test]
+        [TestCase(1, "secret/path1", "secret/path1")]
+        [TestCase(2, "secret2/path1/path2/path3", "secret2/path1/path2/path3")]
+        [TestCase(3, "/secret3/path1/path2/path3", "secret3/path1/path2/path3")]
+        [TestCase(4, "/secret4/path1/path2/path3/", "secret4/path1/path2/path3/*")]
+        [TestCase(5, "secret5/path1/path2/path3/", "secret5/path1/path2/path3/*")]
+        [TestCase(6, "sA/metadata/pathA/path2", "sA/pathA/path2/*")]
+        [TestCase(7, "sA/undelete/pathA/path2", "sA/pathA/path2/*")]
+        [TestCase(8, "sA/delete/pathA/path2", "sA/pathA/path2/*")]
+        [TestCase(9, "sA/destroy/pathA/path2", "sA/pathA/path2/*")]
+        [TestCase(10, "sA/data/pathA/path2", "sA/pathA/path2/*")]
+        [TestCase(11, "sA/metadata/pathA/path2/*", "sA/pathA/path2/*")]
+        [TestCase(12, "sA/undelete/pathA/path2/*", "sA/pathA/path2/*")]
+        [TestCase(13, "sA/delete/pathA/path2/*", "sA/pathA/path2/*")]
+        [TestCase(14, "sA/destroy/pathA/path2/*", "sA/pathA/path2/*")]
+        [TestCase(15, "sA/data/pathA/path2/*", "sA/pathA/path2/*")]
+
+        public void VPPI_Key_ProducedCorrectly(int id, string path, string expectedBE, string expectedPath, bool expectedPrefix)
+
+        {
+            VaultPolicyPathItem vppi = new VaultPolicyPathItem(path);
+            Assert.AreEqual(expectedBE, vppi.BackendMountName, "A10: Backend Mount Name is not expected value.");
+            Assert.AreEqual(expectedPath, vppi.ProtectedPath, "A20:  Protected Path is not expected value.");
+            Assert.AreEqual(expectedPrefix, vppi.IsPrefixType, "A30:  IsPrefixType is not expected value.");
+        }
+
 
 
 
