@@ -61,9 +61,9 @@ namespace VaultAgent.Backends.System
 	    private string _path;
 	    private string _backendMount;
 	    private string _protectedPath;
+	    private string _KV2_PathID = "";                // The KeyValue2 Path Prefix that this object had upon creation.  See Property for details.
 
-
-	    private bool _isPrefixType = false;
+        private bool _isPrefixType = false;
 	    private bool _isKV2Policy = false;
 
 
@@ -74,7 +74,7 @@ namespace VaultAgent.Backends.System
 		private bool _listAllowed = false;
 		private bool _sudoAllowed = false;
 		private bool _rootAllowed = false;
-		private bool _denied = true;
+		private bool? _denied = null;
 		
 
         // Extended Property
@@ -83,7 +83,7 @@ namespace VaultAgent.Backends.System
 	    private bool _extKV2_DestroyVersions = false;
 	    private bool _extKV2_ViewMetadata = false;
 	    private bool _extKV2_DeleteMetaData = false;
-
+	    private bool _extKV2_ListMetaData = false;
 
         #region "Constructors"
 
@@ -117,7 +117,7 @@ namespace VaultAgent.Backends.System
             bool isKV2 = false;
             bool isPrefix = false;
 
-            (_protectedPath, isKV2, isPrefix) = DeriveProtectedPath(protectedPath);
+            (_protectedPath, isKV2, isPrefix, _KV2_PathID) = DeriveProtectedPath(protectedPath);
 
             // We override the IsPrefix and IsKV2 settings if we determined during exploration of the path that either of these was true.  
             if (isKV2) { _isKV2Policy = true; }
@@ -139,7 +139,7 @@ namespace VaultAgent.Backends.System
         /// a PrefixPolicyType (Meaning its permissions apply to subsecrets).  If the path starts with a KV2 prefix then it will be considered to be
         /// a KV2Policy type.  </param>
 		public VaultPolicyPathItem (string protectedPath) {
-		    (_backendMount, _protectedPath, _isKV2Policy, _isPrefixType) = SeparatePathIntoComponents(protectedPath);
+		    (_backendMount, _protectedPath, _isKV2Policy, _isPrefixType, _KV2_PathID) = SeparatePathIntoComponents(protectedPath);
 		    _key = CalculateKeyValue(_backendMount, _protectedPath, _isKV2Policy, _isPrefixType);
         }
 
@@ -167,7 +167,7 @@ namespace VaultAgent.Backends.System
 		    bool isKV2 = false;
 		    bool isPrefix = false;
 
-            (_backendMount, _protectedPath, isKV2, isPrefix) = SeparatePathIntoComponents(protectedPath);
+            (_backendMount, _protectedPath, isKV2, isPrefix, _KV2_PathID) = SeparatePathIntoComponents(protectedPath);
 
 
             // We override the IsPrefix and IsKV2 settings if we determined during exploration of the path that either of these was true.  
@@ -238,15 +238,15 @@ namespace VaultAgent.Backends.System
         /// <summary>
         /// Deconstructs the protected path part of the path
         /// </summary>
-        /// <param name="pathValue"></param>
+        /// <param name="pathValue">The path to be deconstructed.</param>
         /// <returns></returns>
-	    public static (string protectedPath, bool isKV2Type, bool isPrefixType) DeriveProtectedPath (string pathValue) {
+	    public static (string protectedPath, bool isKV2Type, bool isPrefixType, string KV2_PathPrefix) DeriveProtectedPath (string pathValue) {
 	        bool isKv2Type = false;
 	        bool prefixType = false;
 
 	        // Remove any leading slash.
 	        string tempPath = pathValue.TrimStart('/');
-
+            string KV2_PathPrefix = "";
 
 
 	        // Now see if the string starts with any KV2 reserved words.  If it does we remove the reserved word and set the KV2 flag.
@@ -256,6 +256,7 @@ namespace VaultAgent.Backends.System
 	            {
 	                isKv2Type = true;
 	                tempPath = tempPath.Substring(s.Length + 1);
+	                KV2_PathPrefix = s;
 	            }
 	        }
 
@@ -263,13 +264,19 @@ namespace VaultAgent.Backends.System
 	        int length = tempPath.Length;
 
 	        // See if trailing slash.  Then it is a prefix type.
-	        if (pathValue.EndsWith("/")) {
-	            prefixType = true;
-	            length--;
-	            tempPath = tempPath.TrimEnd('/');
-	        }
+            //TODO - Scott -verify the /* pattern is correct.  Need to do some indepth permission testing as Vault documentation is inconclusive.
+            if (pathValue.EndsWith ("/*")) {
+                prefixType = true;
+                length -= 2;
+                tempPath = tempPath.Substring (0, length);
+            }
+            else if (pathValue.EndsWith ("/")) {
+                prefixType = true;
+                length--;
+                tempPath = tempPath.Substring(0, length);
+            }
 
-	        return (tempPath.Substring (0, length), isKv2Type, prefixType);
+	        return (tempPath.Substring (0, length), isKv2Type, prefixType, KV2_PathPrefix);
 	    }
 
 
@@ -320,6 +327,20 @@ namespace VaultAgent.Backends.System
 	        //private set { _isKV2Policy = value; }
 	    }
 
+
+
+        /// <summary>
+        /// The KV2_PathID is the value of the path prefix on a KeyValue Version 2 ACL policy path.  For example given the below Vault KV2 ACL Policy path:
+        /// backendA/metadata/path1/pathB.
+        /// The KV2_PathID would be metadata.
+        /// This is necessary to know when reading policies from the Vault Instance and trying to convert them into VaultPolicyPathItem objects.  Since this C#
+        /// class combines multiple Vault paths into a single path, when creating the objects from Vault, we must know what the original KV2 prefix was so we
+        /// can set the appropriate permission.  For example, the Update permission is stored both on the /data/ path as well as the /delete/ path.  We must be
+        /// able to identify which is which.  This property allows us to tell that.
+        /// </summary>
+        public string KV2_PathID {
+            get => _KV2_PathID;
+        }
     #endregion
  
 
@@ -418,10 +439,14 @@ namespace VaultAgent.Backends.System
 
 
 	/// <summary>
+	/// This property will have one of 3 values:
+	///  - Null - Upon initial object creation this value is undefined.
+	///  - True - Was explicitly set to denied by caller.
+	///  - False - Was explicity set to not denied by caller or by another property calling it.
 	/// Either sets denied property or cancels it.  If setting Denied to True, then ALL other permissions are set to False.  
 	/// If setting denied to false and it was True, then none of the other permissions are changed (they remain false), you must manually enable the ones you want.
 	/// </summary>
-	public bool Denied
+	public bool? Denied
 		{
 			get { return _denied; }
 			set {
@@ -548,6 +573,16 @@ namespace VaultAgent.Backends.System
 	            _isKV2Policy = true;
 	        }
 	    }
+
+
+	    public bool ExtKV2_ListMetaData {
+	        get => _extKV2_ListMetaData;
+	        set {
+	            _extKV2_ListMetaData = value;
+	            _isKV2Policy = true;
+	        }
+	    }
+
         #endregion
 
 
@@ -559,7 +594,7 @@ namespace VaultAgent.Backends.System
         /// </summary>
         /// <param name="path">The path object to be analyzed and decomposed.</param>
         /// <returns>Tuple:  (Backend, protectedPath, isKV2Policy, isPrefixType</returns>
-	    private static (string backend, string protectedPath, bool isKV2Policy, bool isPrefixType) SeparatePathIntoComponents (string path) {
+	    private static (string backend, string protectedPath, bool isKV2Policy, bool isPrefixType, string KV2Path) SeparatePathIntoComponents (string path) {
 	        // Now find first slash.  Everything up to it becomes the backendMount name.
 	        int pos = path.IndexOf('/', 1);
 
@@ -567,8 +602,8 @@ namespace VaultAgent.Backends.System
 
 	        // Everything after is the path.
 
-	        (string protectedPath,  bool isKV2Policy,  bool isPrefixType) = DeriveProtectedPath(path.Substring(pos + 1));
-	        return (backendMount, protectedPath, isKV2Policy, isPrefixType);
+	        (string protectedPath,  bool isKV2Policy,  bool isPrefixType, string KV2Path) = DeriveProtectedPath(path.Substring(pos + 1));
+	        return (backendMount, protectedPath, isKV2Policy, isPrefixType, KV2Path);
 	    }
 
 
@@ -585,8 +620,9 @@ namespace VaultAgent.Backends.System
 	        string protectedPath;
 	        bool isKV2Policy;
 	        bool isPrefixType;
+            string KV2Path;
 
-	        (backend, protectedPath, isKV2Policy, isPrefixType) = SeparatePathIntoComponents (path);
+	        (backend, protectedPath, isKV2Policy, isPrefixType, KV2Path) = SeparatePathIntoComponents (path);
 
             return CalculateKeyValue (backend, protectedPath, isKV2Policy, isPrefixType);
 	    }
@@ -605,81 +641,85 @@ namespace VaultAgent.Backends.System
 	        string iKV2 = isKV2 ? "1" : "0";
 	        string iPrefix = isPrefix ? "/" : "";
 
-	        return backend + "/" + protectedPath + iPrefix + "::" + iKV2;
+            //TODO - validate that this new entry is correct.
+	        return backend + "/" + protectedPath + iPrefix;
+
+	        //return backend + "/" + protectedPath + iPrefix + "::" + iKV2;
 	    }
 
 
 
 
-        /// <summary>
-        /// Returns the Vault HCL policy text for this object.  This can then be inserted into the overall Policy object and sent to Vault.  This may result in the
-        /// output of multiple path statements.
-        /// </summary>
-        /// <returns></returns>
+	    /// <summary>
+	    /// Returns the Vault HCL policy text for this object.  This can then be inserted into the overall Policy object and sent to Vault.  This may result in the
+	    /// output of multiple path statements.
+	    /// </summary>
+	    /// <returns></returns>
 	    public string ToVaultHCLPolicyFormat() {
-            StringBuilder policyHCLFormat = new StringBuilder();
-            List<string> permissions = new List<string>(20);
-            
-            
-
-            // Build the normal permissions path object
-            if (_denied) { permissions.Add ("deny"); }
-            else {
-                if (_createAllowed) { permissions.Add ("create"); }
-
-                if (_readAllowed) { permissions.Add ("read"); }
-
-                if (_deleteAllowed) { permissions.Add ("delete"); }
-
-                if (_updateAllowed) { permissions.Add ("update"); }
-
-                if (_sudoAllowed) { permissions.Add ("sudo"); }
-
-                if (_rootAllowed) { permissions.Add ("root"); }
-
-                if (_listAllowed) { permissions.Add ("list"); }
-            }
-
-            // Now build path statement if permissions list contains at least 1 entry for the normal permissions.
-            // This will build either a /backend/patha/pathb path or a /backend/data/patha/pathb object.
-            if (permissions.Count > 0) {
-                policyHCLFormat =  BuildHCLPolicyPathStatement(this.FullPath, permissions);
-                if (!_isKV2Policy) { return policyHCLFormat.ToString(); }
-
-                // Now check for extended properties in KV2 and return them.
-                permissions.Clear();
-
-                // Check MetaData Permissions.  These will be assigned to the MetaData path.
-                if (_extKV2_ViewMetadata) { permissions.Add("read");}
-
-                if (_extKV2_DeleteMetaData) { permissions.Add ("delete"); }
-
-                if (_listAllowed) { permissions.Add("list");}
-
-                if (permissions.Count > 0) { policyHCLFormat.Append (BuildHCLPolicyPathStatement (_backendMount + "/metadata/" + _protectedPath + "/*",permissions)); }
-
-                permissions.Clear();
+	        StringBuilder policyHCLFormat = new StringBuilder();
+	        List<string> permissions = new List<string> (20);
 
 
-                // Now check the other extended permissions.  Each has its own call.
-                if (_extKV2_DeleteAnyKeyVersion) {
-                    policyHCLFormat.Append (BuildHCLPolicyPathStatement (_backendMount + "/delete/" + _protectedPath + "/*", new List<string> (){"update"}));
-                }
-                if (_extKV2_UnDelete)
-                {
-                    policyHCLFormat.Append(BuildHCLPolicyPathStatement(_backendMount + "/undelete/" + _protectedPath + "/*", new List<string>() { "update" }));
-                }
-                if (_extKV2_DestroyVersions)
-                {
-                    policyHCLFormat.Append(BuildHCLPolicyPathStatement(_backendMount + "/destroy/" + _protectedPath + "/*", new List<string>() { "update" }));
-                }
-            }
 
-            if (policyHCLFormat.Length > 0) { return policyHCLFormat.ToString(); }
+	        // Build the normal permissions path object
+	        if (_denied == true) { permissions.Add ("deny"); }
+	        else {
+	            if (_createAllowed) { permissions.Add ("create"); }
 
-            return "";
+	            if (_readAllowed) { permissions.Add ("read"); }
+
+	            if (_deleteAllowed) { permissions.Add ("delete"); }
+
+	            if (_updateAllowed) { permissions.Add ("update"); }
+
+	            if (_sudoAllowed) { permissions.Add ("sudo"); }
+
+	            if (_rootAllowed) { permissions.Add ("root"); }
+
+	            //TODO - List now needs to know if it is KV2 policy type or not.
+	            if (_listAllowed) { permissions.Add ("list"); }
+	        }
+
+	        // Now build path statement if permissions list contains at least 1 entry for the normal permissions.
+	        // This will build either a /backend/patha/pathb path or a /backend/data/patha/pathb object.
+	        if (permissions.Count > 0) { policyHCLFormat = BuildHCLPolicyPathStatement (this.FullPath, permissions); }
 
 
+	        // If this is a KV2 versioned policy, then check the Extended Policy Fields.
+	        if (_isKV2Policy) {
+	            // Now check for extended properties in KV2 and return them.
+	            permissions.Clear();
+
+	            // Check MetaData Permissions.  These will be assigned to the MetaData path.
+	            if (_extKV2_ViewMetadata) { permissions.Add ("read"); }
+
+	            if (_extKV2_DeleteMetaData) { permissions.Add ("delete"); }
+
+	            if (_listAllowed) { permissions.Add ("list"); }
+
+	            if (permissions.Count > 0) {
+	                policyHCLFormat.Append (BuildHCLPolicyPathStatement (_backendMount + "/metadata/" + _protectedPath + "/*", permissions));
+	            }
+
+	            permissions.Clear();
+
+
+	            // Now check the other extended permissions.  Each has its own call.
+	            if (_extKV2_DeleteAnyKeyVersion) {
+	                policyHCLFormat.Append (BuildHCLPolicyPathStatement (_backendMount + "/delete/" + _protectedPath + "/*", new List<string>() {"update"}));
+	            }
+
+	            if (_extKV2_UnDelete) {
+	                policyHCLFormat.Append (BuildHCLPolicyPathStatement (_backendMount + "/undelete/" + _protectedPath + "/*", new List<string>() {"update"}));
+	            }
+
+	            if (_extKV2_DestroyVersions) {
+	                policyHCLFormat.Append (BuildHCLPolicyPathStatement (_backendMount + "/destroy/" + _protectedPath + "/*", new List<string>() {"update"}));
+	            }
+	        }
+
+	        if (policyHCLFormat.Length > 0) { return policyHCLFormat.ToString(); }
+	        return "";
         }
 
 
@@ -690,7 +730,7 @@ namespace VaultAgent.Backends.System
         /// <param name="path">The vault path that the policy applies to.</param>
         /// <param name="permissions">A List of permissions that apply to this path.</param>
         /// <returns></returns>
-	    private StringBuilder BuildHCLPolicyPathStatement (string path, List<string> permissions ) {
+        private StringBuilder BuildHCLPolicyPathStatement (string path, List<string> permissions ) {
 	        StringBuilder jsonSB = new StringBuilder();
 
             // Path header statement
@@ -717,5 +757,13 @@ namespace VaultAgent.Backends.System
 
 	        return jsonSB;
         }
-    }
+
+
+
+        /// <summary>
+        /// This method will clear the KV2_PathID value.  This is a necessary routine in order to properly convert Vault Policies into these C# objects when
+        /// reading from the Vault Instance.
+        /// </summary>
+	    public void Clear_KV2Path() { _KV2_PathID = ""; }
+	}
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using NUnit.Framework;
 using System.Threading.Tasks;
@@ -57,13 +58,13 @@ namespace VaultAgentTests {
 
         // Validates that the new Policy Constructors is able to break the path down into backend and protected path values as well as set the IsPrefixType
         [Test]
-        [TestCase("secret/path1", "secret","path1",false)]
-        [TestCase("secret2/path1/path2/path3","secret2","path1/path2/path3",false)]
-        [TestCase("/secret3/path1/path2/path3", "secret3", "path1/path2/path3",false)]
-        [TestCase("/secret4/path1/path2/path3/", "secret4", "path1/path2/path3",true)]
-        [TestCase("secret5/path1/path2/path3/", "secret5", "path1/path2/path3",true)]
-
-        public void VPPI_PathSeparatedCorrectlyIntoComponentParts (string path, string expectedBE, string expectedPath, bool expectedPrefix) {
+        [TestCase(1,"secret/path1", "secret","path1",false)]
+        [TestCase(2,"secret2/path1/path2/path3","secret2","path1/path2/path3",false)]
+        [TestCase(3,"/secret3/path1/path2/path3", "secret3", "path1/path2/path3",false)]
+        [TestCase(4,"/secret4/path1/path2/path3/", "secret4", "path1/path2/path3",true)]
+        [TestCase(5,"secret5/path1/path2/path3/", "secret5", "path1/path2/path3",true)]
+        [TestCase(6,"sA/metadata/pathA/path2","sA","pathA/path2",false)]
+        public void VPPI_PathSeparatedCorrectlyIntoComponentParts (int id, string path, string expectedBE, string expectedPath, bool expectedPrefix) {
             VaultPolicyPathItem vppi = new VaultPolicyPathItem(path);
             Assert.AreEqual(expectedBE,vppi.BackendMountName,"A10: Backend Mount Name is not expected value.");
             Assert.AreEqual(expectedPath,vppi.ProtectedPath,"A20:  Protected Path is not expected value.");
@@ -85,53 +86,24 @@ namespace VaultAgentTests {
         }
 
 
-
-
-        /*  No longer valid test as the Protected Path cannot be changed after object construction.
-                // Validate we can change the backend mount name.       
-                [Test]
-                [TestCase("old","new","new")]
-                [TestCase("old", "/new", "new")]
-                [TestCase("old", "new/", "new")]
-                public void ChangingBackendName_Success(string oldValue, string newValue, string expectedValue) {
-                    VaultPolicyPathItem vppi = new VaultPolicyPathItem(oldValue, "path1", true);
-                    Assert.AreEqual(oldValue,vppi.BackendMountName,"A10:  Initial BackendMount name did not get set correctly.");
-                    vppi.BackendMountName = newValue;
-                    Assert.AreEqual(expectedValue, vppi.BackendMountName, "A20:  Backend Mount name did not change to expected value.");
-                }
-        */
-
-
-        /* No longer valid test as the Protected Path cannot be changed after object construction.
-                        // Validate we can change the protected path.
-                        [Test]
-                        [TestCase("old", "new", "new",false)]
-                        [TestCase("old", "/new", "new",false)]
-                        [TestCase("old", "new/", "new", true)]
-                        [TestCase("old", "new/path2/", "new/path2",true)]
-                        [TestCase("old", "/new/path2/path3", "new/path2/path3", false)]
-                        public void ChangingProtectedPath_Success(string oldValue, string newValue, string expectedValue, bool expectedPrefix)
-                        {
-                            VaultPolicyPathItem vppi = new VaultPolicyPathItem("backend", oldValue, false);
-                            Assert.AreEqual(oldValue, vppi.ProtectedPath, "A10:  Initial ProtectedPath did not get set correctly.");
-                            vppi.ProtectedPath = newValue;
-                            Assert.AreEqual(expectedValue, vppi.ProtectedPath, "A20:  ProtectedPath did not change to expected value.");
-                            Assert.AreEqual(expectedPrefix, vppi.IsPrefixType, "A30:  IsPrefixType is not expected value.");
-                        }
-                */
-
-
+        
 
         [Test]
-        [TestCase("secret", "path1", true, "secret/path1/")]
-        [TestCase("secret2", "path1", false, "secret2/path1")]
-        [TestCase("/secret3", "/path1", true, "secret3/path1/")]
-        [TestCase("secret4/", "path1/", false,"secret4/path1/")]
-        [TestCase("secret5", "path1/path2/path3/", true, "secret5/path1/path2/path3/")]
-        public void VPPI_FullPath_ReturnsCorrectValues(string backend, string path, bool IsPrefix, string expectedPath)
+        [TestCase(1,"secret", "path1", true, "secret/path1/","")]
+        [TestCase(2,"secret2", "path1", false, "secret2/path1","")]
+        [TestCase(3,"/secret3", "/path1", true, "secret3/path1/","")]
+        [TestCase(4,"secret4/", "path1/", false,"secret4/path1/","")]
+        [TestCase(5,"secret5", "path1/path2/path3/", true, "secret5/path1/path2/path3/","")]
+        [TestCase(6,"secret6", "data/path1", false, "secret6/data/path1","data")]
+        [TestCase(7, "secret7", "metadata/path1", false, "secret7/data/path1","Metadata")]
+        [TestCase(8, "secret8", "destroy/path1", false, "secret8/data/path1", "destroy")]
+        [TestCase(9, "secret8", "delete/path1", false, "secret8/data/path1", "delete")]
+        [TestCase(10, "secret8", "undelete/path1", false, "secret8/data/path1", "undelete")]
+        public void VPPI_FullPath_ReturnsCorrectValues(int ID, string backend, string path, bool IsPrefix, string expectedPath, string expectedKVPath)
         {
             VaultPolicyPathItem vppi = new VaultPolicyPathItem(backend, path, IsPrefix);
             Assert.AreEqual(expectedPath, vppi.FullPath, "A10: Full path is not expected value.");
+            Assert.AreEqual(expectedKVPath,vppi.KV2_PathID, "A20:  The KeyValue Version 2 path prefix was not expected value.");
         }
 
 
@@ -530,7 +502,7 @@ namespace VaultAgentTests {
 
         // Validates that we can read a Policy object from Vault that contains just a single path permission object.
         [Test]
-        public async Task Policy_CanReadSinglePathPolicy()
+        public async Task Vault_CanReadSinglePathPolicy()
         {
             VaultPolicyContainer VP = new VaultPolicyContainer("Test2000A");
 
@@ -566,7 +538,8 @@ namespace VaultAgentTests {
         public async Task Vault_CanReadMultiplePathPolicy()
         {
             // Create a Vault Policy Item and add the policy paths.
-            VaultPolicyContainer VP = new VaultPolicyContainer("Test2000B");
+            string name = _uniqueKeys.GetKey ("POL");
+            VaultPolicyContainer VP = new VaultPolicyContainer(name);
 
 
             string path1 = "secret/Test2000B1";
@@ -596,7 +569,105 @@ namespace VaultAgentTests {
 
 
             // Now lets read it back. 
-            VaultPolicyContainer vpNew = await _vaultSystemBackend.SysPoliciesACLRead("Test2000B");
+            VaultPolicyContainer vpNew = await _vaultSystemBackend.SysPoliciesACLRead(name);
+
+            Assert.AreEqual(3, vpNew.PolicyPaths.Count);
+            foreach (VaultPolicyPathItem item in vpNew.PolicyPaths.Values)
+            {
+                if (item.FullPath == path1)
+                {
+                    Assert.AreEqual(vpi1.ListAllowed, item.ListAllowed);
+                    Assert.AreEqual(vpi1.DeleteAllowed, item.DeleteAllowed);
+                    Assert.AreEqual(vpi1.ReadAllowed, item.ReadAllowed);
+                    Assert.AreEqual(vpi1.SudoAllowed, item.SudoAllowed);
+                }
+                else if (item.FullPath == path2)
+                {
+                    Assert.AreEqual(vpi2.Denied, item.Denied);
+                }
+                else if (item.FullPath == path3)
+                {
+                    Assert.AreEqual(vpi3.ListAllowed, item.ListAllowed);
+                    Assert.AreEqual(vpi3.ReadAllowed, item.ReadAllowed);
+                    Assert.AreEqual(vpi3.UpdateAllowed, item.UpdateAllowed);
+                    Assert.AreEqual(vpi3.CreateAllowed, false);
+                    Assert.AreEqual(vpi3.DeleteAllowed, false);
+                    Assert.AreEqual(vpi3.SudoAllowed, false);
+                    Assert.AreEqual(vpi3.Denied, false);
+                }
+                // If here, something is wrong.
+                else { Assert.True(false, "invalid path returned of {0}", item.FullPath); }
+            }
+        }
+
+
+
+        // Validate that a KeyValue2 permission of destroy is properly saved in the Vault Instance and can be read back in successfully.
+        [Test]
+        public async Task Vault_KV2_Confirm_DestroyPermission_CreatedCorrectly() {
+            string polName = _uniqueKeys.GetKey ("Destroy");
+            VaultPolicyContainer policyContainer = new VaultPolicyContainer(polName);
+
+            // Create the policy Path Permission Object
+            string backend = "kv2Back";
+            string path = "asecret";
+            VaultPolicyPathItem polItem = new VaultPolicyPathItem(backend,path,null,true);
+            polItem.ExtKV2_DestroySecret = true;
+            policyContainer.AddPolicyPathObject (polItem);
+
+            // Create policy.
+            Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(policyContainer),"A10: Unable to save the policy : " + policyContainer);
+
+            // Now read policy back.
+            VaultPolicyContainer policyContainer2 = await _vaultSystemBackend.SysPoliciesACLRead(polName);
+            Assert.IsNotNull(policyContainer2,"A20:  Policy was not retrieved.");
+
+            // Validate it.
+            VaultPolicyPathItem polItem2 = policyContainer2.PolicyPaths.First().Value;
+            Assert.AreEqual(polItem.ExtKV2_DestroySecret, polItem2.ExtKV2_DestroySecret,"A30:  Policy Items retrieved was not same as saved.");
+        }
+
+
+
+        [Test]
+        // Validates that we can correctly create and read back a Vault KeyValue2 policy.
+        public async Task Vault_Validate_Complex_KV2PolicyTest()
+        {
+            throw new NotImplementedException();
+
+            // Create a Vault Policy Item and add the policy paths.
+            string name = _uniqueKeys.GetKey("POL");
+            VaultPolicyContainer VP = new VaultPolicyContainer(name);
+
+
+            string path1 = "secret/Test2000B1";
+            VaultPolicyPathItem vpi1 = new VaultPolicyPathItem(path1);
+            vpi1.ListAllowed = true;
+            vpi1.DeleteAllowed = true;
+            vpi1.ReadAllowed = true;
+            vpi1.SudoAllowed = true;
+            VP.AddPolicyPathObject(vpi1);
+
+            // 2nd policy path
+            string path2 = "secret/Test2000B2";
+            VaultPolicyPathItem vpi2 = new VaultPolicyPathItem(path2);
+            vpi2.Denied = true;
+            VP.AddPolicyPathObject(vpi2);
+
+            // 3rd policy path
+            string path3 = "secret/Test2000B3";
+            VaultPolicyPathItem vpi3 = new VaultPolicyPathItem(path3);
+            vpi3.ListAllowed = true;
+            vpi3.ReadAllowed = true;
+            vpi3.UpdateAllowed = true;
+            VP.AddPolicyPathObject(vpi3);
+
+
+            Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(VP));
+
+
+            // Now lets read it back. 
+            VaultPolicyContainer vpNew = await _vaultSystemBackend.SysPoliciesACLRead(name);
 
             Assert.AreEqual(3, vpNew.PolicyPaths.Count);
             foreach (VaultPolicyPathItem item in vpNew.PolicyPaths.Values)
@@ -631,7 +702,7 @@ namespace VaultAgentTests {
 
         // Validates that Attempting to read a non-existent policy returns the expected VaultException and the SpecificErrorCode value is set to ObjectDoesNotExist.
         [Test]
-        public void Policy_ReadOfNonExistentPolicy_ResultsInExpectedError()
+        public void Vault_ReadOfNonExistentPolicy_ResultsInExpectedError()
         {
             VaultInvalidPathException e = Assert.ThrowsAsync<VaultInvalidPathException>(async () => await _vaultSystemBackend.SysPoliciesACLRead("NonExistentPolicy"));
             Assert.AreEqual(EnumVaultExceptionCodes.ObjectDoesNotExist, e.SpecificErrorCode);

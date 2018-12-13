@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 using System.Text;
 using VaultAgent.Models;
@@ -492,7 +493,6 @@ namespace VaultAgent
 
 			foreach (VaultPolicyPathItem item in policyContainerItem.PolicyPaths.Values) {
 			    jsonSB.Append (item.ToVaultHCLPolicyFormat());
-			    //jsonSB.Append(BuildPolicyPathJSON(item));
 			}
 
 
@@ -616,6 +616,10 @@ namespace VaultAgent
             // We need to create a default object or else it will not compile.  
 			VaultPolicyPathItem newPathObj = new VaultPolicyPathItem("dummy/dummy2");
 
+            // Used so we can determine what type of path the permission is being applied to.  Complicated.  
+		    string KV2Path = "";
+
+
 			short iStep = iSTARTING;
 
 			// Now process thru the data elements.
@@ -633,11 +637,25 @@ namespace VaultAgent
 								throw new FormatException("Found path keyword, but no value supplied for path NAME");
 							}
 							else {
+                                VaultPolicyPathItem tempItem = new VaultPolicyPathItem(pathObjects[i]);
+							    KV2Path = tempItem.KV2_PathID;
+
+                                // If there is not a Policy permission object for this path in the Policy Container then use the new one.  Otherwise use existing.
+							    if (!vp.PolicyPaths.TryGetValue (tempItem.Key, out newPathObj)) {
+							        newPathObj = tempItem;
+							        vp.AddPolicyPathObject (newPathObj);
+							    }
+
+							    
                                 // Now we need to determine if this is a new path object that should be added to the Dictionary OR
                                 // Can be combined with an already existing path object.  For instance Vault stores KeyValue V2 secret permissions
                                 // in several paths.  But we treat internally as a single path.                              
 								//newPathObj = new VaultPolicyPathItem(pathObjects[i]);
-							    newPathObj = vp.TryAddPath (pathObjects[i]);
+							    //if (!vp.TryAddPath (pathObjects[i], out newPathObj)) {
+                                    // If the policy path object already existed, then we need to clear the metadata flag on it.  
+                                //    newPathObj.Clear_KV2Path();
+							    //}
+							    //newPathObj = vp.TryAddPath (pathObjects[i]);
                                 //vp.TryAddPath()
 								//vp.PolicyPaths.Add(newPathObj.Key,newPathObj);
 
@@ -673,27 +691,78 @@ namespace VaultAgent
 							iStep = iPATHOPTIONS;
 						}
 						else {
-							// It must be a valid capability...Confirm.
+							// It must be a valid capability  AND we need to know what the path Prefix is so we can set the appropriate permission.
 							switch (pathObjects[i]) {
 								case "create":
 									newPathObj.CreateAllowed = true;
 									break;
-								case "read":
+
+							    case "read":
+								    switch (KV2Path) {
+                                        case "":
+                                        case "data": newPathObj.ReadAllowed = true;
+                                            break;
+                                        case "metadata": newPathObj.ExtKV2_ViewMetaData = true;
+                                            break;
+								    }
+
 									newPathObj.ReadAllowed = true;
 									break;
-								case "update":
-									newPathObj.UpdateAllowed = true;
+
+							    case "update":
+								    switch (KV2Path) {
+                                        case "":
+                                        case "data":
+                                            newPathObj.UpdateAllowed = true;
+                                            break;
+                                        case "delete": newPathObj.ExtKV2_DeleteAnyKeyVersion = true;
+                                            break;
+                                        case "undelete": newPathObj.ExtKV2_UndeleteSecret = true;
+                                            break;
+                                        case "destroy": newPathObj.ExtKV2_DestroySecret = true;
+                                            break;
+                                        default:
+                                            throw new DataException(
+                                                "Trying to set Update Permission for a VaultPolicyPathItem object resulted in arriving at an unexpected code path.  Do not know what to do.  Aborting.");
+                                            break;
+                                    }
+                                    break;
+
+							    case "delete":
+								    switch (KV2Path) {
+                                        case "":
+                                        case "data":
+                                            newPathObj.DeleteAllowed = true;
+                                            break;
+                                        case "metadata": newPathObj.ExtKV2_DeleteMetaData = true;
+                                            break;
+                                        default:
+                                            throw new DataException (
+                                                "Trying to set Delete permission for a VaultPolicyPathItem object resulted in arriving at an unexpected code path.  Do not know what to do.  Aborting.");
+								    }
 									break;
-								case "delete":
-									newPathObj.DeleteAllowed = true;
-									break;
-								case "list":
-									newPathObj.ListAllowed = true;
-									break;
-								case "sudo":
+
+							    case "list":
+								    switch (KV2Path)
+								    {
+								        case "":
+								        case "data":
+								            newPathObj.ListAllowed = true;
+								            break;
+								        case "metadata":
+								            newPathObj.ExtKV2_ListMetaData = true;
+								            break;
+								        default:
+								            throw new DataException(
+								                "Trying to set List permission for a VaultPolicyPathItem object resulted in arriving at an unexpected code path.  Do not know what to do.  Aborting.");
+								    }
+								    break;
+
+							    case "sudo":
 									newPathObj.SudoAllowed = true;
 									break;
-								case "deny":
+
+							    case "deny":
 									newPathObj.Denied = true;
 									break;
 							}
