@@ -241,141 +241,7 @@ namespace VaultAgentTests {
 
 
 
-        // Validate that we can build a proper permission string.
-        [Test]
-        public void VPPIKV2_CanBuildKV2PermissionString() {
-            VaultPolicyPathItem vppi = new VaultPolicyPathItem("ABC", "pathA/pathB");
-            vppi.CreateAllowed = true;
-            Assert.True (vppi.ToVaultHCLPolicyFormat().Contains("create"),"A10:  Did not find the create permission in the Vault policy string.");
-            Assert.AreEqual("ABC/pathA/pathB",vppi.SecretPath);
 
-            // Create a KV2 policy item
-            VaultPolicyPathItem vppi2 = new VaultPolicyPathItem("ABC", "data/pathA/pathB");
-            vppi2.CreateAllowed = true;
-            vppi2.DeleteAllowed = true;
-            vppi2.ExtKV2_DeleteAnyKeyVersion = true;
-
-            Assert.True(vppi2.ToVaultHCLPolicyFormat().Contains("create"), "A20:  Did not find the create permission in the Vault policy string.");
-            Assert.True(vppi2.ToVaultHCLPolicyFormat().Contains("delete"), "A30:  Did not find the delete permission in the Vault policy string.");
-            Assert.True(vppi2.ToVaultHCLPolicyFormat().Contains("/data/"), "A40:  Did not find the /data/ subpath in the Vault policy string.");
-            Assert.AreEqual("ABC/data/pathA/pathB",vppi2.SecretPath, "A50:  The secretPath property did not return the expected value.");
-        }
-
-
-
-
-        // Validate that the proper path prefixes are generated for KeyValue2 policies
-        [Test]
-        [TestCase(2)]
-        [TestCase(3)]
-        [TestCase(4)]
-        [TestCase(5)]
-        [TestCase(6)]
-        public void VPPIKV2_PoliciesProduce_ProperPathPrefixes (int id) {
-            string be = "ZZ";
-            string pa = "pathA/pathB";
-            string policyString;
-
-            
-            VaultPolicyPathItem vppi = new VaultPolicyPathItem(be, pa);
-            switch (id) {
-                case 2: 
-                    vppi.ExtKV2_DeleteAnyKeyVersion = true;
-                    policyString = vppi.ToVaultHCLPolicyFormat();
-                    Assert.That (policyString.Contains (be + "/delete/" + pa + "/*"), "A10:  Policy String was not expected value.");
-                    Assert.That(policyString.Contains("update"), "A10:  Policy string did not contain expected permission.");
-                    break;
-                case 3: vppi.ExtKV2_DeleteMetaData = true;
-                    vppi.ExtKV2_DeleteMetaData = true;
-                    policyString = vppi.ToVaultHCLPolicyFormat();
-                    Assert.That(policyString.Contains(be + "/metadata/" + pa + "/*"), "A30:  Policy String was not expected value.");
-                    Assert.That(policyString.Contains("delete"), "A31:  Policy string did not contain expected permission.");
-                    break;
-                case 4: vppi.ExtKV2_DestroySecret = true;
-                    vppi.ExtKV2_DestroySecret = true;
-                    policyString = vppi.ToVaultHCLPolicyFormat();
-                    Assert.That(policyString.Contains(be + "/destroy/" + pa + "/*"), "A40:  Policy String was not expected value.");
-                    Assert.That(policyString.Contains("update"), "A41:  Policy string did not contain expected permission.");
-                    break;
-                case 5: vppi.ExtKV2_UndeleteSecret = true;
-                    vppi.ExtKV2_UndeleteSecret = true;
-                    policyString = vppi.ToVaultHCLPolicyFormat();
-                    Assert.That(policyString.Contains(be + "/undelete/" + pa + "/*"), "A50:  Policy String was not expected value.");
-                    Assert.That(policyString.Contains("update"), "A51:  Policy string did not contain expected permission.");
-                    break;
-                case 6: vppi.ExtKV2_ViewMetaData = true;
-                    vppi.ExtKV2_ViewMetaData = true;
-                    policyString = vppi.ToVaultHCLPolicyFormat();
-                    Assert.That(policyString.Contains(be + "/metadata/" + pa + "/*"), "A60:  Policy String was not expected value.");
-                    Assert.That(policyString.Contains("read"), "A61:  Policy string did not contain expected permission.");
-                    break;
-            }
-
-
-
-        }
-
-
-
-
-        // Validates that the FullPath property will return the proper KV2 type policy data path.
-        [Test]
-        public void VPPI_FullPathReturns_KV2DataPath() {
-            // Create a KV2 policy item
-            VaultPolicyPathItem vppi1 = new VaultPolicyPathItem("ABC", "data/pathA/pathB");
-            
-            vppi1.CreateAllowed = true;
-            Assert.AreEqual("ABC/data/pathA/pathB", vppi1.SecretPath, "A10:  The fullpath property did not return the expected value of : " + "ABC/data/pathA/pathB");
-        }
-
-
-/*  No longer a valid test as PrefixParam cannot be set in constructor.
-        [Test]
-        [TestCase(1, "secret/appA/", true, "secret/appA/", true)]
-        [TestCase(2, "secret/appA", true, "secret/appA/", true)]
-        [TestCase(3, "secret/appA/", false, "secret/appA/", true)]
-        [TestCase(4, "secret/appA", false, "secret/appA", false)]
-        [TestCase(5, "secret/appA/settingB", false, "secret/appA/settingB", false)]
-        [TestCase(6, "secret/appA/settingB", true, "secret/appA/settingB/", true)]
-        [TestCase(7, "secret/appA/settingB/", false, "secret/appA/settingB/", true)]
-        [TestCase(8, "secret/appA/settingB/", true, "secret/appA/settingB/", true)]
-        // Validates the Prefix Constructor works correctly by removing/adding trailing path slash depending on IsPrefix setting.
-        public void VPPI_IsPrefixConstructor_WorksCorrectly(int id, string pathParam, bool prefixParam, string expPathValue, bool expPrefixValue)
-        {
-            VaultPolicyPathItem vaultPolicyPathItem = new VaultPolicyPathItem(pathParam, prefixParam);
-            Assert.AreEqual(expPathValue, vaultPolicyPathItem.FullPath, "A10:  The protected path value was not equal to expected value.");
-            Assert.AreEqual(expPrefixValue, vaultPolicyPathItem.IsPrefixType, "A20:  The expected Prefix Value was not set.");
-        }
-*/
-
-
-        /*  No longer valid test as the Protected Path cannot be changed after object construction.
-        [Test]
-        [TestCase(1,"secret/appA", true, "appA/", true)]
-        [TestCase(2,"secret/appA/", true, "appA", true)]
-        [TestCase(3,"secret/appA", false, "appA/", true)]
-        [TestCase(4,"secret/appA/", false, "appA", false)]
-        [TestCase(5,"secret/appA/settingB", true, "appA/settingC", true)]
-        [TestCase(6,"secret/appA/SettingB/", true, "appA/settingC", true)]
-        [TestCase(7,"secret/appA/settingB", false, "appA/settingC", false)]
-        [TestCase(8,"secret/appA/settingB", false, "appA/settingC/", true)]
-        public void PathWithPrefix_Sets_IsPrefixType_Correctly(int id, string pathParam, bool prefixParam, string newPath, bool isPrefixValue)
-        {
-            VaultPolicyPathItem vaultPolicyPathItem = new VaultPolicyPathItem(pathParam, prefixParam);
-
-
-            // Since we called constructor with the prefix parameter, no matter what the path has (trailing slash or not) the prefix parameter 
-            // determines the type of path object and the IsPrefix setting.
-            Assert.AreEqual(prefixParam, vaultPolicyPathItem.IsPrefixType, "A1: policy IsPrefixType setting is not expected value.");
-
-
-            // Now change the path to be something different.  Confirm IsPrefix setting changes appropriately
-            vaultPolicyPathItem.ProtectedPath = newPath;
-
-            Assert.AreEqual(isPrefixValue, vaultPolicyPathItem.IsPrefixType, "A2: New policy IsPrefix property is not expected value.");
-            
-        }
-        */
 
 
 
@@ -475,7 +341,7 @@ namespace VaultAgentTests {
         #region "Other Policy Tests"
         //TODO this needs some finishing work.../
         [Test]
-        public async Task Policy_CanCreatePolicy_WithSingleVaultPolicyItem()
+        public async Task VaultInstance_CanCreatePolicy_WithSingleVaultPolicyItem()
         {
 
             // Create a Vault Policy Path Item
@@ -493,7 +359,7 @@ namespace VaultAgentTests {
 
         // Validates we can create a policy container object with multiple PolicyPathItems and they are all saved to Vault Instance
         [Test]
-        public async Task Policy_CanCreateAPolicy_WithMultipleVaultPolicyItems()
+        public async Task VaultInstance_CanCreateAPolicy_WithMultipleVaultPolicyItems()
         {
             // Create multiple Vault Policy Path Items
             string polName = _uniqueKeys.GetKey("secret/Pol");
@@ -643,7 +509,7 @@ namespace VaultAgentTests {
 
             // Create the policy Path Permission Object
             string backend = "kv2Back";
-            string path = "asecret";
+            string path = "data/asecret";
             VaultPolicyPathItem polItem = new VaultPolicyPathItem(backend,path);
             polItem.ExtKV2_DestroySecret = true;
             policyContainer.AddPolicyPathObject (polItem);
@@ -802,10 +668,268 @@ namespace VaultAgentTests {
         [TestCase("secret/destroy/path1/path2")]
         [TestCase("secret/delete/path1/path2")]
         [TestCase("secret/undelete/path1/path2")]
-        public void KV2_SinglePathConstructor_IsKV2Property_IsSet (string path) {
+        public void VPPI_KV2_SinglePathConstructor_Sets_IsKV2Property (string path) {
             VaultPolicyPathItem vppi = new VaultPolicyPathItem(path);
             Assert.IsTrue(vppi.IsKV2Policy,"A10:  Expected the IsKV2Policy property to be true.");
         }
-        #endregion
-    }
+
+
+
+
+		// Validate that we can build a proper VaultInstance permission string.
+		[Test]
+		public void VPPI_KV2_CanBuildKV2PermissionString() {
+			VaultPolicyPathItem vppi = new VaultPolicyPathItem("ABC", "pathA/pathB");
+			vppi.CreateAllowed = true;
+			Assert.True(vppi.ToVaultHCLPolicyFormat().Contains("create"), "A10:  Did not find the create permission in the Vault policy string.");
+			Assert.AreEqual("ABC/pathA/pathB", vppi.SecretPath);
+
+			// Create a KV2 policy item
+			VaultPolicyPathItem vppi2 = new VaultPolicyPathItem("ABC", "data/pathA/pathB");
+			vppi2.CreateAllowed = true;
+			vppi2.DeleteAllowed = true;
+			vppi2.ExtKV2_DeleteAnyKeyVersion = true;
+
+			Assert.True(vppi2.ToVaultHCLPolicyFormat().Contains("create"), "A20:  Did not find the create permission in the Vault policy string.");
+			Assert.True(vppi2.ToVaultHCLPolicyFormat().Contains("delete"), "A30:  Did not find the delete permission in the Vault policy string.");
+			Assert.True(vppi2.ToVaultHCLPolicyFormat().Contains("/data/"), "A40:  Did not find the /data/ subpath in the Vault policy string.");
+			Assert.AreEqual("ABC/data/pathA/pathB", vppi2.SecretPath, "A50:  The secretPath property did not return the expected value.");
+		}
+
+
+
+
+		// Validate that the proper path prefixes are generated for KeyValue2 policies
+		[Test]
+		[TestCase(2)]
+		[TestCase(3)]
+		[TestCase(4)]
+		[TestCase(5)]
+		[TestCase(6)]
+		public void VPPI_KV2_PoliciesProduce_ProperPathPrefixes(int id) {
+			string be = "ZZ";
+			string pa = "pathA/pathB";
+			string policyString;
+			string expVal;
+
+
+			VaultPolicyPathItem vppi = new VaultPolicyPathItem(be, "data/" + pa);
+			switch (id) {
+				case 2:
+					vppi.ExtKV2_DeleteAnyKeyVersion = true;
+					policyString = vppi.ToVaultHCLPolicyFormat();
+					expVal = be + "/delete/" + pa + "/*";
+					Assert.That(policyString.Contains(expVal), "A10:  Policy String was not expected value.");
+					Assert.That(policyString.Contains("update"), "A11:  Policy string did not contain expected permission.");
+					break;
+				case 3:
+					vppi.ExtKV2_DeleteMetaData = true;
+					policyString = vppi.ToVaultHCLPolicyFormat();
+					expVal = be + "/metadata/" + pa + "/*";
+					Assert.That(policyString.Contains(expVal), "A30:  Policy String was not expected value.");
+					Assert.That(policyString.Contains("delete"), "A31:  Policy string did not contain expected permission.");
+					break;
+				case 4:
+					vppi.ExtKV2_DestroySecret = true;
+					policyString = vppi.ToVaultHCLPolicyFormat();
+					expVal = be + "/destroy/" + pa + "/*";
+					Assert.That(policyString.Contains(expVal), "A40:  Policy String was not expected value.");
+					Assert.That(policyString.Contains("update"), "A41:  Policy string did not contain expected permission.");
+					break;
+				case 5:
+					vppi.ExtKV2_UndeleteSecret = true;
+					policyString = vppi.ToVaultHCLPolicyFormat();
+					expVal = be + "/undelete/" + pa + "/*";
+					Assert.That(policyString.Contains(expVal), "A50:  Policy String was not expected value.");
+					Assert.That(policyString.Contains("update"), "A51:  Policy string did not contain expected permission.");
+					break;
+				case 6:
+					vppi.ExtKV2_ViewMetaData = true;
+					policyString = vppi.ToVaultHCLPolicyFormat();
+					expVal = be + "/metadata/" + pa + "/*";
+					Assert.That(policyString.Contains(expVal), "A60:  Policy String was not expected value.");
+					Assert.That(policyString.Contains("read"), "A61:  Policy string did not contain expected permission.");
+					break;
+			}
+		}
+
+
+
+
+		// Validates that the SecretPath property will return the proper KV2 type policy secret path.
+		[Test]
+		[TestCase(1,"A/data/path1","A/data/path1")]
+		[TestCase(2, "A/data/path1/", "A/data/path1/*")]
+		[TestCase(3, "A/data/path1/*", "A/data/path1/*")]
+		[TestCase(4, "A/metadata/path1", "A/data/path1")]
+		[TestCase(5, "A/metadata/path1/", "A/data/path1/*")]
+		[TestCase(6, "A/metadata/path1/*", "A/data/path1/*")]
+		[TestCase(7, "A/delete/path1", "A/data/path1")]
+		[TestCase(8, "A/delete/path1/", "A/data/path1/*")]
+		[TestCase(9, "A/delete/path1/*", "A/data/path1/*")]
+		[TestCase(10, "A/undelete/path1", "A/data/path1")]
+		[TestCase(11, "A/undelete/path1/", "A/data/path1/*")]
+		[TestCase(12, "A/undelete/path1/*", "A/data/path1/*")]
+		[TestCase(13, "A/destroy/path1", "A/data/path1")]
+		[TestCase(14, "A/destroy/path1/", "A/data/path1/*")]
+		[TestCase(15, "A/destroy/path1/*", "A/data/path1/*")]
+		public void VPPI_KV2_SecretPathReturnsProperPath(int id, string path, string expSecPath) {
+			// Create a KV2 policy item
+			VaultPolicyPathItem vppi = new VaultPolicyPathItem(path);
+
+			vppi.CreateAllowed = true;
+			Assert.AreEqual(expSecPath,vppi.SecretPath, "A10:  The SecretPath property did not return the expected value");
+		}
+
+
+
+		// Validates combinations of KeyValue2 permissions and a secret object and how many path statements they generate.
+	    [Test]
+		[TestCase("A",1,"Test just a KV2 secret save.  Should be 1 path.")]
+	    [TestCase("B", 2, "Test just a KV2 secret save AND a KV2 Delete.  Should be 2 paths.")]
+	    [TestCase("C", 2, "Test just a KV2 secret save AND a KV2 Destroy.  Should be 2 paths.")]
+	    [TestCase("D", 2, "Test just a KV2 secret save AND a KV2 Undelete.  Should be 2 paths.")]
+	    [TestCase("E", 2, "Test just a KV2 secret save AND a KV2 MetaData Delete, List and View.  Should be 2 paths.")]
+	    [TestCase("F", 3, "Test just a KV2 secret save, a KV2 MetaData and a KV2 Delete.  Should be 3 paths.")]
+	    [TestCase("G", 5, "Test all KV2 Attributes set.  Should be 5 paths.")]
+		[TestCase("H", 1, "DestroySecret only Attribute set.  Should be 1 path.")]
+		public void VPPI_KV2_SubFolderPath_GeneratesSinglePolicyPath(string scenario, int expNumberOfPaths, string testScenario) {
+		    string path = "BE/data/path1/*";
+			VaultPolicyPathItem vppi = new VaultPolicyPathItem(path);
+
+		    switch (scenario) {
+				case "A":
+					vppi.ReadAllowed = true;
+					break;
+				case "B":
+					vppi.ReadAllowed = true;
+					vppi.ExtKV2_DeleteAnyKeyVersion = true;
+					break;
+				case "C":
+					vppi.ReadAllowed = true;
+					vppi.ExtKV2_DestroySecret = true;
+					break;
+				case "D":
+					vppi.ReadAllowed = true;
+					vppi.ExtKV2_UndeleteSecret = true;
+					break;
+			    case "E":
+				    vppi.ReadAllowed = true;
+				    vppi.ExtKV2_ViewMetaData = true;
+				    vppi.ExtKV2_ListMetaData = true;
+					vppi.ExtKV2_DeleteMetaData = true;
+				    break;
+				case "F":
+					vppi.ReadAllowed = true;
+					vppi.ExtKV2_ViewMetaData = true;
+					vppi.ExtKV2_DeleteAnyKeyVersion = true;
+					break;
+			    case "G":
+				    vppi.ReadAllowed = true;
+				    vppi.ExtKV2_ViewMetaData = true;
+				    vppi.ExtKV2_ListMetaData = true;
+				    vppi.ExtKV2_DeleteMetaData = true;
+				    vppi.ExtKV2_DeleteAnyKeyVersion = true;
+				    vppi.ExtKV2_DestroySecret = true;
+				    vppi.ExtKV2_UndeleteSecret = true;
+				    break;
+				case "H":
+					vppi.ExtKV2_DestroySecret = true;
+					break;
+			}
+
+
+			string vaultPolicyStatement = vppi.ToVaultHCLPolicyFormat();
+		    int found = 0;
+		    bool bExit = false;
+		    string temp = vaultPolicyStatement;
+		    int pos = -1;
+		    while (!bExit) {
+			    pos = temp.IndexOf("path ");
+
+			    if (pos > -1) {
+				    found++;
+				    temp = temp.Substring(pos + 1);
+			    }
+			    else { bExit = true; }
+		    }
+			
+			Assert.AreEqual(expNumberOfPaths,found,"A10:  Did not find the number of paths we were expecting to find.");
+	    }
+
+
+
+
+	    // Validate the KV2 Destroy permission generates proper Vault Instance policy statement.
+	    [Test]
+	    public void VPPI_KV2_DestroyAttr_PolicyPath_Correct() {
+		    string path = "ABC/destroy/pathA";
+
+		    VaultPolicyPathItem vppi = new VaultPolicyPathItem(path);
+		    vppi.ExtKV2_DestroySecret = true;
+
+		    Assert.True(vppi.ToVaultHCLPolicyFormat().Contains("update"), "A10:  Did not find the update permission in the Vault policy string.");
+		    Assert.True(vppi.ToVaultHCLPolicyFormat().Contains("destroy"), "A20:  Did not find the destroy permission in the Vault policy string.");
+	    }
+
+
+	    // Validate the KV2 Undelete permission generates proper Vault Instance policy statement.
+	    [Test]
+	    public void VPPI_KV2_UndeleteAttr_PolicyPath_Correct() {
+		    string path = "ABC/undelete/pathA";
+
+		    VaultPolicyPathItem vppi = new VaultPolicyPathItem(path);
+		    vppi.ExtKV2_UndeleteSecret = true;
+
+		    Assert.True(vppi.ToVaultHCLPolicyFormat().Contains("update"), "A10:  Did not find the update permission in the Vault policy string.");
+		    Assert.True(vppi.ToVaultHCLPolicyFormat().Contains("undelete"), "A20:  Did not find the undelete permission in the Vault policy string.");
+	    }
+
+
+
+	    // Validate the KV2 Delete permission generates proper Vault Instance policy statement.
+	    [Test]
+	    public void VPPI_KV2_DeleteAttr_PolicyPath_Correct() {
+		    string path = "ABC/delete/pathA";
+
+		    VaultPolicyPathItem vppi = new VaultPolicyPathItem(path);
+		    vppi.ExtKV2_DeleteAnyKeyVersion = true;
+
+		    Assert.True(vppi.ToVaultHCLPolicyFormat().Contains("update"), "A10:  Did not find the update permission in the Vault policy string.");
+		    Assert.True(vppi.ToVaultHCLPolicyFormat().Contains("delete"), "A20:  Did not find the delete permission in the Vault policy string.");
+	    }
+
+
+
+	    // Validate the KV2 Metadata permission generates proper Vault Instance policy statement.
+	    [Test]
+	    public void VPPI_KV2_MetadataAttr_PolicyPath_Correct() {
+		    string path = "ABC/metadata/pathA";
+
+		    VaultPolicyPathItem vppi = new VaultPolicyPathItem(path);
+		    vppi.ExtKV2_DeleteMetaData = true;
+		    vppi.ExtKV2_ListMetaData = true;
+		    vppi.ExtKV2_ViewMetaData = true;
+
+		    Assert.True(vppi.ToVaultHCLPolicyFormat().Contains("list"), "A10:  Did not find the list permission in the Vault policy string.");
+		    Assert.True(vppi.ToVaultHCLPolicyFormat().Contains("read"), "A11:  Did not find the read permission in the Vault policy string.");
+		    Assert.True(vppi.ToVaultHCLPolicyFormat().Contains("delete"), "A12:  Did not find the delete permission in the Vault policy string.");
+			Assert.True(vppi.ToVaultHCLPolicyFormat().Contains("metadata"), "A20:  Did not find the metadata permission in the Vault policy string.");
+	    }
+
+
+
+	    // Validate that the normal List Attribute will generate the proper KV2 policy permission statement
+	    [Test]
+	    public void VPPI_KV2_ListAttribute_MetadataAttr_PolicyPath_Correct() {
+		    string path = "ABC/metadata/pathA";
+
+		    VaultPolicyPathItem vppi = new VaultPolicyPathItem(path);
+		    vppi.ListAllowed = true;
+
+		    Assert.True(vppi.ToVaultHCLPolicyFormat().Contains("list"), "A10:  Did not find the list permission in the Vault policy string.");
+		    Assert.True(vppi.ToVaultHCLPolicyFormat().Contains("metadata"), "A20:  Did not find the metadata permission in the Vault policy string.");
+	    }
+		#endregion
+	}
 }

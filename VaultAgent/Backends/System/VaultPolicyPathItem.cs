@@ -111,23 +111,10 @@ namespace VaultAgent.Backends.System
         /// passed in.
         /// </summary>
         /// <param name="backendMount">The name/path to the backend that this policy applies to.  Note, all leading/trailing slashes are removed.</param>
-        /// <param name="protectedPath">The path that this policy is applicable to.  If the path ends with a trailing slash then it is considered
-        /// a SubFolderPolicyType (Meaning its permissions apply to subsecrets).  If the path starts with a KV2 SubFolder then it will be considered to be
-        /// a KV2Policy type.  </param>
-        /// <param name="isSubFolderPolicyType">Set to true to indicate this policy object applies to the secret and ALL subsecrets (subfolders).
-        /// This value will be overriden during the path interrogation IF it is determined that the path indicates this is a SubFolderType.  Thus
-        /// this parameter is used only in the case where the path does not indicate whether it is a SubFolder type AND this parameter value is true.</param>
-        /// <param name="isKV2PolicyType">Set to true to indicate that this policy object applies to a KeyValue Version 2 secret store.  In this case
-        /// the path parameter will have one of the KV2 SubFolderes applied to it.  </param>
+        /// <param name="protectedPath">The path that this policy is applicable to.  If the path ends with a trailing slash or a trailing /* then it is considered
+        /// a SubFolderPolicyType (Meaning its permissions apply to subsecrets).
+        /// If the path starts with a KV2 prefix then it will be considered to be a KV2Policy type.  </param>
         public VaultPolicyPathItem (string backendMount, string protectedPath) {  //}, bool? isSubFolderPolicyType = null, bool? isKV2PolicyType = null) {
-            // If caller specified the type of KV2 policy type then we need to set it to the value they passed in.
-           // if (isKV2PolicyType != null) { _isKV2Policy = (bool)isKV2PolicyType; }
-
-            //if (isSubFolderPolicyType != null) { _isSubFolderType = (bool)isSubFolderPolicyType; }
-
-
-            // Note that the ProtectedPath setter WILL OVERRIDE either of the above 2 items IF it can definitively determine that it is a KV2 path 
-            // or a SubFolder type policy.
             _backendMount = DeriveBackendName (backendMount);
             
 
@@ -160,47 +147,10 @@ namespace VaultAgent.Backends.System
 		    (_backendMount, _protectedPath, _isKV2Policy, _isSubFolderType, _KV2_PathID) = SeparatePathIntoComponents(protectedPath);
 		    _key = CalculateKeyValue(_backendMount, _protectedPath);
         }
-
-
-
-        /// <summary>
-        /// Creates a Vault Policy Path Item object.  Note, that the protectedPath parameter will be interrogated to see if it indicates that
-        /// this is an IsSubFolder or IsKV2 policy AND if the Answer is Yes, it WILL OVERRIDE any False setting for isSubFolder and isKV2 parameters
-        /// passed in.
-        /// </summary>
-        /// <param name="protectedPath">The path that this policy is applicable to.  If the path ends with a trailing slash then it is considered
-        /// a SubFolderPolicyType (Meaning its permissions apply to subsecrets).  If the path starts with a KV2 SubFolder then it will be considered to be
-        /// a KV2Policy type.  </param>
-        /// <param name="isSubFolderPolicyType">Set to true to indicate this policy object applies to the secret and ALL subsecrets (subfolders).
-        /// This value will be overriden during the path interrogation IF it is determined that the path indicates this is a SubFolderType.  Thus
-        /// this parameter is used only in the case where the path does not indicate whether it is a SubFolder type AND this parameter value is true.</param>
-        /// <param name="isKV2PolicyType">Set to true to indicate that this policy object applies to a KeyValue Version 2 secret store.  In this case
-        /// the path parameter will have one of the KV2 SubFolderes applied to it.  </param>
-/*		public VaultPolicyPathItem(string protectedPath, bool? isSubFolderPolicyType = null, bool? isKV2PolicyType = null) {
-		    // If caller specified the type of KV2 policy type then we need to set it to the value they passed in.
-		    if (isKV2PolicyType != null) { _isKV2Policy = (bool)isKV2PolicyType; }
-
-		    if (isSubFolderPolicyType != null) { _isSubFolderType = (bool)isSubFolderPolicyType; }
-
-		    bool isKV2 = false;
-		    bool isSubFolder = false;
-
-            (_backendMount, _protectedPath, isKV2, isSubFolder, _KV2_PathID) = SeparatePathIntoComponents(protectedPath);
-
-
-            // We override the IsSubFolder and IsKV2 settings if we determined during exploration of the path that either of these was true.  
-		    if (isKV2) { _isKV2Policy = true;}
-		    if (isSubFolder) { _isSubFolderType = true;}
-
-		    _key = CalculateKeyValue(_backendMount, _protectedPath, _isKV2Policy, _isSubFolderType);		
-		}
-*/
         #endregion
 
 
         #region "Normal Properties"
-
-
 
         /// <summary>
         /// The key is simply the backend name + the protectedPath .
@@ -279,49 +229,33 @@ namespace VaultAgent.Backends.System
 	        }
 
 
-	       // int length = tempPath.Length;
-
 	        // See if trailing slash.  Then it is a SubFolder type.
             //TODO - Scott -verify the /* pattern is correct.  Need to do some indepth permission testing as Vault documentation is inconclusive.
             if (pathValue.EndsWith ("/*")) {
                 SubFolderType = true;
-			
-//	            return (tempPath, isKv2Type, KV2_PathSubFolder);
-				//                length -= 2;
-				//                tempPath = tempPath.Substring (0, length);
 			}
 
 			// If it ends with a slash we automatically add the * for consistency.
             else if (pathValue.EndsWith ("/")) {
                 SubFolderType = true;
 	            return ((tempPath + "*"), isKv2Type, SubFolderType, KV2_PathSubFolder);
-//                length--;
-
-                //tempPath = tempPath.Substring(0, length);
             }
 
 	        return (tempPath, isKv2Type, SubFolderType ,KV2_PathSubFolder);
-			//return (tempPath.Substring (0, length), isKv2Type, SubFolderType, KV2_PathSubFolder);
 		}
 
 
 
         /// <summary>
-        /// Returns the normal full Vault policy data element path for this item.  This is what Vault expects to see as the path for storing secrets.
-        ///   - For non-KV2 policies = The backendmount + the protectedPath + the trailing slash if IsSubFolderType.
-        ///   - For KV2-Policies = the backendmount + "/data/" + the ProtectedPath plus the trailing slash if IsSubFolderType.
-        /// It will never return the Extended KV2 properties path other than the /data/ one.
+        /// Returns the full Vault secret path this policy applies too.
+        ///   - For non-KV2 policies = The backendmount + the protectedPath
+        ///   - For KV2-Policies = the backendmount + "/data/" + the ProtectedPath
+        /// It will never return the Extended KV2 properties path other than the /data/ one.  Thus it will never return metadata, undelete, delete and others.
         /// </summary>
         public string SecretPath {
 	        get {
-	            string trailer;
-
-//	            if (IsSubFolderType) { trailer = "/"; }
-//	            else { trailer = "";}
-
 	            if (_isKV2Policy) { return (_backendMount + "/data/" + _protectedPath);}
                 else { return (_backendMount + "/" + _protectedPath); }
-	            
 	        }
 	    }
 
@@ -346,7 +280,6 @@ namespace VaultAgent.Backends.System
 	    public bool IsKV2Policy
 	    {
 	        get => _isKV2Policy;
-	        //private set { _isKV2Policy = value; }
 	    }
 
 
@@ -544,8 +477,9 @@ namespace VaultAgent.Backends.System
 	    public bool ExtKV2_DeleteAnyKeyVersion {
 	        get => _extKV2_DeleteAnyKeyVersion;
 	        set {
-	            _extKV2_DeleteAnyKeyVersion = value;
-	            _isKV2Policy = true;
+		        if (_isKV2Policy) {
+			        _extKV2_DeleteAnyKeyVersion = value;
+		        }
 	        }
 	    }
 
@@ -556,8 +490,10 @@ namespace VaultAgent.Backends.System
 	    /// </summary>
         public bool ExtKV2_UndeleteSecret {
 	        get => _extKV2_UnDelete;
-	        set { _extKV2_UnDelete = value;
-	            _isKV2Policy = true;
+	        set {
+		        if (_isKV2Policy) {
+			        _extKV2_UnDelete = value;
+		        }
 	        }
 	    }
 
@@ -568,8 +504,7 @@ namespace VaultAgent.Backends.System
 	    /// </summary>
         public bool ExtKV2_DestroySecret {
 	        get => _extKV2_DestroyVersions;
-	        set { _extKV2_DestroyVersions = value;
-	            _isKV2Policy = true;
+	        set { if (_isKV2Policy) { _extKV2_DestroyVersions = value;}
 	        }
 	    }
 
@@ -580,8 +515,7 @@ namespace VaultAgent.Backends.System
 	    /// </summary>
         public bool ExtKV2_ViewMetaData {
 	        get => _extKV2_ViewMetadata;
-	        set { _extKV2_ViewMetadata = value;
-	            _isKV2Policy = true;
+	        set { if (_isKV2Policy) { _extKV2_ViewMetadata = value;} 
 	        }
 	    }
 
@@ -593,17 +527,20 @@ namespace VaultAgent.Backends.System
 	    /// </summary>
 	    public bool ExtKV2_DeleteMetaData {
             get => _extKV2_DeleteMetaData;
-	        set { _extKV2_DeleteMetaData = value;
-	            _isKV2Policy = true;
+	        set { if (_isKV2Policy)  { _extKV2_DeleteMetaData = value; }
 	        }
 	    }
 
 
+		/// <summary>
+		/// Ability to List KeyValue2 Versions.
+		/// </summary>
 	    public bool ExtKV2_ListMetaData {
 	        get => _extKV2_ListMetaData;
 	        set {
-	            _extKV2_ListMetaData = value;
-	            _isKV2Policy = true;
+		        if (_isKV2Policy) {
+			        _extKV2_ListMetaData = value;
+		        }
 	        }
 	    }
 
@@ -664,9 +601,6 @@ namespace VaultAgent.Backends.System
 	    /// <param name="isSubFolder">True if the path object represents sub items of the current path.</param>
 	    /// <returns></returns>
 	    private static string CalculateKeyValue (string backend, string protectedPath) { //, bool isKV2, bool isSubFolder) {
-	        //string iSubFolder = isSubFolder ? "/*" : "";
-
-            //TODO - validate that this new entry is correct.
 		    return (backend + "/" + protectedPath);  // + iSubFolder;
 	    }
 
@@ -681,7 +615,6 @@ namespace VaultAgent.Backends.System
 	    public string ToVaultHCLPolicyFormat() {
 	        StringBuilder policyHCLFormat = new StringBuilder();
 	        List<string> permissions = new List<string> (20);
-
 
 
 	        // Build the normal permissions path object
@@ -718,7 +651,7 @@ namespace VaultAgent.Backends.System
 
 	            if (_extKV2_DeleteMetaData) { permissions.Add ("delete"); }
 
-	            if (_listAllowed) { permissions.Add ("list"); }
+	            if (_listAllowed || _extKV2_ListMetaData) { permissions.Add ("list"); }
 
 	            if (permissions.Count > 0) {
 	                policyHCLFormat.Append (BuildHCLPolicyPathStatement (_backendMount + "/metadata/" + _protectedPath + "/*", permissions));
