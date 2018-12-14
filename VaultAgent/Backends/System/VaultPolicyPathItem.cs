@@ -27,10 +27,10 @@ namespace VaultAgent.Backends.System
 	///        : undelete
 	///        : destroy
 	///
-	/// The backendMount, ProtectedPath IsPrefixType and IsKV2Type properties can only be set during object construction since they are a part of the objects Key value.
+	/// The backendMount, ProtectedPath IsSubFolderType and IsKV2Type properties can only be set during object construction since they are a part of the objects Key value.
 	///
 	/// The property setters and constructor on this class will automatically set the IsKV2Policy flag to true if it finds any of those keywords as the first 
-	/// part of the path (after the backend mount name).  It is critical that users not use those prefixes AT ALL in ANY backend.
+	/// part of the path (after the backend mount name).  It is critical that users not use those SubFolderes AT ALL in ANY backend.
 	/// Likewise it will insert these setters if the policy is flagged as KV2Policy type.
 	///  
 	/// However, with the advent of KeyValue2 paths some changes needed to be made.
@@ -79,9 +79,9 @@ namespace VaultAgent.Backends.System
 	    private string _path;
 	    private string _backendMount;
 	    private string _protectedPath;
-	    private string _KV2_PathID = "";                // The KeyValue2 Path Prefix that this object had upon creation.  See Property for details.
+	    private string _KV2_PathID = "";                // The KeyValue2 Path SubFolder that this object had upon creation.  See Property for details.
 
-        private bool _isPrefixType = false;
+        private bool _isSubFolderType = false;
 	    private bool _isKV2Policy = false;
 
 
@@ -107,94 +107,94 @@ namespace VaultAgent.Backends.System
 
         /// <summary>
         /// Creates a Vault Policy Path Item object.  Note, that the protectedPath parameter will be interrogated to see if it indicates that
-        /// this is an IsPrefix or IsKV2 policy AND if the Answer is Yes, it WILL OVERRIDE any False setting for isPrefix and isKV2 parameters
+        /// this is an IsSubFolder or IsKV2 policy AND if the Answer is Yes, it WILL OVERRIDE any False setting for isSubFolder and isKV2 parameters
         /// passed in.
         /// </summary>
         /// <param name="backendMount">The name/path to the backend that this policy applies to.  Note, all leading/trailing slashes are removed.</param>
         /// <param name="protectedPath">The path that this policy is applicable to.  If the path ends with a trailing slash then it is considered
-        /// a PrefixPolicyType (Meaning its permissions apply to subsecrets).  If the path starts with a KV2 prefix then it will be considered to be
+        /// a SubFolderPolicyType (Meaning its permissions apply to subsecrets).  If the path starts with a KV2 SubFolder then it will be considered to be
         /// a KV2Policy type.  </param>
-        /// <param name="isPrefixPolicyType">Set to true to indicate this policy object applies to the secret and ALL subsecrets (subfolders).
-        /// This value will be overriden during the path interrogation IF it is determined that the path indicates this is a PrefixType.  Thus
-        /// this parameter is used only in the case where the path does not indicate whether it is a prefix type AND this parameter value is true.</param>
+        /// <param name="isSubFolderPolicyType">Set to true to indicate this policy object applies to the secret and ALL subsecrets (subfolders).
+        /// This value will be overriden during the path interrogation IF it is determined that the path indicates this is a SubFolderType.  Thus
+        /// this parameter is used only in the case where the path does not indicate whether it is a SubFolder type AND this parameter value is true.</param>
         /// <param name="isKV2PolicyType">Set to true to indicate that this policy object applies to a KeyValue Version 2 secret store.  In this case
-        /// the path parameter will have one of the KV2 prefixes applied to it.  </param>
-        public VaultPolicyPathItem (string backendMount, string protectedPath, bool? isPrefixPolicyType = null, bool? isKV2PolicyType = null) {
+        /// the path parameter will have one of the KV2 SubFolderes applied to it.  </param>
+        public VaultPolicyPathItem (string backendMount, string protectedPath) {  //}, bool? isSubFolderPolicyType = null, bool? isKV2PolicyType = null) {
             // If caller specified the type of KV2 policy type then we need to set it to the value they passed in.
-            if (isKV2PolicyType != null) { _isKV2Policy = (bool)isKV2PolicyType; }
+           // if (isKV2PolicyType != null) { _isKV2Policy = (bool)isKV2PolicyType; }
 
-            if (isPrefixPolicyType != null) { _isPrefixType = (bool)isPrefixPolicyType; }
+            //if (isSubFolderPolicyType != null) { _isSubFolderType = (bool)isSubFolderPolicyType; }
 
 
             // Note that the ProtectedPath setter WILL OVERRIDE either of the above 2 items IF it can definitively determine that it is a KV2 path 
-            // or a prefix type policy.
+            // or a SubFolder type policy.
             _backendMount = DeriveBackendName (backendMount);
             
 
             // Interrogate the path.
             bool isKV2 = false;
-            bool isPrefix = false;
+            bool isSubFolder = false;
 
-            (_protectedPath, isKV2, isPrefix, _KV2_PathID) = DeriveProtectedPath(protectedPath);
+            (_protectedPath, isKV2, isSubFolder, _KV2_PathID) = DeriveProtectedPath(protectedPath);
 
-            // We override the IsPrefix and IsKV2 settings if we determined during exploration of the path that either of these was true.  
+            // We override the IsSubFolder and IsKV2 settings if we determined during exploration of the path that either of these was true.  
             if (isKV2) { _isKV2Policy = true; }
-            if (isPrefix) { _isPrefixType = true; }
+            if (isSubFolder) { _isSubFolderType = true; }
 
 
             // Now build the key 
-            _key = CalculateKeyValue (_backendMount, _protectedPath, _isKV2Policy, _isPrefixType);
+            _key = CalculateKeyValue (_backendMount, _protectedPath);
         }
 
 
 
         /// <summary>
         /// Creates a Vault Policy Path Item object.  Note, that the protectedPath parameter will be interrogated to see if it indicates that
-        /// this is an IsPrefix or IsKV2 policy AND if the Answer is Yes, it WILL OVERRIDE any False setting for isPrefix and isKV2 parameters
+        /// this is an IsSubFolder or IsKV2 policy AND if the Answer is Yes, it WILL OVERRIDE any False setting for isSubFolder and isKV2 parameters
         /// passed in.
         /// </summary>
         /// <param name="protectedPath">The path that this policy is applicable to.  If the path ends with a trailing slash then it is considered
-        /// a PrefixPolicyType (Meaning its permissions apply to subsecrets).  If the path starts with a KV2 prefix then it will be considered to be
+        /// a SubFolderPolicyType (Meaning its permissions apply to subsecrets).  If the path starts with a KV2 SubFolder then it will be considered to be
         /// a KV2Policy type.  </param>
 		public VaultPolicyPathItem (string protectedPath) {
-		    (_backendMount, _protectedPath, _isKV2Policy, _isPrefixType, _KV2_PathID) = SeparatePathIntoComponents(protectedPath);
-		    _key = CalculateKeyValue(_backendMount, _protectedPath, _isKV2Policy, _isPrefixType);
+		    (_backendMount, _protectedPath, _isKV2Policy, _isSubFolderType, _KV2_PathID) = SeparatePathIntoComponents(protectedPath);
+		    _key = CalculateKeyValue(_backendMount, _protectedPath);
         }
 
 
 
         /// <summary>
         /// Creates a Vault Policy Path Item object.  Note, that the protectedPath parameter will be interrogated to see if it indicates that
-        /// this is an IsPrefix or IsKV2 policy AND if the Answer is Yes, it WILL OVERRIDE any False setting for isPrefix and isKV2 parameters
+        /// this is an IsSubFolder or IsKV2 policy AND if the Answer is Yes, it WILL OVERRIDE any False setting for isSubFolder and isKV2 parameters
         /// passed in.
         /// </summary>
         /// <param name="protectedPath">The path that this policy is applicable to.  If the path ends with a trailing slash then it is considered
-        /// a PrefixPolicyType (Meaning its permissions apply to subsecrets).  If the path starts with a KV2 prefix then it will be considered to be
+        /// a SubFolderPolicyType (Meaning its permissions apply to subsecrets).  If the path starts with a KV2 SubFolder then it will be considered to be
         /// a KV2Policy type.  </param>
-        /// <param name="isPrefixPolicyType">Set to true to indicate this policy object applies to the secret and ALL subsecrets (subfolders).
-        /// This value will be overriden during the path interrogation IF it is determined that the path indicates this is a PrefixType.  Thus
-        /// this parameter is used only in the case where the path does not indicate whether it is a prefix type AND this parameter value is true.</param>
+        /// <param name="isSubFolderPolicyType">Set to true to indicate this policy object applies to the secret and ALL subsecrets (subfolders).
+        /// This value will be overriden during the path interrogation IF it is determined that the path indicates this is a SubFolderType.  Thus
+        /// this parameter is used only in the case where the path does not indicate whether it is a SubFolder type AND this parameter value is true.</param>
         /// <param name="isKV2PolicyType">Set to true to indicate that this policy object applies to a KeyValue Version 2 secret store.  In this case
-        /// the path parameter will have one of the KV2 prefixes applied to it.  </param>
-		public VaultPolicyPathItem(string protectedPath, bool? isPrefixPolicyType = null, bool? isKV2PolicyType = null) {
+        /// the path parameter will have one of the KV2 SubFolderes applied to it.  </param>
+/*		public VaultPolicyPathItem(string protectedPath, bool? isSubFolderPolicyType = null, bool? isKV2PolicyType = null) {
 		    // If caller specified the type of KV2 policy type then we need to set it to the value they passed in.
 		    if (isKV2PolicyType != null) { _isKV2Policy = (bool)isKV2PolicyType; }
 
-		    if (isPrefixPolicyType != null) { _isPrefixType = (bool)isPrefixPolicyType; }
+		    if (isSubFolderPolicyType != null) { _isSubFolderType = (bool)isSubFolderPolicyType; }
 
 		    bool isKV2 = false;
-		    bool isPrefix = false;
+		    bool isSubFolder = false;
 
-            (_backendMount, _protectedPath, isKV2, isPrefix, _KV2_PathID) = SeparatePathIntoComponents(protectedPath);
+            (_backendMount, _protectedPath, isKV2, isSubFolder, _KV2_PathID) = SeparatePathIntoComponents(protectedPath);
 
 
-            // We override the IsPrefix and IsKV2 settings if we determined during exploration of the path that either of these was true.  
+            // We override the IsSubFolder and IsKV2 settings if we determined during exploration of the path that either of these was true.  
 		    if (isKV2) { _isKV2Policy = true;}
-		    if (isPrefix) { _isPrefixType = true;}
+		    if (isSubFolder) { _isSubFolderType = true;}
 
-		    _key = CalculateKeyValue(_backendMount, _protectedPath, _isKV2Policy, _isPrefixType);		
+		    _key = CalculateKeyValue(_backendMount, _protectedPath, _isKV2Policy, _isSubFolderType);		
 		}
-
+*/
         #endregion
 
 
@@ -207,7 +207,7 @@ namespace VaultAgent.Backends.System
         /// </summary>
         public string Key {
             get => _key;
-            private set { _key = CalculateKeyValue(_backendMount,_protectedPath,_isKV2Policy,_isPrefixType); }
+            private set { _key = CalculateKeyValue(_backendMount,_protectedPath); }
         }
 
 
@@ -241,11 +241,11 @@ namespace VaultAgent.Backends.System
         /// <summary>
         /// The ProtectedPath is the Vault path (excluding the mount name) that the policy applies to.
         /// There are some words of Caution:
-        ///  1) You should never use any of the restricted KV2Policy prefixes as the start of any path in ANY backend.  Doing so will cause the policies to not work.
+        ///  1) You should never use any of the restricted KV2Policy SubFolderes as the start of any path in ANY backend.  Doing so will cause the policies to not work.
         ///     You have been warned.  These are:  metadata, data, destroy, delete, undelete.
-        ///  2) Setting this property after initial construction will never override the IsPrefix and IsKV2 properties.  You must manually adjust those after object creation.
-        /// Important Note:  If you provide a trailing slash then the IsPrefixType flag is set to true.  However, the opposite is not true.  If you do not specify
-        /// a trailing slash then the IsPrefixType is not set to false, but rather remains unchanged.  You should use the IsPrefixType property to unset the value.
+        ///  2) Setting this property after initial construction will never override the IsSubFolder and IsKV2 properties.  You must manually adjust those after object creation.
+        /// Important Note:  If you provide a trailing slash then the IsSubFolderType flag is set to true.  However, the opposite is not true.  If you do not specify
+        /// a trailing slash then the IsSubFolderType is not set to false, but rather remains unchanged.  You should use the IsSubFolderType property to unset the value.
         /// </summary>
         public string ProtectedPath {
             get => _protectedPath;
@@ -258,13 +258,13 @@ namespace VaultAgent.Backends.System
         /// </summary>
         /// <param name="pathValue">The path to be deconstructed.</param>
         /// <returns></returns>
-	    public static (string protectedPath, bool isKV2Type, bool isPrefixType, string KV2_PathPrefix) DeriveProtectedPath (string pathValue) {
+	    public static (string protectedPath, bool isKV2Type, bool isSubFolderType, string KV2_PathSubFolder) DeriveProtectedPath (string pathValue) {
 	        bool isKv2Type = false;
-	        bool prefixType = false;
+	        bool SubFolderType = false;
 
 	        // Remove any leading slash.
 	        string tempPath = pathValue.TrimStart('/');
-            string KV2_PathPrefix = "";
+            string KV2_PathSubFolder = "";
 
 
 	        // Now see if the string starts with any KV2 reserved words.  If it does we remove the reserved word and set the KV2 flag.
@@ -274,46 +274,53 @@ namespace VaultAgent.Backends.System
 	            {
 	                isKv2Type = true;
 	                tempPath = tempPath.Substring(s.Length + 1);
-	                KV2_PathPrefix = s;
+	                KV2_PathSubFolder = s;
 	            }
 	        }
 
 
-	        int length = tempPath.Length;
+	       // int length = tempPath.Length;
 
-	        // See if trailing slash.  Then it is a prefix type.
+	        // See if trailing slash.  Then it is a SubFolder type.
             //TODO - Scott -verify the /* pattern is correct.  Need to do some indepth permission testing as Vault documentation is inconclusive.
             if (pathValue.EndsWith ("/*")) {
-                prefixType = true;
-                length -= 2;
-                tempPath = tempPath.Substring (0, length);
-            }
+                SubFolderType = true;
+			
+//	            return (tempPath, isKv2Type, KV2_PathSubFolder);
+				//                length -= 2;
+				//                tempPath = tempPath.Substring (0, length);
+			}
+
+			// If it ends with a slash we automatically add the * for consistency.
             else if (pathValue.EndsWith ("/")) {
-                prefixType = true;
-                length--;
-                tempPath = tempPath.Substring(0, length);
+                SubFolderType = true;
+	            return ((tempPath + "*"), isKv2Type, SubFolderType, KV2_PathSubFolder);
+//                length--;
+
+                //tempPath = tempPath.Substring(0, length);
             }
 
-	        return (tempPath.Substring (0, length), isKv2Type, prefixType, KV2_PathPrefix);
-	    }
+	        return (tempPath, isKv2Type, SubFolderType ,KV2_PathSubFolder);
+			//return (tempPath.Substring (0, length), isKv2Type, SubFolderType, KV2_PathSubFolder);
+		}
 
 
 
         /// <summary>
-        /// Returns the normal full Vault policy path for this item.  This is what Vault expects to see as the path.  This will one of the following, but only one:
-        ///   - For non-KV2 policies = The backendmount + the protectedPath + the trailing slash if IsPrefixType.
-        ///   - For KV2-Policies = the backendmount + "/data/" + the ProtectedPath plus the trailing slash if IsPrefixType.
+        /// Returns the normal full Vault policy data element path for this item.  This is what Vault expects to see as the path for storing secrets.
+        ///   - For non-KV2 policies = The backendmount + the protectedPath + the trailing slash if IsSubFolderType.
+        ///   - For KV2-Policies = the backendmount + "/data/" + the ProtectedPath plus the trailing slash if IsSubFolderType.
         /// It will never return the Extended KV2 properties path other than the /data/ one.
         /// </summary>
-        public string FullPath {
+        public string SecretPath {
 	        get {
 	            string trailer;
 
-	            if (IsPrefixType) { trailer = "/"; }
-	            else { trailer = "";}
+//	            if (IsSubFolderType) { trailer = "/"; }
+//	            else { trailer = "";}
 
-	            if (_isKV2Policy) { return (_backendMount + "/data/" + _protectedPath + trailer);}
-                else { return (_backendMount + "/" + _protectedPath + trailer); }
+	            if (_isKV2Policy) { return (_backendMount + "/data/" + _protectedPath);}
+                else { return (_backendMount + "/" + _protectedPath); }
 	            
 	        }
 	    }
@@ -322,13 +329,10 @@ namespace VaultAgent.Backends.System
 
 
         /// <summary>
-        /// The IsPrefix property is used to determine if a Vault policy is a prefixed policy. This just means does it apply to just a 
+        /// The IsSubFolder property is used to determine if a Vault policy applies to subfolders or to the key itself.
         /// </summary>
-		public bool IsPrefixType {
-			get => _isPrefixType;
-			//private set {
-			//    _isPrefixType = value;
-			//}
+		public bool IsSubFolderType {
+			get => _isSubFolderType;
 		}
 
     
@@ -336,8 +340,8 @@ namespace VaultAgent.Backends.System
         /// <summary>
         /// Sets/Gets whether a policy Item refers to a Vault KeyValue2 policy.  This is important because KV2 paths are different than all other backend type paths.
         /// Specifically all data is stored at backendMount/data/|rest of path|.  When this flag is set to true, it turns on the extended security settings that
-        /// KV2 backends support.  In addition the fullPath that is returned is altered to include the KV2 security prefix inside of it.  The KV2 security prefix is
-        /// the 2nd path from the left.  So backend1/data/path/pathb/pathc.  data is the KV2 security prefix.
+        /// KV2 backends support.  In addition the fullPath that is returned is altered to include the KV2 security SubFolder inside of it.  The KV2 security SubFolder is
+        /// the 2nd path from the left.  So backend1/data/path/pathb/pathc.  data is the KV2 security SubFolder.
         /// </summary>
 	    public bool IsKV2Policy
 	    {
@@ -348,11 +352,11 @@ namespace VaultAgent.Backends.System
 
 
         /// <summary>
-        /// The KV2_PathID is the value of the path prefix on a KeyValue Version 2 ACL policy path.  For example given the below Vault KV2 ACL Policy path:
+        /// The KV2_PathID is the value of the path SubFolder on a KeyValue Version 2 ACL policy path.  For example given the below Vault KV2 ACL Policy path:
         /// backendA/metadata/path1/pathB.
         /// The KV2_PathID would be metadata.
         /// This is necessary to know when reading policies from the Vault Instance and trying to convert them into VaultPolicyPathItem objects.  Since this C#
-        /// class combines multiple Vault paths into a single path, when creating the objects from Vault, we must know what the original KV2 prefix was so we
+        /// class combines multiple Vault paths into a single path, when creating the objects from Vault, we must know what the original KV2 SubFolder was so we
         /// can set the appropriate permission.  For example, the Update permission is stored both on the /data/ path as well as the /delete/ path.  We must be
         /// able to identify which is which.  This property allows us to tell that.
         /// </summary>
@@ -477,6 +481,8 @@ namespace VaultAgent.Backends.System
 					_sudoAllowed = false;
 					_rootAllowed = false;
 				}
+
+				_denied = value;
 			}
 		}
 
@@ -608,20 +614,22 @@ namespace VaultAgent.Backends.System
 
         /// <summary>
         /// Takes a path string and decomposes it into its backend, protectedPath components and determines if the path indicates whether this is
-        /// a prefix type path or KV2 policy path.
+        /// a SubFolder type path or KV2 policy path.
         /// </summary>
         /// <param name="path">The path object to be analyzed and decomposed.</param>
-        /// <returns>Tuple:  (Backend, protectedPath, isKV2Policy, isPrefixType</returns>
-	    private static (string backend, string protectedPath, bool isKV2Policy, bool isPrefixType, string KV2Path) SeparatePathIntoComponents (string path) {
+        /// <returns>Tuple:  (Backend, protectedPath, isKV2Policy, isSubFolderType</returns>
+	    private static (string backend, string protectedPath, bool isKV2Policy, bool isSubFolderType, string KV2Path) SeparatePathIntoComponents (string path) {
 	        // Now find first slash.  Everything up to it becomes the backendMount name.
 	        int pos = path.IndexOf('/', 1);
+
+			if (pos == -1 ) { throw new VaultInvalidDataException("Invalid value specified for the Vault Path.  Path must consist of a backend/path/path...");}
 
 	        string backendMount = DeriveBackendName(path.Substring(0, pos));
 
 	        // Everything after is the path.
 
-	        (string protectedPath,  bool isKV2Policy,  bool isPrefixType, string KV2Path) = DeriveProtectedPath(path.Substring(pos + 1));
-	        return (backendMount, protectedPath, isKV2Policy, isPrefixType, KV2Path);
+	        (string protectedPath,  bool isKV2Policy,  bool isSubFolderType, string KV2Path) = DeriveProtectedPath(path.Substring(pos + 1));
+	        return (backendMount, protectedPath, isKV2Policy, isSubFolderType, KV2Path);
 	    }
 
 
@@ -637,12 +645,12 @@ namespace VaultAgent.Backends.System
 	        string backend;
 	        string protectedPath;
 	        bool isKV2Policy;
-	        bool isPrefixType;
+	        bool isSubFolderType;
             string KV2Path;
 
-	        (backend, protectedPath, isKV2Policy, isPrefixType, KV2Path) = SeparatePathIntoComponents (path);
+	        (backend, protectedPath, isKV2Policy, isSubFolderType, KV2Path) = SeparatePathIntoComponents (path);
 
-            return CalculateKeyValue (backend, protectedPath, isKV2Policy, isPrefixType);
+            return CalculateKeyValue (backend, protectedPath); //, isKV2Policy, isSubFolderType);
 	    }
 
 
@@ -653,13 +661,13 @@ namespace VaultAgent.Backends.System
 	    /// <param name="backend">The Backend Mount component of the object.</param>
 	    /// <param name="protectedPath">The path that the policy is protecting.</param>
 	    /// <param name="isKV2">True if the path object represents a KeyValue version 2 ACL property.</param>
-	    /// <param name="isPrefix">True if the path object represents sub items of the current path.</param>
+	    /// <param name="isSubFolder">True if the path object represents sub items of the current path.</param>
 	    /// <returns></returns>
-	    private static string CalculateKeyValue (string backend, string protectedPath, bool isKV2, bool isPrefix) {
-	        string iPrefix = isPrefix ? "/*" : "";
+	    private static string CalculateKeyValue (string backend, string protectedPath) { //, bool isKV2, bool isSubFolder) {
+	        //string iSubFolder = isSubFolder ? "/*" : "";
 
             //TODO - validate that this new entry is correct.
-	        return backend + "/" + protectedPath + iPrefix;
+		    return (backend + "/" + protectedPath);  // + iSubFolder;
 	    }
 
 
@@ -697,7 +705,7 @@ namespace VaultAgent.Backends.System
 
 	        // Now build path statement if permissions list contains at least 1 entry for the normal permissions.
 	        // This will build either a /backend/patha/pathb path or a /backend/data/patha/pathb object.
-	        if (permissions.Count > 0) { policyHCLFormat = BuildHCLPolicyPathStatement (this.FullPath, permissions); }
+	        if (permissions.Count > 0) { policyHCLFormat = BuildHCLPolicyPathStatement (this.SecretPath, permissions); }
 
 
 	        // If this is a KV2 versioned policy, then check the Extended Policy Fields.

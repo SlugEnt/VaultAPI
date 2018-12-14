@@ -50,65 +50,65 @@ namespace VaultAgentTests {
             Assert.False(vpp.SudoAllowed, "Sudo Not False");
             Assert.False(vpp.UpdateAllowed, "Update Not False");
 
-            // Denied is true initially.
-            Assert.True(vpp.Denied, "Denied Not True");
+            // Denied is undefined initially.
+            Assert.IsNull(vpp.Denied, "Denied property was not initially set to null.");
         }
 
 
 
-        // Validates that the new Policy Constructors is able to break the path down into backend and protected path values as well as set the IsPrefixType
+        // Validates that the VPPI single constructor is able to break the path down into backend and protected path values as well as set the IsSubFolders type parameter
         [Test]
         [TestCase(1,"secret/path1", "secret","path1",false)]
         [TestCase(2,"secret2/path1/path2/path3","secret2","path1/path2/path3",false)]
         [TestCase(3,"/secret3/path1/path2/path3", "secret3", "path1/path2/path3",false)]
-        [TestCase(4,"/secret4/path1/path2/path3/", "secret4", "path1/path2/path3",true)]
-        [TestCase(5,"secret5/path1/path2/path3/", "secret5", "path1/path2/path3",true)]
+        [TestCase(4,"/secret4/path1/path2/path3/", "secret4", "path1/path2/path3/*",true)]
+        [TestCase(5,"secret5/path1/path2/path3/", "secret5", "path1/path2/path3/*",true)]
         [TestCase(6,"sA/metadata/pathA/path2","sA","pathA/path2",false)]
         [TestCase(7, "sA/undelete/pathA/path2", "sA", "pathA/path2", false)]
         [TestCase(8, "sA/delete/pathA/path2", "sA", "pathA/path2", false)]
         [TestCase(9, "sA/destroy/pathA/path2", "sA", "pathA/path2", false)]
         [TestCase(10, "sA/data/pathA/path2", "sA", "pathA/path2", false)]
-        public void VPPI_PathSeparatedCorrectlyIntoComponentParts (int id, string path, string expectedBE, string expectedPath, bool expectedPrefix) {
+        public void VPPI_PathSeparatedCorrectlyIntoComponentParts (int id, string path, string expectedBE, string expectedPath, bool expectedSubFolder) {
             VaultPolicyPathItem vppi = new VaultPolicyPathItem(path);
             Assert.AreEqual(expectedBE,vppi.BackendMountName,"A10: Backend Mount Name is not expected value.");
             Assert.AreEqual(expectedPath,vppi.ProtectedPath,"A20:  Protected Path is not expected value.");
-            Assert.AreEqual(expectedPrefix, vppi.IsPrefixType, "A30:  IsPrefixType is not expected value.");
+            Assert.AreEqual(expectedSubFolder, vppi.IsSubFolderType, "A30:  IsSubFolder property is not expected value.");
         }
 
 
 
-
+		// Validates that the VPPI double parameter constructor works correctly.
         [Test]
-        [TestCase(1,"secret","path1",true,"secret","path1",true)]
-        [TestCase(2,"secret2", "path1", false, "secret2", "path1",false)]
-        [TestCase(3,"/secret3", "/path1", true, "secret3", "path1",true)]
-        [TestCase(4,"secret4/", "path1/", false, "secret4", "path1",true)]
-        [TestCase(5,"secret5", "path1/path2/path3/", true, "secret5", "path1/path2/path3",true)]
-        public void VPPI_DefaultConstructor_BackendPathIsPrefix_Works (int id,string backend, string path, bool IsPrefix, string expectedBE, string expectedPath, bool expectedPrefix) {
-            VaultPolicyPathItem vppi = new VaultPolicyPathItem(backend,path,IsPrefix);
+        [TestCase(1,"secret","path1","secret","path1",false)]
+        [TestCase(2,"secret2", "path1", "secret2", "path1",false)]
+        [TestCase(3,"/secret3", "/path1", "secret3", "path1",false)]
+        [TestCase(4,"secret4/", "path1/", "secret4", "path1/*",true)]
+        [TestCase(5,"secret5", "path1/path2/path3/", "secret5", "path1/path2/path3/*",true)]
+        public void VPPI_DefaultConstructor_BackendPathIsPrefix_Works (int id,string backend, string path, string expectedBE, string expectedPath, bool expectedSubFolderType) {
+            VaultPolicyPathItem vppi = new VaultPolicyPathItem(backend,path);
             Assert.AreEqual(expectedBE, vppi.BackendMountName, "A10: Backend Mount Name is not expected value.");
             Assert.AreEqual(expectedPath, vppi.ProtectedPath, "A20:  Protected Path is not expected value.");
-            Assert.AreEqual(expectedPrefix, vppi.IsPrefixType, "A30:  IsPrefixType is not expected value.");
+            Assert.AreEqual(expectedSubFolderType, vppi.IsSubFolderType, "A30:  IsPrefixType is not expected value.");
         }
 
 
         
-
+		// Validates that the FullPath property returns the proper path value.
         [Test]
-        [TestCase(1,"secret", "path1", true, "secret/path1/","")]
-        [TestCase(2,"secret2", "path1", false, "secret2/path1","")]
-        [TestCase(3,"/secret3", "/path1", true, "secret3/path1/","")]
-        [TestCase(4,"secret4/", "path1/", false,"secret4/path1/","")]
-        [TestCase(5,"secret5", "path1/path2/path3/", true, "secret5/path1/path2/path3/","")]
+        [TestCase(1,"secret", "path1",  false, "secret/path1","")]
+        [TestCase(2,"secret2", "path1",  false, "secret2/path1","")]
+        [TestCase(3,"/secret3", "/path1", false, "secret3/path1","")]
+        [TestCase(4,"secret4/", "path1/", false,"secret4/path1/*","")]
+        [TestCase(5,"secret5", "path1/path2/path3/", true, "secret5/path1/path2/path3/*","")]
         [TestCase(6,"secret6", "data/path1", false, "secret6/data/path1","data")]
-        [TestCase(7, "secret7", "metadata/path1", false, "secret7/data/path1","Metadata")]
+        [TestCase(7, "secret7", "metadata/path1", false, "secret7/data/path1","metadata")]
         [TestCase(8, "secret8", "destroy/path1", false, "secret8/data/path1", "destroy")]
         [TestCase(9, "secret8", "delete/path1", false, "secret8/data/path1", "delete")]
         [TestCase(10, "secret8", "undelete/path1", false, "secret8/data/path1", "undelete")]
-        public void VPPI_FullPath_ReturnsCorrectValues(int ID, string backend, string path, bool IsPrefix, string expectedPath, string expectedKVPath)
+        public void VPPI_FullPath_ReturnsCorrectValues(int ID, string backend, string path, bool notUsed, string expectedPath, string expectedKVPath)
         {
-            VaultPolicyPathItem vppi = new VaultPolicyPathItem(backend, path, IsPrefix);
-            Assert.AreEqual(expectedPath, vppi.FullPath, "A10: Full path is not expected value.");
+            VaultPolicyPathItem vppi = new VaultPolicyPathItem(backend, path);
+            Assert.AreEqual(expectedPath, vppi.SecretPath, "A10: Full path is not expected value.");
             Assert.AreEqual(expectedKVPath,vppi.KV2_PathID, "A20:  The KeyValue Version 2 path prefix was not expected value.");
         }
 
@@ -116,29 +116,27 @@ namespace VaultAgentTests {
 
         // Validates that the key for a VaultPolicyPathItem object is generated correctly.
         [Test]
-        [TestCase(1, "secret/path1", "secret/path1")]
-        [TestCase(2, "secret2/path1/path2/path3", "secret2/path1/path2/path3")]
-        [TestCase(3, "/secret3/path1/path2/path3", "secret3/path1/path2/path3")]
-        [TestCase(4, "/secret4/path1/path2/path3/", "secret4/path1/path2/path3/*")]
-        [TestCase(5, "secret5/path1/path2/path3/", "secret5/path1/path2/path3/*")]
-        [TestCase(6, "sA/metadata/pathA/path2", "sA/pathA/path2/*")]
-        [TestCase(7, "sA/undelete/pathA/path2", "sA/pathA/path2/*")]
-        [TestCase(8, "sA/delete/pathA/path2", "sA/pathA/path2/*")]
-        [TestCase(9, "sA/destroy/pathA/path2", "sA/pathA/path2/*")]
-        [TestCase(10, "sA/data/pathA/path2", "sA/pathA/path2/*")]
-        [TestCase(11, "sA/metadata/pathA/path2/*", "sA/pathA/path2/*")]
-        [TestCase(12, "sA/undelete/pathA/path2/*", "sA/pathA/path2/*")]
-        [TestCase(13, "sA/delete/pathA/path2/*", "sA/pathA/path2/*")]
-        [TestCase(14, "sA/destroy/pathA/path2/*", "sA/pathA/path2/*")]
-        [TestCase(15, "sA/data/pathA/path2/*", "sA/pathA/path2/*")]
-
-        public void VPPI_Key_ProducedCorrectly(int id, string path, string expectedBE, string expectedPath, bool expectedPrefix)
+        [TestCase(1, "secret/path1", "secret","path1")]
+        [TestCase(2, "secret2/path1/path2/path3", "secret2","path1/path2/path3")]
+        [TestCase(3, "/secret3/path1/path2/path3", "secret3","path1/path2/path3")]
+        [TestCase(4, "/secret4/path1/path2/path3/", "secret4","path1/path2/path3/*")]
+        [TestCase(5, "secret5/path1/path2/path3/", "secret5","path1/path2/path3/*")]
+        [TestCase(6, "sA/metadata/pathA/path2", "sA","pathA/path2")]
+        [TestCase(7, "sA/undelete/pathA/path2", "sA","pathA/path2")]
+        [TestCase(8, "sA/delete/pathA/path2", "sA","pathA/path2")]
+        [TestCase(9, "sA/destroy/pathA/path2", "sA","pathA/path2")]
+        [TestCase(10, "sA/data/pathA/path2", "sA","pathA/path2")]
+        [TestCase(11, "sA/metadata/pathA/path2/*", "sA","pathA/path2/*")]
+        [TestCase(12, "sA/undelete/pathA/path2/*", "sA","pathA/path2/*")]
+        [TestCase(13, "sA/delete/pathA/path2/*", "sA","pathA/path2/*")]
+        [TestCase(14, "sA/destroy/pathA/path2/*", "sA","pathA/path2/*")]
+        [TestCase(15, "sA/data/pathA/path2/*", "sA","pathA/path2/*")]
+        public void VPPI_Key_ProducedCorrectly(int id, string path, string expectedBE, string expectedPath)
 
         {
             VaultPolicyPathItem vppi = new VaultPolicyPathItem(path);
             Assert.AreEqual(expectedBE, vppi.BackendMountName, "A10: Backend Mount Name is not expected value.");
             Assert.AreEqual(expectedPath, vppi.ProtectedPath, "A20:  Protected Path is not expected value.");
-            Assert.AreEqual(expectedPrefix, vppi.IsPrefixType, "A30:  IsPrefixType is not expected value.");
         }
 
 
@@ -152,8 +150,8 @@ namespace VaultAgentTests {
         [TestCase("L", "List")]
         [TestCase("T", "Root")]
         [TestCase("S", "Sudo")]
-        // Test that setting capabilities to true works and removes the denied setting if set.01
-        public void VPPI_SettingTrueToFields_Success(string type, string value)
+		// Test that setting capabilities to true works and removes the denied setting if set.01
+		public void VPPI_SettingTrueToFields_Success(string type, string value)
         {
             string polName = _uniqueKeys.GetKey("Pol/");
             VaultPolicyPathItem vpp = new VaultPolicyPathItem(polName);
@@ -189,8 +187,7 @@ namespace VaultAgentTests {
                     vpp.SudoAllowed = true;
                     Assert.True(vpp.SudoAllowed, value + " Allowed was not True");
                     break;
-
-            }
+			}
             Assert.False(vpp.Denied, "Denied should have been set to false.");
         }
 
@@ -233,10 +230,10 @@ namespace VaultAgentTests {
 
 
 
-        // Validate that we can get a permission string back.
+        // Validate that we can get a permission string back from the ToVaultHCL Policy Method.
         [Test]
         public void VPPI_CanBuildVaultPermissionString() {
-            VaultPolicyPathItem vppi = new VaultPolicyPathItem("ABC","pathA/pathB",false);
+            VaultPolicyPathItem vppi = new VaultPolicyPathItem("ABC","pathA/pathB");
             vppi.CreateAllowed = true;
             string permission = vppi.ToVaultHCLPolicyFormat();
             Assert.IsNotEmpty(permission,"A10:  Expected a permission string to be returned.");
@@ -247,13 +244,13 @@ namespace VaultAgentTests {
         // Validate that we can build a proper permission string.
         [Test]
         public void VPPIKV2_CanBuildKV2PermissionString() {
-            VaultPolicyPathItem vppi = new VaultPolicyPathItem("ABC", "pathA/pathB", false);
+            VaultPolicyPathItem vppi = new VaultPolicyPathItem("ABC", "pathA/pathB");
             vppi.CreateAllowed = true;
             Assert.True (vppi.ToVaultHCLPolicyFormat().Contains("create"),"A10:  Did not find the create permission in the Vault policy string.");
-            Assert.AreEqual("ABC/pathA/pathB",vppi.FullPath);
+            Assert.AreEqual("ABC/pathA/pathB",vppi.SecretPath);
 
             // Create a KV2 policy item
-            VaultPolicyPathItem vppi2 = new VaultPolicyPathItem("ABC", "pathA/pathB", false,true);
+            VaultPolicyPathItem vppi2 = new VaultPolicyPathItem("ABC", "data/pathA/pathB");
             vppi2.CreateAllowed = true;
             vppi2.DeleteAllowed = true;
             vppi2.ExtKV2_DeleteAnyKeyVersion = true;
@@ -261,7 +258,7 @@ namespace VaultAgentTests {
             Assert.True(vppi2.ToVaultHCLPolicyFormat().Contains("create"), "A20:  Did not find the create permission in the Vault policy string.");
             Assert.True(vppi2.ToVaultHCLPolicyFormat().Contains("delete"), "A30:  Did not find the delete permission in the Vault policy string.");
             Assert.True(vppi2.ToVaultHCLPolicyFormat().Contains("/data/"), "A40:  Did not find the /data/ subpath in the Vault policy string.");
-            Assert.AreEqual("ABC/data/pathA/pathB",vppi2.FullPath, "A50:  The fullpath property did not return the expected value.");
+            Assert.AreEqual("ABC/data/pathA/pathB",vppi2.SecretPath, "A50:  The secretPath property did not return the expected value.");
         }
 
 
@@ -280,7 +277,7 @@ namespace VaultAgentTests {
             string policyString;
 
             
-            VaultPolicyPathItem vppi = new VaultPolicyPathItem(be, pa, false);
+            VaultPolicyPathItem vppi = new VaultPolicyPathItem(be, pa);
             switch (id) {
                 case 2: 
                     vppi.ExtKV2_DeleteAnyKeyVersion = true;
@@ -325,14 +322,14 @@ namespace VaultAgentTests {
         [Test]
         public void VPPI_FullPathReturns_KV2DataPath() {
             // Create a KV2 policy item
-            VaultPolicyPathItem vppi1 = new VaultPolicyPathItem("ABC", "pathA/pathB", false,true);
+            VaultPolicyPathItem vppi1 = new VaultPolicyPathItem("ABC", "data/pathA/pathB");
             
             vppi1.CreateAllowed = true;
-            Assert.AreEqual("ABC/data/pathA/pathB", vppi1.FullPath, "A10:  The fullpath property did not return the expected value of : " + "ABC/data/pathA/pathB");
+            Assert.AreEqual("ABC/data/pathA/pathB", vppi1.SecretPath, "A10:  The fullpath property did not return the expected value of : " + "ABC/data/pathA/pathB");
         }
 
 
-
+/*  No longer a valid test as PrefixParam cannot be set in constructor.
         [Test]
         [TestCase(1, "secret/appA/", true, "secret/appA/", true)]
         [TestCase(2, "secret/appA", true, "secret/appA/", true)]
@@ -349,7 +346,7 @@ namespace VaultAgentTests {
             Assert.AreEqual(expPathValue, vaultPolicyPathItem.FullPath, "A10:  The protected path value was not equal to expected value.");
             Assert.AreEqual(expPrefixValue, vaultPolicyPathItem.IsPrefixType, "A20:  The expected Prefix Value was not set.");
         }
-
+*/
 
 
         /*  No longer valid test as the Protected Path cannot be changed after object construction.
@@ -454,20 +451,20 @@ namespace VaultAgentTests {
 
         // Validates that the key for a Vault Policy Path Item is generated correctly.
         [Test]
-        [TestCase(1,"/backend1/pathA/pathB/pathC","backend1/pathA/pathB/pathC::0", "Normal Path test with KV2:False and IsPrefix:False")]
-        [TestCase(2, "/backend1/pathA", "backend1/pathA::0","Normal Path test with KV2:False and IsPrefix:False")]
-        [TestCase(3, "/backend1/pathA/", "backend1/pathA/::0","Normal Path test with KV2:False and IsPrefix:True")]
-        [TestCase(4, "/backend1/pathA/pathB", "backend1/pathA/pathB::0", "Normal Path test with KV2:False and IsPrefix:True")]
-        [TestCase(5, "/backend2/data/pathA", "backend2/pathA::1", "KV2 Path test with IsPrefix:False")]
-        [TestCase(6, "/backend2/metadata/pathA", "backend2/pathA::1", "KV2 Path test with IsPrefix:False")]
-        [TestCase(7, "/backend2/destroy/pathA", "backend2/pathA::1", "KV2 Path test with IsPrefix:False")]
-        [TestCase(8, "/backend2/delete/pathA", "backend2/pathA::1", "KV2 Path test with IsPrefix:False")]
-        [TestCase(9, "/backend2/undelete/pathA", "backend2/pathA::1", "KV2 Path test with IsPrefix:False")]
-        [TestCase(10, "/backend3/a/data/pathA", "backend3/a/data/pathA::0", "Test Similar path to KV2 Path test with IsPrefix:False")]
-        [TestCase(11, "/backend3/a/metadata/pathA", "backend3/a/metadata/pathA::0", "Test Similar path to KV2 Path test with IsPrefix:False")]
-        [TestCase(12, "/backend3/a/destroy/pathA", "backend3/a/destroy/pathA::0", "Test Similar path to KV2 Path test with IsPrefix:False")]
-        [TestCase(13, "/backend3/a/delete/pathA", "backend3/a/delete/pathA::0", "Test Similar path to KV2 Path test with IsPrefix:False")]
-        [TestCase(14, "/backend3/a/undelete/pathA", "backend3/a/undelete/pathA::0", "Test Similar path to KV2 Path test with IsPrefix:False")]
+        [TestCase(1,"/backend1/pathA/pathB/pathC","backend1/pathA/pathB/pathC", "Normal Path test with KV2:False and IsPrefix:False")]
+        [TestCase(2, "/backend1/pathA", "backend1/pathA","Normal Path test with KV2:False and IsPrefix:False")]
+        [TestCase(3, "/backend1/pathA/", "backend1/pathA/*","Normal Path test with KV2:False and IsPrefix:True")]
+        [TestCase(4, "/backend1/pathA/pathB", "backend1/pathA/pathB", "Normal Path test with KV2:False and IsPrefix:True")]
+        [TestCase(5, "/backend2/data/pathA", "backend2/pathA", "KV2 Path test with IsPrefix:False")]
+        [TestCase(6, "/backend2/metadata/pathA", "backend2/pathA", "KV2 Path test with IsPrefix:False")]
+        [TestCase(7, "/backend2/destroy/pathA", "backend2/pathA", "KV2 Path test with IsPrefix:False")]
+        [TestCase(8, "/backend2/delete/pathA", "backend2/pathA", "KV2 Path test with IsPrefix:False")]
+        [TestCase(9, "/backend2/undelete/pathA", "backend2/pathA", "KV2 Path test with IsPrefix:False")]
+        [TestCase(10, "/backend3/a/data/pathA", "backend3/a/data/pathA", "Test Similar path to KV2 Path test with IsPrefix:False")]
+        [TestCase(11, "/backend3/a/metadata/pathA", "backend3/a/metadata/pathA", "Test Similar path to KV2 Path test with IsPrefix:False")]
+        [TestCase(12, "/backend3/a/destroy/pathA", "backend3/a/destroy/pathA", "Test Similar path to KV2 Path test with IsPrefix:False")]
+        [TestCase(13, "/backend3/a/delete/pathA", "backend3/a/delete/pathA", "Test Similar path to KV2 Path test with IsPrefix:False")]
+        [TestCase(14, "/backend3/a/undelete/pathA", "backend3/a/undelete/pathA", "Test Similar path to KV2 Path test with IsPrefix:False")]
         public void VPPI_KeyGenerated_CorrectlyFromPath (int id, string path, string expectedKey,string desc) {
             VaultPolicyPathItem vppi = new VaultPolicyPathItem(path);
             Assert.AreEqual(expectedKey,vppi.Key,desc);
@@ -601,38 +598,38 @@ namespace VaultAgentTests {
             VP.AddPolicyPathObject(vpi3);
 
 
-            Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(VP));
+            Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(VP),"A10:  Unable to create policy in the Vault instance successfully.");
 
 
             // Now lets read it back. 
             VaultPolicyContainer vpNew = await _vaultSystemBackend.SysPoliciesACLRead(name);
 
-            Assert.AreEqual(3, vpNew.PolicyPaths.Count);
+            Assert.AreEqual(3, vpNew.PolicyPaths.Count,"A20:  PolicyPaths count was not expected value.");
             foreach (VaultPolicyPathItem item in vpNew.PolicyPaths.Values)
             {
-                if (item.FullPath == path1)
+                if (item.SecretPath == path1)
                 {
-                    Assert.AreEqual(vpi1.ListAllowed, item.ListAllowed);
-                    Assert.AreEqual(vpi1.DeleteAllowed, item.DeleteAllowed);
-                    Assert.AreEqual(vpi1.ReadAllowed, item.ReadAllowed);
-                    Assert.AreEqual(vpi1.SudoAllowed, item.SudoAllowed);
+                    Assert.AreEqual(vpi1.ListAllowed, item.ListAllowed,"a30:  Listallowed property not expected value.");
+                    Assert.AreEqual(vpi1.DeleteAllowed, item.DeleteAllowed,"a31:  DeleteAllowed property not expected value.");
+                    Assert.AreEqual(vpi1.ReadAllowed, item.ReadAllowed, "a32:  ReadAllowed property not expected value.");
+                    Assert.AreEqual(vpi1.SudoAllowed, item.SudoAllowed, "a33:  SudoAllowed property not expected value.");
                 }
-                else if (item.FullPath == path2)
+                else if (item.SecretPath == path2)
                 {
-                    Assert.AreEqual(vpi2.Denied, item.Denied);
+                    Assert.AreEqual(vpi2.Denied, item.Denied, "a40:  Denied property not expected value.");
                 }
-                else if (item.FullPath == path3)
+                else if (item.SecretPath == path3)
                 {
-                    Assert.AreEqual(vpi3.ListAllowed, item.ListAllowed);
-                    Assert.AreEqual(vpi3.ReadAllowed, item.ReadAllowed);
-                    Assert.AreEqual(vpi3.UpdateAllowed, item.UpdateAllowed);
+                    Assert.AreEqual(vpi3.ListAllowed, item.ListAllowed, "a50:  Listallowed property not expected value.");
+                    Assert.AreEqual(vpi3.ReadAllowed, item.ReadAllowed, "a51:  ReadAllowed property not expected value.");
+                    Assert.AreEqual(vpi3.UpdateAllowed, item.UpdateAllowed, "a52:  UpdateAllowed property not expected value.");
                     Assert.AreEqual(vpi3.CreateAllowed, false);
                     Assert.AreEqual(vpi3.DeleteAllowed, false);
                     Assert.AreEqual(vpi3.SudoAllowed, false);
                     Assert.AreEqual(vpi3.Denied, false);
                 }
                 // If here, something is wrong.
-                else { Assert.True(false, "invalid path returned of {0}", item.FullPath); }
+                else { Assert.True(false, "invalid path returned of {0}", item.SecretPath,"A60:  Invalid SecretPath specified"); }
             }
         }
 
@@ -647,7 +644,7 @@ namespace VaultAgentTests {
             // Create the policy Path Permission Object
             string backend = "kv2Back";
             string path = "asecret";
-            VaultPolicyPathItem polItem = new VaultPolicyPathItem(backend,path,null,true);
+            VaultPolicyPathItem polItem = new VaultPolicyPathItem(backend,path);
             polItem.ExtKV2_DestroySecret = true;
             policyContainer.AddPolicyPathObject (polItem);
 
@@ -708,18 +705,18 @@ namespace VaultAgentTests {
             Assert.AreEqual(3, vpNew.PolicyPaths.Count);
             foreach (VaultPolicyPathItem item in vpNew.PolicyPaths.Values)
             {
-                if (item.FullPath == path1)
+                if (item.SecretPath == path1)
                 {
                     Assert.AreEqual(vpi1.ListAllowed, item.ListAllowed);
                     Assert.AreEqual(vpi1.DeleteAllowed, item.DeleteAllowed);
                     Assert.AreEqual(vpi1.ReadAllowed, item.ReadAllowed);
                     Assert.AreEqual(vpi1.SudoAllowed, item.SudoAllowed);
                 }
-                else if (item.FullPath == path2)
+                else if (item.SecretPath == path2)
                 {
                     Assert.AreEqual(vpi2.Denied, item.Denied);
                 }
-                else if (item.FullPath == path3)
+                else if (item.SecretPath == path3)
                 {
                     Assert.AreEqual(vpi3.ListAllowed, item.ListAllowed);
                     Assert.AreEqual(vpi3.ReadAllowed, item.ReadAllowed);
@@ -730,7 +727,7 @@ namespace VaultAgentTests {
                     Assert.AreEqual(vpi3.Denied, false);
                 }
                 // If here, something is wrong.
-                else { Assert.True(false, "invalid path returned of {0}", item.FullPath); }
+                else { Assert.True(false, "invalid path returned of {0}", item.SecretPath); }
             }
         }
 
