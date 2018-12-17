@@ -17,7 +17,8 @@ namespace VaultAgent
         LoginSecretID_NotFound = 4,         // Indicates that the login failed because the login SecretID supplied is not valid.
 		CheckAndSetMissing = 5,				// The Check and Set (CAS) parameter was missing.  This is required on some KV2 keystores depending on config.
 		CAS_VersionMissing = 6,				// The Check and Set (CAS) secret version was missing OR the secret already exists, but was told it should only save if it does not exist.
-		CAS_SecretExistsAlready = 7			// The Check and Set (CAS) is set && User requested that the Save only happen if the secret does not already exist.  Secret exists and so this error.
+		CAS_SecretExistsAlready = 7,		// The Check and Set (CAS) is set && User requested that the Save only happen if the secret does not already exist.  Secret exists and so this error.
+        PermissionDenied = 8                // Indicates a token does not have permission to a specific path.
 	}
 
 

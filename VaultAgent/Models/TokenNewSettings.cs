@@ -40,5 +40,19 @@ namespace VaultAgent.Models
 
 		[JsonProperty("period")]
 		public string RenewalPeriod { get; set; }
+
+
+
+        // Constructors 
+
+        [JsonConstructor]
+        public TokenNewSettings (string id) { ID = id; }
+
+        /// <summary>
+        /// Creates a new TokenSettings object with an empty initialized Policies List.
+        /// </summary>
+        public TokenNewSettings() {
+            Policies = new List<string>();
+        }
     }
 }

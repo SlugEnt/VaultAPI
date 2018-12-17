@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using NUnit.Framework;
 using VaultAgent.Backends.System;
 using VaultAgent.SecretEngines;
@@ -61,10 +62,14 @@ namespace VaultAgentTests
 			Assert.NotNull(_casMount);
 			Assert.NotNull(_defaultMount);
 
+			// This is required as of Vault 1.0  It now seems to take a second or 2 to upgrade the mount from KV1 to KV2.
+			Thread.Sleep(3000);
+
 			// Set backend mount config.
 			Assert.True(await _casMount.SetBackendConfiguration(6, true));
 			Assert.True(await _noCasMount.SetBackendConfiguration(8, false));
 			Assert.True(await _defaultMount.SetBackendConfiguration(3, false));
+
 
 			return;
 		}
