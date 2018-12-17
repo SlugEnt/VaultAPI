@@ -88,28 +88,33 @@ namespace VaultAgent.SecretEngines {
             catch (Exception e) { throw e; }
         }
 
-		#endregion
+        #endregion
 
 
 
-		/// <summary>
-		/// Saves the provided KV2Secret object.  You must specify a save option and optionally what the current version of the secret is.
-		/// If the CAS setting is set on the backend then the following errors may be returned:
-		/// [VaultInvalidDataException]
-		///    [SpecificErrorCode] = EnumVaultExceptionCodes.CheckAndSetMissing - You specified an invalid casSaveOption (AlwaysAllow is not valid for backend with CAS Set)
-		///			or the currentVersion parameter was invalid.
-		///    [SpecificErrorCode] = EnumVaultExceptionCodes.CAS_SecretExistsAlready - You set the casSaveOption to only allow save to succeed if the secret does not yet exist.
-		///    [SpecificErrorCode] = EnumVaultExceptionCodes.CAS_VersionMissing - The version you specified was invalid.  It must be equal to the current version number of the secret.
-		/// </summary>
-		/// <param name="secret">KV2Secret object to be saved.  This must contain minimally the Name and the Path of the secret and one or more optional attributes.</param>
-		/// <param name="casSaveOption">This must be set to the CAS option you desired:
-		///   - OnlyIfKeyDoesNotExist = 0,
-	    ///   - OnlyOnExistingVersionMatch = 1,
-	    ///   - AlwaysAllow = 2  - Set to this value if the backend is not CAS enabled.  If CAS is enabled then this option will result in an error.
-		/// </param>
-		/// <param name="currentVersion">What the current version of the secret is.  Required if the backend is in CAS mode (Default mode).</param>
-		/// <returns></returns>
-		public async Task<bool> SaveSecret (KV2Secret secret, KV2EnumSecretSaveOptions casSaveOption, int currentVersion = 0) {
+        /// <summary>
+        /// Saves the provided KV2Secret object.  You must specify a save option and optionally what the current version of the secret is.
+        /// If the CAS setting is set on the backend then the following errors may be returned:
+        /// <para></para>
+        /// <para>Commonly Throws the Following Errors:</para>
+        /// <para>  [VaultForbiddenException] - Erros with access.  The SpecifiedErrorCode field will be set to EnumVaultExceptionCodes.PermissionDenied if token does not have
+        /// appropriate permissions to access the path.</para>
+        /// <para>   [VaultInvalidDataException]</para>
+        /// <para>     [SpecificErrorCode] = EnumVaultExceptionCodes.CheckAndSetMissing - You specified an invalid casSaveOption (AlwaysAllow is not valid for backend with CAS Set)
+        ///			or the currentVersion parameter was invalid. </para>
+        /// <para>     [SpecificErrorCode] = EnumVaultExceptionCodes.CAS_SecretExistsAlready - You set the casSaveOption to only allow save to succeed if the secret does not yet exist.</para>
+        /// <para>     [SpecificErrorCode] = EnumVaultExceptionCodes.CAS_VersionMissing - The version you specified was invalid.  It must be equal to the current version number of the secret.</para>
+        /// 
+        /// </summary>
+        /// <param name="secret">KV2Secret object to be saved.  This must contain minimally the Name and the Path of the secret and one or more optional attributes.</param>
+        /// <param name="casSaveOption">This must be set to the CAS option you desired:
+        ///   - OnlyIfKeyDoesNotExist = 0,
+        ///   - OnlyOnExistingVersionMatch = 1,
+        ///   - AlwaysAllow = 2  - Set to this value if the backend is not CAS enabled.  If CAS is enabled then this option will result in an error.
+        /// </param>
+        /// <param name="currentVersion">What the current version of the secret is.  Required if the backend is in CAS mode (Default mode).</param>
+        /// <returns></returns>
+        public async Task<bool> SaveSecret (KV2Secret secret, KV2EnumSecretSaveOptions casSaveOption, int currentVersion = 0) {
             string path = MountPointPath + "data/" + secret.FullPath;
 
 
@@ -136,38 +141,43 @@ namespace VaultAgent.SecretEngines {
             reqData.Add ("options", options);
             reqData.Add ("data", secret);
 
-            try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync2 (path, "SaveSecret", reqData);
-                if (vdro.Success) { return true; }
+		    try {
+		        VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync2 (path, "SaveSecret", reqData);
+		        if (vdro.Success) { return true; }
 
-                return false;
-            }
-            catch (VaultInvalidDataException e) {
-                if (e.Message.Contains ("check-and-set parameter required for this call")) {
-					VaultInvalidDataException eNew = new VaultInvalidDataException(Constants.Error_CAS_Set + " | Original Error message was: " + e.Message);
-	                eNew.SpecificErrorCode = EnumVaultExceptionCodes.CheckAndSetMissing;
-	                throw eNew;                   
-                }
-				// Check for Version errors:
-                else if (e.Message.Contains ("did not match the current version")) {
-					// If user requested that the save happen only if the key does not already exist then return customized error message.
-	                if (casSaveOption == KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist) {
-		                VaultInvalidDataException eNew = new VaultInvalidDataException(Constants.Error_CAS_SecretAlreadyExists +
-		                                                                               " | Original Error message was: " + e.Message);
+		        return false;
+		    }
+		    catch (VaultInvalidDataException e) {
+		        if (e.Message.Contains ("check-and-set parameter required for this call")) {
+		            VaultInvalidDataException eNew = new VaultInvalidDataException (Constants.Error_CAS_Set + " | Original Error message was: " + e.Message);
+		            eNew.SpecificErrorCode = EnumVaultExceptionCodes.CheckAndSetMissing;
+		            throw eNew;
+		        }
+
+		        // Check for Version errors:
+		        else if (e.Message.Contains ("did not match the current version")) {
+		            // If user requested that the save happen only if the key does not already exist then return customized error message.
+		            if (casSaveOption == KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist) {
+		                VaultInvalidDataException eNew = new VaultInvalidDataException (Constants.Error_CAS_SecretAlreadyExists +
+		                                                                                " | Original Error message was: " + e.Message);
 		                eNew.SpecificErrorCode = EnumVaultExceptionCodes.CAS_SecretExistsAlready;
 		                throw eNew;
-					}
+		            }
 
-					// Customize the version discrepancy message
-					else {
-		                VaultInvalidDataException eNew = new VaultInvalidDataException(Constants.Error_CAS_InvalidVersion + " Version specified was: " +
-		                                                                               currentVersion +
-		                                                                               " | Original Error message was: " + e.Message);
+		            // Customize the version discrepancy message
+		            else {
+		                VaultInvalidDataException eNew = new VaultInvalidDataException (Constants.Error_CAS_InvalidVersion + " Version specified was: " +
+		                                                                                currentVersion +
+		                                                                                " | Original Error message was: " + e.Message);
 		                eNew.SpecificErrorCode = EnumVaultExceptionCodes.CAS_VersionMissing;
 		                throw eNew;
-	                }
-                }
-                else { throw new VaultInvalidDataException (e.Message); }
+		            }
+		        }
+		        else { throw new VaultInvalidDataException (e.Message); }
+		    }
+		    catch (VaultForbiddenException e) {
+		        if (e.Message.Contains ("* permission denied")) { e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied;  }
+		        throw e;
             }
         }
 
@@ -186,8 +196,14 @@ namespace VaultAgent.SecretEngines {
         /// <returns>KV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
         public async Task<KV2SecretWrapper> ReadSecret (string secretPath, int secretVersion = 0) {
             string path = MountPointPath + "data/" + secretPath;
+            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+
+            // TODO - Read secret will return an object for a version that has been destroyed or deleted.  We need to interrogate that
+            // and try and find the next non deleted version.
             try {
-                Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"version", secretVersion.ToString()}};
+                if (secretVersion > 0) { contentParams.Add ("version", secretVersion.ToString()); }
+
+
 
                 VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ReadSecret", contentParams);
                 if (vdro.Success) {
@@ -198,9 +214,12 @@ namespace VaultAgent.SecretEngines {
                 throw new ApplicationException ("SecretBackEnd: ReadSecret - Arrived at an unexpected code path.");
             }
 
-			// VaultInvalidPathExceptions are not permission problems - despite what the error text hints at.  Instead they just mean no secret exists at that path.  We return null.
-			// Vault with throw a VaultForbiddenException on permission errors - and we do not catch that here.
+            // VaultInvalidPathExceptions are not permission problems - despite what the error text hints at.  Instead they just mean no secret exists at that path.  We return null.	
             catch (VaultInvalidPathException e) { return null; }
+            catch (VaultForbiddenException e) {
+                if (e.Message.Contains ("* permission denied")) { e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied; }
+                throw e;
+            }
         }
 
 
@@ -226,7 +245,7 @@ namespace VaultAgent.SecretEngines {
 
 
         /// <summary>
-        /// Deletes the most recent version of a secret or a specific version of a secret.
+        /// Deletes the most recent version of a secret or a specific version of a secret.  
         /// </summary>
         /// <param name="secretPath">The name of the secret to delete.</param>
         /// <param name="version">The version to delete.  Defaults to zero which is the most recent or current version of the key.</param>
@@ -235,22 +254,30 @@ namespace VaultAgent.SecretEngines {
             string path;
             VaultDataResponseObject vdro;
 
-            // Paths are different if specifying versions or version = 0 (current)
-            if (version != 0) {
-                path = MountPointPath + "delete/" + secretPath;
+            try {
+                // Paths are different if specifying versions or version = 0 (current)
+                if (version != 0) {
+                    path = MountPointPath + "delete/" + secretPath;
 
-                // Add the version parameter
-                string jsonParams = "{\"versions\": [" + version.ToString() + "]}";
-                vdro = await _parent._httpConnector.PostAsync (path, "DeleteSecretVersion", null, jsonParams);
+                    // Add the version parameter
+                    string jsonParams = "{\"versions\": [" + version.ToString() + "]}";
+                    vdro = await _parent._httpConnector.PostAsync (path, "DeleteSecretVersion", null, jsonParams);
+                }
+                else {
+                    path = MountPointPath + "data/" + secretPath;
+                    vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteSecretVersion");
+                }
+
+
+                if (vdro.Success) { return true; }
+                else { return false; }
             }
-            else {
-                path = MountPointPath + "data/" + secretPath;
-                vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteSecretVersion");
+            catch (VaultForbiddenException e) {
+                if (e.Message.Contains("* permission denied")) {
+                    e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied;
+                }
+                throw e;
             }
-
-
-            if (vdro.Success) { return true; }
-            else { return false; }
         }
 
 
@@ -358,7 +385,10 @@ namespace VaultAgent.SecretEngines {
 
                 return false;
             }
-            catch (Exception e) { throw e; }
+            catch (VaultForbiddenException e) {
+                if (e.Message.Contains ("* permission denied")) { e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied;}
+                throw e;
+            }
         }
 
 

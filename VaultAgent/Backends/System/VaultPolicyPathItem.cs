@@ -649,6 +649,12 @@ namespace VaultAgent.Backends.System
 
 	        // If this is a KV2 versioned policy, then check the Extended Policy Fields.
 	        if (_isKV2Policy) {
+	            string kv2Path;
+
+                // These KeyValue V2 paths must always end in /*
+	            if (_protectedPath.EndsWith ("/*")) { kv2Path = _protectedPath; }
+	            else { kv2Path =  _protectedPath + "/*"; }
+
 	            // Now check for extended properties in KV2 and return them.
 	            permissions.Clear();
 
@@ -660,7 +666,7 @@ namespace VaultAgent.Backends.System
 	            if (_listAllowed || _extKV2_ListMetaData) { permissions.Add ("list"); }
 
 	            if (permissions.Count > 0) {
-	                policyHCLFormat.Append (BuildHCLPolicyPathStatement (_backendMount + "/metadata/" + _protectedPath + "/*", permissions));
+	                policyHCLFormat.Append (BuildHCLPolicyPathStatement (_backendMount + "/metadata/" + kv2Path, permissions));
 	            }
 
 	            permissions.Clear();
@@ -668,15 +674,15 @@ namespace VaultAgent.Backends.System
 
 	            // Now check the other extended permissions.  Each has its own call.
 	            if (_extKV2_DeleteAnyKeyVersion) {
-	                policyHCLFormat.Append (BuildHCLPolicyPathStatement (_backendMount + "/delete/" + _protectedPath + "/*", new List<string>() {"update"}));
+	                policyHCLFormat.Append (BuildHCLPolicyPathStatement (_backendMount + "/delete/" + kv2Path, new List<string>() {"update"}));
 	            }
 
 	            if (_extKV2_UnDelete) {
-	                policyHCLFormat.Append (BuildHCLPolicyPathStatement (_backendMount + "/undelete/" + _protectedPath + "/*", new List<string>() {"update"}));
+	                policyHCLFormat.Append (BuildHCLPolicyPathStatement (_backendMount + "/undelete/" + kv2Path, new List<string>() {"update"}));
 	            }
 
 	            if (_extKV2_DestroyVersions) {
-	                policyHCLFormat.Append (BuildHCLPolicyPathStatement (_backendMount + "/destroy/" + _protectedPath + "/*", new List<string>() {"update"}));
+	                policyHCLFormat.Append (BuildHCLPolicyPathStatement (_backendMount + "/destroy/" + kv2Path, new List<string>() {"update"}));
 	            }
 	        }
 

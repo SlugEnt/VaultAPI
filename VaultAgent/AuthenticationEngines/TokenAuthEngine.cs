@@ -61,7 +61,8 @@ namespace VaultAgent.AuthenticationEngines
 
 
 		/// <summary>
-		/// Creates a token that is a child of the calling token.  
+		/// Creates a token that is a child of the calling token.  Note, IF you do not specify any Policies, it will have the same policies as the token
+		/// being used to call this routine.  This could mean it has root access!  Best to always set at least 1 policy.  Use default if you need.
 		/// </summary>
 		/// <param name="tokenSettings">A TokenNewSettings object with the options you would like the new token to have. </param>
 		/// <returns>True if token was created successfully.</returns>
