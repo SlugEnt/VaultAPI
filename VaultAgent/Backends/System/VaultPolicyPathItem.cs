@@ -472,7 +472,7 @@ namespace VaultAgent.Backends.System
 
 
 	    /// <summary>
-	    /// Only applies to KeyValue2 policy paths.  When true the permission to delete any version of a secret is enabled.
+	    /// When true the permission to delete any version of a secret is enabled.  Throws InvalidOperationException if the policy is not a KV2 type policy.
 	    /// </summary>
 	    public bool ExtKV2_DeleteAnyKeyVersion {
 	        get => _extKV2_DeleteAnyKeyVersion;
@@ -480,68 +480,74 @@ namespace VaultAgent.Backends.System
 		        if (_isKV2Policy) {
 			        _extKV2_DeleteAnyKeyVersion = value;
 		        }
+				else throw new InvalidOperationException("Vault Policy Path Item is not a KeyValue Version 2 Policy Type.  Extended attributes only apply to KV2 type policies.");
 	        }
 	    }
 
 
 
-	    /// <summary>
-	    /// Only applies to KeyValue2 policy paths.  When true the permission to undelete a secret is enabled.
-	    /// </summary>
-        public bool ExtKV2_UndeleteSecret {
+		/// <summary>
+		/// When true the permission to undelete a secret is enabled.  Throws InvalidOperationException if the policy is not a KV2 type policy.
+		/// </summary>
+		public bool ExtKV2_UndeleteSecret {
 	        get => _extKV2_UnDelete;
 	        set {
 		        if (_isKV2Policy) {
 			        _extKV2_UnDelete = value;
 		        }
-	        }
+		        else throw new InvalidOperationException("Vault Policy Path Item is not a KeyValue Version 2 Policy Type.  Extended attributes only apply to KV2 type policies.");
+			}
 	    }
 
 
 
-	    /// <summary>
-	    /// Only applies to KeyValue2 policy paths.  When true the permission to destroy the versions of a secret is enabled.
-	    /// </summary>
-        public bool ExtKV2_DestroySecret {
+		/// <summary>
+		/// Only applies to KeyValue2 policy paths.  When true the permission to destroy the versions of a secret is enabled.  Throws InvalidOperationException if the policy is not a KV2 type policy.
+		/// </summary>
+		public bool ExtKV2_DestroySecret {
 	        get => _extKV2_DestroyVersions;
 	        set { if (_isKV2Policy) { _extKV2_DestroyVersions = value;}
-	        }
+		        else throw new InvalidOperationException("Vault Policy Path Item is not a KeyValue Version 2 Policy Type.  Extended attributes only apply to KV2 type policies.");
+			}
 	    }
 
 
 
-	    /// <summary>
-	    /// Only applies to KeyValue2 policy paths.  When true the permission to view the metadata for a given secret is enabled.
-	    /// </summary>
-        public bool ExtKV2_ViewMetaData {
+		/// <summary>
+		/// Only applies to KeyValue2 policy paths.  When true the permission to view the metadata for a given secret is enabled.  Throws InvalidOperationException if the policy is not a KV2 type policy.
+		/// </summary>
+		public bool ExtKV2_ViewMetaData {
 	        get => _extKV2_ViewMetadata;
-	        set { if (_isKV2Policy) { _extKV2_ViewMetadata = value;} 
-	        }
+	        set { if (_isKV2Policy) { _extKV2_ViewMetadata = value;}
+		        else throw new InvalidOperationException("Vault Policy Path Item is not a KeyValue Version 2 Policy Type.  Extended attributes only apply to KV2 type policies.");
+			}
 	    }
 
 
 
 
-	    /// <summary>
-	    /// Only applies to KeyValue2 policy paths.  When true the permission to delete the metadata for a given secret is enabled.
-	    /// </summary>
-	    public bool ExtKV2_DeleteMetaData {
+		/// <summary>
+		/// Only applies to KeyValue2 policy paths.  When true the permission to delete the metadata for a given secret is enabled.  Throws InvalidOperationException if the policy is not a KV2 type policy.
+		/// </summary>
+		public bool ExtKV2_DeleteMetaData {
             get => _extKV2_DeleteMetaData;
 	        set { if (_isKV2Policy)  { _extKV2_DeleteMetaData = value; }
-	        }
+		        else throw new InvalidOperationException("Vault Policy Path Item is not a KeyValue Version 2 Policy Type.  Extended attributes only apply to KV2 type policies.");
+			}
 	    }
 
 
 		/// <summary>
-		/// Ability to List KeyValue2 Versions.
+		/// Ability to List KeyValue2 Versions.  Throws InvalidOperationException if the policy is not a KV2 type policy.
 		/// </summary>
-	    public bool ExtKV2_ListMetaData {
+		public bool ExtKV2_ListMetaData {
 	        get => _extKV2_ListMetaData;
 	        set {
 		        if (_isKV2Policy) {
 			        _extKV2_ListMetaData = value;
 		        }
-	        }
+		        else throw new InvalidOperationException("Vault Policy Path Item is not a KeyValue Version 2 Policy Type.  Extended attributes only apply to KV2 type policies.");
+			}
 	    }
 
         #endregion

@@ -7,6 +7,11 @@ using System.Threading.Tasks;
 using VaultAgentTests;
 using VaultAgent.Backends.System;
 using VaultAgent;
+using VaultAgent.Backends;
+using VaultAgent.AuthenticationEngines;
+using VaultAgent.Models;
+using VaultAgent.SecretEngines;
+using VaultAgent.SecretEngines.KV2;
 
 namespace VaultAgentTests {
 
@@ -77,7 +82,7 @@ namespace VaultAgentTests {
 
 
 
-		// Validates that the VPPI double parameter constructor works correctly.
+		// Validates that the VPPI constructor that takes backend name and path parameters works correctly.
         [Test]
         [TestCase(1,"secret","path1","secret","path1",false)]
         [TestCase(2,"secret2", "path1", "secret2", "path1",false)]
@@ -93,7 +98,7 @@ namespace VaultAgentTests {
 
 
         
-		// Validates that the FullPath property returns the proper path value.
+		// Validates that the Secret Path property returns the proper path value.
         [Test]
         [TestCase(1,"secret", "path1",  false, "secret/path1","")]
         [TestCase(2,"secret2", "path1",  false, "secret2/path1","")]
@@ -241,7 +246,19 @@ namespace VaultAgentTests {
 
 
 
-
+		// Validate that calling a KeyValue V2 Extended Attribute property setter throws error if the policy is not KV2 type of policy.
+	    [Test]
+	    public void VPPI_CallingKV2Attribute_OnNonKV2PolicyItem_ThrowsError() {
+			VaultPolicyPathItem vppi = new VaultPolicyPathItem("/be/test/path1");
+			
+		    //vppi.ExtKV2_DeleteAnyKeyVersion = true;
+		    InvalidOperationException e = Assert.Throws<InvalidOperationException>( () => vppi.ExtKV2_DeleteAnyKeyVersion = true);
+		    InvalidOperationException e2 = Assert.Throws<InvalidOperationException>(() => vppi.ExtKV2_DeleteMetaData = true);
+		    InvalidOperationException e3 = Assert.Throws<InvalidOperationException>(() => vppi.ExtKV2_DestroySecret = true);
+		    InvalidOperationException e4 = Assert.Throws<InvalidOperationException>(() => vppi.ExtKV2_ListMetaData = true);
+		    InvalidOperationException e5 = Assert.Throws<InvalidOperationException>(() => vppi.ExtKV2_UndeleteSecret= true);
+		    InvalidOperationException e6 = Assert.Throws<InvalidOperationException>(() => vppi.ExtKV2_ViewMetaData = true);
+		}
 
 
 
@@ -931,5 +948,101 @@ namespace VaultAgentTests {
 		    Assert.True(vppi.ToVaultHCLPolicyFormat().Contains("metadata"), "A20:  Did not find the metadata permission in the Vault policy string.");
 	    }
 		#endregion
+
+
+		#region "FullCycle Policy Tests"
+		// This section does complex tests on each of the Permissions to make sure they actually work in the Vault environment.
+
+	    [Test]
+	    public async Task Test1() {
+		    string beName = _uniqueKeys.GetKey("backEnd");
+		    string pathNameRoot = _uniqueKeys.GetKey("rootPth");
+		    string secretPath;
+		    KV2Secret readSecret;
+		    KV2SecretWrapper secretReadWrapper;
+
+
+		    // Create the backend.
+		    VaultSysMountConfig testBE = new VaultSysMountConfig();
+		    Assert.True(await _vaultSystemBackend.SysMountCreate(beName, "test Backend", EnumSecretBackendTypes.KeyValueV2),
+			    "A10:  Enabling backend " + beName + " failed.");
+
+		    // Lets create a policy for root path.
+		    VaultPolicyPathItem vppi = new VaultPolicyPathItem(beName, "data/" + pathNameRoot);
+		    vppi.CRUDAllowed = true;
+
+		    // Create the Actual Policy container
+		    VaultPolicyContainer polCon1 = new VaultPolicyContainer("polCon1");
+		    polCon1.AddPolicyPathObject(vppi);
+
+		    // Save Policy to Vault Instance.
+		    Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(polCon1), "A20:  Saving the policy to Vault Instance failed.");
+
+		    // Now create a token that will have this policy applied to it.
+		    TokenAuthEngine tokenEng = (TokenAuthEngine) _vaultAgentAPI.ConnectAuthenticationBackend(EnumBackendTypes.A_Token);
+
+		    TokenNewSettings tokenASettings = new TokenNewSettings();
+		    tokenASettings.Policies = new List<string>();
+		    tokenASettings.Policies.Add(polCon1.Name);
+		    Token tokenA = await tokenEng.CreateToken(tokenASettings);
+
+		    // Now we will use that token to try and test the secret out.  We need to create a new instance of Vault to test the token out.
+		    VaultAgentAPI vaultAgent2 = new VaultAgentAPI("TestComplexPolicies", _vaultAgentAPI.IP, _vaultAgentAPI.Port, _vaultAgentAPI.Token.ID);
+		    KV2SecretEngine secEng = (KV2SecretEngine) vaultAgent2.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, beName, beName);
+
+
+		    // Now lets test our permissions. The first thing we need to do is create the secret path, but as our root token.  The new token
+			// we just created does not have access to the parent folder to do anything.  Create on the secret folder does not actually allow you 
+			// to create a secret.
+
+		    // 1. Save Secret
+		    KV2Secret secret = new KV2Secret(pathNameRoot);
+		    secret.Attributes.Add("attrA", "valueA");
+		    secret.Attributes.Add("attrB", "valueB");
+		    Assert.True(await secEng.SaveSecret(secret, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist), "A30:  Unable to save the secret.");
+
+
+			// Now we can switch to our reduced permission token for testing. 
+		    vaultAgent2.Token = tokenA;
+
+
+			// 2. Read Secret.
+			secretReadWrapper = await secEng.ReadSecret(pathNameRoot);
+		    readSecret = secretReadWrapper.Secret;
+		    Assert.AreEqual(secret.Attributes.Count, readSecret.Attributes.Count, "A40:  The secret read back was not the same as the one we saved.  Huh?");
+
+		    // 3. Validate the secret attributes.
+		    string attrValue;
+		    foreach (KeyValuePair<string, string> kv in secret.Attributes) {
+			    // Confirm it exists in the Read back version and the value is the same.
+			    Assert.True(readSecret.Attributes.TryGetValue(kv.Key, out attrValue), "A50:  Unable to find the secret attribute: " + kv.Key);
+			    Assert.AreEqual(kv.Value, attrValue, "A51:  Attribute was found, but its value was different.");
+		    }
+
+		    // 4. Update the secret.  
+		    secret.Attributes.Add("attrC", "valueC");
+		    secret.Attributes["attrB"] = "ValueB2";
+		    Assert.True(await secEng.SaveSecret(secret, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, secretReadWrapper.Version),
+			    "A60:  Updating the secret failed.");
+
+		    // 5 Read the secret back and confirm.
+		    secretReadWrapper = await secEng.ReadSecret(pathNameRoot);
+		    readSecret = secretReadWrapper.Secret;
+		    Assert.AreEqual(secret.Attributes.Count, readSecret.Attributes.Count, "A61:  The secret read back was not the same as the one we saved.  Huh?");
+
+		    // 6. Validate the secret attributes.
+		    foreach (KeyValuePair<string, string> kv in secret.Attributes) {
+			    // Confirm it exists in the Read back version and the value is the same.
+			    Assert.True(readSecret.Attributes.TryGetValue(kv.Key, out attrValue), "A64:  Unable to find the secret attribute: " + kv.Key);
+			    Assert.AreEqual(kv.Value, attrValue, "A66:  Attribute was found, but its value was different.");
+		    }
+
+		    // 7. Delete the secret.
+		    Assert.True(await secEng.DeleteSecretVersion(secret), "A70:  Unable to delete the secret.");
+	    }
+
+
+	    #endregion
+
+		}
 	}
-}
