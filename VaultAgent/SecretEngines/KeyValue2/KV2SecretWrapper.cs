@@ -1,8 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+
+
+// Allow Testing project to access KV2SecretWrapper to perform tests.
+[assembly: InternalsVisibleTo("VaultAgent.Test")]
+
 
 namespace VaultAgent.SecretEngines.KV2
 {
@@ -12,32 +18,13 @@ namespace VaultAgent.SecretEngines.KV2
 	/// Much of the info is just Informational, but some such as the version saved, etc is of critical nature.
 	/// The main secret data is stored in the KV2Secret object.
 	/// </summary>
-	public partial class KV2SecretWrapper
+	internal partial class KV2SecretWrapper
 	{
-		// Default constructor used when created outside of vault.
-		public KV2SecretWrapper () {
-			WasReadFromVault = false;
+	    [JsonConstructor]
+        // Default constructor used when created outside of vault.
+        public KV2SecretWrapper () {
 			Data = new SecretReadReturnObjData(true);
 		}
-
-
-
-		/// <summary>
-		/// This constructor should never be used by any outside caller.  Only used by the JSON Converter logic.
-		/// It's sole purpose is to set the WasReadFromVault flag.
-		/// </summary>
-		/// <param name="value"></param>
-		[JsonConstructor]
-		public KV2SecretWrapper	(bool value) { WasReadFromVault = true; }
-
-
-
-		/// <summary>
-		/// Tells you if this Secret was read from the Vault storage engine or if it was created outside of Vault.  If it was not read from Vault then
-		/// the version number and some of the other informational data is invalid.
-		/// </summary>
-		public bool WasReadFromVault { get; private set; }
-
 
 
 		[JsonProperty("request_id")]
@@ -103,7 +90,7 @@ namespace VaultAgent.SecretEngines.KV2
 
 
 
-	public partial class SecretReadReturnObjData
+	internal partial class SecretReadReturnObjData
 	{
 		/// <summary>
 		/// Default Constructor used by JSONConverter.
@@ -142,7 +129,7 @@ namespace VaultAgent.SecretEngines.KV2
 	/// This class is Vault Secret MetaData that tracks some values related to a given secret.
 	/// Items tracked include when it was created and/or deleted, as well as if it is currently marked soft deleted and what the version # is.
 	/// </summary>
-	public partial class Metadata
+	internal partial class Metadata
 	{
 		/// <summary>
 		/// When this particular secret version was created.
@@ -179,12 +166,12 @@ namespace VaultAgent.SecretEngines.KV2
 	#region JSONConverterLogic
 
 
-	public partial class KV2SecretWrapper
+	internal partial class KV2SecretWrapper
 	{
 		public static KV2SecretWrapper FromJson(string json) => JsonConvert.DeserializeObject<KV2SecretWrapper>(json, KV2Converter.Settings);
 	}
 
-	public static class Serialize
+	internal static class Serialize
 	{
 		public static string ToJson(this KV2SecretWrapper self) => JsonConvert.SerializeObject(self, KV2Converter.Settings);
 	}
