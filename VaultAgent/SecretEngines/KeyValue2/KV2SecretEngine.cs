@@ -192,9 +192,9 @@ namespace VaultAgent.SecretEngines {
         /// Returns Null if no secret found at location.
         /// </summary>
         /// <param name="secretPath">The Name (path) to the secret you wish to read.</param>
-        /// <param name="secretVersion">The version of the secret to retrieve.  Leave at default of Zero to read most recent version.</param>
+        /// <param name="secretVersion">The version of the secret to retrieve.  (Default) set to 0 to read most recent version. </param>
         /// <returns>KV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
-        public async Task<KV2SecretWrapper> ReadSecret (string secretPath, int secretVersion = 0) {
+        public async Task<KV2Secret> ReadSecret (string secretPath, int secretVersion = 0) {
             string path = MountPointPath + "data/" + secretPath;
             Dictionary<string, string> contentParams = new Dictionary<string, string>();
 
@@ -203,13 +203,22 @@ namespace VaultAgent.SecretEngines {
             try {
                 if (secretVersion > 0) { contentParams.Add ("version", secretVersion.ToString()); }
 
-
-
                 VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ReadSecret", contentParams);
                 if (vdro.Success) {
                     KV2SecretWrapper secretReadReturnObj = KV2SecretWrapper.FromJson (vdro.GetResponsePackageAsJSON());
-                    return secretReadReturnObj;
-                }
+
+					// We now need to move some fields from the KV2SecretWrapper into the KV2Secret which is embedded in the 
+					// wrapper class.
+	                secretReadReturnObj.Secret.CreatedTime = secretReadReturnObj.Data.Metadata.CreatedTime;
+	                secretReadReturnObj.Secret.DeletionTime = secretReadReturnObj.Data.Metadata.DeletionTime;
+	                secretReadReturnObj.Secret.Destroyed = secretReadReturnObj.Data.Metadata.Destroyed;
+	                secretReadReturnObj.Secret.Version = secretReadReturnObj.Data.Metadata.Version;
+
+					// Now get the secret obj, remove it from the wrapper - so the class can be deleted and then return to caller.
+	                KV2Secret secret = secretReadReturnObj.Secret;
+	                secretReadReturnObj.Secret = null;
+	                return secret;
+                    }
 
                 throw new ApplicationException ("SecretBackEnd: ReadSecret - Arrived at an unexpected code path.");
             }
@@ -231,8 +240,9 @@ namespace VaultAgent.SecretEngines {
 		/// </summary>
 		/// <param name="secretPath">The path to the secret to check for existence and retrieve if it does exist.</param>
 		/// <returns></returns>
-		public async Task<(bool IsSuccess, KV2SecretWrapper Secret)> TryReadSecret(string secretPath, int secretVersion = 0) {
-		    KV2SecretWrapper secret = await ReadSecret(secretPath, secretVersion);
+		public async Task<(bool IsSuccess, KV2Secret Secret)> TryReadSecret(string secretPath, int secretVersion = 0) {
+		    KV2Secret secret = await ReadSecret(secretPath, secretVersion);
+
 		    if (secret == null) {
 			    return (false, null);
 		    }
@@ -392,7 +402,12 @@ namespace VaultAgent.SecretEngines {
         }
 
 
-        //TODO ReadSecretMetaData routine needed.
+
+        /// <summary>
+        /// Reads the Secret Metadata for the KeyValue V2 secret.  This includes version information, and critical timestamps such as destroy, delete, create etc.
+        /// </summary>
+        /// <param name="secretNamePath">The path to the secret to get metadata on.</param>
+        /// <returns>KV2SecretMetaDataInfo object</returns>
         public async Task<KV2SecretMetaDataInfo> GetSecretMetaData (string secretNamePath) {
             // we need to use the MetaData Path
             string path = MountPointPath + "metadata/" + secretNamePath;
@@ -442,11 +457,28 @@ namespace VaultAgent.SecretEngines {
         public async Task<List<string>> ListSecretsAtPath (KV2Secret secretObj) { return await ListSecretsAtPath (secretObj.FullPath); }
         public async Task<bool> DeleteSecretVersion (KV2Secret secretObj, int version=0) { return await DeleteSecretVersion (secretObj.FullPath, version); }
 
-        public async Task<KV2SecretWrapper> ReadSecret (KV2Secret secretObj, int secretVersion = 0) {
+
+
+        /// <summary>
+        /// Reads the specified secret from Vault.  It defaults to reading the most recent version of the secret.
+        /// <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
+        /// <para>Returns the KV2Secret if a secret was found at the location.</para>
+        /// <para>Returns Null if no secret found at location.</para>
+        /// </summary>
+        /// <param name="secretObj">An existing KV2Secret object that you wish to re-read.  The existing object will be deleted and replaced with the values for the new.</param>
+        /// <param name="secretVersion">Version of the secret to retrieve.
+        /// <para>  (Default) set to 0 to read most recent version.</para>
+        /// <para>  Set to -1 to use the version number specified in the secret object.</para>
+        /// <para>  Set to any positive number to read that specific version from the Vault Instance Store.</para>
+        /// </param>
+        /// <returns>KV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
+        public async Task<KV2Secret> ReadSecret (KV2Secret secretObj, int secretVersion = 0) {
+            if (secretVersion == -1) { secretVersion = secretObj.Version;}
             return await ReadSecret (secretObj.FullPath, secretVersion);
         }
 
-	    public async Task<(bool IsSuccess, KV2SecretWrapper Secret)> TryReadSecret(KV2Secret secretObj, int secretVersion = 0) {
+
+	    public async Task<(bool IsSuccess, KV2Secret Secret)> TryReadSecret(KV2Secret secretObj, int secretVersion = 0) {
 			var result = await TryReadSecret(secretObj.FullPath, secretVersion);
 		    return (result.IsSuccess, result.Secret);
 		}
