@@ -246,6 +246,23 @@ namespace VaultAgentTests {
 
 
 
+		// Validates that a Policy Container with only an initialized VaultPolicyPathItem object throws an error when trying to save to Vault.
+		[Test]
+		public void PolicyContainerWithVPPIWithNoSettingsSet_ThrowsError() {
+			VaultPolicyPathItem vppi = new VaultPolicyPathItem("ABC", "pathA/pathB");
+
+			// We set no permissions to test.
+			string permission = vppi.ToVaultHCLPolicyFormat();
+			Assert.IsEmpty(permission,"Expected the permission string to be empty.  Instead received something back.");
+
+			VaultPolicyContainer vpc = new VaultPolicyContainer("testCon");
+			vpc.AddPolicyPathObject(vppi);
+
+			ArgumentException e1 = Assert.ThrowsAsync<ArgumentException>( async () => await _vaultSystemBackend.SysPoliciesACLCreate(vpc));
+		}
+
+
+
 		// Validate that calling a KeyValue V2 Extended Attribute property setter throws error if the policy is not KV2 type of policy.
 		[Test]
 		public void VPPI_CallingKV2Attribute_OnNonKV2PolicyItem_ThrowsError() {
@@ -685,6 +702,7 @@ namespace VaultAgentTests {
 		[TestCase("secret/destroy/path1/path2")]
 		[TestCase("secret/delete/path1/path2")]
 		[TestCase("secret/undelete/path1/path2")]
+		[TestCase("secret/data/*")]
 		public void VPPI_KV2_SinglePathConstructor_Sets_IsKV2Property (string path) {
 			VaultPolicyPathItem vppi = new VaultPolicyPathItem(path);
 			Assert.IsTrue(vppi.IsKV2Policy,"A10:  Expected the IsKV2Policy property to be true.");
@@ -713,6 +731,19 @@ namespace VaultAgentTests {
 			Assert.AreEqual("ABC/data/pathA/pathB", vppi2.SecretPath, "A50:  The secretPath property did not return the expected value.");
 		}
 
+
+
+		[Test]
+		[TestCase(1,"A","path1","A/data/path1",Description = "This is the expected format of parameters, backend, path without KV2 prefix.")]
+		[TestCase(2, "A", "path2/", "A/data/path2/*", Description = "This is the expected format of parameters, backend, path without KV2 prefix and securing subfolders.")]
+		[TestCase(3, "A", "path3/path4", "A/data/path3/path4")]
+		[TestCase(4, "A", "data/path1", "A/data/path1",Description = "Validates that if the KV2 prefix path is specified in the path, that it is stripped out.")]
+		[TestCase(5, "B", "metadata/path2/*", "B/data/path2/*", Description = "Validates that if the KV2 prefix path is specified in the path, that it is stripped out.")]
+		public void VPPI_KV2Constructor_ProducesCorrectResults(int id, string backend, string path, string expectedPath) {
+			VaultPolicyPathItem vppi = new VaultPolicyPathItem(true,backend,path);
+			Assert.True(vppi.IsKV2Policy, "A10:  Expected Policy to be a KV2 type of policy item, but it is not identified as so.");
+			Assert.AreEqual(expectedPath,vppi.SecretPath,"A20:  The secret path is incorrect.");
+		}
 
 
 
@@ -790,6 +821,7 @@ namespace VaultAgentTests {
 		[TestCase(13, "A/destroy/path1", "A/data/path1")]
 		[TestCase(14, "A/destroy/path1/", "A/data/path1/*")]
 		[TestCase(15, "A/destroy/path1/*", "A/data/path1/*")]
+		[TestCase(16, "B/data/*", "B/data/*")]
 		public void VPPI_KV2_SecretPathReturnsProperPath(int id, string path, string expSecPath) {
 			// Create a KV2 policy item
 			VaultPolicyPathItem vppi = new VaultPolicyPathItem(path);
@@ -1041,337 +1073,6 @@ namespace VaultAgentTests {
 			// 7. Delete the secret.
 			Assert.True(await secEng.DeleteSecretVersion(secret), "A70:  Unable to delete the secret.");
 		}
-
-
-
-		// Validate that we can define a policy which permits us the ability to Read, Update and Delete a secret.
-		// For this test we will have the following paths:
-		//   Backend KeyValue V2 Store:   backEndSF<random>
-		//   Secret path:                 /data/apps/appA<random>
-		//    PathAppFolder = appA<random>
-		//    pathAppRoot   = apps
-		//    SecretBase    = pathAppRoot / pathAppFolder
-		//    PolicyFolder  = backend / data / secretBase
-
-		/* This has been replaced by the PolicyKV2_Tests Class.
-				[Test]
-				public async Task FullCycleTest_OnSubFolders()
-				{
-					string beName = _uniqueKeys.GetKey("backEndSF");
-					string pathAppFolder = _uniqueKeys.GetKey("appA");
-					string policyAppPath = "data/apps/" + pathAppFolder + "/*";
-
-					string secretRoot = "apps/";
-					string secretBaseFolder = secretRoot + pathAppFolder;
-
-					KV2Secret readSecret;
-
-					// A.  Create the backend.
-					VaultSysMountConfig testBE = new VaultSysMountConfig();
-					Assert.True(await _vaultSystemBackend.SysMountCreate(beName, "test Backend", EnumSecretBackendTypes.KeyValueV2),
-						"A10:  Enabling backend " + beName + " failed.");
-
-					// B.  Lets create a policy for root path.
-					VaultPolicyPathItem vppi = new VaultPolicyPathItem(beName, policyAppPath);
-					vppi.Denied = true;
-
-					// C.  Create the Actual Policy container
-					string polName = _uniqueKeys.GetKey ("polCon");
-					VaultPolicyContainer polCon1 = new VaultPolicyContainer(polName);
-					polCon1.AddPolicyPathObject(vppi);
-
-					// D.  Save Policy to Vault Instance.
-					Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(polCon1), "A20:  Saving the policy to Vault Instance failed.");
-
-
-					// E.  Now lets create our base secret path.
-					VaultAgentAPI vaultInit = new VaultAgentAPI("Root",_vaultAgentAPI.IP,_vaultAgentAPI.Port,_vaultAgentAPI.Token.ID);
-					KV2SecretEngine rootEng = (KV2SecretEngine) vaultInit.ConnectToSecretBackend (EnumSecretBackendTypes.KeyValueV2, beName, beName);
-
-
-					// F. Save Secret
-					KV2Secret secretA = new KV2Secret("secretA", secretBaseFolder);
-					secretA.Attributes.Add("attrA", "valueA");
-					secretA.Attributes.Add("attrB", "valueB");
-					Assert.True(await rootEng.SaveSecret(secretA, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist), "A30:  Unable to save the Initial Base Secret Path.");
-
-
-					// *****************************************
-					// NOW we test permissions.  We will have 2 tokens we use.  1 that will have the policy and 1 that will not.  We will then test each.
-					// *****************************************
-
-					// Get connection to Token Engine so we can create tokens.
-					TokenAuthEngine tokenEng = (TokenAuthEngine)_vaultAgentAPI.ConnectAuthenticationBackend(EnumBackendTypes.A_Token);
-
-					// AA - The token that will have the policy.
-					TokenNewSettings tokenASettings = new TokenNewSettings();
-					tokenASettings.Policies.Add(polCon1.Name);
-					Token tokenOK = await tokenEng.CreateToken(tokenASettings);
-
-					// AB - The token that will not have the policy.
-					TokenNewSettings tokenBSettings = new TokenNewSettings();
-					tokenBSettings.Policies.Add("default");
-					Token tokenFAIL = await tokenEng.CreateToken(tokenBSettings);
-
-
-					// AC - Create 2 Vault Instances that will use each Token.
-					VaultAgentAPI vaultOK = new VaultAgentAPI("OKToken", _vaultAgentAPI.IP, _vaultAgentAPI.Port, tokenOK.ID);
-					VaultAgentAPI vaultFail = new VaultAgentAPI("FAILToken", _vaultAgentAPI.IP, _vaultAgentAPI.Port, tokenFAIL.ID);
-
-					// AD - Create the KeyValue Engines for each Token
-					KV2SecretEngine engKV2OK = (KV2SecretEngine)vaultOK.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, beName, beName);
-					KV2SecretEngine engKV2FAIL = (KV2SecretEngine)vaultFail.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, beName, beName);
-
-
-
-					// *****************************************
-					// Now lets test our permissions.
-					// For this series of tests the permissions are based upon this structure:
-					//  /data/apps/appA<random>   Is the base secret folder.  Neither token has access to this base secret.
-					// We only provided permissions at:
-					// /data/apps/appA<random>/* level and below.
-
-					// We will adjust the policy each time and then test.
-					// *****************************************
-
-					// BA - Validate that the secret actually was written and can be read by the root token.
-					KV2Secret secTemp;
-					secTemp = await rootEng.ReadSecret(secretA);
-					Assert.AreEqual(secretA.Attributes.Count,secTemp.Attributes.Count, "A100:  Secret Attributes are not equal.  This is not the secret we saved.");
-
-
-					// BB - Neither token should have access to the Secret's base path as we did not provide permission. Lets Test.
-					secTemp = null;
-					try { secTemp = await engKV2OK.ReadSecret (secretA); }
-					catch (VaultForbiddenException e) {
-						Assert.AreEqual(EnumVaultExceptionCodes.PermissionDenied, e.SpecificErrorCode, "A105:  Expected permission denied error, received something else.");
-					}
-					Assert.IsNull(secTemp,"A110:  Expected the Secret to not be found.  But it seems we found one.  Something is wrong with permissions.");
-					try { secTemp = await engKV2FAIL.ReadSecret(secretA); }
-					catch (VaultForbiddenException e)
-					{
-						Assert.AreEqual(EnumVaultExceptionCodes.PermissionDenied, e.SpecificErrorCode, "A115:  Expected permission denied error, received something else.");
-					}
-					Assert.IsNull(secTemp, "A120:  Expected the Secret to not be found.  But it seems we found one.  Something is wrong with permissions.");
-
-
-
-
-					// BC - Provide access to Read for the OK Token.
-					vppi.Denied = true;
-					vppi.ReadAllowed = true;
-					Assert.True(await _vaultSystemBackend.SysPoliciesACLUpdate(polCon1), "A125:  Updating the policy to Vault Instance failed.");
-
-
-					// BD - Now the OK token should have access.
-					try { secTemp = await engKV2OK.ReadSecret(secretA); }
-					catch (VaultForbiddenException e)
-					{
-						Assert.Fail("A130:  Received a Vault forbidden exception.  Was not expected it to fail.");
-					}
-					Assert.IsNotNull(secTemp, "A132:  Expected the Secret to be found and successfully read.  We did not find a secret object.  Something is wrong with permissions.");
-
-					// Retrieve Version number - need in next steps.
-					int versionNumber = secTemp.Version;
-
-					secTemp = null;
-					try { secTemp = await engKV2FAIL.ReadSecret(secretA); }
-					catch (VaultForbiddenException e)
-					{
-						Assert.AreEqual(EnumVaultExceptionCodes.PermissionDenied, e.SpecificErrorCode, "A134:  Expected permission denied error, received something else.");
-					}
-					Assert.IsNull(secTemp, "A136:  Expected the Secret to not be found.  But it seems we found one.  Something is wrong with permissions.");
-
-
-
-					// CA - Lets try an update step.  Should fail initially.
-					string attC = "attC";
-					string valueC = "valueC";
-
-
-
-					secretA.Attributes.Add(attC,valueC);
-					VaultForbiddenException e1 = Assert.ThrowsAsync<VaultForbiddenException>(async () => await engKV2OK.SaveSecret(secretA, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, versionNumber),"A200:  Expected VaultForbidden Error to be thrown.");
-					Assert.AreEqual(EnumVaultExceptionCodes.PermissionDenied, e1.SpecificErrorCode, "A202:  Expected PermissionDenied to be set on SpecificErrorCode Field.");
-
-
-					// CB - Try with the Fail Token - should fail.
-					VaultForbiddenException eCB1 = Assert.ThrowsAsync<VaultForbiddenException>(async () => await engKV2FAIL.SaveSecret(secretA, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, versionNumber),"A204:  Expected VaultForbidden Error to be thrown.");
-					Assert.AreEqual(EnumVaultExceptionCodes.PermissionDenied, eCB1.SpecificErrorCode, "A206:  Expected PermissionDenied to be set on SpecificErrorCode Field.");
-
-
-					// CC - Update the policy to allow.
-					vppi.UpdateAllowed = true;
-					Assert.True(await _vaultSystemBackend.SysPoliciesACLUpdate(polCon1), "A208:  Updating the policy object failed.");
-
-					// CD - Retry the save.
-					Assert.True(await engKV2OK.SaveSecret(secretA, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, versionNumber),
-						"A209:  Updating of the secret was not successful.  This should have succeeded.");
-
-
-
-					// DA Lets Try to Delete the most recent version of the secret.
-					secTemp = null;
-					secTemp = await engKV2OK.ReadSecret(secretA);
-					versionNumber = secTemp.Version;
-
-					VaultForbiddenException eDA1 = Assert.ThrowsAsync<VaultForbiddenException>(async () => await engKV2OK.DeleteSecretVersion(secretA), "A300:  Expected VaultForbidden Error to be thrown.");
-					Assert.AreEqual(EnumVaultExceptionCodes.PermissionDenied, eDA1.SpecificErrorCode, "A302:  Expected PermissionDenied to be set on SpecificErrorCode Field.");
-
-					// DB - Change policy and retry.
-					vppi.DeleteAllowed = true;
-					Assert.True(await _vaultSystemBackend.SysPoliciesACLUpdate(polCon1), "A304:  Updating the policy object failed.");
-					Assert.True(await engKV2OK.DeleteSecretVersion(secretA), "A306:  Expected deletion of specific secret version to succeed..");
-
-
-					// DL.  Lets try to undelete the secret.
-					VaultForbiddenException eDL1= Assert.ThrowsAsync<VaultForbiddenException>(async () => await engKV2OK.UndeleteSecretVersion(secretA,versionNumber), "DL10:  Expected VaultForbidden Error to be thrown.");
-
-
-
-					// DM.  Lets try again.
-					vppi.ExtKV2_UndeleteSecret = true;
-					Assert.True(await _vaultSystemBackend.SysPoliciesACLUpdate(polCon1), "DM10:  Updating the policy object failed.");
-					Assert.True(await engKV2OK.UndeleteSecretVersion(secretA, versionNumber), "DM20:  Expected Undelete to succeed.");
-
-					// Try to read it back.
-					secTemp = null;
-					secTemp = await engKV2OK.ReadSecret(secretA); 
-					Assert.IsNotNull(secTemp, "DM30:  Expected the Secret to be found and successfully read.  We did not find a secret object.  Something is wrong with permissions.");
-					// Retrieve Version number - need in next steps.
-					versionNumber = secTemp.Version;
-
-
-
-					// DS  - Destroy Secret - specific version
-
-					// DT - Try and destroy - should fail.
-					VaultForbiddenException eDT1 = Assert.ThrowsAsync<VaultForbiddenException>(async () => await engKV2OK.DestroySecretVersion(secretA,versionNumber), "DT10:  Expected VaultForbidden Error to be thrown.");
-					Assert.AreEqual(EnumVaultExceptionCodes.PermissionDenied, eDT1.SpecificErrorCode, "DT10:  Expected PermissionDenied to be set on SpecificErrorCode Field.");
-
-					//DU - Give permissions.
-					vppi.ExtKV2_DestroySecret = true;
-					Assert.True(await _vaultSystemBackend.SysPoliciesACLUpdate(polCon1), "DU10:  Updating the policy object failed.");
-					Assert.True (await engKV2OK.DestroySecretVersion (secretA, versionNumber), "DU20:  Destroy Secret Specific Version Failed.");
-
-					// Try to read it back.
-					secTemp = null;
-					secTemp = await engKV2OK.ReadSecret(secretA);
-					Assert.IsNull(secTemp, "DU30:  Expected the Secret to not be found.");
-					// Retrieve Version number - need in next steps.
-					//versionNumber = secTemp.Version;
-					//Assert.AreEqual(1,versionNumber,"DU40:  Expected the secret version numbers to be equal.  They were not.");
-
-
-					// G.  Now Lets update secret a couple of more times and then try to delete a specific version:
-
-					// EAA - Get current version of secret.
-					secTemp = null;
-					secTemp = await engKV2OK.ReadSecret(secretA,1); // Temporary - Since we did soft delete , Read Secret stil sees the deleted version, but it returns null.
-					Assert.IsNotNull(secTemp, "EAA10:  Expected the Secret to be found and successfully read.  We did not find a secret object.  Something is wrong with permissions.");
-					// Retrieve Version number - need in next steps.
-					versionNumber = secTemp.Version;
-
-
-					// EA - Update secret a couple of times
-					int versionStart = versionNumber;
-					secretA.Attributes.Add("EA", "valueEA");
-					Assert.True(await engKV2OK.SaveSecret(secretA, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, versionStart),
-						"EA12:  Updating of the secret was not successful.  This should have succeeded.");
-
-					secretA.Attributes.Add("EA2","valueEA2");
-					int versionMiddle = ++versionStart;
-					Assert.True(await engKV2OK.SaveSecret(secretA, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, versionMiddle),
-						"EA14:  Updating of the secret was not successful.  This should have succeeded.");
-
-					secretA.Attributes.Add("EA3", "valueEA3");
-					int versionLatest = ++versionMiddle;
-					Assert.True(await engKV2OK.SaveSecret(secretA, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, versionLatest),
-						"EA14:  Updating of the secret was not successful.  This should have succeeded.");
-
-
-					// EB - Read back current version of secret.
-					secTemp = null;
-					secTemp = await engKV2OK.ReadSecret(secretA); 
-					Assert.IsNotNull(secTemp, "EB10:  Expected the Secret to be found and successfully read.  We did not find a secret object.  Something is wrong with permissions.");
-
-					// Retrieve Version number - need in next steps.
-					versionNumber = secTemp.Version;
-					versionLatest++;
-					Assert.AreEqual(versionLatest,versionNumber,"The latest version number of the test secret is not the expected value.");
-
-					// EC - Attempt to delete the middle version.
-					VaultForbiddenException eEC1 = Assert.ThrowsAsync<VaultForbiddenException>(async () => await engKV2OK.DeleteSecretVersion(secretA, versionMiddle), "EC10:  Expected VaultForbidden Error to be thrown.");
-					Assert.AreEqual(EnumVaultExceptionCodes.PermissionDenied, eCB1.SpecificErrorCode, "EC20:  Expected PermissionDenied to be set on SpecificErrorCode Field.");
-
-					// EF - Update policy to allow deletion of any version.
-					vppi.ExtKV2_DeleteAnyKeyVersion = true;
-					Assert.True(await _vaultSystemBackend.SysPoliciesACLUpdate(polCon1), "EF10:  Updating the policy object failed.");
-
-
-					// EG - Now attempt to read the specific version of secret that we are going to delete - to confirm it is there.
-					secTemp = null;
-					secTemp = await engKV2OK.ReadSecret(secretA,versionMiddle);
-					Assert.IsNotNull(secTemp, "EG10:  Expected the Secret to be found and successfully read.  We did not find a secret object.  Something is wrong with permissions.");
-					Assert.AreEqual(versionMiddle,secTemp.Version,"EG20:  Version of secret read was not the version requested.");
-
-					// EH - Delete the secret specific version.
-					Assert.True(await engKV2OK.DeleteSecretVersion(secretA,versionMiddle), "EH10:  Expected deletion of specific secret version to succeed..");
-
-					// EI - Attemp to read the specific version of the secret back.
-					//KV2SecretWrapper secretReadWrapper2 = null;
-					KV2Secret secTemp2 = null;
-					secTemp2 = await engKV2OK.ReadSecret(secretA, versionMiddle);
-					Assert.IsNull(secTemp2,"Expected to not find the given secret.  But found it.  This means it did not get deleted.");
-
-
-					/*            
-								Assert.True(await secEng.SaveSecret(secret, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist), "A30:  Unable to save the secret.");
-
-
-								// Now we can switch to our reduced permission token for testing. 
-								vaultAgent2.Token = tokenA;
-
-
-								// 2. Read Secret.
-								secretReadWrapper = await secEng.ReadSecret(pathNameRoot);
-								readSecret = secretReadWrapper.Secret;
-								Assert.AreEqual(secret.Attributes.Count, readSecret.Attributes.Count, "A40:  The secret read back was not the same as the one we saved.  Huh?");
-
-								// 3. Validate the secret attributes.
-								string attrValue;
-								foreach (KeyValuePair<string, string> kv in secret.Attributes)
-								{
-									// Confirm it exists in the Read back version and the value is the same.
-									Assert.True(readSecret.Attributes.TryGetValue(kv.Key, out attrValue), "A50:  Unable to find the secret attribute: " + kv.Key);
-									Assert.AreEqual(kv.Value, attrValue, "A51:  Attribute was found, but its value was different.");
-								}
-
-								// 4. Update the secret.  
-								secret.Attributes.Add("attrC", "valueC");
-								secret.Attributes["attrB"] = "ValueB2";
-								Assert.True(await secEng.SaveSecret(secret, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, secretReadWrapper.Version),
-									"A60:  Updating the secret failed.");
-
-								// 5 Read the secret back and confirm.
-								secretReadWrapper = await secEng.ReadSecret(pathNameRoot);
-								readSecret = secretReadWrapper.Secret;
-								Assert.AreEqual(secret.Attributes.Count, readSecret.Attributes.Count, "A61:  The secret read back was not the same as the one we saved.  Huh?");
-
-								// 6. Validate the secret attributes.
-								foreach (KeyValuePair<string, string> kv in secret.Attributes)
-								{
-									// Confirm it exists in the Read back version and the value is the same.
-									Assert.True(readSecret.Attributes.TryGetValue(kv.Key, out attrValue), "A64:  Unable to find the secret attribute: " + kv.Key);
-									Assert.AreEqual(kv.Value, attrValue, "A66:  Attribute was found, but its value was different.");
-								}
-
-								// 7. Delete the secret.
-								Assert.True(await secEng.DeleteSecretVersion(secret), "A70:  Unable to delete the secret.");
-
-
-				}
-					*/
 		#endregion
 
 	}

@@ -14,6 +14,7 @@ namespace VaultClient
 {
 
 	/// <summary>
+	/// All paths below are assumed to be in the KV2 backend mount.  So all policy paths are prefixed with KV2/
 	/// We will use the following path structure in Vault:
 	///  /path1
 	///    /appA
@@ -109,7 +110,7 @@ namespace VaultClient
         /// <returns></returns>
         private async Task CreateBackendMounts() {
             _beAuthName = "BEAppRole";
-            _beKV2Name = "shKV2";
+            _beKV2Name = "KV2";
 
             // 1.  Create an App Role Authentication backend. 
             try
@@ -129,7 +130,7 @@ namespace VaultClient
             // Create a KV2 Secret Mount if it does not exist.           
             try
             {
-                await _vaultAgent.System.SysMountCreate(_beKV2Name, "Sheakley KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
+                await _vaultAgent.System.SysMountCreate(_beKV2Name, "ClientTest KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
             }
             catch (VaultInvalidDataException e)
             {
@@ -167,56 +168,57 @@ namespace VaultClient
             _polSharedEmail = await GetPolicy ("polSharedEmail");
 
             // RoleMaster Policy.
-            VaultPolicyPathItem vpItem1 = new VaultPolicyPathItem("shKV2/data/*");
+			// Has access to everything in the KV2 backend.
+            VaultPolicyPathItem vpItem1 = new VaultPolicyPathItem(_beKV2Name + "/data/*");
             vpItem1.FullControl = true;
             _polRoleMaster.AddPolicyPathObject(vpItem1);
             if (!( await _vaultAgent.System.SysPoliciesACLCreate(_polRoleMaster))) { Console.WriteLine("Unable to save the policies for the CreateRoles method"); }
 
             // Role1 Policy.  FC on path1 and AppData
-            VaultPolicyPathItem vpItem2 = new VaultPolicyPathItem("shKV2/data/path1/*");
-            vpItem2.FullControl = true;
-            _polRole1.AddPolicyPathObject(vpItem2);
-            VaultPolicyPathItem vpItem2B = new VaultPolicyPathItem("shKV2/data/path1");
-            vpItem2B.FullControl = true;
-            _polRole1.AddPolicyPathObject(vpItem2B);
-			//VaultPolicyPathItem vpItem2C = new VaultPolicyPathItem("shKV2/data/" + Constants.appData);
-			//vpItem2C.FullControl = true;
-			//_polRole1.PolicyPaths.Add(vpItem2C);
-			VaultPolicyPathItem vpItem2D = new VaultPolicyPathItem("shKV2/data/" + Constants.appData + "/*");
-	        vpItem2D.CreateAllowed = true;
-	        _polRole1.AddPolicyPathObject(vpItem2D);
-	        VaultPolicyPathItem vpItem2E = new VaultPolicyPathItem("shKV2/metadata/" + Constants.appData + "/*");
-	        vpItem2E.ListAllowed = true;
-	        _polRole1.AddPolicyPathObject(vpItem2E);
+			VaultPolicyPathItem vppiR1P1 = new VaultPolicyPathItem(true, _beKV2Name,Constants.path1 + "/*");
+	        vppiR1P1.FullControl = true;
+	        VaultPolicyPathItem vppiR1PAppData = new VaultPolicyPathItem(true, _beKV2Name, Constants.appData + "/*");
+	        vppiR1PAppData.FullControl = true;
+
+	        _polRole1.AddPolicyPathObject(vppiR1P1);
+	        _polRole1.AddPolicyPathObject(vppiR1PAppData);
+	        if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRole1))) {
+		        Console.WriteLine("Unable to save the policies for the Policy {0}", _polRole1.Name); 
+				throw new ApplicationException("Error saving Role1 Policies");
+	        }
+
 
 			if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRole1))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRole1.Name); }
 
 
             // Role2 Policy.  RO on path1
-            VaultPolicyPathItem vpItem3 = new VaultPolicyPathItem("shKV2/data/path1/*");
-            vpItem3.ReadAllowed = true;
-            _polRole2.AddPolicyPathObject(vpItem3);
+            VaultPolicyPathItem vppiR2P1 = new VaultPolicyPathItem(true, _beKV2Name, Constants.path1 + "/*");
+	        vppiR2P1.ReadAllowed = true;
+            _polRole2.AddPolicyPathObject(vppiR2P1);
             if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRole2))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRole2.Name); }
 
             // RoleAppA Policy.  FC on apps/AppA
-            VaultPolicyPathItem vpItemA1 = new VaultPolicyPathItem("shKV2/data/appData/appA/*");
+            VaultPolicyPathItem vpItemA1 = new VaultPolicyPathItem(true, _beKV2Name, "appData/appA/*");
             vpItemA1.FullControl = true;
             _polRoleAppA.AddPolicyPathObject(vpItemA1);
             if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRoleAppA))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRoleAppA.Name); }
 
             // RoleAppB Policy.  FC on apps/AppB
-            VaultPolicyPathItem vpItemB1 = new VaultPolicyPathItem("shKV2/data/appData/appB/*");
+            VaultPolicyPathItem vpItemB1 = new VaultPolicyPathItem(true, _beKV2Name,"appData/appB/*");
             vpItemB1.FullControl = true;
             _polRoleAppB.AddPolicyPathObject(vpItemB1);
             if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRoleAppB))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRoleAppB.Name); }
 
             // Shared DB Policy
-            VaultPolicyPathItem vpITemDB = new VaultPolicyPathItem("shKV2/data/shared/dbConfig");
+            VaultPolicyPathItem vpITemDB = new VaultPolicyPathItem(true, _beKV2Name , "shared/dbConfig");
             _polSharedDB.AddPolicyPathObject(vpITemDB);
+	        vpITemDB.ReadAllowed = true;
             if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polSharedDB))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polSharedDB.Name); }
 
+
             // Shared Email Policy
-            VaultPolicyPathItem vpItemEmail = new VaultPolicyPathItem("shKV2/data/shared/Email");
+            VaultPolicyPathItem vpItemEmail = new VaultPolicyPathItem(true, _beKV2Name, "shared/Email");
+	        vpItemEmail.ReadAllowed = true;
             _polSharedEmail.AddPolicyPathObject(vpItemEmail);
             if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polSharedEmail))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polSharedEmail.Name); }
         }
@@ -335,16 +337,31 @@ namespace VaultClient
 
 
 
-               // Main testing logic begins here.
+				// Main testing logic begins here.
 
-               // For this sequence of steps we need to create a new instance of the Vault as we will be connecting via the new token.  We connect to the requested backend.
-                VaultAgentAPI A_VaultAgentAPI = new VaultAgentAPI("SecretRole A",_vaultAgent.IP,_vaultAgent.Port);
+				// For this sequence of steps we need to create a new instance of the Vault as we will be connecting via the new token.  We connect to the requested backend.
+				/*
+				VaultAgentAPI A_VaultAgentAPI = new VaultAgentAPI("SecretRole A",_vaultAgent.IP,_vaultAgent.Port);
 			    AppRoleAuthEngine A_appRoleAuthEngine = (AppRoleAuthEngine) A_VaultAgentAPI.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _beAuthName, _beAuthName);
 			    KV2SecretEngine A_KV2SecretEngine =
-			        (KV2SecretEngine) A_VaultAgentAPI.ConnectToSecretBackend (EnumSecretBackendTypes.KeyValueV2, "Sheakley KV2 Secrets", _beKV2Name);
-
+			        (KV2SecretEngine) A_VaultAgentAPI.ConnectToSecretBackend (EnumSecretBackendTypes.KeyValueV2, "Test  KV2 Secrets", _beKV2Name);
+*/
 			    await PerformRoleMasterTasks();
+
+				// Role1 can create any secret/subsecret on the path1/ and appdata/ paths
 			    await PerformRole1Tasks();
+
+
+				// Perform RoleAppA tasks
+				await PerformRoleATasks();
+
+
+				// Perform RoleAppB tasks
+				await PerformRoleBTasks();
+
+
+				// Role2 can only read anything found within path1/
+				await PerformRole2Tasks();
 
 
 			    return;
@@ -371,11 +388,106 @@ namespace VaultClient
 
 
 
+
+	    public async Task PerformRoleATasks() {
+		    // We need to simulate a session as this Role1 User:
+		    VaultAgentAPI vault = new VaultAgentAPI("Role2", _vaultAgent.IP, _vaultAgent.Port);
+		    AppRoleAuthEngine authEngine = (AppRoleAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
+		    KV2SecretEngine secretEngine =
+			    (KV2SecretEngine)vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "Sheakley KV2 Secrets", _beKV2Name);
+
+
+		    // Now login.            
+		    Token token = await authEngine.Login(roleAppA.RoleID, _SIDRoleAppA.ID);
+
+			// Read existing secrets.
+		    string rootPath = Constants.appData + "/" + Constants.appName_A + "/";
+		    KV2Secret secretA1 = new KV2Secret("Database", rootPath);
+		    bool readSuccess = false;
+		    (readSuccess, secretA1) = await secretEngine.TryReadSecret(secretA1,0);
+
+
+		    if (!readSuccess) {
+			    secretA1 = new KV2Secret("Database", rootPath);
+				// Create Some Secrets.
+				secretA1.Attributes.Add("username", "abcUser");
+			    secretA1.Attributes.Add("password", "passEncrypted");
+			    secretA1.Attributes.Add("Connection", "db=1.2.3.4:4706/iInstance");
+
+			    await secretEngine.SaveSecret(secretA1, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist , 0);
+		    }
+
+			// Lets try and read an AppB secret.  Should fail.
+		    try {
+			    // Lets try and read an AppA secret.  Should fail.
+			    string rootBPath = Constants.appData + "/" + Constants.appName_B + "/";
+			    KV2Secret secretB1 = new KV2Secret("Database", rootBPath);
+			    (readSuccess, secretB1) = await secretEngine.TryReadSecret(secretB1, 0);
+		    }
+		    catch (VaultForbiddenException e) {
+			    Console.WriteLine("[SUCCESS-EXPECTED RESULT:  User A does not have access to read from User B's secret store.");
+		    }
+
+
+			// Lets update the secret.
+		    string passwd = secretA1.Attributes["password"];
+		    passwd = passwd + DateTime.Now.Hour;
+		    secretA1.Attributes["password"] = passwd;
+			//secretEngine.SaveSecret(secretA1,)
+	    }
+
+
+
+	    public async Task PerformRoleBTasks() {
+		    // We need to simulate a session as this Role1 User:
+		    VaultAgentAPI vault = new VaultAgentAPI("Role2", _vaultAgent.IP, _vaultAgent.Port);
+		    AppRoleAuthEngine authEngine = (AppRoleAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
+		    KV2SecretEngine secretEngine =
+			    (KV2SecretEngine)vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "Sheakley KV2 Secrets", _beKV2Name);
+
+
+		    // Now login.            
+		    Token token = await authEngine.Login(roleAppB.RoleID, _SIDRoleAppB.ID);
+		
+		    // Read existing secrets.
+		    string rootPath = Constants.appData + "/" + Constants.appName_B + "/";
+		    KV2Secret secretB1 = new KV2Secret("Database", rootPath);
+		    bool readSuccess = false;
+		    (readSuccess, secretB1) = await secretEngine.TryReadSecret(secretB1, 0);
+
+
+		    if (!readSuccess) {
+			    secretB1 = new KV2Secret("Database", rootPath);
+			    // Create Some Secrets.
+			    secretB1.Attributes.Add("username", "Buser");
+			    secretB1.Attributes.Add("password", "Bpassword");
+			    secretB1.Attributes.Add("Connection", "db=99.100.101.102:0/iBInstance");
+
+			    await secretEngine.SaveSecret(secretB1, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist, 0);
+		    }
+
+		    try {
+			    // Lets try and read an AppA secret.  Should fail.
+				string rootAPath = Constants.appData + "/" + Constants.appName_A + "/";
+				KV2Secret secretA1 = new KV2Secret("Database", rootAPath);
+			    (readSuccess, secretB1) = await secretEngine.TryReadSecret(secretA1, 0);
+		    }
+		    catch (VaultForbiddenException e) {
+				Console.WriteLine("[SUCCESS-EXPECTED RESULT:  User B does not have access to read from User A's secret store.");
+		    }
+
+		    int bb = 0;
+		    bb++;
+
+	    }
+
+
+
+
 		/// <summary>
-		/// Performs tasks to setup the RoleMaster Role for use.
 		/// </summary>
 		/// <returns></returns>
-        public async Task PerformRoleMasterTasks() {
+		public async Task PerformRoleMasterTasks() {
             KV2SecretEngine secEngine =
                 (KV2SecretEngine) _vaultAgent.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "Sheakley KV2 Secrets", _beKV2Name);
 
@@ -386,8 +498,7 @@ namespace VaultClient
 				await secEngine.SaveSecret(a, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist);
 			}
 
-			//await secEngine.SaveSecret (a, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist);
-
+			
 			// Create the AppData Folder
 			KV2Secret b = new KV2Secret(Constants.appData);
 			result = await secEngine.TryReadSecret(b);
@@ -401,7 +512,7 @@ namespace VaultClient
 
 
 		/// <summary>
-		/// Performs tasks that the Role1 user would do.
+		/// Performs tasks that the Role1 user would do.  Creating the actual application folders.
 		/// </summary>
 		/// <param name="role"></param>
 		/// <returns></returns>
@@ -439,20 +550,38 @@ namespace VaultClient
 				if (!appFolders.Contains(Constants.appName_A)) { await secretEngine.SaveSecret(appDataAppA, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist); }
 				if (!appFolders.Contains(Constants.appName_B)) { await secretEngine.SaveSecret(appDataAppB, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist); }
 
-				//	result = await secretEngine.TryReadSecret(appDataAppA);
-				//	if (!result.IsSuccess) {
-				await secretEngine.SaveSecret(appDataAppA, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist);
-			//	}
-			//	result = await secretEngine.TryReadSecret(appDataAppB);
-			//	if (!result.IsSuccess) {
-					await secretEngine.SaveSecret(appDataAppB, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist);
-			//	}
-
-
 			}
 			catch (VaultForbiddenException e) { Console.WriteLine("The role does not have permission to perform the requested operation. - Original Error - {0}", e.Message);}
 			catch (Exception e) { Console.WriteLine("Error detected in routine - PerformRole1Tasks - Error is - {0}", e.Message); }
 		}
+
+
+		/// <summary>
+		/// Performs tasks that the Role1 user would do.  Creating the actual application folders.
+		/// </summary>
+		/// <param name="role"></param>
+		/// <returns></returns>
+		public async Task PerformRole2Tasks() {
+			try {
+				// We just try and read secrets off path1/ folders.
+
+				// We need to simulate a session as this Role1 User:
+				VaultAgentAPI vault = new VaultAgentAPI("Role2", _vaultAgent.IP, _vaultAgent.Port);
+				AppRoleAuthEngine authEngine = (AppRoleAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
+				KV2SecretEngine secretEngine =
+					(KV2SecretEngine)vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "Sheakley KV2 Secrets", _beKV2Name);
+
+
+				// Now login.            
+				Token token = await authEngine.Login(role2.RoleID, _SIDRole2.ID);
+
+				// Try and read a secret.
+
+			}
+			catch (VaultForbiddenException e) { Console.WriteLine("The role does not have permission to perform the requested operation. - Original Error - {0}", e.Message); }
+			catch (Exception e) { Console.WriteLine("Error detected in routine - PerformRole1Tasks - Error is - {0}", e.Message); }
+		}
+
 
 
 

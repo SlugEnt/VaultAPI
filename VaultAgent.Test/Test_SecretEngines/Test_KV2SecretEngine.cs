@@ -466,6 +466,28 @@ namespace VaultAgentTests
 
 
 
+	    /// <summary>
+	    /// Validates WasReadFromVault Property Setting of KV2Secret is set correctly.
+	    /// </summary>
+	    /// <returns></returns>
+	    [Test]
+	    public async Task KV2Secret_WasReadFromVault_Works() {
+		    string secName = _uniqueKey.GetKey("secWAS");
+		    KV2Secret secretV2 = new KV2Secret(secName);
+		    KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("A1", "aaaa1");
+		    secretV2.Attributes.Add(kv1.Key, kv1.Value);
+
+		    Assert.True(await _defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.AlwaysAllow));
+
+
+		    // Read the Secret back to confirm the save.
+		    KV2Secret s2 = await _defaultMount.ReadSecret(secretV2);
+		    Assert.True(secretV2.Path == s2.Path);
+		    Assert.Contains(kv1, s2.Attributes);
+			Assert.IsTrue(s2.WasReadFromVault,"A40:  Expected the property WasReadFromVault to be true.");
+	    }
+
+
 		/// <summary>
 		/// Can save a secret with multiple attributes.
 		/// </summary>
@@ -667,6 +689,9 @@ namespace VaultAgentTests
 
 			// Now delete a specific version.
 			Assert.True(await _defaultMount.DeleteSecretVersion(secretV2,s3.Version), "A8: Deletion of secret failed.");
+
+			// Required, sometimes this is to fast for Vault when running on same machine.
+			Thread.Sleep(200);
 
 			// Try to read it to confirm it is gone.
 			KV2Secret s5 = await _defaultMount.ReadSecret(secretV2,s3.Version);
@@ -1038,6 +1063,7 @@ namespace VaultAgentTests
             Assert.True(await _casMount.SaveSecret(newSecret, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, newSecret.Version), "UpdateSecretRandom:  Failed to save correctly.");
             return await _casMount.ReadSecret(newSecret);
         }
+
 
 
 

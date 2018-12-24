@@ -425,47 +425,7 @@ namespace VaultAgent
 
 		}
 
-
-
-/* - This logic has been moved into the VaultPolicyPathItem class.
-		/// <summary>
-		/// Internal method that is used to build the Vault HCL formatted policy from the VaultPolicyPathItem object.
-		/// </summary>
-		/// <param name="policyPathItemPath"></param>
-		/// <returns></returns>
-		private string BuildPolicyPathJSON (VaultPolicyPathItem policyPathItemPath) {
-			StringBuilder jsonSB = new StringBuilder();
-
-
-			jsonSB.Append("path \\\"" + policyPathItemPath.FullPath);
-			jsonSB.Append("\\\" { capabilities = [");
-
-			if (policyPathItemPath.Denied) { jsonSB.Append("\\\"deny\\\""); }
-			else {
-				if (policyPathItemPath.CreateAllowed) { jsonSB.Append("\\\"create\\\","); }
-				if (policyPathItemPath.ReadAllowed) { jsonSB.Append("\\\"read\\\","); }
-				if (policyPathItemPath.DeleteAllowed) { jsonSB.Append("\\\"delete\\\","); }
-				if (policyPathItemPath.ListAllowed) { jsonSB.Append("\\\"list\\\","); }
-				if (policyPathItemPath.RootAllowed) { jsonSB.Append("\\\"root\\\","); }
-				if (policyPathItemPath.SudoAllowed) { jsonSB.Append("\\\"sudo\\\","); }
-				if (policyPathItemPath.UpdateAllowed) { jsonSB.Append("\\\"update\\\","); }
-
-				// Remove last comma if there.
-				if (jsonSB.Length > 1) {
-					char val = jsonSB[jsonSB.Length - 1];
-					if (val.ToString() == ",") { jsonSB.Length -= 1; }
-				}
-			}
-			
-			// Close out this path enty.
-			jsonSB.Append("]} ");
-
-			
-
-
-			return jsonSB.ToString();
-		}
-*/
+		
 
 
 		/// <summary>
@@ -484,23 +444,24 @@ namespace VaultAgent
 
 
 			// Build the JSON - Lots of string escaping, etc.  fun!
-			StringBuilder jsonSB = new StringBuilder();
 
+			StringBuilder jsonBody = new StringBuilder();
 
-			// Build the header for JSON Policy.
-			jsonSB.Append("{\"policy\": \"");
-
-
+			// Build the body of the JSON policy out.  We add the prefix part only if there is a body.
 			foreach (VaultPolicyPathItem item in policyContainerItem.PolicyPaths.Values) {
-			    jsonSB.Append (item.ToVaultHCLPolicyFormat());
+			    jsonBody.Append (item.ToVaultHCLPolicyFormat());
 			}
 
+			// If the VaultPolicyPathItem is still at new initialized state then throw error as there is no permission settings to send to Vault.
+			if (jsonBody.Length == 0 ) { throw new ArgumentException("The PolicyContainer contained one or more VaultPolicyPathItem(s) at their initial state - undefined.  You must supply a VaultPolicyPathItem with at least one permission set.");}
+
+			jsonBody.Insert(0, "{\"policy\": \"");
 
 			// Issue the policy documents closing quote and then end the JSON.
-			jsonSB.Append("\"");
-			jsonSB.Append("}");
+			jsonBody.Append("\"}");
+			//jsonBody.Append("}");
 
-			string json = jsonSB.ToString();
+			string json = jsonBody.ToString();
 
 			VaultDataResponseObject vdro = await _parent._httpConnector.PutAsync(path, "SysPoliciesACLCreate", null, json);
 			if (vdro.Success) {

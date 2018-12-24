@@ -146,6 +146,16 @@ namespace VaultAgent.Test.ModelTests
 
 
 
+		// When a secret is initially created its version should be 0 and WasReadFromVault should be false.
+	    [Test]
+	    public void WasReadFromVault_InitiallyReturnsFalse() {
+		    string name = "ttt";
+			KV2Secret secret = new KV2Secret(name);
+			Assert.IsFalse(secret.WasReadFromVault,"A10:   Expected WasReadFromVault to be false.");
+			Assert.AreEqual(0,secret.Version,"A20:  Secret Version should initially be zero.");
+	    }
+
+
 
         [Test]
         // Test that Secret shortcut access the actual backing value correctly.  Vault pushes

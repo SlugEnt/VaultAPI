@@ -426,15 +426,6 @@ namespace VaultAgentTests
 			Assert.Null(await _keyValueSecretEngine.ReadSecret(thePath));
 		}
 
-
-
-		[Test,Order(800)]
-		public bool Secret_DeleteSecret_ShouldFailIfNoPermission () {
-			throw new NotImplementedException();
-			return false;
-		}
-
-
 	}
 
 

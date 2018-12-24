@@ -81,6 +81,14 @@ namespace VaultAgent.SecretEngines.KV2
 
 
 
+		public bool WasReadFromVault {
+			get {
+				return Version > 0 ? true : false;
+			}
+		}
+
+
+
 		/// <summary>
 		/// The actual values that should be saved in the secret. 
 		/// </summary>
@@ -119,7 +127,7 @@ namespace VaultAgent.SecretEngines.KV2
 
 
 		/// <summary>
-		/// The version number of this particular secret.
+		/// The version number of this particular secret.  Is > 0 if the secret was read from the Vault.  Is zero if this object was created in application.
 		/// </summary>
 		public int Version { get; internal set; }
 

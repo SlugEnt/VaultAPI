@@ -97,7 +97,7 @@ namespace VaultAgent.SecretEngines {
         /// If the CAS setting is set on the backend then the following errors may be returned:
         /// <para></para>
         /// <para>Commonly Throws the Following Errors:</para>
-        /// <para>  [VaultForbiddenException] - Erros with access.  The SpecifiedErrorCode field will be set to EnumVaultExceptionCodes.PermissionDenied if token does not have
+        /// <para>  [VaultForbiddenException] - Errors with access.  The SpecifiedErrorCode field will be set to EnumVaultExceptionCodes.PermissionDenied if token does not have
         /// appropriate permissions to access the path.</para>
         /// <para>   [VaultInvalidDataException]</para>
         /// <para>     [SpecificErrorCode] = EnumVaultExceptionCodes.CheckAndSetMissing - You specified an invalid casSaveOption (AlwaysAllow is not valid for backend with CAS Set)
@@ -184,17 +184,17 @@ namespace VaultAgent.SecretEngines {
 
 
 
-        /// <summary>
-        /// Reads the secret from Vault.  It defaults to reading the most recent version.  Set secretVersion to non zero to retrieve a
-        /// specific version.
-        /// Returns [VaultForbiddenException] if you do not have permission to read from the path.
-        /// Returns the KV2SecretWrapper if a secret was found at the location.
-        /// Returns Null if no secret found at location.
-        /// </summary>
-        /// <param name="secretPath">The Name (path) to the secret you wish to read.</param>
-        /// <param name="secretVersion">The version of the secret to retrieve.  (Default) set to 0 to read most recent version. </param>
-        /// <returns>KV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
-        public async Task<KV2Secret> ReadSecret (string secretPath, int secretVersion = 0) {
+		/// <summary>
+		/// Reads the secret from Vault.  It defaults to reading the most recent version.  Set secretVersion to non zero to retrieve a
+		/// specific version.
+		/// <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
+		/// <para>Returns the KV2SecretWrapper if a secret was found at the location.</para>
+		/// <para>Returns Null if no secret found at location.</para>
+		/// </summary>
+		/// <param name="secretPath">The Name (path) to the secret you wish to read.</param>
+		/// <param name="secretVersion">The version of the secret to retrieve.  (Default) set to 0 to read most recent version. </param>
+		/// <returns>KV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
+		public async Task<KV2Secret> ReadSecret (string secretPath, int secretVersion = 0) {
             string path = MountPointPath + "data/" + secretPath;
             Dictionary<string, string> contentParams = new Dictionary<string, string>();
 
@@ -233,12 +233,15 @@ namespace VaultAgent.SecretEngines {
 
 
 
-		 
+
 		/// <summary>
-		/// Version of Read Secret that returns a tuple.  First Tuple Value is a boolean and is True if the Secret exists and was able to be read.  Returns false, if it does not exist.
-		/// By default it checks against the current version of a secret.
+		/// Attempts to read a secret if it exists.  Returns a tuple value (bool success, KV2Secret secret) as follows:
+		/// <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
+		/// <para>If secret was found the first value is True and the 2nd value is the KV2Secret that was read.</para>
+		/// <para>If not found, the first value is False and the second value is null.</para>
 		/// </summary>
 		/// <param name="secretPath">The path to the secret to check for existence and retrieve if it does exist.</param>
+		/// <param name="secretVersion">The secret version to be read.  0 for current.</param>
 		/// <returns></returns>
 		public async Task<(bool IsSuccess, KV2Secret Secret)> TryReadSecret(string secretPath, int secretVersion = 0) {
 		    KV2Secret secret = await ReadSecret(secretPath, secretVersion);
@@ -255,7 +258,7 @@ namespace VaultAgent.SecretEngines {
 
 
         /// <summary>
-        /// Deletes the most recent version of a secret or a specific version of a secret.  
+        /// Deletes the version of the secret requested - or the most recent version if version parameter is zero.
         /// </summary>
         /// <param name="secretPath">The name of the secret to delete.</param>
         /// <param name="version">The version to delete.  Defaults to zero which is the most recent or current version of the key.</param>
@@ -455,7 +458,22 @@ namespace VaultAgent.SecretEngines {
         }
 
         public async Task<List<string>> ListSecretsAtPath (KV2Secret secretObj) { return await ListSecretsAtPath (secretObj.FullPath); }
-        public async Task<bool> DeleteSecretVersion (KV2Secret secretObj, int version=0) { return await DeleteSecretVersion (secretObj.FullPath, version); }
+
+
+
+		/// <summary>
+		/// Deletes the version of the secret requested - or the most recent version if version parameter is zero.
+		/// </summary>
+		/// <param name="secretPath">The name of the secret to delete.</param>
+		/// <param name="version">The version of the secret to delete.
+        /// <para>  (Default) set to 0 to delete the most recent version.</para>
+		/// <para>  Set to -1 to use the version number specified in the secret object as the version to delete.</para>
+		/// <para>  Set to any positive number to delete that specific version from the Vault Instance Store.</para>
+		/// <returns>True if successful.  False otherwise.</returns>
+		public async Task<bool> DeleteSecretVersion(KV2Secret secretObj, int secretVersion = 0) {
+		    if (secretVersion == -1) { secretVersion = secretObj.Version; }
+			return await DeleteSecretVersion (secretObj.FullPath, secretVersion);
+	    }
 
 
 
@@ -478,9 +496,28 @@ namespace VaultAgent.SecretEngines {
         }
 
 
-	    public async Task<(bool IsSuccess, KV2Secret Secret)> TryReadSecret(KV2Secret secretObj, int secretVersion = 0) {
-			var result = await TryReadSecret(secretObj.FullPath, secretVersion);
-		    return (result.IsSuccess, result.Secret);
+
+		/// <summary>
+		/// Attempts to read a secret if it exists.  Returns a tuple value (bool success, KV2Secret secret) as follows:
+		/// <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
+		/// <para>If secret was found the first value is True and the 2nd value is the KV2Secret that was read.</para>
+		/// <para>If not found, the first value is False and the second value is null.</para>
+		/// </summary>
+		/// <param name="secretPath">The path to the secret to check for existence and retrieve if it does exist.</param>
+		/// <param name="secretVersion">Version of the secret to retrieve.
+		/// <para>  (Default) set to 0 to read most recent version.</para>
+		/// <para>  Set to -1 to use the version number specified in the secret object.</para>
+		/// <para>  Set to any positive number to read that specific version from the Vault Instance Store.</para>
+		/// <returns></returns>
+		public async Task<(bool IsSuccess, KV2Secret Secret)> TryReadSecret(KV2Secret secretObj, int secretVersion = 0) {
+			KV2Secret secret = await ReadSecret(secretObj.FullPath, secretVersion);
+
+			if (secret == null) {
+				return (false, null);
+			}
+			else {
+				return (true, secret);
+			}
 		}
 
 
