@@ -135,9 +135,6 @@ namespace VaultAgent
 
 			VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "AuthListAll");
 			if (vdro.Success) {
-				string js = vdro.GetDataPackageAsJSON();
-				//string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "");
-
 				string json = vdro.GetDataPackageAsJSON();
 				Dictionary<string, AuthMethod> methods = JsonConvert.DeserializeObject<Dictionary<string, AuthMethod>>(json);
 

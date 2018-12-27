@@ -43,7 +43,7 @@ namespace VaultAgent.SecretEngines.KV2.SecretMetaDataInfo
 		[JsonProperty("destroyed")]
 		public bool Destroyed { get; set; }
 	}
-
+/*
 	public partial class SecretReadReturnObj
 	{
 		public static SecretReadReturnObj FromJson(string json) => JsonConvert.DeserializeObject<SecretReadReturnObj>(json, Converter.Settings);
@@ -64,4 +64,5 @@ namespace VaultAgent.SecretEngines.KV2.SecretMetaDataInfo
 			},
 		};
 	}
+*/
 }

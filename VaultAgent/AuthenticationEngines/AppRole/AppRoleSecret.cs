@@ -58,25 +58,4 @@ namespace VaultAgent.AuthenticationEngines
 	    public VaultMetadata MetaData { get; set; }
 
 	}
-
-
-    /*
-    public static class Serialize
-    {
-        public static string ToJson(this Welcome self) => JsonConvert.SerializeObject(self, QuickType.Converter.Settings);
-    }
-
-    internal static class Converter
-    {
-        public static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
-        {
-            MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
-            DateParseHandling = DateParseHandling.None,
-            Converters =
-            {
-                new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal }
-            },
-        };
-    
-    }*/
 }

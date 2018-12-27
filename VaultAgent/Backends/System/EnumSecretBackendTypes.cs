@@ -16,6 +16,8 @@ namespace VaultAgent.Backends.System
 		Generic = 4,
 		PKI = 5,
 		SSH = 6,
-		KeyValueV2 = 7
+		KeyValueV2 = 7,
+		Identity = 8
+
 	}
 }

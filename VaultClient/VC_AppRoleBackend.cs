@@ -76,6 +76,8 @@ namespace VaultClient
         private VaultPolicyContainer _polRole2;
         private AppRoleSecret _SIDRole2;
 
+	    private VaultPolicyContainer _polCommon;
+
         // Has RW accesss t to its own app path - apps/AppA
         private AppRole roleAppA;
         private VaultPolicyContainer _polRoleAppA;
@@ -167,6 +169,8 @@ namespace VaultClient
             _polSharedDB = await GetPolicy ("polSharedDB");
             _polSharedEmail = await GetPolicy ("polSharedEmail");
 
+	        _polCommon = await GetPolicy("appCommon");
+
             // RoleMaster Policy.
 			// Has access to everything in the KV2 backend.
             VaultPolicyPathItem vpItem1 = new VaultPolicyPathItem(_beKV2Name + "/data/*");
@@ -197,20 +201,25 @@ namespace VaultClient
             _polRole2.AddPolicyPathObject(vppiR2P1);
             if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRole2))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRole2.Name); }
 
-            // RoleAppA Policy.  FC on apps/AppA
-            VaultPolicyPathItem vpItemA1 = new VaultPolicyPathItem(true, _beKV2Name, "appData/appA/*");
-            vpItemA1.FullControl = true;
-            _polRoleAppA.AddPolicyPathObject(vpItemA1);
-            if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRoleAppA))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRoleAppA.Name); }
+			VaultPolicyPathItem vpitemVar = new VaultPolicyPathItem(true,_beKV2Name,"appData/{{identity.entity.name}}/*");
+	        vpitemVar.FullControl = true;
+	        _polCommon.AddPolicyPathObject(vpitemVar);
+	        if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polCommon))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polCommon.Name); }
+			/*
+						// RoleAppA Policy.  FC on apps/AppA
+						VaultPolicyPathItem vpItemA1 = new VaultPolicyPathItem(true, _beKV2Name, "appData/appA/*");
+						vpItemA1.FullControl = true;
+						_polRoleAppA.AddPolicyPathObject(vpItemA1);
+						if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRoleAppA))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRoleAppA.Name); }
 
-            // RoleAppB Policy.  FC on apps/AppB
-            VaultPolicyPathItem vpItemB1 = new VaultPolicyPathItem(true, _beKV2Name,"appData/appB/*");
-            vpItemB1.FullControl = true;
-            _polRoleAppB.AddPolicyPathObject(vpItemB1);
-            if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRoleAppB))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRoleAppB.Name); }
-
-            // Shared DB Policy
-            VaultPolicyPathItem vpITemDB = new VaultPolicyPathItem(true, _beKV2Name , "shared/dbConfig");
+						// RoleAppB Policy.  FC on apps/AppB
+						VaultPolicyPathItem vpItemB1 = new VaultPolicyPathItem(true, _beKV2Name,"appData/appB/*");
+						vpItemB1.FullControl = true;
+						_polRoleAppB.AddPolicyPathObject(vpItemB1);
+						if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRoleAppB))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRoleAppB.Name); }
+			*/
+			// Shared DB Policy
+			VaultPolicyPathItem vpITemDB = new VaultPolicyPathItem(true, _beKV2Name , "shared/dbConfig");
             _polSharedDB.AddPolicyPathObject(vpITemDB);
 	        vpITemDB.ReadAllowed = true;
             if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polSharedDB))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polSharedDB.Name); }
@@ -323,12 +332,14 @@ namespace VaultClient
 			    roleMaster = await CreateRole ("roleMaster", _polRoleMaster.Name);
 			    role1 = await CreateRole ("role1", _polRole1.Name);
 			    role2 = await CreateRole("role2", _polRole2.Name);
-			    roleAppA = await CreateRole ("roleAppA", _polRoleAppA.Name,_polSharedDB.Name);
-			    roleAppB = await CreateRole("roleAppB", _polRoleAppB.Name, _polSharedDB.Name, _polSharedEmail.Name);
+				roleAppA = await CreateRole("roleAppA", _polCommon.Name, _polSharedDB.Name);
+				roleAppB = await CreateRole("roleAppB", _polCommon.Name, _polSharedDB.Name);
+				//roleAppA = await CreateRole ("roleAppA", _polRoleAppA.Name,_polSharedDB.Name);
+				//roleAppB = await CreateRole("roleAppB", _polRoleAppB.Name, _polSharedDB.Name, _polSharedEmail.Name);
 
 
-                // Create Secret ID's for each of the Application Roles                
-			    _SIDRoleMaster = await _appRoleAuthEngine.CreateSecretID (roleMaster.Name);
+				// Create Secret ID's for each of the Application Roles                
+				_SIDRoleMaster = await _appRoleAuthEngine.CreateSecretID (roleMaster.Name);
 			    _SIDRole1 = await _appRoleAuthEngine.CreateSecretID(role1.Name);
 			    _SIDRole2 = await _appRoleAuthEngine.CreateSecretID(role2.Name);
 			    _SIDRoleAppA = await _appRoleAuthEngine.CreateSecretID(roleAppA.Name);

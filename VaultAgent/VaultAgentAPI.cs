@@ -177,7 +177,7 @@ namespace VaultAgent
 		/// <param name="backendName">The name you wish to refer to this backend by.  This is NOT the Vault mount path.</param>
 		/// <param name="backendMountPath">The path to the vault mount point that this backend is located at.</param>
 		/// <returns>True if it was able to successfully connect to the backend.  False if it encountered an error.</returns>
-		public VaultBackend ConnectToSecretBackend(EnumSecretBackendTypes secretBackendType, string backendName, string backendMountPath) {
+		public VaultBackend ConnectToSecretBackend(EnumSecretBackendTypes secretBackendType, string backendName="", string backendMountPath="") {
 			switch (secretBackendType) {
 				case EnumSecretBackendTypes.KeyValueV2:
 					KV2SecretEngine kv2Backend = new KV2SecretEngine(backendName, backendMountPath, this);
@@ -188,6 +188,10 @@ namespace VaultAgent
 				case EnumSecretBackendTypes.Transit:
 					TransitSecretEngine transitSecretEngine = new TransitSecretEngine(backendName, backendMountPath, this);
 					return transitSecretEngine;
+				case EnumSecretBackendTypes.Identity:
+					// There is only 1 backend of this type, so no need for backend mount path or name.
+					IdentitySecretEngine identitySecretEngine = new IdentitySecretEngine(this);
+					return identitySecretEngine;
 			}
 			return null;
 		}

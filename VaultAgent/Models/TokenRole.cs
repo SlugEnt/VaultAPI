@@ -102,27 +102,5 @@ namespace VaultAgent.Models
 		[JsonProperty("renewable")]
 		public bool IsRenewable { get; set; }
 	}
-/*
-	public partial class TokenRole
-	{
-		public static TokenRole FromJson(string json) => JsonConvert.DeserializeObject<TokenRole>(json, VaultAgent.Backends.KV_V2.Converter.Settings);
-	}
-
-	public static class Serialize
-	{
-		public static string ToJson(this TokenRole self) => JsonConvert.SerializeObject(self, VaultAgent.Backends.KV_V2.Converter.Settings);
-	}
-
-	internal static class Converter
-	{
-		public static readonly JsonSerializerSettings Settings = new JsonSerializerSettings {
-			MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
-			DateParseHandling = DateParseHandling.None,
-			Converters = {
-				new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal }
-			},
-		};
-	}
-	*/
 }
 

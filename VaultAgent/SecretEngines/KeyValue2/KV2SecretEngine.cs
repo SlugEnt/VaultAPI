@@ -205,11 +205,12 @@ namespace VaultAgent.SecretEngines {
 
                 VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ReadSecret", contentParams);
                 if (vdro.Success) {
-                    KV2SecretWrapper secretReadReturnObj = KV2SecretWrapper.FromJson (vdro.GetResponsePackageAsJSON());
+	                KV2SecretWrapper secretReadReturnObj = vdro.GetVaultTypedObjectFromResponseV2<KV2SecretWrapper>();
+					//KV2SecretWrapper secretReadReturnObj = KV2SecretWrapper.FromJson (vdro.GetResponsePackageAsJSON());
 
 					// We now need to move some fields from the KV2SecretWrapper into the KV2Secret which is embedded in the 
 					// wrapper class.
-	                secretReadReturnObj.Secret.CreatedTime = secretReadReturnObj.Data.Metadata.CreatedTime;
+					secretReadReturnObj.Secret.CreatedTime = secretReadReturnObj.Data.Metadata.CreatedTime;
 	                secretReadReturnObj.Secret.DeletionTime = secretReadReturnObj.Data.Metadata.DeletionTime;
 	                secretReadReturnObj.Secret.Destroyed = secretReadReturnObj.Data.Metadata.Destroyed;
 	                secretReadReturnObj.Secret.Version = secretReadReturnObj.Data.Metadata.Version;

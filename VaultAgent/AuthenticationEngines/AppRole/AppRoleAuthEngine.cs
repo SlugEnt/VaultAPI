@@ -67,7 +67,6 @@ namespace VaultAgent.AuthenticationEngines
 
 			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "AppRoleAuthEngine: SaveRole", null, json);
 			if (vdro.Success) {
-
 				return true;
 			}
 			else { return false; }
@@ -137,7 +136,7 @@ namespace VaultAgent.AuthenticationEngines
 
 			VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "ReadRole");
 			if (vdro.Success) {
-				AppRole appRole = vdro.GetVaultTypedObject<AppRole>();
+				AppRole appRole = vdro.GetVaultTypedObjectV2<AppRole>();
 				appRole.Name = appRoleName;
 
 				// Read the roleID if requested to:
@@ -163,7 +162,7 @@ namespace VaultAgent.AuthenticationEngines
 		}
 
 
-
+		
 
         /// <summary>
         /// Deletes the AppRole with the given name.  Returns True if deleted OR did not exist.  False otherwise.
@@ -174,13 +173,10 @@ namespace VaultAgent.AuthenticationEngines
 			string path = MountPointPath + "role/" + appRoleName;
 
 
-			try {
-				VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync(path, "DeleteRole");
-				if (vdro.Success) { return true; }
-				else { return false; }
-			}
+			VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync(path, "DeleteRole");
+			if (vdro.Success) { return true; }
+			else { return false; }
 
-			catch (Exception e) { throw e; }
 		}
 
 
@@ -257,7 +253,7 @@ namespace VaultAgent.AuthenticationEngines
 
 			VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "CreateSecretID", contentParams);
 			if (vdro.Success) {
-				return vdro.GetVaultTypedObject<AppRoleSecret>();
+				return vdro.GetVaultTypedObjectV2<AppRoleSecret>();
 			}
 			else { return null; }
 		}
@@ -293,7 +289,7 @@ namespace VaultAgent.AuthenticationEngines
 		        VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "GenerateSecretID", contentParams);
 		        if (vdro.Success)
 		        {
-		            AppRoleSecret appRoleSecret = vdro.GetVaultTypedObject<AppRoleSecret>();
+		            AppRoleSecret appRoleSecret = vdro.GetVaultTypedObjectV2<AppRoleSecret>();
 		            if (returnFullSecret)
 		            {
 		                AppRoleSecret fullSecret = await ReadSecretID(appRoleName, appRoleSecret.ID);
@@ -383,7 +379,7 @@ namespace VaultAgent.AuthenticationEngines
 				// TODO - Follow up to see if this is a bug or feature.
 	            if (vdro.HttpStatusCode == 200)
 	            {
-                    AppRoleSecret  secret = vdro.GetVaultTypedObject<AppRoleSecret>();
+                    AppRoleSecret  secret = vdro.GetVaultTypedObjectV2<AppRoleSecret>();
 
                     // We need to do this as Vault does NOT return the ID of the secret in the data.
                     // TODO - Do we want to blank it out or continue filling it in....?

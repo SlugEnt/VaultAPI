@@ -165,7 +165,7 @@ namespace VaultAgent.SecretEngines.KV2
 	// All of the following code is for the JSON conversion.
 	#region JSONConverterLogic
 
-
+		/*
 	internal partial class KV2SecretWrapper
 	{
 		public static KV2SecretWrapper FromJson(string json) => JsonConvert.DeserializeObject<KV2SecretWrapper>(json, KV2Converter.Settings);
@@ -214,5 +214,6 @@ namespace VaultAgent.SecretEngines.KV2
 
 		public static readonly ParseStringConverter Singleton = new ParseStringConverter();
 	}
+	*/
 	#endregion
 }

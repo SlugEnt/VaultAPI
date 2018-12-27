@@ -238,17 +238,5 @@ namespace VaultAgent.Models
 			get { return !IsOrphan; }
 			set { IsOrphan = !value; }
 		}
-
-
-/*  Not Necessary - defined as a property up above.
-		/// <summary>
-		/// Returns Creation Time of Token as a DateTime value
-		/// </summary>
-		public DateTime CreationTime_AsDateTime {
-			get {
-				return VaultUtilityFX.ConvertUnixTimeStamp(CreationTime);
-			}
-		}
-  */
 	}
 }

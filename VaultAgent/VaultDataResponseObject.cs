@@ -206,14 +206,6 @@ namespace VaultAgent
 
 
 
-		/// <summary>
-		/// Returns a T object with the corresponding values from the JSON Data Object that is a subset of the JSON Response object returned from Vault.
-		/// </summary>
-		/// <typeparam name="T">The object class to convert the JSON into.</typeparam>
-		/// <returns>An instance of the object class requested, with the values from the JSON Data object.</returns>
-		public T GetVaultTypedObject<T>() {
-			return JsonConvert.DeserializeObject<T>(GetDataPackageAsJSON());
-		}
 
 
 		/// <summary>
@@ -221,8 +213,41 @@ namespace VaultAgent
 		/// </summary>
 		/// <typeparam name="T">The object type to fill from the JSON.</typeparam>
 		/// <returns>T - Object filled with values from JSON.</returns>
+		[Obsolete]
 		public T GetVaultTypedObjectFromResponse<T>() {
 			return JsonConvert.DeserializeObject<T>(GetResponsePackageAsJSON());
+		}
+		
+		/// <summary>
+		/// This should be retired.  In order to do so, you need to remove the 3 Serialization functions added to custom classes by the QuickType Json App.
+		/// Returns a T object with the corresponding values from the JSON Data Object that is a subset of the JSON Response object returned from Vault.
+		/// </summary>
+		/// <typeparam name="T">The object class to convert the JSON into.</typeparam>
+		/// <returns>An instance of the object class requested, with the values from the JSON Data object.</returns>
+		[Obsolete]
+		public T GetVaultTypedObject<T>() {
+			return JsonConvert.DeserializeObject<T>(GetDataPackageAsJSON());
+		}
+
+
+
+		/// <summary>
+		/// Returns a T object with the corresponding values from the JSON Data Object from the Response object returned from Vault.
+		/// </summary>
+		/// <typeparam name="T">The object class to convert the JSON into.</typeparam>
+		/// <returns>An instance of the object class requested, with the values from the JSON Data object.</returns>
+
+		public T GetVaultTypedObjectV2<T>() { return VaultSerializationHelper.FromJson<T>(GetDataPackageAsJSON()); }
+
+
+
+		/// <summary>
+		/// Populates a T object with the corresponding values from the JSON Response object Vault gave us.
+		/// </summary>
+		/// <typeparam name="T">The object type to fill from the JSON.</typeparam>
+		/// <returns>T - Object filled with values from JSON.</returns>
+		public T GetVaultTypedObjectFromResponseV2<T>() {
+			return VaultSerializationHelper.FromJson<T>(GetResponsePackageAsJSON());
 		}
 
 
