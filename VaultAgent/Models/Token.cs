@@ -107,7 +107,8 @@ namespace VaultAgent.Models
 
 
 		/// <summary>
-		/// A list of policies that this token is associated with.
+		/// A list of policies that this token is associated with.  This is the combined total of policies from the backend that supplied the token and the
+		/// identity associated with this token.  IE.  TokenPolicies + IdentityPolicies
 		/// </summary>
 		[JsonProperty("policies")]
 		public List<string> Policies { get; set; }
@@ -144,6 +145,20 @@ namespace VaultAgent.Models
 		/// </summary>
 		[JsonProperty("accessor")]
 		public string AccessorTokenID { get; private set; }
+
+
+		/// <summary>
+		/// The policies that this token has received from the actual authentication backend object (appRole, userRole, etc)
+		/// </summary>
+		[JsonProperty("token_policies")]
+		public List<string> TokenPolicies { get; internal set; }
+
+
+		/// <summary>
+		/// The policies that this token has received from the entity that it is related too.
+		/// </summary>
+		[JsonProperty("identity_policies")]
+		public List<string> IdentityPolicies { get; internal set; }
 
 
 		#region "CreateTime and TTL"

@@ -69,27 +69,4 @@ namespace VaultAgent.SecretEngines
 		public string Name { get; internal set; }
 	}
 
-/*
-	public partial class EntityAlias
-	{
-		public static EntityAlias FromJson(string json) => JsonConvert.DeserializeObject<EntityAlias>(json, EntityAliasConverter.Settings);
-	}
-
-	public static class Serialize
-	{
-		public static string ToJson(this EntityAlias self) => JsonConvert.SerializeObject(self, EntityAliasConverter.Settings);
-	}
-
-	internal static class EntityAliasConverter
-	{
-		public static readonly JsonSerializerSettings Settings = new JsonSerializerSettings {
-			MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
-			DateParseHandling = DateParseHandling.None,
-			Converters =
-			{
-				new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal }
-			},
-		};
-	}
-	*/
 }

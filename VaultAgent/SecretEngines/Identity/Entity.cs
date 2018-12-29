@@ -29,7 +29,7 @@ namespace VaultAgent.SecretEngines
 
 
 		[JsonProperty("aliases")]
-		public List<string> Aliases { get; internal set; }
+		public List<EntityAlias> Aliases { get; internal set; }
 
 		[JsonProperty("creation_time")]
 		public DateTimeOffset CreationTime { get; internal set; }

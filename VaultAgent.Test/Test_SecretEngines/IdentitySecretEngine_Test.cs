@@ -33,6 +33,7 @@ namespace VaultAgentTests
 		private Object locking = new Object();
 
 
+
 		/// <summary>
 		/// One Time Setup - Run once per a single Test run exection.
 		/// </summary>
@@ -44,7 +45,8 @@ namespace VaultAgentTests
 			// Build Connection to Vault.
 			_vaultAgentAPI = new VaultAgentAPI("IdentityTest", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
 			_idEngine = (IdentitySecretEngine) _vaultAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.Identity);
-		}
+
+			}
 
 
 
@@ -59,35 +61,45 @@ namespace VaultAgentTests
 				bLocking = true;
 			}
 
-			
-			// If already done this during this test run, then no need to do again.
-			if ( _appRoleAccessor != "" ) { return; }
-
-			// We need A role based Auth engine so we can test the Alias functionality.  This is a constant value.  If we can't find it then we create it.
 			string AppRoleEngine = "appRoleTST";
-			AuthMethod authMethod = null;
-			while ( authMethod == null ) {
-				Dictionary<string, AuthMethod> authMethods = await _vaultAgentAPI.System.AuthListAll();
 
-				// See if the AppRole Backend exists.  We need to add a trailing slash because vault returns the key with a trailing slash.  Swallow exception not found.
-				try { authMethod = authMethods[AppRoleEngine + "/"]; }
-				catch ( KeyNotFoundException e ) { }
+			try {
 
-				if ( authMethod == null ) {
-					AuthMethod am = new AuthMethod(AppRoleEngine, EnumAuthMethods.AppRole);
-					bool rc = await _vaultAgentAPI.System.AuthEnable(am);
-					Thread.Sleep(60);
+
+				// If already done this during this test run, then no need to do again.
+				if ( _appRoleAccessor != "" ) { return; }
+
+				// We need A role based Auth engine so we can test the Alias functionality.  This is a constant value.  If we can't find it then we create it.
+
+				AuthMethod authMethod = null;
+				while ( authMethod == null ) {
+					Dictionary<string, AuthMethod> authMethods = await _vaultAgentAPI.System.AuthListAll();
+
+					// See if the AppRole Backend exists.  We need to add a trailing slash because vault returns the key with a trailing slash.  Swallow exception not found.
+					try { authMethod = authMethods[AppRoleEngine + "/"]; }
+					catch ( KeyNotFoundException e ) { }
+
+					if ( authMethod == null ) {
+						AuthMethod am = new AuthMethod(AppRoleEngine, EnumAuthMethods.AppRole);
+						bool rc = await _vaultAgentAPI.System.AuthEnable(am);
+						Thread.Sleep(60);
+					}
 				}
+
+				// Connect the AppRole Authentication engine.
+				_appRoleAuthEngine =
+					(AppRoleAuthEngine) _vaultAgentAPI.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, AppRoleEngine, AppRoleEngine);
+
+				// Store the accessor for use in entity-alias tests and to alert that we completed this setup task.
+				_appRoleAccessor = authMethod.Accessor;
 			}
 
-			// Connect the AppRole Authentication engine.
-			_appRoleAuthEngine =
-				(AppRoleAuthEngine) _vaultAgentAPI.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, AppRoleEngine, AppRoleEngine);
+			catch ( Exception e ) { Assert.False(true, "[SetupAliasTestConditions]  Try block errored"); }
+			finally {
 
-			// Store the accessor for use in entity-alias tests and to alert that we completed this setup task.
-			_appRoleAccessor = authMethod.Accessor;
+				lock (locking) { bLocking = false; }
+			}
 
-			bLocking = false;
 
 			//TestContext.WriteLine("Role Name:     {0}", _theRole.Name);
 			//TestContext.WriteLine("Role ID:       {0}", _theRole.RoleID);
@@ -397,7 +409,7 @@ namespace VaultAgentTests
 			await SetupAliasTestConditions();
 
 			// Now create an entity.
-			string name = _uniqueKey.GetKey("Entity");
+			string name = _uniqueKey.GetKey("EntityR");
 			Entity entity = new Entity(name);
 			entity.Policies.Add("polTest2");
 			entity.Metadata.Add("Company", "ACME");
@@ -412,7 +424,7 @@ namespace VaultAgentTests
 			TestContext.WriteLine("Entity ID:        {0}", savedEntity.Id);
 
 			// Create a bogus role name "user"
-			string roleName = _uniqueKey.GetKey("aRoleT");
+			string roleName = _uniqueKey.GetKey("aRoleTEE");
 
 			// Now lets create an alias to that role.
 			Guid aliasGuid = await _idEngine.SaveAlias(savedEntity.Id, _appRoleAccessor, roleName);
@@ -424,11 +436,14 @@ namespace VaultAgentTests
 
 		[Test]
 		public async Task EntityAlias_Update_Success() {
+			throw new NotImplementedException();
+			// It is not working correctly.
+			
 			// Ensure Alias Pre-Conditions are defined.
 			await SetupAliasTestConditions();
 
 			// Now create an entity.
-			string name = _uniqueKey.GetKey("Entity");
+			string name = _uniqueKey.GetKey("EntityU");
 			Entity entity = new Entity(name);
 			entity.Policies.Add("polTest2");
 			entity.Metadata.Add("Company", "ACME");
@@ -443,7 +458,7 @@ namespace VaultAgentTests
 			TestContext.WriteLine("Entity ID:        {0}", savedEntity.Id);
 
 			// Now we need to create an AppRole and store it off.
-			string roleName = _uniqueKey.GetKey("aRoleT");
+			string roleName = _uniqueKey.GetKey("aRoleTU");
 			AppRole theRole = new AppRole(roleName);
 			theRole = await _appRoleAuthEngine.SaveRoleAndReturnRoleObject(theRole);
 			Assert.IsNotNull(theRole, "The application role must be a valid role object in order for the Entity-Alias tests to work.");

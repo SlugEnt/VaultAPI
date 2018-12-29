@@ -22,11 +22,13 @@ namespace VaultAgent.SecretEngines.KV2
         // The name of the secret object in the Vault Instance.
 	    private string _name;
 
-
+		//TODO - Does name and path need to be only set thru constructor - even in JSON constructions?  
+		//TODO - Do we need a Key value which returns what the key of this secret would be (Name+Path)?
 
 		/// <summary>
 		/// Creates a new empty secret
 		/// </summary>
+		[JsonConstructor]
 		public KV2Secret() {
 			Attributes = new Dictionary<string, string>();
 		}
@@ -40,6 +42,8 @@ namespace VaultAgent.SecretEngines.KV2
 		/// <param name="path">The path to the secret to be stored.  apps/appA/config   apps/appA is the path.</param>
 		public KV2Secret(string secretName, string path = "") {
 		    Name = secretName;
+
+			if ( path.StartsWith("/data/") ) { throw new ArgumentException("KeyValue V2 secret paths do not need to specify the /data/ prefix as it is assumed."); }
 		    Path = path;
 			Attributes = new Dictionary<string, string>();
 		}
@@ -51,6 +55,7 @@ namespace VaultAgent.SecretEngines.KV2
         /// app/AppA/username  then the secret name would be username and the secret path would be app/AppA.  
         /// </summary>
         public string Name { get => _name;
+			//TODO - Does this need to be an internal set?
             set { _name = value; }
         }
 
@@ -61,7 +66,8 @@ namespace VaultAgent.SecretEngines.KV2
         /// </summary>
         public string Path {
             get { return _path;}
-            set {
+			//TODO - Does this need to be an internal set? 
+	        set {
                 string temp;
                 if (value == "/") { _path = ""; }
                 else { _path = value.TrimEnd('/').TrimStart(('/')); }

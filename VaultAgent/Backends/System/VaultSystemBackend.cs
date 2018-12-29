@@ -207,22 +207,57 @@ namespace VaultAgent
 			if (vdro.Success) { return true; }
 			else { return false; }
 		}
-        #endregion
+		#endregion
 
 
-        #region SysMounts
-        // ==============================================================================================================================================
+		#region "SysCapabilities"
 
-        /// <summary>
-        /// Creates (Enables in Vault terminology) a new backend secrets engine with the given name, type and configuration settings.
-        /// Throws:  [VaultInvalidDataException] when the mount point already exists.  SpecificErrorCode will be set to: [BackendMountAlreadyExists]
-        /// </summary>
-        /// <param name="mountPath">The root path to this secrets engine that it will be mounted at.  Is a part of every URL to this backend.
-        /// <param name="description">Brief human friendly name for the mount.</param>
-        /// <param name="backendType">The type of secrets backend this mount is.  </param>
-        /// <param name="config">The configuration to be applied to this mount.</param>
-        /// <returns>Bool:  True if successful in creating the backend mount point.  False otherwise.</returns>
-        public async Task<bool> SysMountCreate (string mountPath, string description, EnumSecretBackendTypes backendType, VaultSysMountConfig config = null) {
+		public async Task<Dictionary<string,List<string>>> GetTokenCapabilityOnPaths(string tokenID, List<string> paths) {
+			string path = MountPointPath + "capabilities";
+
+			// Add the token and paths parameters
+			Dictionary<string, object> contentParams = new Dictionary<string, object>() {
+				{ "token", tokenID },
+				{ "paths", paths }
+			};
+
+
+			try {
+				VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync2(path, "GetTokenCapabilityOnPaths", contentParams);
+				if (vdro.Success) {
+					string js = vdro.GetDataPackageAsJSON();
+					Dictionary<string,List<string>> capabilities;
+					capabilities = VaultUtilityFX.ConvertJSON<Dictionary<string, List<string>>>(js);    //<Dictionary<string>,List<string>> (js);
+					//string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
+					//List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js);
+					return capabilities;
+				}
+				throw new ApplicationException("IdentitySecretEngine:ListEntitiesByName -> Arrived at unexpected code block.");
+			}
+			// 404 Errors mean there were no entities.  We just return an empty list.
+			catch (VaultInvalidPathException e) {
+				e = null;
+				return null;
+			}
+		}
+	
+
+		#endregion
+
+
+		#region SysMounts
+		// ==============================================================================================================================================
+
+		/// <summary>
+		/// Creates (Enables in Vault terminology) a new backend secrets engine with the given name, type and configuration settings.
+		/// Throws:  [VaultInvalidDataException] when the mount point already exists.  SpecificErrorCode will be set to: [BackendMountAlreadyExists]
+		/// </summary>
+		/// <param name="mountPath">The root path to this secrets engine that it will be mounted at.  Is a part of every URL to this backend.
+		/// <param name="description">Brief human friendly name for the mount.</param>
+		/// <param name="backendType">The type of secrets backend this mount is.  </param>
+		/// <param name="config">The configuration to be applied to this mount.</param>
+		/// <returns>Bool:  True if successful in creating the backend mount point.  False otherwise.</returns>
+		public async Task<bool> SysMountCreate (string mountPath, string description, EnumSecretBackendTypes backendType, VaultSysMountConfig config = null) {
 			// The keyname forms the last part of the path
 			string path = MountPointPath + pathMounts +  mountPath;
 
@@ -741,6 +776,7 @@ namespace VaultAgent
 
 
 #endregion
+
 
 	}
 	// ==============================================================================================================================================

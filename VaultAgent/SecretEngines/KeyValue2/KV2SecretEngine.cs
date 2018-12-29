@@ -464,12 +464,13 @@ namespace VaultAgent.SecretEngines {
 
 		/// <summary>
 		/// Deletes the version of the secret requested - or the most recent version if version parameter is zero.
-		/// </summary>
-		/// <param name="secretPath">The name of the secret to delete.</param>
-		/// <param name="version">The version of the secret to delete.
-        /// <para>  (Default) set to 0 to delete the most recent version.</para>
+		/// <para> Set secretVersion parameter as follows:</para>
+		/// <para>  (Default) set to 0 to delete the most recent version.</para>
 		/// <para>  Set to -1 to use the version number specified in the secret object as the version to delete.</para>
 		/// <para>  Set to any positive number to delete that specific version from the Vault Instance Store.</para>
+		/// </summary>
+		/// <param name="secretPath">The name of the secret to delete.</param>
+		/// <param name="version">The version of the secret to delete.</param>
 		/// <returns>True if successful.  False otherwise.</returns>
 		public async Task<bool> DeleteSecretVersion(KV2Secret secretObj, int secretVersion = 0) {
 		    if (secretVersion == -1) { secretVersion = secretObj.Version; }

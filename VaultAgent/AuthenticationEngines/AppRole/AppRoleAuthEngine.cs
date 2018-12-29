@@ -434,9 +434,9 @@ namespace VaultAgent.AuthenticationEngines
 		/// </summary>
 		/// <param name="roleID">Required:  The RoleID value that you wish to login to.</param>
 		/// <param name="secretID">Optional: The secretID to use to login to the role with.</param>
-		/// <returns>Token object that was created, that can be used to access the Vault with.</returns>
+		/// <returns>Token object that was created, that can be used to access the Vault with.  The parent token has also been set to this same token.</returns>
 		/// TODO - Change the return type.
-		public async Task<Token> Login(string roleID, string secretID) {
+		public async Task<Token> Login (string roleID, string secretID) {
 			string path = MountPointPath + "login";
 
 			// Setup roleID and secret ID Parameters
@@ -453,15 +453,9 @@ namespace VaultAgent.AuthenticationEngines
 			    string js = vdro.GetResponsePackageFieldAsJSON("auth");	    
 			    LoginResponse loginResponse =  VaultUtilityFX.ConvertJSON<LoginResponse>(js);
 
-                // We need to set the token.
+                // We need to set the token and then refresh it.
 		        _parent.TokenID = loginResponse.ClientToken;
-
-
-                // Not needed - TokenID setter above does this now.
-				// Now retrieve the token:
-//				return await GetMyTokenInfo();
-
-		        //return vdro.Success ? true : false;
+			    await _parent.RefreshActiveToken();
 		        return _parent.Token;
 		    }
 
