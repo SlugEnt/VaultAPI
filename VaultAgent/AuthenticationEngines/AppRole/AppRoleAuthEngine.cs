@@ -268,7 +268,7 @@ namespace VaultAgent.AuthenticationEngines
 		/// need the full secret information then leacing at false is faster.</param>
 		/// <param name="vaultMetadata">A Vault MetaData object that should be attached to the given secret. </param>
 		/// <returns>AppRoleSecret object.  Whether this is fully populated or contains just the ID and accessor depends upon the returnFullSecret parameter.</returns>
-		public async Task<AppRoleSecret> GenerateSecretID(string appRoleName, bool returnFullSecret = false,VaultMetadata vaultMetadata = null) {
+		public async Task<AppRoleSecret> GenerateSecretID(string appRoleName, bool returnFullSecret = false, Dictionary<string,string> vaultMetadata = null) {
 			string path = MountPointPath + "role/" + appRoleName + "/secret-id";
 
 

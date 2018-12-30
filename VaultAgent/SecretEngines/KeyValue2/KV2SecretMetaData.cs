@@ -43,26 +43,5 @@ namespace VaultAgent.SecretEngines.KV2.SecretMetaDataInfo
 		[JsonProperty("destroyed")]
 		public bool Destroyed { get; set; }
 	}
-/*
-	public partial class SecretReadReturnObj
-	{
-		public static SecretReadReturnObj FromJson(string json) => JsonConvert.DeserializeObject<SecretReadReturnObj>(json, Converter.Settings);
-	}
 
-	public static class Serialize
-	{
-		public static string ToJson(this SecretReadReturnObj self) => JsonConvert.SerializeObject(self, Converter.Settings);
-	}
-
-	internal static class Converter
-	{
-		public static readonly JsonSerializerSettings Settings = new JsonSerializerSettings {
-			MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
-			DateParseHandling = DateParseHandling.None,
-			Converters = {
-				new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal }
-			},
-		};
-	}
-*/
 }

@@ -10,6 +10,9 @@ using System.Collections.Generic;
 
 namespace VaultAgentTests
 {
+	/// <summary>
+	/// This class exercises the Vault Token engine.  
+	/// </summary>
 	[TestFixture]
 	[Parallelizable]
 	class TokenAuthEngine_Test
@@ -86,6 +89,39 @@ namespace VaultAgentTests
 
 
 
+		// Validate we can create a token with MetaData attributes and those are then on any token that is created.
+		// Validates a token can be created with a settings object
+		[Test]
+		public async Task MetadataOnToken_IsSet() {
+			string tokenID = UK.GetKey("token");
+			int numUses = 19;
+			string tokenName = "Name" + tokenID.ToString();
+			bool parent = true;
+
+			TokenNewSettings tokenNewSettings = new TokenNewSettings() {
+				ID = tokenID,
+				Name = tokenName,
+				NumberOfUses = numUses,
+				NoParentToken = parent
+			};
+
+			tokenNewSettings.MetaData.Add("country","US");
+			tokenNewSettings.MetaData.Add("state","OH");
+			tokenNewSettings.MetaData.Add("Territory","midwest");
+
+			Token token = await _tokenAuthEngine.CreateToken(tokenNewSettings);
+			Assert.NotNull(token, "A10:  Expected to receive the new token back, instead we received a null value.");
+			
+
+			// Read the token we just created.
+			//Token tokenNew = await _tokenAuthEngine.GetTokenWithID(tokenID);
+			Assert.IsNotNull(token, "A20: No Token returned.  Was expecting one.");
+
+			Assert.AreEqual(tokenNewSettings.MetaData.Count,token.Metadata.Count);
+			CollectionAssert.AreEquivalent(tokenNewSettings.MetaData,token.Metadata,"A30:  Was expected the Metadata dictionary on the token to be the same values as what we put in the TokenNewSettings object.  They are different.");
+		}
+
+
 
 		// Validates a token can be created and accessed with its accessor property.
 		[Test]
@@ -107,7 +143,6 @@ namespace VaultAgentTests
 
 
             // Read the token we just created.
-//            Token token = await _tokenAuthEngine.GetTokenWithID(tokenID);
 			Assert.IsNotNull(token, "M2: No Token returned.  Was expecting one.");
 			string tDisplayName = "token-" + tokenName;
 			Assert.AreEqual(tDisplayName, token.DisplayName,"M3: Token Display name is not what was expected.  Expected {0}, but got {1}",tDisplayName,token.DisplayName);
@@ -360,10 +395,7 @@ namespace VaultAgentTests
 			Assert.False(await _tokenAuthEngine.RevokeTokenViaAccessor(tokenID), "M1:  Revocation of token via invalid accessor failed.");
 		}
 
-
-
-
-
+		
 
         // Validates that revoking a parent token and requesting that the children still remain, results in the children being orphaned.
 	    [Test]

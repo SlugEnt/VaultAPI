@@ -14,7 +14,8 @@ namespace VaultAgent.AuthenticationEngines
         [JsonConstructor]
 	    public AppRoleSecret()
 	    {
-            MetaData = new VaultMetadata();
+			// Initialize the Metadata object.
+            Metadata = new Dictionary<string, string>();
 	    }
 
 
@@ -55,7 +56,7 @@ namespace VaultAgent.AuthenticationEngines
 
 
 	    [JsonProperty("metadata")]
-	    public VaultMetadata MetaData { get; set; }
+	    public Dictionary<string,string> Metadata { get; internal set; }
 
 	}
 }

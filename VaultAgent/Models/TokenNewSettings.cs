@@ -45,14 +45,19 @@ namespace VaultAgent.Models
 
         // Constructors 
 
+		/// <summary>
+		/// Constructor for use when reading the Settings from Vault.  Sets the ID.
+		/// </summary>
+		/// <param name="id"></param>
         [JsonConstructor]
         public TokenNewSettings (string id) { ID = id; }
 
         /// <summary>
-        /// Creates a new TokenSettings object with an empty initialized Policies List.
+        /// Creates a new TokenSettings object with an empty initialized Policies list and empty Metadata Dictionary.
         /// </summary>
         public TokenNewSettings() {
             Policies = new List<string>();
+			MetaData = new Dictionary<string, string>();
         }
     }
 }

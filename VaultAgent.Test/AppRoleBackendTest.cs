@@ -11,6 +11,9 @@ using VaultAgent.Models;
 
 namespace VaultAgentTests
 {
+	/// <summary>
+	/// Tests the AppRole authentication backend.
+	/// </summary>
 	[TestFixture]
 	[Parallelizable]
     public class AppRoleAuthEngineTest
@@ -301,7 +304,7 @@ namespace VaultAgentTests
 		}
 
 
-
+		// Validates we can set MetaData on a secret.
 	    [Test]
 	    public async Task GenerateSecret_WithMetaData_Success() {
 		    string rName = _uniqueKeys.GetKey("Role");
@@ -310,7 +313,7 @@ namespace VaultAgentTests
 
 
 			// Build a Meta Data object
-		    VaultMetadata vaultMetadata = new VaultMetadata()
+			Dictionary<string,string> metadata = new Dictionary<string, string>() 
 		    {
 			    { "testKey","dev"},
 			    { "Name","Bob Jones"}
@@ -318,15 +321,16 @@ namespace VaultAgentTests
 
 
 		    // Get a secret for it
-		    AppRoleSecret appRoleSecret = await _appRoleAuthEngine.GenerateSecretID(roleA.Name,true,vaultMetadata);
+		    AppRoleSecret appRoleSecret = await _appRoleAuthEngine.GenerateSecretID(roleA.Name,true,metadata);
 		    Assert.NotNull(appRoleSecret);
 		    Assert.IsNotEmpty(appRoleSecret.ID);
 		    Assert.IsNotEmpty(appRoleSecret.Accessor);
+			CollectionAssert.AreEquivalent(metadata,appRoleSecret.Metadata,"A10:  Expected the 2 metadata collections to be the same.");
 
 	        TestContext.WriteLine("Auth Engine Mount Point:  {0}  |  Mount Point Path:  {1}", _appRoleAuthEngine.MountPoint, _appRoleAuthEngine.MountPointPath);
 	        TestContext.WriteLine("Role A:     {0}", roleA.Name);
 	        TestContext.WriteLine("Secret ID:  {0}", appRoleSecret.ID);
-            foreach (KeyValuePair<string,string> a in appRoleSecret.MetaData)
+            foreach (KeyValuePair<string,string> a in appRoleSecret.Metadata)
 	        {
 	            TestContext.WriteLine("MetaData:   {0} - {1}", a.Key,a.Value);
             }        
@@ -335,7 +339,6 @@ namespace VaultAgentTests
 
 
         // Validates the ReadSecretID routine returns all of a secret's properties
-        //TODO - Check all the properties for proper values, Fix MetaData not being returned issue.
         [Test]
         public async Task ReadSecretID_Success()
         {
@@ -344,29 +347,29 @@ namespace VaultAgentTests
             Assert.True(await _appRoleAuthEngine.SaveRole(roleA));
 
 
-            // Build a Meta Data object
-            VaultMetadata vaultMetadata = new VaultMetadata()
-            {
-                { "testKey","dev"},
-                { "Name","Bob Jones"}
-            };
+	        // Build a Meta Data object
+	        Dictionary<string, string> metadata = new Dictionary<string, string>()
+	        {
+		        { "testKey","dev"},
+		        { "Name","Bob Jones"}
+	        };
 
-
-            // Get a secret for it - GenerateSecretID with True setting performs the ReadSecret
-            AppRoleSecret appRoleSecret = await _appRoleAuthEngine.GenerateSecretID(roleA.Name, false, vaultMetadata);
-            Assert.NotNull(appRoleSecret);
-            Assert.IsNotEmpty(appRoleSecret.ID);
-            Assert.IsNotEmpty(appRoleSecret.Accessor);
+			// Get a secret for it - GenerateSecretID with True setting performs the ReadSecret
+			AppRoleSecret appRoleSecret = await _appRoleAuthEngine.GenerateSecretID(roleA.Name, false, metadata);
+            Assert.NotNull(appRoleSecret,"A10:  appRoleSecret was null.");
+            Assert.IsNotEmpty(appRoleSecret.ID,"A20:  Secret ID was empty.");
+            Assert.IsNotEmpty(appRoleSecret.Accessor, "A30:  Secret Accessor was not set to a valid value");
 
             // Now read the secret back.
             AppRoleSecret secretFull = await _appRoleAuthEngine.ReadSecretID(roleA.Name, appRoleSecret.ID);
 
-            Assert.AreEqual(appRoleSecret.ID,secretFull.ID);
+            Assert.AreEqual(appRoleSecret.ID,secretFull.ID,"A40:  Secret ID's were not the same");
+	        CollectionAssert.AreEquivalent(metadata, secretFull.Metadata, "A50:  Expected the 2 metadata collections to be the same.");
 
-            TestContext.WriteLine("Auth Engine Mount Point:  {0}  |  Mount Point Path:  {1}", _appRoleAuthEngine.MountPoint, _appRoleAuthEngine.MountPointPath);
+			TestContext.WriteLine("Auth Engine Mount Point:  {0}  |  Mount Point Path:  {1}", _appRoleAuthEngine.MountPoint, _appRoleAuthEngine.MountPointPath);
             TestContext.WriteLine("Role A:     {0}", roleA.Name);
             TestContext.WriteLine("Secret ID:  {0}", appRoleSecret.ID);
-            foreach (KeyValuePair<string, string> a in appRoleSecret.MetaData)
+            foreach (KeyValuePair<string, string> a in appRoleSecret.Metadata)
             {
                 TestContext.WriteLine("MetaData:   {0} - {1}", a.Key, a.Value);
             }

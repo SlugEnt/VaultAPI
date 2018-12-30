@@ -76,12 +76,12 @@ namespace VaultAgent.Models
 		public long MaxTTL { get; set; }
 
 
-		//TODO - Convert to a List<string>
+	
 		/// <summary>
 		/// Metadata is used to attach arbitrary string-type metadata to the token.  This data is displayed in the audit log.
 		/// </summary>
 		[JsonProperty("meta")]
-		public object Meta { get; set; }
+		public Dictionary<string,string> Metadata { get; set; }
 
 
 		/// <summary>
@@ -190,7 +190,7 @@ namespace VaultAgent.Models
 
 
 
-		// Believe this is for associating a user account across different auth methods (for instance bsmith in LDAP and bob in GIT).?
+		// The entity this token is related to.
 		[JsonProperty("entity_id")]
 		public string EntityId { get; private set; }
 
@@ -230,9 +230,12 @@ namespace VaultAgent.Models
 
 
 
-		// Default empty constructor
+		/// <summary>
+		/// Default empty constructor.  Initializes the Metadata dictionary.
+		/// </summary>
 		public Token() {
 			ReadFromVault = false;
+			Metadata = new Dictionary<string, string>();
 		}
 
 

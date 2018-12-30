@@ -12,6 +12,7 @@ using VaultAgent.AuthenticationEngines;
 using VaultAgent.Models;
 using VaultAgent.SecretEngines;
 using VaultAgent.SecretEngines.KV2;
+using System.Threading;
 
 namespace VaultAgentTests {
 
@@ -1022,7 +1023,7 @@ namespace VaultAgentTests {
 			// Now we will use that token to try and test the secret out.  We need to create a new instance of Vault to test the token out.
 			VaultAgentAPI vaultAgent2 = new VaultAgentAPI("TestComplexPolicies", _vaultAgentAPI.IP, _vaultAgentAPI.Port, _vaultAgentAPI.Token.ID);
 			KV2SecretEngine secEng = (KV2SecretEngine) vaultAgent2.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, beName, beName);
-
+			Thread.Sleep(500);
 
 			// Now lets test our permissions. The first thing we need to do is create the secret path, but as our root token.  The new token
 			// we just created does not have access to the parent folder to do anything.  Create on the secret folder does not actually allow you 
