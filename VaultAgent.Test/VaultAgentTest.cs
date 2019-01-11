@@ -6,6 +6,8 @@ using VaultAgent;
 using System.Threading.Tasks;
 using VaultAgent.AuthenticationEngines;
 using VaultAgent.Backends;
+using SlugEnt;
+
 
 namespace VaultAgentTests
 {

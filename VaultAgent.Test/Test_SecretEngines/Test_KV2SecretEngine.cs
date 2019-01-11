@@ -9,6 +9,7 @@ using VaultAgent.Backends;
 using VaultAgent.SecretEngines.KV2.SecretMetaDataInfo;
 using VaultAgent;
 using VaultAgent.SecretEngines.KV2;
+using SlugEnt;
 
 
 namespace VaultAgentTests

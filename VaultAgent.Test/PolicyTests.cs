@@ -13,6 +13,8 @@ using VaultAgent.Models;
 using VaultAgent.SecretEngines;
 using VaultAgent.SecretEngines.KV2;
 using System.Threading;
+using SlugEnt;
+
 
 namespace VaultAgentTests {
 

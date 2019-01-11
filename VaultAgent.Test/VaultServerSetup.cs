@@ -279,47 +279,4 @@ namespace VaultAgentTests
 		}
 			
 	}
-
-
-
-	// Used to generate Unique Keys for Vault Tests.  Especially useful when using a single Vault instance that continuously runs.
-	public class UniqueKeys
-	{
-		private int keyIncrementer = 0;
-		private object keyIncrLock = new object();
-		private string stGuid;
-
-		public UniqueKeys() {
-			DateTime d = DateTime.Now;
-			stGuid = TimeGuid.ConvertTimeToChar(d);
-		}
-
-
-		/// <summary>
-		/// Creates a small random key based upon the current time (H:M:S).
-		/// </summary>
-		/// <param name="prefix"></param>
-		/// <returns></returns>
-		public string GetKey(string prefix = "Key") {
-			string val = prefix + stGuid + IncrementKey();
-			return val;
-		}
-
-
-		public string RefreshKey (string prefix = "Key") {
-			DateTime d = DateTime.Now;
-			stGuid = TimeGuid.ConvertTimeToChar(d);
-			return GetKey();
-		}
-
-
-		private string IncrementKey() {
-			string val;
-			lock (keyIncrLock) {
-				keyIncrementer++;
-				val = keyIncrementer.ToString();
-			}
-			return val;
-		}
-	}
 }

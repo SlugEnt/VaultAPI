@@ -10,7 +10,7 @@ using VaultAgentTests;
 using VaultAgent;
 using System;
 using VaultAgent.AuthenticationEngines;
-
+using SlugEnt;
 
 
 namespace VaultAgentTests
@@ -21,7 +21,7 @@ namespace VaultAgentTests
 	class IdentitySecretEngine_Test {
 		private VaultAgentAPI _vaultAgentAPI;
 		private IdentitySecretEngine _idEngine;
-		private readonly UniqueKeys _uniqueKey = new UniqueKeys(); // Unique Key generator
+		private readonly UniqueKeys _uniqueKey = new UniqueKeys("_","__"); // Unique Key generator
 
 		// Used in the Entity Alias tests.
 		private string _appRoleAccessor = "";

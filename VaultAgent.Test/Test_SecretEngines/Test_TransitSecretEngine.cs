@@ -9,6 +9,7 @@ using VaultAgent.Backends;
 using VaultAgent.Backends.System;
 using VaultAgent.Backends.Transit;
 using VaultAgent.SecretEngines;
+using SlugEnt;
 
 namespace VaultAgentTests
 {
@@ -27,7 +28,7 @@ namespace VaultAgentTests
 
 
 		// Used to ensure we have a random key.
-		private readonly UniqueKeys _uniqueKeys = new UniqueKeys();       // Unique Key generator
+		private readonly UniqueKeys _uniqueKeys = new UniqueKeys("_","__");       // Unique Key generator
 
 
 

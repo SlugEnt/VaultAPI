@@ -1,19 +1,17 @@
 ﻿using Newtonsoft.Json;
 
-namespace VaultAgent.Backends.Transit.Models
-{
-	/// <summary>
-	/// A single Vault Decrypted value.  
-	/// </summary>
-	public class TransitDecryptedItem
-	{
-		private string decrypted;
+namespace VaultAgent.Backends.Transit.Models {
+    /// <summary>
+    /// A single Vault Decrypted value.  
+    /// </summary>
+    public class TransitDecryptedItem {
+        private string decrypted;
 
-		[JsonProperty("plaintext")]
-		public string DecryptedValue
-		{
-			get { return decrypted; }
-			set { decrypted = VaultUtilityFX.Base64DecodeAscii(value); }
-		}
-	}
+
+        [JsonProperty ("plaintext")]
+        public string DecryptedValue {
+            get { return decrypted; }
+            set { decrypted = VaultUtilityFX.Base64DecodeAscii (value); }
+        }
+    }
 }

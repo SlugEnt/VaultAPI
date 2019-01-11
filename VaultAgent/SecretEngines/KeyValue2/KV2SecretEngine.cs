@@ -13,10 +13,9 @@ namespace VaultAgent.SecretEngines {
         public const string Error_CAS_InvalidVersion = "The backend storage engine has the CAS property set.  This requires that all secret saves must " +
                                                        "specify the current version of the key in order to update it.  The calling routine provided an incorrect version.";
 
-	    public const string Error_CAS_SecretAlreadyExists =
-		    "The backend storage engine has the CAS property set.  In addition, the calling routine specified that the secret save should " +
-		    "only happen if the secret does not exist.  The secret already exists and thus cannot be saved.";
-
+        public const string Error_CAS_SecretAlreadyExists =
+            "The backend storage engine has the CAS property set.  In addition, the calling routine specified that the secret save should " +
+            "only happen if the secret does not exist.  The secret already exists and thus cannot be saved.";
     }
 
 
@@ -35,7 +34,7 @@ namespace VaultAgent.SecretEngines {
         /// <param name="backendMountPoint">The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/ and exclude trailing slash.</param>
         /// <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
         public KV2SecretEngine (string backendName, string backendMountPoint, VaultAgentAPI vaultAgentAPI) : base (backendName, backendMountPoint,
-            vaultAgentAPI) {
+                                                                                                                   vaultAgentAPI) {
             Type = EnumBackendTypes.KeyValueV2;
             IsSecretBackend = true;
         }
@@ -43,6 +42,7 @@ namespace VaultAgent.SecretEngines {
 
 
         #region "Configuration"
+
 
         /// <summary>
         /// Configures the Key Value V2 backend. 
@@ -62,11 +62,11 @@ namespace VaultAgent.SecretEngines {
                 contentParams.Add ("cas_required", casRequired.ToString());
 
                 VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "ConfigureBackend", contentParams);
-                if (vdro.Success) { return true; }
+                if ( vdro.Success ) { return true; }
 
                 return false;
             }
-            catch (Exception e) { throw e; }
+            catch ( Exception e ) { throw e; }
         }
 
 
@@ -75,9 +75,8 @@ namespace VaultAgent.SecretEngines {
         /// Returns the configuration settings of the current KeyValue V2 secret store. 
         /// </summary>
         /// <returns>KV2BackendSettings object with the values of the current configuration.</returns>
-        public async Task<KV2SecretEngineSettings> GetBackendConfiguration() {
+        public async Task<KV2SecretEngineSettings> GetBackendConfiguration () {
             try {
-
                 // V2 Secret stores have a unique config path...
                 string path = MountPointPath + "config";
 
@@ -85,8 +84,9 @@ namespace VaultAgent.SecretEngines {
                 KV2SecretEngineSettings settings = vdro.GetVaultTypedObject<KV2SecretEngineSettings>();
                 return settings;
             }
-            catch (Exception e) { throw e; }
+            catch ( Exception e ) { throw e; }
         }
+
 
         #endregion
 
@@ -122,12 +122,12 @@ namespace VaultAgent.SecretEngines {
             Dictionary<string, string> options = new Dictionary<string, string>();
 
             // Set CAS depending on option coming from caller.
-            switch (casSaveOption) {
+            switch ( casSaveOption ) {
                 case KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist:
                     options.Add ("cas", "0");
                     break;
                 case KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch:
-                    if (currentVersion != 0) { options.Add ("cas", currentVersion.ToString()); }
+                    if ( currentVersion != 0 ) { options.Add ("cas", currentVersion.ToString()); }
                     else {
                         throw new ArgumentException (
                             "The option OnlyOnExistingVersionMatch was chosen, but the currentVersion parameter was not set.  It must be set to the value of the current version of the key as stored in Vault.");
@@ -141,120 +141,116 @@ namespace VaultAgent.SecretEngines {
             reqData.Add ("options", options);
             reqData.Add ("data", secret);
 
-		    try {
-		        VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync2 (path, "SaveSecret", reqData);
-		        if (vdro.Success) { return true; }
-
-		        return false;
-		    }
-		    catch (VaultInvalidDataException e) {
-		        if (e.Message.Contains ("check-and-set parameter required for this call")) {
-		            VaultInvalidDataException eNew = new VaultInvalidDataException (Constants.Error_CAS_Set + " | Original Error message was: " + e.Message);
-		            eNew.SpecificErrorCode = EnumVaultExceptionCodes.CheckAndSetMissing;
-		            throw eNew;
-		        }
-
-		        // Check for Version errors:
-		        else if (e.Message.Contains ("did not match the current version")) {
-		            // If user requested that the save happen only if the key does not already exist then return customized error message.
-		            if (casSaveOption == KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist) {
-		                VaultInvalidDataException eNew = new VaultInvalidDataException (Constants.Error_CAS_SecretAlreadyExists +
-		                                                                                " | Original Error message was: " + e.Message);
-		                eNew.SpecificErrorCode = EnumVaultExceptionCodes.CAS_SecretExistsAlready;
-		                throw eNew;
-		            }
-
-		            // Customize the version discrepancy message
-		            else {
-		                VaultInvalidDataException eNew = new VaultInvalidDataException (Constants.Error_CAS_InvalidVersion + " Version specified was: " +
-		                                                                                currentVersion +
-		                                                                                " | Original Error message was: " + e.Message);
-		                eNew.SpecificErrorCode = EnumVaultExceptionCodes.CAS_VersionMissing;
-		                throw eNew;
-		            }
-		        }
-		        else { throw new VaultInvalidDataException (e.Message); }
-		    }
-		    catch (VaultForbiddenException e) {
-		        if (e.Message.Contains ("* permission denied")) { e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied;  }
-		        throw e;
-            }
-        }
-
-
-
-
-		/// <summary>
-		/// Reads the secret from Vault.  It defaults to reading the most recent version.  Set secretVersion to non zero to retrieve a
-		/// specific version.
-		/// <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
-		/// <para>Returns the KV2SecretWrapper if a secret was found at the location.</para>
-		/// <para>Returns Null if no secret found at location.</para>
-		/// </summary>
-		/// <param name="secretPath">The Name (path) to the secret you wish to read.</param>
-		/// <param name="secretVersion">The version of the secret to retrieve.  (Default) set to 0 to read most recent version. </param>
-		/// <returns>KV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
-		public async Task<KV2Secret> ReadSecret (string secretPath, int secretVersion = 0) {
-            string path = MountPointPath + "data/" + secretPath;
-            Dictionary<string, string> contentParams = new Dictionary<string, string>();
-
-            // TODO - Read secret will return an object for a version that has been destroyed or deleted.  We need to interrogate that
-            // and try and find the next non deleted version.
             try {
-                if (secretVersion > 0) { contentParams.Add ("version", secretVersion.ToString()); }
+                VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync2 (path, "SaveSecret", reqData);
+                if ( vdro.Success ) { return true; }
 
-                VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ReadSecret", contentParams);
-                if (vdro.Success) {
-	                KV2SecretWrapper secretReadReturnObj = vdro.GetVaultTypedObjectFromResponseV2<KV2SecretWrapper>();
-					//KV2SecretWrapper secretReadReturnObj = KV2SecretWrapper.FromJson (vdro.GetResponsePackageAsJSON());
+                return false;
+            }
+            catch ( VaultInvalidDataException e ) {
+                if ( e.Message.Contains ("check-and-set parameter required for this call") ) {
+                    VaultInvalidDataException eNew = new VaultInvalidDataException (Constants.Error_CAS_Set + " | Original Error message was: " + e.Message);
+                    eNew.SpecificErrorCode = EnumVaultExceptionCodes.CheckAndSetMissing;
+                    throw eNew;
+                }
 
-					// We now need to move some fields from the KV2SecretWrapper into the KV2Secret which is embedded in the 
-					// wrapper class.
-					secretReadReturnObj.Secret.CreatedTime = secretReadReturnObj.Data.Metadata.CreatedTime;
-	                secretReadReturnObj.Secret.DeletionTime = secretReadReturnObj.Data.Metadata.DeletionTime;
-	                secretReadReturnObj.Secret.Destroyed = secretReadReturnObj.Data.Metadata.Destroyed;
-	                secretReadReturnObj.Secret.Version = secretReadReturnObj.Data.Metadata.Version;
-
-					// Now get the secret obj, remove it from the wrapper - so the class can be deleted and then return to caller.
-	                KV2Secret secret = secretReadReturnObj.Secret;
-	                secretReadReturnObj.Secret = null;
-	                return secret;
+                // Check for Version errors:
+                else if ( e.Message.Contains ("did not match the current version") ) {
+                    // If user requested that the save happen only if the key does not already exist then return customized error message.
+                    if ( casSaveOption == KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist ) {
+                        VaultInvalidDataException eNew = new VaultInvalidDataException (Constants.Error_CAS_SecretAlreadyExists +
+                                                                                        " | Original Error message was: " +
+                                                                                        e.Message);
+                        eNew.SpecificErrorCode = EnumVaultExceptionCodes.CAS_SecretExistsAlready;
+                        throw eNew;
                     }
 
-                throw new ApplicationException ("SecretBackEnd: ReadSecret - Arrived at an unexpected code path.");
+                    // Customize the version discrepancy message
+                    else {
+                        VaultInvalidDataException eNew = new VaultInvalidDataException (
+                            Constants.Error_CAS_InvalidVersion + " Version specified was: " + currentVersion + " | Original Error message was: " + e.Message);
+                        eNew.SpecificErrorCode = EnumVaultExceptionCodes.CAS_VersionMissing;
+                        throw eNew;
+                    }
+                }
+                else { throw new VaultInvalidDataException (e.Message); }
             }
+            catch ( VaultForbiddenException e ) {
+                if ( e.Message.Contains ("* permission denied") ) { e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied; }
 
-            // VaultInvalidPathExceptions are not permission problems - despite what the error text hints at.  Instead they just mean no secret exists at that path.  We return null.	
-            catch (VaultInvalidPathException e) { return null; }
-            catch (VaultForbiddenException e) {
-                if (e.Message.Contains ("* permission denied")) { e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied; }
                 throw e;
             }
         }
 
 
 
+        /// <summary>
+        /// Reads the secret from Vault.  It defaults to reading the most recent version.  Set secretVersion to non zero to retrieve a
+        /// specific version.
+        /// <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
+        /// <para>Returns the KV2SecretWrapper if a secret was found at the location.</para>
+        /// <para>Returns Null if no secret found at location.</para>
+        /// </summary>
+        /// <param name="secretPath">The Name (path) to the secret you wish to read.</param>
+        /// <param name="secretVersion">The version of the secret to retrieve.  (Default) set to 0 to read most recent version. </param>
+        /// <returns>KV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
+        public async Task<KV2Secret> ReadSecret (string secretPath, int secretVersion = 0) {
+            string path = MountPointPath + "data/" + secretPath;
+            Dictionary<string, string> contentParams = new Dictionary<string, string>();
 
-		/// <summary>
-		/// Attempts to read a secret if it exists.  Returns a tuple value (bool success, KV2Secret secret) as follows:
-		/// <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
-		/// <para>If secret was found the first value is True and the 2nd value is the KV2Secret that was read.</para>
-		/// <para>If not found, the first value is False and the second value is null.</para>
-		/// </summary>
-		/// <param name="secretPath">The path to the secret to check for existence and retrieve if it does exist.</param>
-		/// <param name="secretVersion">The secret version to be read.  0 for current.</param>
-		/// <returns></returns>
-		public async Task<(bool IsSuccess, KV2Secret Secret)> TryReadSecret(string secretPath, int secretVersion = 0) {
-		    KV2Secret secret = await ReadSecret(secretPath, secretVersion);
+            // TODO - Read secret will return an object for a version that has been destroyed or deleted.  We need to interrogate that
+            // and try and find the next non deleted version.
+            try {
+                if ( secretVersion > 0 ) { contentParams.Add ("version", secretVersion.ToString()); }
 
-		    if (secret == null) {
-			    return (false, null);
-		    }
-		    else {
-			    return (true, secret);
-		    }
-	    }
+                VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ReadSecret", contentParams);
+                if ( vdro.Success ) {
+                    KV2SecretWrapper secretReadReturnObj = vdro.GetVaultTypedObjectFromResponseV2<KV2SecretWrapper>();
 
+                    //KV2SecretWrapper secretReadReturnObj = KV2SecretWrapper.FromJson (vdro.GetResponsePackageAsJSON());
+
+                    // We now need to move some fields from the KV2SecretWrapper into the KV2Secret which is embedded in the 
+                    // wrapper class.
+                    secretReadReturnObj.Secret.CreatedTime = secretReadReturnObj.Data.Metadata.CreatedTime;
+                    secretReadReturnObj.Secret.DeletionTime = secretReadReturnObj.Data.Metadata.DeletionTime;
+                    secretReadReturnObj.Secret.Destroyed = secretReadReturnObj.Data.Metadata.Destroyed;
+                    secretReadReturnObj.Secret.Version = secretReadReturnObj.Data.Metadata.Version;
+
+                    // Now get the secret obj, remove it from the wrapper - so the class can be deleted and then return to caller.
+                    KV2Secret secret = secretReadReturnObj.Secret;
+                    secretReadReturnObj.Secret = null;
+                    return secret;
+                }
+
+                throw new ApplicationException ("SecretBackEnd: ReadSecret - Arrived at an unexpected code path.");
+            }
+
+            // VaultInvalidPathExceptions are not permission problems - despite what the error text hints at.  Instead they just mean no secret exists at that path.  We return null.	
+            catch ( VaultInvalidPathException e ) { return null; }
+            catch ( VaultForbiddenException e ) {
+                if ( e.Message.Contains ("* permission denied") ) { e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied; }
+
+                throw e;
+            }
+        }
+
+
+
+        /// <summary>
+        /// Attempts to read a secret if it exists.  Returns a tuple value (bool success, KV2Secret secret) as follows:
+        /// <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
+        /// <para>If secret was found the first value is True and the 2nd value is the KV2Secret that was read.</para>
+        /// <para>If not found, the first value is False and the second value is null.</para>
+        /// </summary>
+        /// <param name="secretPath">The path to the secret to check for existence and retrieve if it does exist.</param>
+        /// <param name="secretVersion">The secret version to be read.  0 for current.</param>
+        /// <returns></returns>
+        public async Task<(bool IsSuccess, KV2Secret Secret)> TryReadSecret (string secretPath, int secretVersion = 0) {
+            KV2Secret secret = await ReadSecret (secretPath, secretVersion);
+
+            if ( secret == null ) { return (false, null); }
+            else { return (true, secret); }
+        }
 
 
 
@@ -270,7 +266,7 @@ namespace VaultAgent.SecretEngines {
 
             try {
                 // Paths are different if specifying versions or version = 0 (current)
-                if (version != 0) {
+                if ( version != 0 ) {
                     path = MountPointPath + "delete/" + secretPath;
 
                     // Add the version parameter
@@ -283,19 +279,15 @@ namespace VaultAgent.SecretEngines {
                 }
 
 
-                if (vdro.Success) { return true; }
+                if ( vdro.Success ) { return true; }
                 else { return false; }
             }
-            catch (VaultForbiddenException e) {
-                if (e.Message.Contains("* permission denied")) {
-                    e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied;
-                }
+            catch ( VaultForbiddenException e ) {
+                if ( e.Message.Contains ("* permission denied") ) { e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied; }
+
                 throw e;
             }
         }
-
-
-
 
 
 
@@ -309,7 +301,7 @@ namespace VaultAgent.SecretEngines {
 
             try {
                 VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ListSecrets");
-                if (vdro.Success) {
+                if ( vdro.Success ) {
                     string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
                     List<string> keys = VaultUtilityFX.ConvertJSON<List<string>> (js);
                     return keys;
@@ -319,10 +311,8 @@ namespace VaultAgent.SecretEngines {
             }
 
             // 404 Errors mean there were no sub paths.  We just return an empty list.
-            catch (VaultInvalidPathException e) { return new List<string>(); }
+            catch ( VaultInvalidPathException e ) { return new List<string>(); }
         }
-
-
 
 
 
@@ -344,11 +334,11 @@ namespace VaultAgent.SecretEngines {
                 contentParams.Add ("cas_required", casRequired.ToString());
 
                 VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "UpdateSecretSettings", contentParams);
-                if (vdro.Success) { return true; }
+                if ( vdro.Success ) { return true; }
 
                 return false;
             }
-            catch (Exception e) { throw e; }
+            catch ( Exception e ) { throw e; }
         }
 
 
@@ -369,13 +359,12 @@ namespace VaultAgent.SecretEngines {
                 contentParams.Add ("versions", version.ToString());
 
                 VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "UndeleteSecretVersion", contentParams);
-                if (vdro.Success) { return true; }
+                if ( vdro.Success ) { return true; }
 
                 return false;
             }
-            catch (Exception e) { throw e; }
+            catch ( Exception e ) { throw e; }
         }
-
 
 
 
@@ -395,12 +384,13 @@ namespace VaultAgent.SecretEngines {
                 contentParams.Add ("versions", version.ToString());
 
                 VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "DestroySecretVersion", contentParams);
-                if (vdro.Success) { return true; }
+                if ( vdro.Success ) { return true; }
 
                 return false;
             }
-            catch (VaultForbiddenException e) {
-                if (e.Message.Contains ("* permission denied")) { e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied;}
+            catch ( VaultForbiddenException e ) {
+                if ( e.Message.Contains ("* permission denied") ) { e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied; }
+
                 throw e;
             }
         }
@@ -417,7 +407,7 @@ namespace VaultAgent.SecretEngines {
             string path = MountPointPath + "metadata/" + secretNamePath;
 
             VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "GetSecretMetaData");
-            if (vdro.Success) {
+            if ( vdro.Success ) {
                 string ks = vdro.GetDataPackageAsJSON();
                 KV2SecretMetaDataInfo kvData = VaultUtilityFX.ConvertJSON<KV2SecretMetaDataInfo> (ks);
                 return kvData;
@@ -439,43 +429,47 @@ namespace VaultAgent.SecretEngines {
                 string path = MountPointPath + "metadata/" + secretNamePath;
 
                 VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync (path, "DestroySecretCompletely");
-                if (vdro.Success) { return true; }
+                if ( vdro.Success ) { return true; }
 
                 return false;
             }
-            catch (Exception e) { throw e; }
+            catch ( Exception e ) { throw e; }
         }
 
 
 
         #region "KV2Secret Object Methods"
 
+
         public async Task<bool> DestroySecretCompletely (KV2Secret secretObj) { return await DestroySecretCompletely (secretObj.FullPath); }
         public async Task<bool> DestroySecretVersion (KV2Secret secretObj, int version) { return await DestroySecretVersion (secretObj.FullPath, version); }
         public async Task<bool> UndeleteSecretVersion (KV2Secret secretObj, int version) { return await UndeleteSecretVersion (secretObj.FullPath, version); }
+
 
         public async Task<bool> UpdateSecretSettings (KV2Secret secretObj, UInt16 maxVersions, bool casRequired) {
             return await UpdateSecretSettings (secretObj.FullPath, maxVersions, casRequired);
         }
 
+
         public async Task<List<string>> ListSecretsAtPath (KV2Secret secretObj) { return await ListSecretsAtPath (secretObj.FullPath); }
 
 
 
-		/// <summary>
-		/// Deletes the version of the secret requested - or the most recent version if version parameter is zero.
-		/// <para> Set secretVersion parameter as follows:</para>
-		/// <para>  (Default) set to 0 to delete the most recent version.</para>
-		/// <para>  Set to -1 to use the version number specified in the secret object as the version to delete.</para>
-		/// <para>  Set to any positive number to delete that specific version from the Vault Instance Store.</para>
-		/// </summary>
-		/// <param name="secretPath">The name of the secret to delete.</param>
-		/// <param name="version">The version of the secret to delete.</param>
-		/// <returns>True if successful.  False otherwise.</returns>
-		public async Task<bool> DeleteSecretVersion(KV2Secret secretObj, int secretVersion = 0) {
-		    if (secretVersion == -1) { secretVersion = secretObj.Version; }
-			return await DeleteSecretVersion (secretObj.FullPath, secretVersion);
-	    }
+        /// <summary>
+        /// Deletes the version of the secret requested - or the most recent version if version parameter is zero.
+        /// <para> Set secretVersion parameter as follows:</para>
+        /// <para>  (Default) set to 0 to delete the most recent version.</para>
+        /// <para>  Set to -1 to use the version number specified in the secret object as the version to delete.</para>
+        /// <para>  Set to any positive number to delete that specific version from the Vault Instance Store.</para>
+        /// </summary>
+        /// <param name="secretPath">The name of the secret to delete.</param>
+        /// <param name="version">The version of the secret to delete.</param>
+        /// <returns>True if successful.  False otherwise.</returns>
+        public async Task<bool> DeleteSecretVersion (KV2Secret secretObj, int secretVersion = 0) {
+            if ( secretVersion == -1 ) { secretVersion = secretObj.Version; }
+
+            return await DeleteSecretVersion (secretObj.FullPath, secretVersion);
+        }
 
 
 
@@ -493,40 +487,36 @@ namespace VaultAgent.SecretEngines {
         /// </param>
         /// <returns>KV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
         public async Task<KV2Secret> ReadSecret (KV2Secret secretObj, int secretVersion = 0) {
-            if (secretVersion == -1) { secretVersion = secretObj.Version;}
+            if ( secretVersion == -1 ) { secretVersion = secretObj.Version; }
+
             return await ReadSecret (secretObj.FullPath, secretVersion);
         }
 
 
 
-		/// <summary>
-		/// Attempts to read a secret if it exists.  Returns a tuple value (bool success, KV2Secret secret) as follows:
-		/// <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
-		/// <para>If secret was found the first value is True and the 2nd value is the KV2Secret that was read.</para>
-		/// <para>If not found, the first value is False and the second value is null.</para>
-		/// </summary>
-		/// <param name="secretPath">The path to the secret to check for existence and retrieve if it does exist.</param>
-		/// <param name="secretVersion">Version of the secret to retrieve.
-		/// <para>  (Default) set to 0 to read most recent version.</para>
-		/// <para>  Set to -1 to use the version number specified in the secret object.</para>
-		/// <para>  Set to any positive number to read that specific version from the Vault Instance Store.</para>
-		/// <returns></returns>
-		public async Task<(bool IsSuccess, KV2Secret Secret)> TryReadSecret(KV2Secret secretObj, int secretVersion = 0) {
-			KV2Secret secret = await ReadSecret(secretObj.FullPath, secretVersion);
+        /// <summary>
+        /// Attempts to read a secret if it exists.  Returns a tuple value (bool success, KV2Secret secret) as follows:
+        /// <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
+        /// <para>If secret was found the first value is True and the 2nd value is the KV2Secret that was read.</para>
+        /// <para>If not found, the first value is False and the second value is null.</para>
+        /// </summary>
+        /// <param name="secretPath">The path to the secret to check for existence and retrieve if it does exist.</param>
+        /// <param name="secretVersion">Version of the secret to retrieve.
+        /// <para>  (Default) set to 0 to read most recent version.</para>
+        /// <para>  Set to -1 to use the version number specified in the secret object.</para>
+        /// <para>  Set to any positive number to read that specific version from the Vault Instance Store.</para>
+        /// <returns></returns>
+        public async Task<(bool IsSuccess, KV2Secret Secret)> TryReadSecret (KV2Secret secretObj, int secretVersion = 0) {
+            KV2Secret secret = await ReadSecret (secretObj.FullPath, secretVersion);
 
-			if (secret == null) {
-				return (false, null);
-			}
-			else {
-				return (true, secret);
-			}
-		}
+            if ( secret == null ) { return (false, null); }
+            else { return (true, secret); }
+        }
 
 
-		public async Task<KV2SecretMetaDataInfo> GetSecretMetaData (KV2Secret secretObj) { return await GetSecretMetaData (secretObj.FullPath); }
+        public async Task<KV2SecretMetaDataInfo> GetSecretMetaData (KV2Secret secretObj) { return await GetSecretMetaData (secretObj.FullPath); }
+
 
         #endregion
-
-
     }
 }

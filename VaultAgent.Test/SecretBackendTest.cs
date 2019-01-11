@@ -5,6 +5,7 @@ using VaultAgent.SecretEngines;
 using VaultAgent.Backends.System;
 using System.Threading.Tasks;
 using VaultAgent;
+using SlugEnt;
 
 namespace VaultAgentTests
 {

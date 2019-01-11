@@ -12,6 +12,7 @@ using VaultAgent.Models;
 using VaultAgent.SecretEngines;
 using VaultAgent.SecretEngines.KV2;
 using VaultAgentTests;
+using SlugEnt;
 
 namespace VaultAgentTests
 {
@@ -24,7 +25,7 @@ namespace VaultAgentTests
 		
 		private VaultAgentAPI _vaultAgentAPI;
 		private VaultSystemBackend _vaultSystemBackend;
-		private UniqueKeys _uniqueKeys = new UniqueKeys(); // Unique Key generator
+		private UniqueKeys _uniqueKeys = new UniqueKeys("_","__"); // Unique Key generator
 		private string _beName;
 		private KV2SecretEngine _rootEng;
 		private VaultAgentAPI _vaultRootAgentAPI;

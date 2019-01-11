@@ -8,6 +8,7 @@ using VaultAgent.Backends;
 using VaultAgent;
 using VaultAgent.AuthenticationEngines;
 using VaultAgent.Models;
+using SlugEnt;
 
 namespace VaultAgentTests
 {
@@ -20,7 +21,7 @@ namespace VaultAgentTests
     {
 		private VaultAgentAPI _vault;
 		private VaultSystemBackend _vaultSystemBackend;
-		private UniqueKeys _uniqueKeys = new UniqueKeys();       // Unique Key generator
+		private UniqueKeys _uniqueKeys = new UniqueKeys("_","__");       // Unique Key generator
 
 		private AppRoleAuthEngine _appRoleAuthEngine;
 

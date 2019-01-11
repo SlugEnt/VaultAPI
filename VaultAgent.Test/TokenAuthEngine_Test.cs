@@ -1,12 +1,11 @@
 ﻿using NUnit.Framework;
 using System.Threading.Tasks;
-using VaultAgent.Backends.System;
 using VaultAgent.Backends;
 using VaultAgent;
 using VaultAgent.AuthenticationEngines;
 using VaultAgent.Models;
-using CommonFunctions;
 using System.Collections.Generic;
+using SlugEnt;
 
 namespace VaultAgentTests
 {
@@ -18,7 +17,7 @@ namespace VaultAgentTests
 	class TokenAuthEngine_Test
 	{
 		private VaultAgentAPI vault;
-		private UniqueKeys UK = new UniqueKeys();       // Unique Key generator
+		private UniqueKeys UK = new UniqueKeys("","");       // Unique Key generator
 		private TokenAuthEngine _tokenAuthEngine;
 
 

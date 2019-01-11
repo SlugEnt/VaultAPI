@@ -1,13 +1,12 @@
 using NUnit.Framework;
-using System.Net.Http;
 using System.Collections.Generic;
 using VaultAgent;
-using VaultAgent.Models;
 using System;
 using System.Threading.Tasks;
-using VaultAgent.Backends;
 using VaultAgent.Backends.System;
 using System.Diagnostics;
+using SlugEnt;
+
 
 namespace VaultAgentTests
 {

@@ -6,51 +6,51 @@ using System.Globalization;
 using Newtonsoft.Json.Converters;
 
 namespace VaultAgent.AuthenticationEngines {
-	public class AppRoleSecret {
-		[JsonConstructor]
-		public AppRoleSecret () {
-			// Initialize the Metadata object.
-			Metadata = new Dictionary<string, string>();
-		}
+    public class AppRoleSecret {
+        [JsonConstructor]
+        public AppRoleSecret () {
+            // Initialize the Metadata object.
+            Metadata = new Dictionary<string, string>();
+        }
 
 
-		[JsonProperty("secret_id")]
-		public string ID { get; set; }
+        [JsonProperty ("secret_id")]
+        public string ID { get; set; }
 
 
-		[JsonProperty("secret_id_accessor")]
-		public string Accessor { get; set; }
+        [JsonProperty ("secret_id_accessor")]
+        public string Accessor { get; set; }
 
 
-		[JsonProperty("cidr_list")]
-		public object [] CIDR_List { get; set; }
+        [JsonProperty ("cidr_list")]
+        public object [] CIDR_List { get; set; }
 
 
-		[JsonProperty("creation_time")]
-		public DateTimeOffset CreationTime { get; set; }
+        [JsonProperty ("creation_time")]
+        public DateTimeOffset CreationTime { get; set; }
 
 
-		[JsonProperty("expiration_time")]
-		public DateTimeOffset ExpirationTime { get; set; }
+        [JsonProperty ("expiration_time")]
+        public DateTimeOffset ExpirationTime { get; set; }
 
 
-		[JsonProperty("last_updated_time")]
-		public DateTimeOffset LastUpdatedTime { get; set; }
+        [JsonProperty ("last_updated_time")]
+        public DateTimeOffset LastUpdatedTime { get; set; }
 
 
-		[JsonProperty("secret_id_num_uses")]
-		public long NumberOfUses { get; set; }
+        [JsonProperty ("secret_id_num_uses")]
+        public long NumberOfUses { get; set; }
 
 
-		[JsonProperty("secret_id_ttl")]
-		public long SecretID_TTl { get; set; }
+        [JsonProperty ("secret_id_ttl")]
+        public long SecretID_TTl { get; set; }
 
 
-		[JsonProperty("token_bound_cidrs")]
-		public object [] TokenBoundCidrs { get; set; }
+        [JsonProperty ("token_bound_cidrs")]
+        public object [] TokenBoundCidrs { get; set; }
 
 
-		[JsonProperty("metadata")]
-		public Dictionary<string, string> Metadata { get; internal set; }
-	}
+        [JsonProperty ("metadata")]
+        public Dictionary<string, string> Metadata { get; internal set; }
+    }
 }
