@@ -212,5 +212,11 @@ namespace VaultAgent {
         /// <typeparam name="T">The object type to fill from the JSON.</typeparam>
         /// <returns>T - Object filled with values from JSON.</returns>
         public T GetVaultTypedObjectFromResponseV2<T> () { return VaultSerializationHelper.FromJson<T> (GetResponsePackageAsJSON()); }
+
+
+        public T GetVaultTypedObjectFromResponseField<T> (string fieldName) {
+            string json = GetResponsePackageFieldAsJSON (fieldName);
+            return VaultSerializationHelper.FromJson<T> (json);
+        }
     }
 }

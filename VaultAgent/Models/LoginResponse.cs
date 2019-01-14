@@ -1,24 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
+﻿using System.Collections.Generic;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+
 
 
 namespace VaultAgent.Models {
     /// <summary>
     /// This class is used to get the response from a Login attempt.  It provides much of the information you will need in this object
     /// directly.  But best is still to go read the token object that corresponds to the ClientToken property.
+    /// <remarks>Note: TokenType added from LDAP login.  Is not found on EntityLogin.</remarks>
     /// </summary>
-    internal class LoginResponse {
+    public class LoginResponse {
         /// <summary>
         /// The ID of the token that was generated from the Login.
         /// </summary>
         [JsonProperty ("client_token")]
-        public string ClientToken { get; set; }
+        public string ClientToken { get; internal set; }
 
+
+        /// <summary>
+        /// The accessor value for the Client Token
+        /// </summary>
         [JsonProperty ("accessor")]
-        public string Accessor { get; set; }
+        public string Accessor { get; internal set; }
 
 
         /// <summary>
@@ -49,12 +52,23 @@ namespace VaultAgent.Models {
         public Dictionary<string, string> Metadata { get; internal set; }
 
         [JsonProperty ("lease_duration")]
-        public long LeaseDuration { get; set; }
+        public long LeaseDuration { get; internal set; }
 
         [JsonProperty ("renewable")]
-        public bool Renewable { get; set; }
+        public bool Renewable { get; internal set; }
 
+
+        /// <summary>
+        /// The Entity this login is associated with.
+        /// </summary>
         [JsonProperty ("entity_id")]
-        public string EntityId { get; set; }
+        public string EntityId { get; internal set; }
+
+
+        /// <summary>
+        /// The type of token this is:  Service or Batch are the only valid values.
+        /// </summary>
+        [JsonProperty("token_type")]
+        public string TokenType { get; internal set; }
     }
 }

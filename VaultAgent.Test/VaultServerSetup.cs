@@ -174,7 +174,7 @@ namespace VaultAgentTests
 				CreateNoWindow = false,
 				RedirectStandardError = true,
 				RedirectStandardOutput = true
-		};
+			};
 
 			// Startup the vault server
 			startInfo.EnvironmentVariables["HOME"] = VaultServerRef.vaultFolder;

@@ -82,19 +82,7 @@ namespace VaultAgent {
             // Establish a connection to the token backend.
             _tokenEngine = (TokenAuthEngine) ConnectAuthenticationBackend (EnumBackendTypes.A_Token);
 
-            if ( tokenID != "" ) {
-                TokenID = tokenID;
-/*
-		        _vaultAccessTokenID = tokenID;
-
-                // Let the HTTP Connector know about the token.
-                _httpConnector.SetTokenHeader(_vaultAccessTokenID);
-
-                //  Now retrieve token details from Vault.
-                Task<Token> task = Task.Run<Token> (async () => await _tokenEngine.GetCurrentTokenInfo());
-		        Token = task.Result;
-*/
-            }
+            if ( tokenID != "" ) {TokenID = tokenID;}
         }
 
 
@@ -239,6 +227,9 @@ namespace VaultAgent {
                 case EnumBackendTypes.A_Token:
                     TokenAuthEngine tokenAuthEngine = new TokenAuthEngine (this);
                     return tokenAuthEngine;
+                case EnumBackendTypes.A_LDAP:
+                    LdapAuthEngine ldapAuthEngine = new LdapAuthEngine(backendName,backendMountPath,this);
+                    return ldapAuthEngine;
                 default: throw new ArgumentOutOfRangeException ("Must supply a backendType that is derived from the VaultAuthenticationBackend class");
             }
         }
@@ -258,7 +249,7 @@ namespace VaultAgent {
                 case EnumBackendTypes.A_Token:
                     TokenAuthEngine tokenAuthEngine = new TokenAuthEngine (this);
                     return tokenAuthEngine;
-                default: throw new ArgumentOutOfRangeException ("Must supply a backendType that is derived from the VaultAuthenticationBackend class");
+                default: throw new ArgumentOutOfRangeException ("Must supply a backendType that is derived from the VaultAuthenticationBackend class AND that supports a default backend mount.");
             }
         }
 
