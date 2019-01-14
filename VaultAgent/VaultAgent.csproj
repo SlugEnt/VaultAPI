@@ -1,10 +1,23 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyVersion>0.0.9.41</AssemblyVersion>
-    <FileVersion>0.0.9.26</FileVersion>
-    <Version>0.0.9</Version>
+    <AssemblyVersion>0.1.0.1</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+    <Version>0.1.0</Version>
+    <Title>VaultAgent</Title>
+    <PackageId>SlugEnt.VaultAgent</PackageId>
+    <Authors>Scott Herrmann</Authors>
+    <Company>Slug Enterprises</Company>
+    <Description>A C# library for interacting with HashiCorp's Vault.  Still very much a WIP.</Description>
+    <Copyright>Scott Herrmann 2018</Copyright>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <RepositoryUrl>https://bitbucket.org/wshpersonal/vaultapi/src/master</RepositoryUrl>
+    <PackageProjectUrl>https://bitbucket.org/wshpersonal/vaultapi/wiki/Home</PackageProjectUrl>
+    <RepositoryType>Git</RepositoryType>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageReleaseNotes>Supports Token, LDAP, AppRole, System, Transit, Identity, Keyvalue1 and KeyValue2 backends.</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
