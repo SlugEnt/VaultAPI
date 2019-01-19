@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Collections;
+using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using VaultAgent;
@@ -175,13 +176,58 @@ namespace VaultAgent {
 
 
 
-        /// <summary>
-        /// Performs an HTTP Delete operation.
-        /// </summary>
-        /// <param name="APIPath">The Vault path to call to perform a deletion on.</param>
-        /// <param name="callingRoutineName">Routine that called this function</param>
-        /// <returns>VaultDateResponseObject of the results of the operation.</returns>
-        public async Task<VaultDataResponseObject> DeleteAsync (string APIPath, string callingRoutineName) {
+	    /// <summary>
+	    /// Retrieves data from the Vault.
+	    /// </summary>
+	    /// <param name="APIPath">Path to the vault method you wish to execute.</param>
+	    /// <param name="callingRoutineName">Name of routine that is calling us - used during error reporting.</param>
+	    /// <param name="sendParameters">The parameters to send to the API method.</param>
+	    /// <returns>A VaultDataResponseObject containing the return data or error codes.</returns>
+	    public async Task<VaultDataResponseObjectB> GetAsync_B (string APIPath, string callingRoutineName, Dictionary<string, string> sendParameters = null) {
+		    string jsonResponse;
+		    string fullURI;
+
+
+		    // Build the fullURI string.  If it has parameters those are a part of it, otherwise it's just the APIPath
+		    if (sendParameters != null) {
+				// Assume 30 characters per parameter item.
+				StringBuilder sendParams = new StringBuilder("?",sendParameters.Count * 30);
+			    foreach (KeyValuePair<string, string> item in sendParameters) { sendParams.Append(item.Key + "=" + item.Value + "&"); }
+
+			    // Remove trailing &
+			    sendParams.Length--;
+
+			    fullURI = APIPath + sendParams.ToString();
+		    }
+			else { fullURI = APIPath; }
+
+
+		    HttpResponseMessage response = await _httpClt.GetAsync(fullURI);
+		    if ( response.IsSuccessStatusCode ) {
+				VaultDataResponseObjectB vdr = new VaultDataResponseObjectB(response);
+			    //vdr.GetResponse();
+			    //jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+			    //VaultDataResponseObjectB vdr = new VaultDataResponseObjectB(jsonResponse, response.StatusCode);
+			    return vdr;
+		    }
+		    else {
+			    // Process errors.  This method will always throw an error.
+			    await HandleVaultErrors(response, fullURI, callingRoutineName);
+			    return null;
+		    }
+	    }
+
+
+
+
+
+		/// <summary>
+		/// Performs an HTTP Delete operation.
+		/// </summary>
+		/// <param name="APIPath">The Vault path to call to perform a deletion on.</param>
+		/// <param name="callingRoutineName">Routine that called this function</param>
+		/// <returns>VaultDateResponseObject of the results of the operation.</returns>
+		public async Task<VaultDataResponseObject> DeleteAsync (string APIPath, string callingRoutineName) {
             string jsonResponse = "";
             string httpParameters = "";
 
@@ -199,7 +245,7 @@ namespace VaultAgent {
 
 
         /// <summary>
-        /// Processes errors returned by calls to the Vault API.
+        /// Processes errors returned by calls to the Vault API.  This will throw a new Error in all cases.
         /// </summary>
         /// <param name="response">The actual HttpResponseMessage returned by the HTTP call.</param>
         /// <param name="vaultHttpPath">The path that we tried to run on the Vault API.</param>

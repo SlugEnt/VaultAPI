@@ -116,13 +116,51 @@ namespace VaultAgent.AuthenticationEngines {
         }
 
 
+		// This is an attempt at optimizing and changing the HTTP calls for faster performance.
+	    /// <summary>
+	    /// Lists all Application Roles.  Returns an empty list if no roles found.
+	    /// </summary>
+	    /// <returns>List[string] of role names.  Empty list if no roles found.</returns>
+	    public async Task<List<string>> ListRoles_B() {
+		    string path = MountPointPath + "role";
 
-        /// <summary>
-        /// Reads the AppRole with the given name.  Returns an AppRole object or Null if the AppRole does not exist.
-        /// </summary>
-        /// <param name="appRoleName">String name of the app role to retrieve.</param>
-        /// <returns>AppRole object.</returns>
-        public async Task<AppRole> ReadRole (string appRoleName, bool readRoleID = false) {
+		    try {
+			    // Setup List Parameter
+			    Dictionary<string, string> contentParams = new Dictionary<string, string>() { { "list", "true" } };
+
+
+			    VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "ListRoles", contentParams);
+			    if (vdro.Success) {
+
+				    List<string> keys2 = await vdro.B_ListData();
+				    return keys2;
+
+				    string js = await vdro.AccessResponse();
+
+					string js2 = vdro.GetJSONPropertyValue(js, "keys");
+				    List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js2);
+				    return keys;
+			    }
+
+			    throw new ApplicationException("AppRoleAuthEngine:ListRoles -> Arrived at unexpected code block.");
+		    }
+
+		    // 404 Errors mean there were no roles.  We just return an empty list.
+		    catch (VaultInvalidPathException e) {
+			    e = null;
+			    return new List<string>();
+		    }
+	    }
+
+
+
+
+		/// <summary>
+		/// Reads the AppRole with the given name.  Returns an AppRole object or Null if the AppRole does not exist.
+		/// </summary>
+		/// <param name="appRoleName">String name of the app role to retrieve.</param>
+		/// <returns>AppRole object.</returns>
+		public async Task<AppRole> ReadRole (string appRoleName, bool readRoleID = false) {
             string path = MountPointPath + "role/" + appRoleName;
 
             VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ReadRole");

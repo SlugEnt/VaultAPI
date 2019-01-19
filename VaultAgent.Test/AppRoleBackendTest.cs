@@ -557,5 +557,41 @@ namespace VaultAgentTests
 
 
 
+		//Validates that the ListRoles Command works
+	    [Test]
+	    public async Task ListRoles_Works () {
+		    short i;
+		    string [] roleNames = new string[10];
+
+		    for ( i = 0; i < 10; i++ ) {
+			    string name = _uniqueKeys.GetKey("LR").ToLower();
+			    roleNames [i] = name;
+				AppRole appRole = new AppRole(name);
+			    Assert.True(await _appRoleAuthEngine.SaveRole(appRole),"A10:  Failed to save the appRole");
+			}
+
+		    List<string> appRoles = await _appRoleAuthEngine.ListRoles();
+			Assert.AreEqual(i,appRoles.Count,"A20:  Expected the listed roles to be equal to the number created.");
+			CollectionAssert.AreEquivalent(roleNames,appRoles,"A30:  Collections were not the same.");
+		}
+
+	    //Validates that the ListRoles Command works
+	    [Test]
+	    public async Task ListRolesB_Works() {
+		    short i;
+		    string[] roleNames = new string[10];
+
+		    for (i = 0; i < 10; i++) {
+			    string name = _uniqueKeys.GetKey("LR").ToLower();
+			    roleNames[i] = name;
+			    AppRole appRole = new AppRole(name);
+			    Assert.True(await _appRoleAuthEngine.SaveRole(appRole), "A10:  Failed to save the appRole");
+		    }
+
+		    List<string> appRoles = await _appRoleAuthEngine.ListRoles_B();
+		    Assert.AreEqual(i, appRoles.Count, "A20:  Expected the listed roles to be equal to the number created.");
+		    CollectionAssert.AreEquivalent(roleNames, appRoles, "A30:  Collections were not the same.");
+	    }
+
 	}
 }
