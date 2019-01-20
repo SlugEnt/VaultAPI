@@ -26,6 +26,10 @@ namespace VaultClient
 			VaultAgentAPI vaultAgent = new VaultAgentAPI("Vault", ip, port, rootToken, true);
 			
 
+			// Perform optimize tests
+			OptimizeTests optimize = new OptimizeTests(vaultAgent);
+			await optimize.Run();
+			return;
 
 
 			VC_AppRoleAuthEngine roleBE = new VC_AppRoleAuthEngine(vaultAgent);

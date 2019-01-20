@@ -61,12 +61,13 @@ namespace VaultAgent
 		/// you separate with a period.  So data.keys will create an object from whatever the keys json field contains.
 		/// <para>should be specified as all lower case.</para></param>
 		/// <returns></returns>
-		public  async Task<T> GetDotNetObject<T>(string key) {
+		public  async Task<T> GetDotNetObject<T>(string key = "data") {
 			await AsyncReadResponse();
 
 			JToken keyList = _respData.SelectToken(key);
 			return keyList.ToObject<T>();
 		}
 
+		
 	}
 }

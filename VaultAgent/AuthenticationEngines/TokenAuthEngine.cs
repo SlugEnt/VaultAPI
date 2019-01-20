@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using VaultAgent.Models;
 using SlugEnt;
@@ -28,6 +27,7 @@ namespace VaultAgent.AuthenticationEngines {
 
             VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ListTokenAccessors");
             if ( vdro.Success ) {
+
                 string js = vdro.GetDataPackageFieldAsJSON ("keys");
                 List<string> tokenAccessors = VaultUtilityFX.ConvertJSON<List<string>> (js);
                 return tokenAccessors;

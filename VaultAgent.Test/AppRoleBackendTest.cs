@@ -571,7 +571,7 @@ namespace VaultAgentTests
 
 
 		//Validates that the ListRoles Command works
-	    [Test]
+	    [Test, Order(100)]
 	    public async Task ListRoles_Works () {
 		    short i;
 		    string [] roleNames = new string[10];

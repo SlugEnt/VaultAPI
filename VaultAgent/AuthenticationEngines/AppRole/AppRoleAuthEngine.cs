@@ -63,7 +63,7 @@ namespace VaultAgent.AuthenticationEngines {
             string json = JsonConvert.SerializeObject (appRole);
 
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "AppRoleAuthEngine: SaveRole", null, json);
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "AppRoleAuthEngine: SaveRole", null, json);
             if ( vdro.Success ) { return true; }
             else { return false; }
         }
@@ -124,7 +124,7 @@ namespace VaultAgent.AuthenticationEngines {
 	    /// <returns>List[string] of role names.  Empty list if no roles found.</returns>
 	    public async Task<List<string>> ListRoles_B() {
 		    string path = MountPointPath + "role";
-
+			
 		    try {
 			    // Setup List Parameter
 			    Dictionary<string, string> contentParams = new Dictionary<string, string>() { { "list", "true" } };
@@ -277,10 +277,9 @@ namespace VaultAgent.AuthenticationEngines {
 
             Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"role_id", valueOfRoleID}};
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "UpdateAppRoleID", contentParams);
-            if ( vdro.HttpStatusCode == 204 ) { return true; }
-            else { return false; }
-        }
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "UpdateAppRoleID", contentParams);
+			return vdro.HttpStatusCode == 204 ? true : false;
+		}
 
 
 
@@ -312,9 +311,9 @@ namespace VaultAgent.AuthenticationEngines {
                 contentParams.Add ("cidr_list", cidrs);
             }
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "CreateSecretID", contentParams);
-            if ( vdro.Success ) { return vdro.GetVaultTypedObjectV2<AppRoleSecret>(); }
-            else { return null; }
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "CreateSecretID", contentParams);
+	        if ( vdro.Success ) { return await vdro.GetDotNetObject<AppRoleSecret>("data"); } 
+	        else { return null; }
         }
 
 
@@ -344,16 +343,15 @@ namespace VaultAgent.AuthenticationEngines {
 			}
 */
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "GenerateSecretID", contentParams);
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "GenerateSecretID", contentParams);
                 if ( vdro.Success ) {
-                    AppRoleSecret appRoleSecret = vdro.GetVaultTypedObjectV2<AppRoleSecret>();
+                    AppRoleSecret appRoleSecret = await vdro.GetDotNetObject<AppRoleSecret>("data");
                     if ( returnFullSecret ) {
                         AppRoleSecret fullSecret = await ReadSecretID (appRoleName, appRoleSecret.ID);
                         return fullSecret;
                     }
                     else { return appRoleSecret; }
 
-                    //return vdro.GetVaultTypedObject<AppRoleSecret>();
                 }
                 else { return null; }
             }
@@ -416,12 +414,12 @@ namespace VaultAgent.AuthenticationEngines {
             Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"secret_id", secretID}};
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "ReadSecretID", contentParams);
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "ReadSecretID", contentParams);
 
                 // Note: We cannot test for HTTP Success as Vault returns a 204 if secretID is not found - might be a bug - filed a post on Forum.
                 // TODO - Follow up to see if this is a bug or feature.
                 if ( vdro.HttpStatusCode == 200 ) {
-                    AppRoleSecret secret = vdro.GetVaultTypedObjectV2<AppRoleSecret>();
+                    AppRoleSecret secret = await vdro.GetDotNetObject<AppRoleSecret>();
 
                     // We need to do this as Vault does NOT return the ID of the secret in the data.
                     // TODO - Do we want to blank it out or continue filling it in....?
@@ -439,7 +437,7 @@ namespace VaultAgent.AuthenticationEngines {
 
 
         /// <summary>
-        /// Deletes the given secretID from the Vault.
+        /// Deletes the given secretID from the Vault.  Equivalent of Vault Destroy
         /// </summary>
         /// <param name="roleName">The Role that the secret is a part of.</param>
         /// <param name="secretID">The SecretID to delete.</param>
@@ -451,9 +449,8 @@ namespace VaultAgent.AuthenticationEngines {
             Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"secret_id", secretID}};
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "DeleteSecretID", contentParams);
-                bool rc;
-                return rc = vdro.Success ? true : false;
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "DeleteSecretID", contentParams);
+                return vdro.Success;
             }
             catch ( VaultInvalidPathException e ) {
                 e.SpecificErrorCode = EnumVaultExceptionCodes.ObjectDoesNotExist;

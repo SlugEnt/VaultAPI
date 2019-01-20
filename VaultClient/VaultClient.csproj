@@ -3,8 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
-    <AssemblyVersion>1.0.0.241</AssemblyVersion>
-    <FileVersion>1.0.0.52</FileVersion>
+    <AssemblyVersion>1.0.0.248</AssemblyVersion>
+    <FileVersion>1.0.0.59</FileVersion>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
@@ -15,6 +15,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.DotNet.ProjectModel.Workspaces" Version="1.0.0-preview2-1-003177" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+    <PackageReference Include="NUnit" Version="3.11.0" />
+    <PackageReference Include="SlugEnt.UniqueKeys" Version="1.0.4" />
   </ItemGroup>
 
   <ItemGroup>
