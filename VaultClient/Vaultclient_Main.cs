@@ -16,21 +16,11 @@ namespace VaultClient
 			string ip;
 			int port;
 
-			// USe remote Vault server
-			if (2 == 3) {
-				//rootToken = "956ac20d-3516-cdd3-61fc-b50bc5763453";
-				rootToken = "19490709-7966-bd0c-8a72-3f4724283c1e";
-				lookupToken = "7d13922b-7844-85d9-fbb8-6cc8bed270f2";
-				ip = "192.168.1.86";
-				port = 8200;
-			}
 			// Use local dev server.
-			else {
-				rootToken = "tokenA";
-				lookupToken = "hi";
-				ip = "127.0.0.1";
-				port = 47002;
-			}
+			rootToken = "tokenA";
+			lookupToken = "hi";
+			ip = "127.0.0.1";
+			port = 47002;
 
 			// Connect to Vault, add an authentication backend of AppRole.
 			VaultAgentAPI vaultAgent = new VaultAgentAPI("Vault", ip, port, rootToken, true);
@@ -48,8 +38,6 @@ namespace VaultClient
 
 
 
-			Console.ReadKey();
-			return;
 
 
 			// Transit Backend
@@ -63,6 +51,7 @@ namespace VaultClient
 			Console.WriteLine("  -- Press any key to exit program.");
 			Console.ReadKey();
 
+			Console.ReadKey();
 			return;
 
 			string path = "v1/auth/token/lookup";

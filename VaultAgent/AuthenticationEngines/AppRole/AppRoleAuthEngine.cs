@@ -98,10 +98,11 @@ namespace VaultAgent.AuthenticationEngines {
                 Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"list", "true"}};
 
 
-                VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ListRoles", contentParams);
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListRoles", contentParams);
                 if ( vdro.Success ) {
-                    string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
-                    List<string> keys = VaultUtilityFX.ConvertJSON<List<string>> (js);
+	                List<string> keys = await vdro.GetDotNetObject<List<string>>("data.keys");
+//                    string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
+//                    List<string> keys = VaultUtilityFX.ConvertJSON<List<string>> (js);
                     return keys;
                 }
 
@@ -132,14 +133,15 @@ namespace VaultAgent.AuthenticationEngines {
 			    VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "ListRoles", contentParams);
 			    if (vdro.Success) {
 
-				    List<string> keys2 = await vdro.B_ListData();
+				    List<string> keys2 = await vdro.GetDotNetObject<List<string>>("data.keys");
 				    return keys2;
-
-				    string js = await vdro.AccessResponse();
+					/*
+				    //string js = await vdro.AccessResponse();
 
 					string js2 = vdro.GetJSONPropertyValue(js, "keys");
-				    List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js2);
+				    //List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js2);
 				    return keys;
+					*/
 			    }
 
 			    throw new ApplicationException("AppRoleAuthEngine:ListRoles -> Arrived at unexpected code block.");
@@ -154,7 +156,7 @@ namespace VaultAgent.AuthenticationEngines {
 
 
 
-
+/*
 		/// <summary>
 		/// Reads the AppRole with the given name.  Returns an AppRole object or Null if the AppRole does not exist.
 		/// </summary>
@@ -176,15 +178,37 @@ namespace VaultAgent.AuthenticationEngines {
 
             return null;
         }
+		*/
 
 
+	    /// <summary>
+	    /// Reads the AppRole with the given name.  Returns an AppRole object or Null if the AppRole does not exist.
+	    /// </summary>
+	    /// <param name="appRoleName">String name of the app role to retrieve.</param>
+	    /// <returns>AppRole object.</returns>
+		public async Task<AppRole> ReadRole(string appRoleName, bool readRoleID = false) {
+		    string path = MountPointPath + "role/" + appRoleName;
 
-        /// <summary>
-        /// Deletes the App Role from the vault.  Returns True if deleted OR did not exist.  False otherwise.
-        /// </summary>
-        /// <param name="appRole">AppRole object to be deleted</param>
-        /// <returns>Bool:  True if deleted.  False otherwise</returns>
-        public async Task<bool> DeleteRole (AppRole appRole) { return await DeleteRole (appRole.Name); }
+		    VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "ReadRole");
+		    if (vdro.Success) {
+			    AppRole appRole = await vdro.GetDotNetObject<AppRole>("data");
+			    appRole.Name = appRoleName;
+
+				// Read the roleID if requested to:
+				if (readRoleID) { appRole.RoleID = await ReadRoleID(appRole.Name); }
+
+				return appRole;
+			}
+		    return null;
+	    }
+
+
+		/// <summary>
+		/// Deletes the App Role from the vault.  Returns True if deleted OR did not exist.  False otherwise.
+		/// </summary>
+		/// <param name="appRole">AppRole object to be deleted</param>
+		/// <returns>Bool:  True if deleted.  False otherwise</returns>
+		public async Task<bool> DeleteRole (AppRole appRole) { return await DeleteRole (appRole.Name); }
 
 
 
@@ -203,33 +227,52 @@ namespace VaultAgent.AuthenticationEngines {
         }
 
 
+		/* Old Code - To be removed at a later time.
+				/// <summary>
+				/// Retrieves the AppRoleID of the given AppRole.
+				/// </summary>
+				/// <param name="appRoleName"></param>
+				/// <returns>Returns a string representing the Role ID as stored in Vault.  Returns RoleID as empty string if RoleID could not be found.
+				/// VaultInvalidPathException with SpecificErrorCode = ObjectDoesNotExist, if the Role does not exist.
+				/// </returns>
+				public async Task<string> ReadRoleID (string appRoleName) {
+					string path = MountPointPath + "role/" + appRoleName + "/role-id";
 
-        /// <summary>
-        /// Retrieves the AppRoleID of the given AppRole.
-        /// </summary>
-        /// <param name="appRoleName"></param>
-        /// <returns>Returns a string representing the Role ID as stored in Vault.  Returns RoleID as empty string if RoleID could not be found.
-        /// VaultInvalidPathException with SpecificErrorCode = ObjectDoesNotExist, if the Role does not exist.
-        /// </returns>
-        public async Task<string> ReadRoleID (string appRoleName) {
-            string path = MountPointPath + "role/" + appRoleName + "/role-id";
+					try {
+						VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ReadRoleID");
+						return vdro.Success ? vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "role_id") : "";
+					}
+					catch ( VaultInvalidPathException e ) { return ""; }
+				}
+		*/
 
-            try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ReadRoleID");
-                return vdro.Success ? vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "role_id") : "";
-            }
-            catch ( VaultInvalidPathException e ) { return ""; }
-        }
+		/// <summary>
+		/// Retrieves the AppRoleID of the given AppRole.
+		/// </summary>
+		/// <param name="appRoleName"></param>
+		/// <returns>Returns a string representing the Role ID as stored in Vault.  Returns RoleID as empty string if RoleID could not be found.
+		/// VaultInvalidPathException with SpecificErrorCode = ObjectDoesNotExist, if the Role does not exist.
+		/// </returns>
+		public async Task<string> ReadRoleID(string appRoleName) {
+		    string path = MountPointPath + "role/" + appRoleName + "/role-id";
+
+		    try {
+			    VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "ReadRoleID");
+			    return vdro.Success ? await vdro.GetDotNetObject<string>("data.role_id") : ""; 
+		    }
+		    catch (VaultInvalidPathException e) { return ""; }
+	    }
 
 
 
-        /// <summary>
-        /// Updates the AppRoleID of the given AppRole to the value specified.
-        /// </summary>
-        /// <param name="appRoleName"></param>
-        /// <param name="valueOfRoleID"></param>
-        /// <returns>True if update of RoleID was successful.</returns>
-        public async Task<bool> UpdateAppRoleID (string appRoleName, string valueOfRoleID) {
+
+		/// <summary>
+		/// Updates the AppRoleID of the given AppRole to the value specified.
+		/// </summary>
+		/// <param name="appRoleName"></param>
+		/// <param name="valueOfRoleID"></param>
+		/// <returns>True if update of RoleID was successful.</returns>
+		public async Task<bool> UpdateAppRoleID (string appRoleName, string valueOfRoleID) {
             string path = MountPointPath + "role/" + appRoleName + "/role-id";
 
             Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"role_id", valueOfRoleID}};
@@ -338,10 +381,13 @@ namespace VaultAgent.AuthenticationEngines {
                 Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"list", "true"}};
 
 
-                VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ListSecretIDAccessors", contentParams);
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListSecretIDAccessors", contentParams);
                 if ( vdro.Success ) {
-                    string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
+	                List<string> keys = await vdro.GetDotNetObject<List<string>>("data.keys");
+/*
+					string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
                     List<string> keys = VaultUtilityFX.ConvertJSON<List<string>> (js);
+					*/
                     return keys;
                 }
 

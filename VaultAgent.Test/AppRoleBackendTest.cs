@@ -223,10 +223,23 @@ namespace VaultAgentTests
 			Assert.NotNull(Id);
 		}
 
-
-
-	    // Validates that asking for an invalid roleID returns an empty string if it does not exist.
+/* VDRO-B conversion tests - not needed anymore
+	    // Validates we can read a role ID that exists.
 	    [Test]
+	    public async Task ReadValidRoleID_Returns_RoleID_B() {
+		    string rName = _uniqueKeys.GetKey("Role");
+
+		    AppRole ar = new AppRole(rName);
+		    Assert.True(await _appRoleAuthEngine.SaveRole(ar));
+
+		    string Id = await _appRoleAuthEngine.ReadRoleID_B(rName);
+		    Assert.NotNull(Id);
+	    }
+*/
+
+
+		// Validates that asking for an invalid roleID returns an empty string if it does not exist.
+		[Test]
 	    public async Task ReadNonExistantRoleID_ReturnsEmptyString () {
 		    string rName = _uniqueKeys.GetKey("Role");
 		    string Id = await _appRoleAuthEngine.ReadRoleID(rName);
@@ -574,7 +587,7 @@ namespace VaultAgentTests
 			Assert.AreEqual(i,appRoles.Count,"A20:  Expected the listed roles to be equal to the number created.");
 			CollectionAssert.AreEquivalent(roleNames,appRoles,"A30:  Collections were not the same.");
 		}
-
+		/*
 	    //Validates that the ListRoles Command works
 	    [Test]
 	    public async Task ListRolesB_Works() {
@@ -592,6 +605,7 @@ namespace VaultAgentTests
 		    Assert.AreEqual(i, appRoles.Count, "A20:  Expected the listed roles to be equal to the number created.");
 		    CollectionAssert.AreEquivalent(roleNames, appRoles, "A30:  Collections were not the same.");
 	    }
+		*/
 
 	}
 }

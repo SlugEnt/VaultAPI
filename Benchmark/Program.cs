@@ -31,6 +31,7 @@ namespace MyBenchmarks
 		private VaultAgentAPI _vaultAgent;
 		private static string _beAuthName = "BM_AppRole";
 		private static string _beKV2Name = "BM_KV2";
+		private string [] roles;
 
 		//[Params(1000, 10000)]
 		//public int N;
@@ -55,7 +56,7 @@ namespace MyBenchmarks
 
 		// Sets up a fixed number of Application Roles, that should be consistent between runs.
 		private async Task SetupRoles () {
-			string[] roles = new string[10];
+			roles = new string[10];
 			roles [0] = "abcxyz123";
 			roles [1] = "zyxabc986";
 			roles [2] = "master";
@@ -122,8 +123,10 @@ namespace MyBenchmarks
 		//                  370us   +90us improvement
 		// Optimization 4:  VaultDataResponse B_ListData - Don't convert to json to string, manipulate directly from JObject
 		//                  352us   +18us improvement
+		// Optimization 5:  VDR GetDotNetObject - using generics instead of hard coded value.
+		//                  366us   -14 disimprovement
 
-
+		/*
 		[Benchmark]
 		public async Task ListRoles_A () { List<string> roles = await _appRoleAuthEngine.ListRoles(); }
 
@@ -131,7 +134,23 @@ namespace MyBenchmarks
 		[Benchmark]
 		public async Task ListRoles_B () { List<string> roles = await _appRoleAuthEngine.ListRoles_B();}
 
+	*/
 
+		[Benchmark]
+		public async Task ReadRoles_A () {
+			foreach ( string role in roles ) {
+				AppRole a = await _appRoleAuthEngine.ReadRole(role);
+			}
+		}
+
+		/*
+		[Benchmark]
+		public async Task ReadRoles_B() {
+			foreach (string role in roles) {
+				AppRole a = await _appRoleAuthEngine.ReadRoleB(role);
+			}
+		}
+		*/
 	}
 
 }

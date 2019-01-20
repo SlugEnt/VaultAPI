@@ -52,11 +52,12 @@ namespace VaultClient
         private string _beKV2Name;
 
 
-		AppRoleAuthEngine _appRoleAuthEngine;
+		private AppRoleAuthEngine _appRoleAuthEngine;
 		private string _AppRoleName;
 	    private VaultAgentAPI _vaultAgent;
 	    private UniqueKeys uniqueKeys;
 	    private string _AppBEName;
+	    private IdentitySecretEngine _idEngine;
 
 
         // The Application Roles we will create in this scenario
@@ -99,8 +100,10 @@ namespace VaultClient
 			_vaultAgent = vaultAgent;
 
 			_appRoleAuthEngine = (AppRoleAuthEngine)vaultAgent.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
+	        _idEngine = (IdentitySecretEngine) vaultAgent.ConnectToSecretBackend(EnumSecretBackendTypes.Identity);
 
-		}
+
+        }
 
 
 
@@ -405,7 +408,7 @@ namespace VaultClient
 		    VaultAgentAPI vault = new VaultAgentAPI("Role2", _vaultAgent.IP, _vaultAgent.Port);
 		    AppRoleAuthEngine authEngine = (AppRoleAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
 		    KV2SecretEngine secretEngine =
-			    (KV2SecretEngine)vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "Sheakley KV2 Secrets", _beKV2Name);
+			    (KV2SecretEngine)vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "KV2 Secrets", _beKV2Name);
 
 
 		    // Now login.            
@@ -454,7 +457,7 @@ namespace VaultClient
 		    VaultAgentAPI vault = new VaultAgentAPI("Role2", _vaultAgent.IP, _vaultAgent.Port);
 		    AppRoleAuthEngine authEngine = (AppRoleAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
 		    KV2SecretEngine secretEngine =
-			    (KV2SecretEngine)vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "Sheakley KV2 Secrets", _beKV2Name);
+			    (KV2SecretEngine)vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "KV2 Secrets", _beKV2Name);
 
 
 		    // Now login.            
