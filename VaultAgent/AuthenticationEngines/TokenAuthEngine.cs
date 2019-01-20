@@ -25,12 +25,12 @@ namespace VaultAgent.AuthenticationEngines {
         public async Task<List<string>> ListTokenAccessors () {
             string path = MountPointPath + "accessors?list=true";
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ListTokenAccessors");
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListTokenAccessors");
             if ( vdro.Success ) {
-
-                string js = vdro.GetDataPackageFieldAsJSON ("keys");
-                List<string> tokenAccessors = VaultUtilityFX.ConvertJSON<List<string>> (js);
-                return tokenAccessors;
+	            return await vdro.GetDotNetObject<List<string>>("data.keys");
+                //string js = vdro.GetDataPackageFieldAsJSON ("keys");
+                //List<string> tokenAccessors = VaultUtilityFX.ConvertJSON<List<string>> (js);
+                //return tokenAccessors;
             }
 
             return null;
@@ -47,7 +47,7 @@ namespace VaultAgent.AuthenticationEngines {
 
             string json = JsonConvert.SerializeObject (tokenSettings, Formatting.None);
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "CreateOrphanToken", null, json);
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "CreateOrphanToken", json);
             if ( vdro.Success ) { return true; }
 
             throw new ApplicationException ("TokenAuthEngine:  CreateToken returned an unexpected error.");
@@ -66,10 +66,12 @@ namespace VaultAgent.AuthenticationEngines {
 
             string json = JsonConvert.SerializeObject (tokenSettings, Formatting.None);
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "CreateToken", null, json);
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "CreateToken", json);
             if ( vdro.Success ) {
-                string js = vdro.GetResponsePackageFieldAsJSON ("auth");
-                LoginResponse loginResponse = VaultUtilityFX.ConvertJSON<LoginResponse> (js);
+
+                //string js = vdro.GetResponsePackageFieldAsJSON ("auth");
+                //LoginResponse loginResponse = VaultUtilityFX.ConvertJSON<LoginResponse> (js);
+	            LoginResponse loginResponse = await vdro.GetDotNetObject<LoginResponse>("auth");
 
                 // Now read the token.back.
                 return (await this.GetTokenWithID (loginResponse.ClientToken));
@@ -87,14 +89,15 @@ namespace VaultAgent.AuthenticationEngines {
         public async Task<Token> GetTokenWithID (string tokenID) {
             string path = MountPointPath + "lookup";
 
-            Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"token", tokenID}};
+            Dictionary<string, object> contentParams = new Dictionary<string, object>() {{"token", tokenID}};
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "GetToken", contentParams);
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B(path, "GetToken", contentParams);
                 if ( vdro.Success ) {
-                    string js = vdro.GetDataPackageAsJSON();
-                    Token token = VaultUtilityFX.ConvertJSON<Token> (js);
-                    return token;
+	                return await vdro.GetDotNetObject<Token>();
+                    //string js = vdro.GetDataPackageAsJSON();
+                    //Token token = VaultUtilityFX.ConvertJSON<Token> (js);
+                    //return token;
                 }
                 else { throw new VaultUnexpectedCodePathException(); }
             }
@@ -117,11 +120,12 @@ namespace VaultAgent.AuthenticationEngines {
             string path = MountPointPath + "lookup-self";
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "GetCurrentTokenInfo");
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "GetCurrentTokenInfo");
                 if ( vdro.Success ) {
-                    string js = vdro.GetDataPackageAsJSON();
-                    Token tokenInfo = VaultUtilityFX.ConvertJSON<Token> (js);
-                    return tokenInfo;
+	                return await vdro.GetDotNetObject<Token>();
+                    //string js = vdro.GetDataPackageAsJSON();
+                    //Token tokenInfo = VaultUtilityFX.ConvertJSON<Token> (js);
+                    //return tokenInfo;
                 }
                 else { throw new VaultUnexpectedCodePathException(); }
             }
@@ -144,13 +148,14 @@ namespace VaultAgent.AuthenticationEngines {
             string path = MountPointPath + "lookup-accessor";
 
 
-            Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"accessor", accessorID}};
+            Dictionary<string, object> contentParams = new Dictionary<string, object>() {{"accessor", accessorID}};
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "GetTokenViaAccessor", contentParams);
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "GetTokenViaAccessor", contentParams);
                 if ( vdro.Success ) {
-                    string js = vdro.GetDataPackageAsJSON();
-                    Token token = VaultUtilityFX.ConvertJSON<Token> (js);
+	                Token token = await vdro.GetDotNetObject<Token>();
+//                    string js = vdro.GetDataPackageAsJSON();
+//                    Token token = VaultUtilityFX.ConvertJSON<Token> (js);
                     token.TokenType = EnumTokenType.Accessor;
                     return token;
                 }
@@ -174,10 +179,10 @@ namespace VaultAgent.AuthenticationEngines {
         public async Task<bool> RenewToken (string tokenID) {
             string path = MountPointPath + "renew";
 
-            Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"token", tokenID}};
+            Dictionary<string, object> contentParams = new Dictionary<string, object>() {{"token", tokenID}};
 
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "RenewToken", contentParams);
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "RenewToken", contentParams);
             if ( vdro.Success ) { return true; }
             else { throw new VaultUnexpectedCodePathException(); }
         }
@@ -201,7 +206,7 @@ namespace VaultAgent.AuthenticationEngines {
             //}
 
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "RenewToken", contentParams);
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "RenewToken", contentParams);
             if ( vdro.Success ) { return true; }
             else { throw new VaultUnexpectedCodePathException(); }
         }
@@ -215,7 +220,7 @@ namespace VaultAgent.AuthenticationEngines {
         public async Task<bool> RenewTokenSelf () {
             string path = MountPointPath + "renew-self";
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "RenewTokenSelf");
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "RenewTokenSelf");
             if ( vdro.Success ) { return true; }
             else { throw new VaultUnexpectedCodePathException(); }
         }
@@ -233,7 +238,7 @@ namespace VaultAgent.AuthenticationEngines {
             Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"increment", renewalTimeAmount.Value}};
 
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "RenewTokenSelf", contentParams);
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "RenewTokenSelf", contentParams);
             if ( vdro.Success ) { return true; }
             else { throw new VaultUnexpectedCodePathException(); }
         }
@@ -251,11 +256,11 @@ namespace VaultAgent.AuthenticationEngines {
             if ( revokeChildren == true ) { path = MountPointPath + "revoke"; }
             else { path = MountPointPath + "revoke-orphan"; }
 
-            Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"token", tokenID}};
+            Dictionary<string, object> contentParams = new Dictionary<string, object>() {{"token", tokenID}};
 
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "RevokeToken", contentParams);
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "RevokeToken", contentParams);
                 if ( vdro.Success ) { return true; }
                 else { throw new VaultUnexpectedCodePathException(); }
             }
@@ -276,7 +281,7 @@ namespace VaultAgent.AuthenticationEngines {
             string path = MountPointPath + "revoke-self";
 
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "RevokeTokenSelf");
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "RevokeTokenSelf");
             if ( vdro.Success ) { return true; }
             else { throw new VaultUnexpectedCodePathException(); }
         }
@@ -292,10 +297,10 @@ namespace VaultAgent.AuthenticationEngines {
             string path = MountPointPath + "revoke-accessor";
 
 
-            Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"accessor", AccessorID}};
+            Dictionary<string, object> contentParams = new Dictionary<string, object>() {{"accessor", AccessorID}};
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "RevokeTokenViaAccessor", contentParams);
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "RevokeTokenViaAccessor", contentParams);
                 if ( vdro.Success ) { return true; }
                 else { throw new VaultUnexpectedCodePathException(); }
             }
@@ -318,7 +323,7 @@ namespace VaultAgent.AuthenticationEngines {
             string json = JsonConvert.SerializeObject (tokenRole, Formatting.None);
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "SaveTokenRole", null, json);
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "SaveTokenRole", json);
                 if ( vdro.Success ) { return true; }
                 else { throw new VaultUnexpectedCodePathException(); }
             }
@@ -340,11 +345,12 @@ namespace VaultAgent.AuthenticationEngines {
             string path = MountPointPath + "roles/" + tokenRoleName;
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "GetTokenRole");
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "GetTokenRole");
                 if ( vdro.Success ) {
-                    string js = vdro.GetDataPackageAsJSON();
-                    TokenRole tokenRole = VaultUtilityFX.ConvertJSON<TokenRole> (js);
-                    return tokenRole;
+	                return await vdro.GetDotNetObject<TokenRole>();
+                    //string js = vdro.GetDataPackageAsJSON();
+                    //TokenRole tokenRole = VaultUtilityFX.ConvertJSON<TokenRole> (js);
+                    //return tokenRole;
                 }
                 else { throw new VaultUnexpectedCodePathException(); }
             }
@@ -358,11 +364,12 @@ namespace VaultAgent.AuthenticationEngines {
         public async Task<List<string>> ListTokenRoles () {
             string path = MountPointPath + "roles?list=true";
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ListTokenRoles");
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListTokenRoles");
             if ( vdro.Success ) {
-                string js = vdro.GetDataPackageFieldAsJSON ("keys");
-                List<string> tokenRoles = VaultUtilityFX.ConvertJSON<List<string>> (js);
-                return tokenRoles;
+	            return await vdro.GetDotNetObject<List<string>>("data.keys");
+                //string js = vdro.GetDataPackageFieldAsJSON ("keys");
+                //List<string> tokenRoles = VaultUtilityFX.ConvertJSON<List<string>> (js);
+                //return tokenRoles;
             }
 
             return null;

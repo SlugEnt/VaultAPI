@@ -48,7 +48,7 @@ namespace VaultAgent.SecretEngines {
 
             string json = JsonConvert.SerializeObject (entity);
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "IdentityEngine: SaveEntity", null, json);
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "IdentityEngine: SaveEntity", json);
             if ( vdro.Success ) {
                 Guid guid;
 
@@ -56,7 +56,8 @@ namespace VaultAgent.SecretEngines {
                 // passed in Entity object.  Otherwise it is in the response body.
                 if ( entity.Id != Guid.Empty ) { guid = entity.Id; }
                 else {
-                    string id = vdro.GetDataPackageFieldAsJSON ("id");
+	                string id = await vdro.GetDotNetObject<string>("data.id");
+                    //string id = vdro.GetDataPackageFieldAsJSON ("id");
                     guid = new Guid (id);
                 }
 
@@ -81,10 +82,11 @@ namespace VaultAgent.SecretEngines {
         public async Task<Entity> ReadEntity (Guid id) {
             string path = MountPointPath + "entity/id/" + id;
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "IdentityEngine: ReadEntity", null);
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "IdentityEngine: ReadEntity", null);
             if ( vdro.Success ) {
-                Entity entity = vdro.GetVaultTypedObjectV2<Entity>();
-                return entity;
+	            return await vdro.GetDotNetObject<Entity>();
+                //Entity entity = vdro.GetVaultTypedObjectV2<Entity>();
+                //return entity;
             }
 
             return null;
@@ -101,10 +103,11 @@ namespace VaultAgent.SecretEngines {
         public async Task<Entity> ReadEntity (string entityName) {
             string path = MountPointPath + "entity/name/" + entityName;
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "IdentityEngine: ReadEntity (EntityName)", null);
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "IdentityEngine: ReadEntity (EntityName)", null);
             if ( vdro.Success ) {
-                Entity entity = vdro.GetVaultTypedObjectV2<Entity>();
-                return entity;
+	            return await vdro.GetDotNetObject<Entity>();
+                //Entity entity = vdro.GetVaultTypedObjectV2<Entity>();
+                //return entity;
             }
 
             return null;
@@ -154,11 +157,12 @@ namespace VaultAgent.SecretEngines {
                 Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"list", "true"}};
 
 
-                VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ListEntitesByName", contentParams);
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListEntitesByName", contentParams);
                 if ( vdro.Success ) {
-                    string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
-                    List<string> keys = VaultUtilityFX.ConvertJSON<List<string>> (js);
-                    return keys;
+	                return await vdro.GetDotNetObject<List<string>>("data.keys");
+//	                string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
+  //                  List<string> keys = VaultUtilityFX.ConvertJSON<List<string>> (js);
+    //                return keys;
                 }
 
                 throw new ApplicationException ("IdentitySecretEngine:ListEntitiesByName -> Arrived at unexpected code block.");
@@ -181,11 +185,12 @@ namespace VaultAgent.SecretEngines {
                 Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"list", "true"}};
 
 
-                VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ListEntitesByID", contentParams);
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListEntitesByID", contentParams);
                 if ( vdro.Success ) {
-                    string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
-                    List<Guid> keys = VaultUtilityFX.ConvertJSON<List<Guid>> (js);
-                    return keys;
+	                return await vdro.GetDotNetObject<List<Guid>>("data.keys");
+                    //string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
+//                    List<Guid> keys = VaultUtilityFX.ConvertJSON<List<Guid>> (js);
+  //                  return keys;
                 }
 
                 throw new ApplicationException ("IdentitySecretEngine:ListEntitiesByID -> Arrived at unexpected code block.");
@@ -224,9 +229,10 @@ namespace VaultAgent.SecretEngines {
             };
 
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "IdentityEngine: SaveAlias", contentParams);
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "IdentityEngine: SaveAlias", contentParams);
             if ( vdro.Success ) {
-                string id = vdro.GetDataPackageFieldAsJSON ("id");
+	            string id = await vdro.GetDotNetObject<string>("data.id");
+//                string id = vdro.GetDataPackageFieldAsJSON ("id");
                 Guid guid = new Guid (id);
                 return guid;
             }
@@ -244,13 +250,14 @@ namespace VaultAgent.SecretEngines {
         public async Task<EntityAlias> ReadAlias (Guid aliasID) {
             string path = MountPointPath + "entity-alias/id/" + aliasID;
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "IdentityEngine: ReadAlias (AliasID)", null);
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "IdentityEngine: ReadAlias (AliasID)", null);
             if ( vdro.Success ) {
-                string json = vdro.GetDataPackageAsJSON();
+	            return await vdro.GetDotNetObject<EntityAlias>();
+//                string json = vdro.GetDataPackageAsJSON();
 
                 //return true;
-                EntityAlias entityAlias = vdro.GetVaultTypedObject<EntityAlias>();
-                return entityAlias;
+  //              EntityAlias entityAlias = vdro.GetVaultTypedObject<EntityAlias>();
+    //            return entityAlias;
             }
 
             return null;
@@ -277,9 +284,9 @@ namespace VaultAgent.SecretEngines {
             };
 
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "IdentityEngine: UpdateAlias", contentParams);
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "IdentityEngine: UpdateAlias", contentParams);
             if ( vdro.Success ) {
-                string id = vdro.GetDataPackageFieldAsJSON ("id");
+	            string id = await vdro.GetDotNetObject<string>("data.id");  //vdro.GetDataPackageFieldAsJSON ("id");
                 Guid guid = new Guid (id);
                 return guid;
             }
@@ -310,11 +317,12 @@ namespace VaultAgent.SecretEngines {
                 Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"list", "true"}};
 
 
-                VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ListAliases", contentParams);
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListAliases", contentParams);
                 if ( vdro.Success ) {
-                    string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
-                    List<Guid> keys = VaultUtilityFX.ConvertJSON<List<Guid>> (js);
-                    return keys;
+	                return await vdro.GetDotNetObject<List<Guid>>("data.keys");
+//                    string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
+  //                  List<Guid> keys = VaultUtilityFX.ConvertJSON<List<Guid>> (js);
+    //                return keys;
                 }
 
                 throw new ApplicationException ("IdentitySecretEngine:ListAliases -> Arrived at unexpected code block.");

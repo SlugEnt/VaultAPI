@@ -63,7 +63,7 @@ namespace VaultAgent.AuthenticationEngines {
             string json = JsonConvert.SerializeObject (appRole);
 
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "AppRoleAuthEngine: SaveRole", null, json);
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "AppRoleAuthEngine: SaveRole", json);
             if ( vdro.Success ) { return true; }
             else { return false; }
         }
@@ -275,7 +275,7 @@ namespace VaultAgent.AuthenticationEngines {
 		public async Task<bool> UpdateAppRoleID (string appRoleName, string valueOfRoleID) {
             string path = MountPointPath + "role/" + appRoleName + "/role-id";
 
-            Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"role_id", valueOfRoleID}};
+            Dictionary<string, object> contentParams = new Dictionary<string, object>() {{"role_id", valueOfRoleID}};
 
             VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "UpdateAppRoleID", contentParams);
 			return vdro.HttpStatusCode == 204 ? true : false;
@@ -299,7 +299,7 @@ namespace VaultAgent.AuthenticationEngines {
             string path = MountPointPath + "role/" + appRoleName + "/secret-id";
 
 
-            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+            Dictionary<string, object> contentParams = new Dictionary<string, object>();
             if ( metadata != null ) {
                 string metadataString = JsonConvert.SerializeObject (metadata);
                 contentParams.Add ("metadata", metadataString);
@@ -330,7 +330,7 @@ namespace VaultAgent.AuthenticationEngines {
             string path = MountPointPath + "role/" + appRoleName + "/secret-id";
 
 
-            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+            Dictionary<string, object> contentParams = new Dictionary<string, object>();
             if ( vaultMetadata != null ) {
                 string metadataString = JsonConvert.SerializeObject (vaultMetadata);
                 contentParams.Add ("metadata", metadataString);
@@ -411,7 +411,7 @@ namespace VaultAgent.AuthenticationEngines {
             string path = MountPointPath + "role/" + roleName + "/secret-id/lookup";
 
             // Setup secret ID Parameter
-            Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"secret_id", secretID}};
+            Dictionary<string, object> contentParams = new Dictionary<string, object>() {{"secret_id", secretID}};
 
             try {
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "ReadSecretID", contentParams);
@@ -446,7 +446,7 @@ namespace VaultAgent.AuthenticationEngines {
             string path = MountPointPath + "role/" + roleName + "/secret-id/destroy";
 
             // Setup secret ID Parameter
-            Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"secret_id", secretID}};
+            Dictionary<string, object> contentParams = new Dictionary<string, object>() {{"secret_id", secretID}};
 
             try {
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "DeleteSecretID", contentParams);

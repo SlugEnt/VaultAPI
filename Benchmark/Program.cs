@@ -8,6 +8,7 @@ using VaultAgent.AuthenticationEngines;
 using VaultAgent.Backends;
 using VaultAgent.Backends.System;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using VaultAgent.SecretEngines;
 
 
@@ -126,6 +127,41 @@ namespace MyBenchmarks
 		// Optimization 5:  VDR GetDotNetObject - using generics instead of hard coded value.
 		//                  366us   -14 disimprovement
 
+
+		[Benchmark]
+		public void DictionarySerializer_A () {
+			Dictionary<string,string> a = new Dictionary<string, string>();
+			a.Add("a", "1");
+			a.Add("b", "2000");
+			a.Add("c", "33333");
+			a.Add("d", "4000044444");
+			a.Add("e", "555555555555555555");
+
+
+			string inputJSON = JsonConvert.SerializeObject(a, Formatting.None);
+		}
+
+
+
+		[Benchmark]
+		public void DictionarySerializer_B () {
+			Dictionary<string, object> a = new Dictionary<string, object>();
+			a.Add("a", "1");
+			a.Add("b", "2000");
+			a.Add("c", "33333");
+			a.Add("d", "4000044444");
+			a.Add("e", "555555555555555555");
+		
+
+
+		string inputJSON = JsonConvert.SerializeObject(a, Formatting.None);
+		}
+	}
+
+
+
+
+
 		/*
 		[Benchmark]
 		public async Task ListRoles_A () { List<string> roles = await _appRoleAuthEngine.ListRoles(); }
@@ -135,14 +171,14 @@ namespace MyBenchmarks
 		public async Task ListRoles_B () { List<string> roles = await _appRoleAuthEngine.ListRoles_B();}
 
 	*/
-
+/*
 		[Benchmark]
 		public async Task ReadRoles_A () {
 			foreach ( string role in roles ) {
 				AppRole a = await _appRoleAuthEngine.ReadRole(role);
 			}
 		}
-
+*/
 		/*
 		[Benchmark]
 		public async Task ReadRoles_B() {
@@ -151,6 +187,6 @@ namespace MyBenchmarks
 			}
 		}
 		*/
-	}
-
 }
+
+

@@ -64,8 +64,11 @@ namespace VaultAgent
 		public  async Task<T> GetDotNetObject<T>(string key = "data") {
 			await AsyncReadResponse();
 
-			JToken keyList = _respData.SelectToken(key);
-			return keyList.ToObject<T>();
+			JToken json;	
+			
+			if ( key == "" ) { json = _respData;}
+			else { json = _respData.SelectToken(key); }
+			return json.ToObject<T>();
 		}
 
 		
