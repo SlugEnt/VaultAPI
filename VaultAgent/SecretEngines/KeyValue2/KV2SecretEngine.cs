@@ -305,9 +305,6 @@ namespace VaultAgent.SecretEngines {
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListSecrets");
                 if ( vdro.Success ) {
 	                return await vdro.GetDotNetObject<List<string>>("data.keys");
-//                    string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
-  //                  List<string> keys = VaultUtilityFX.ConvertJSON<List<string>> (js);
-    //                return keys;
                 }
 
                 throw new ApplicationException ("KV2SecretEngine:ListSecretsAtPath  Arrived at unexpected code block.");

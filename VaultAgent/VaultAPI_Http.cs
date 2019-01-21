@@ -44,6 +44,7 @@ namespace VaultAgent {
 
 
 
+		[Obsolete]
         /// <summary>
         /// Calls the HTTP Post method, to send data to the Vault API server.  
         /// </summary>
@@ -101,11 +102,13 @@ namespace VaultAgent {
 		/// <param name="inputParams">A Dictionary of key value pairs of parameters that should be sent in the body of the HTTP Call.  Should set to null if overriding 
 		/// with your own JSON string of parameters by setting the inputParamsJSON</param>
 		/// <param name="inputParamsJSON">JSON string of the parameters you want to put in the body of the HTTP call.  This is used to override the inputParams Dictionary.</param>
+		/// <param name="expectReturnToHaveBody">Set to true to optimize the call by not retrieving the body from the response because it is not needed or expected to be empty.</param>
 		/// <returns>VaultDataResponseObject with the results of the call.</returns>
-		public async Task<VaultDataResponseObjectB> PostAsync_B (string APIPath,
-	                                                            string callingRoutineName,
-	                                                            //Dictionary<string, object> inputParams = null,
-	                                                            string inputParamsJSON = "") {
+		public async Task<VaultDataResponseObjectB> PostAsync_B(string APIPath,
+																string callingRoutineName,
+																//Dictionary<string, object> inputParams = null,
+																string inputParamsJSON = "",
+																 bool expectReturnToHaveBody = true) {
 		    //if ( inputParams != null ) { inputParamsJSON = JsonConvert.SerializeObject(inputParams, Formatting.None); }
 
 
@@ -115,7 +118,9 @@ namespace VaultAgent {
 
 		    HttpResponseMessage response = await _httpClt.PostAsync(APIPath, contentBody);
 		    if ( response.IsSuccessStatusCode ) {
-			    VaultDataResponseObjectB vdr = new VaultDataResponseObjectB(response);
+			    VaultDataResponseObjectB vdr;
+				if (!expectReturnToHaveBody) { vdr = new VaultDataResponseObjectB(response.StatusCode);}
+			    else { vdr = new VaultDataResponseObjectB(response); }
 			    return vdr;
 		    }
 		    else {
@@ -124,20 +129,6 @@ namespace VaultAgent {
 			    return null;
 		    }
 	    }
-	    /*
-
-
-	    string jsonResponse = "";
-
-	    HttpResponseMessage response = await _httpClt.PostAsync(APIPath, contentBody);
-	    if (response.IsSuccessStatusCode) { jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false); }
-	    else { await HandleVaultErrors(response, APIPath, callingRoutineName); }
-
-
-	    VaultDataResponseObject vdr = new VaultDataResponseObject(jsonResponse, response.StatusCode);
-	    return vdr;
-	    */
-		
 
 
 
@@ -151,6 +142,7 @@ namespace VaultAgent {
 		/// with your own JSON string of parameters by setting the inputParamsJSON</param>
 		/// <param name="inputParamsJSON">JSON string of the parameters you want to put in the body of the HTTP call.  This is used to override the inputParams Dictionary.</param>
 		/// <returns>VaultDataResponseObject with the results of the call.</returns>
+		[Obsolete]
 		public async Task<VaultDataResponseObject> PostAsync2 (string APIPath,
                                                                string callingRoutineName,
                                                                Dictionary<string, object> inputParams = null,
@@ -205,7 +197,7 @@ namespace VaultAgent {
         }
 
 
-
+		[Obsolete]
         /// <summary>
         /// Retrieves data from the Vault.
         /// </summary>
