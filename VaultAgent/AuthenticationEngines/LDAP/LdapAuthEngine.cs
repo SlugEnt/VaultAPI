@@ -47,7 +47,7 @@ namespace VaultAgent.AuthenticationEngines
 		    string path = MountPointPath + "config";
 		    string json  = JsonConvert.SerializeObject(ldapConfig);
 
-		    VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "LdapAuthEngine: ConfigureLDAPBackend", null, json);
+		    VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B(path, "LdapAuthEngine: ConfigureLDAPBackend", json,false);
 		    return vdro.Success;
 		}
 
@@ -61,11 +61,9 @@ namespace VaultAgent.AuthenticationEngines
 		    string path = MountPointPath + "config";
 
 
-		    VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "ReadLDAPConfig");
+		    VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "ReadLDAPConfig");
 		    if (vdro.Success) {
-				LdapConfig ldapConfig = vdro.GetVaultTypedObjectV2<LdapConfig>();
-
-			    return ldapConfig;
+                return await vdro.GetDotNetObject<LdapConfig>();
 		    }
 
 		    return null;
@@ -86,11 +84,9 @@ namespace VaultAgent.AuthenticationEngines
 			    Dictionary<string, string> contentParams = new Dictionary<string, string>() { { "list", "true" } };
 
 
-			    VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "LdapAuthEngine:ListUsers", contentParams);
+			    VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "LdapAuthEngine:ListUsers", contentParams);
 			    if (vdro.Success) {
-				    string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
-				    List<string> keys = VaultSerializationHelper.FromJson<List<string>>(js); 
-				    return keys;
+                    return await vdro.GetDotNetObject<List<string>> ("data.keys");
 			    }
 
 			    throw new ApplicationException("LdapAuthEngine:ListUsers -> Arrived at unexpected code block.");
@@ -121,9 +117,8 @@ namespace VaultAgent.AuthenticationEngines
             json.Add("policies", policyValue);
 
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "LdapAuthEngine: SaveGroup", null, json.ToString());
-		    if (vdro.Success) { return true; }
-		    else { return false; }
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B(path, "LdapAuthEngine: SaveGroup", json.ToString(),false);
+            return vdro.Success;
 		}
 
 
@@ -138,11 +133,15 @@ namespace VaultAgent.AuthenticationEngines
             string path = MountPointPath + "groups/" + groupName;
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "LdapAuthEngine:GetPoliciesAssignedToGroup");
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "LdapAuthEngine:GetPoliciesAssignedToGroup");
                 if ( vdro.Success ) {
+                    return await vdro.GetDotNetObject<List<string>> ("data.policies");
+                    //TODO Cleanup
+                    /*
                     string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "policies");
                     List<string> policies = VaultSerializationHelper.FromJson<List<string>> (js);
                     return policies;
+                    */
                 }
 
                 throw new ApplicationException ("LdapAuthEngine:GetPoliciesAssignedToGroup -> Arrived at unexpected code block.");
@@ -168,12 +167,16 @@ public async Task<List<string>> ListUsers() {
 			    Dictionary<string, string> contentParams = new Dictionary<string, string>() { { "list", "true" } };
 
 
-			    VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync(path, "LdapAuthEngine:ListUsers", contentParams);
+			    VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "LdapAuthEngine:ListUsers", contentParams);
 			    if (vdro.Success) {
+                    return await vdro.GetDotNetObject<List<string>> ("data.keys");
+                    //TODO Cleanup
+                    /*
 				    string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
 
 				    List<string> keys = VaultSerializationHelper.FromJson<List<string>>(js); 
 				    return keys;
+                    */
 			    }
 
 			    throw new ApplicationException("LdapAuthEngine:ListUsers -> Arrived at unexpected code block.");
@@ -200,10 +203,14 @@ public async Task<List<string>> ListUsers() {
 			JObject json = new JObject();
 			json.Add("password",password);
 
-		    VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync(path, "LdapAuthEngine:Login", null, json.ToString());
+		    VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B(path, "LdapAuthEngine:Login",  json.ToString());
             if ( vdro.Success ) {
+                return await vdro.GetDotNetObject<LoginResponse> ("auth");
+                //TODO Cleanup
+                /*
                 LoginResponse lr = vdro.GetVaultTypedObjectFromResponseField<LoginResponse> ("auth");
                 return lr;
+                */
             }
             else { return null; }
         }

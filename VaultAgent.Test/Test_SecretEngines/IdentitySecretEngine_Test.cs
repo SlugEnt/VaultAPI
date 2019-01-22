@@ -550,7 +550,7 @@ namespace VaultAgentTests
 			// Now save entity
 			Entity savedEntity = await _idEngine.SaveEntity(entity);
 			Assert.IsNotNull(savedEntity, "A10:  Expected to receive an Entity object");
-			Thread.Sleep(30);
+			Thread.Sleep(60);
 
 			List<Guid> aliases = await _idEngine.ListAliases();
 			Assert.GreaterOrEqual(aliases.Count,1,"A20:  Expected the list of aliases to contain 1 or more items.");
