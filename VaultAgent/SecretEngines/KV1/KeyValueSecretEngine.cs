@@ -109,13 +109,15 @@ namespace VaultAgent.SecretEngines {
             // Build the content parameters, which will contain the TTL and the key value attributes.
             Dictionary<string, string> contentParams = new Dictionary<string, string>();
             contentParams.Add ("ttl", secret.RefreshInterval.ToString());
-            string contentParamsJSON = JsonConvert.SerializeObject (contentParams, Formatting.None);
+	        //string contentParamsJSON = VaultSerializationHelper.ToJson(contentParams);  
+	        string contentParamsJSON = JsonConvert.SerializeObject (contentParams, Formatting.None);
 
 
             // Build entire JSON Body:  Input Params + Bulk Items List.
             string attrJSON = "";
             if ( secret.Attributes.Count > 0 ) {
-                attrJSON = JsonConvert.SerializeObject (secret.Attributes, Formatting.None);
+	            //attrJSON = VaultSerializationHelper.ToJson(secret.Attributes);
+	            attrJSON = JsonConvert.SerializeObject (secret.Attributes, Formatting.None);
 
                 // Combine the 2 JSON's
                 string newVarsJSON = contentParamsJSON.Substring (1, contentParamsJSON.Length - 2) + ",";
@@ -123,9 +125,8 @@ namespace VaultAgent.SecretEngines {
             }
             else { attrJSON = contentParamsJSON; }
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "CreateOrUpdateSecret", null, attrJSON);
-            if ( vdro.Success ) { return true; }
-            else { return false; }
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "CreateOrUpdateSecret", attrJSON);
+	        return vdro.Success;
         }
 
 
@@ -142,9 +143,10 @@ namespace VaultAgent.SecretEngines {
             string path = MountPointPath + secretPath;
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ReadSecret");
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ReadSecret");
                 if ( vdro.Success ) {
-                    KeyValueSecret secret = vdro.GetVaultTypedObjectFromResponse<KeyValueSecret>();
+	                KeyValueSecret secret = await vdro.GetDotNetObject<KeyValueSecret>("");
+					//KeyValueSecret secret = vdro.GetVaultTypedObjectFromResponse<KeyValueSecret>();
 
                     // Vault does not populate the path variable.  We need to set.
                     secret.Path = secretPath;
@@ -153,8 +155,7 @@ namespace VaultAgent.SecretEngines {
 
                 throw new ApplicationException ("SecretBackEnd: ReadSecret - Arrived at an unexpected code path.");
             }
-            catch ( VaultInvalidPathException e ) { return null; }
-            catch ( Exception e ) { throw e; }
+            catch ( VaultInvalidPathException) { return null; }
         }
 
 
@@ -202,18 +203,16 @@ namespace VaultAgent.SecretEngines {
             string path = MountPointPath + secretPath + "?list=true";
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ListSecrets");
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListSecrets");
                 if ( vdro.Success ) {
-                    string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
-                    List<string> keys = VaultUtilityFX.ConvertJSON<List<string>> (js);
-                    return keys;
+	                return await vdro.GetDotNetObject<List<string>>("data.keys");
                 }
 
                 throw new ApplicationException ("KeyValueSecretEngine:ListSecrets  Arrived at unexpected code block.");
             }
 
             // 404 Errors mean there were no sub paths.  We just return an empty list.
-            catch ( VaultInvalidPathException e ) { return new List<string>(); }
+            catch ( VaultInvalidPathException ) { return new List<string>(); }
         }
 
 
@@ -266,7 +265,7 @@ namespace VaultAgent.SecretEngines {
         public async Task<bool> DeleteSecret (string secretPath) {
             string path = MountPointPath + secretPath;
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteSecretVersion");
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteSecretVersion");
             if ( vdro.Success ) { return true; }
             else { return false; }
         }

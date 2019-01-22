@@ -27,18 +27,19 @@ namespace VaultAgent.Backends.System {
         /// <summary>
         /// The name of this policy.  Vault stores all policies as lower case values and so it is converted to all lower case when setting the value. 
         /// </summary>
-        public string Name {
-            get { return _name; }
-            set { _name = value.ToLower(); }
-        }
+        public string Name
+		{
+			get => _name;
+	        set => _name = value.ToLower();
+		}
 
 
 
-        /// <summary>
-        /// Provides access to the set of policy paths that make up this overall security policy.
-        /// Callers should typicall only use this to loop thru list.  They should call AddPolicyPathItem and GetPolicyPathItem to add/retrieve a specific policy path item.
-        /// </summary>
-        public Dictionary<string, VaultPolicyPathItem> PolicyPaths { get; private set; }
+		/// <summary>
+		/// Provides access to the set of policy paths that make up this overall security policy.
+		/// Callers should typicall only use this to loop thru list.  They should call AddPolicyPathItem and GetPolicyPathItem to add/retrieve a specific policy path item.
+		/// </summary>
+		public Dictionary<string, VaultPolicyPathItem> PolicyPaths { get; private set; }
 
 
 

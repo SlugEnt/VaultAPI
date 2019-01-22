@@ -56,7 +56,7 @@ namespace VaultClient
 		private AppRoleAuthEngine _appRoleAuthEngine;
 		private string _AppRoleName;
 	    private VaultAgentAPI _vaultAgent;
-	    private UniqueKeys uniqueKeys;
+	    
 	    private string _AppBEName;
 	    private IdentitySecretEngine _idEngine;
 
@@ -439,7 +439,7 @@ namespace VaultClient
 			    KV2Secret secretB1 = new KV2Secret("Database", rootBPath);
 			    (readSuccess, secretB1) = await secretEngine.TryReadSecret(secretB1, 0);
 		    }
-		    catch (VaultForbiddenException e) {
+		    catch (VaultForbiddenException) {
 			    Console.WriteLine("[SUCCESS-EXPECTED RESULT:  User A does not have access to read from User B's secret store.");
 		    }
 
@@ -487,7 +487,7 @@ namespace VaultClient
 				KV2Secret secretA1 = new KV2Secret("Database", rootAPath);
 			    (readSuccess, secretB1) = await secretEngine.TryReadSecret(secretA1, 0);
 		    }
-		    catch (VaultForbiddenException e) {
+		    catch (VaultForbiddenException) {
 				Console.WriteLine("[SUCCESS-EXPECTED RESULT:  User B does not have access to read from User A's secret store.");
 		    }
 

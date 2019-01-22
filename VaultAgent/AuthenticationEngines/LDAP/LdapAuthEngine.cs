@@ -97,8 +97,7 @@ namespace VaultAgent.AuthenticationEngines
 		    }
 
 		    // 404 Errors mean there were no roles.  We just return an empty list.
-		    catch (VaultInvalidPathException e) {
-			    e = null;
+		    catch (VaultInvalidPathException) {
 			    return new List<string>();
 		    }
 		}
@@ -150,7 +149,7 @@ namespace VaultAgent.AuthenticationEngines
             }
 
             // Group does not exist or has not had any Policies assigned to it.  Return an empty List.
-            catch ( VaultInvalidPathException e ) { return new List<string>(); }
+            catch ( VaultInvalidPathException) { return new List<string>(); }
         }
 
 
@@ -181,8 +180,7 @@ public async Task<List<string>> ListUsers() {
 		    }
 
 		    // 404 Errors mean there were no roles.  We just return an empty list.
-		    catch (VaultInvalidPathException e) {
-			    e = null;
+		    catch (VaultInvalidPathException) {
 			    return new List<string>();
 		    }
 

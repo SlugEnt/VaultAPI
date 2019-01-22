@@ -356,7 +356,7 @@ namespace VaultAgent.AuthenticationEngines {
             }
 
             // If Vault could not find the tokenRole then return null.
-            catch ( VaultInvalidPathException e ) { return null; }
+            catch ( VaultInvalidPathException ) { return null; }
         }
 
 
@@ -385,7 +385,7 @@ namespace VaultAgent.AuthenticationEngines {
         public async Task<bool> DeleteTokenRole (string tokenRoleName) {
             string path = MountPointPath + "roles/" + tokenRoleName;
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteTokenRole");
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteTokenRole");
             if ( vdro.Success ) { return true; }
             else { return false; }
         }

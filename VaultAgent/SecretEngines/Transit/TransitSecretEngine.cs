@@ -146,7 +146,7 @@ namespace VaultAgent.SecretEngines {
                 if ( TKI != null ) { return true; }
                 else { return false; }
             }
-            catch ( VaultInvalidPathException e ) { return false; }
+            catch ( VaultInvalidPathException) { return false; }
         }
 
 
@@ -504,7 +504,7 @@ namespace VaultAgent.SecretEngines {
             string path = MountPointPath + "keys/" + keyName;
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteKey");
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteKey");
                 if ( vdro.Success ) { return true; }
                 else { return false; }
             }

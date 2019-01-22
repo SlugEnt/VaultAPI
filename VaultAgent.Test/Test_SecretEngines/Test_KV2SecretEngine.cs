@@ -15,7 +15,7 @@ using SlugEnt;
 namespace VaultAgentTests
 {
     
-	[TestFixture]
+	[TestFixture,Order(1)]
 	[Parallelizable]
     public class Test_KV2SecretEngine
     {
@@ -65,7 +65,7 @@ namespace VaultAgentTests
 			Assert.NotNull(_defaultMount);
 
 			// This is required as of Vault 1.0  It now seems to take a second or 2 to upgrade the mount from KV1 to KV2.
-			Thread.Sleep(5000);
+			Thread.Sleep(2500);
 
 			// Set backend mount config.
 			Assert.True(await _casMount.SetBackendConfiguration(6, true));

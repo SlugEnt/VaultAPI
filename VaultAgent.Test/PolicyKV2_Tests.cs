@@ -214,7 +214,7 @@ namespace VaultAgentTests
 			// BD - Now the OK token should have access.
 			KV2Secret secret = null;
 			try { secret = await engOK.ReadSecret(origSecret); }
-			catch (VaultForbiddenException e) {
+			catch (VaultForbiddenException) {
 				Assert.Fail("A130:  Received a Vault forbidden exception.  Was not expected it to fail.");
 			}
 			Assert.IsNotNull(secret, "A132:  Expected the Secret to be found and successfully read.  We did not find a secret object.  Something is wrong with permissions.");

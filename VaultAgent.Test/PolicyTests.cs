@@ -993,7 +993,7 @@ namespace VaultAgentTests {
 		public async Task FullCycleTest_OnPrimaryFolder() {
 			string beName = _uniqueKeys.GetKey("backEnd");
 			string pathNameRoot = _uniqueKeys.GetKey("rootPth");
-			string secretPath;
+			
 			KV2Secret readSecret;
 			//KV2SecretWrapper secretReadWrapper;
 

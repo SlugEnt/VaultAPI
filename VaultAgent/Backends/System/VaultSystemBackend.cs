@@ -74,11 +74,8 @@ namespace VaultAgent {
 
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "VaultSystemBackend:AuthEnable", null, json);
-
-                if ( vdro.Success ) { return true; }
-
-                return false;
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "VaultSystemBackend:AuthEnable", json, false);
+	            return vdro.Success;
             }
             catch ( VaultInvalidDataException e ) {
                 if ( e.Message.Contains ("path is already in use") ) {
@@ -102,7 +99,7 @@ namespace VaultAgent {
         public async Task<bool> AuthDisable (string authName) {
             string path = MountPointPath + "auth/" + authName;
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync (path, "AuthDisable");
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "AuthDisable");
             if ( vdro.Success ) { return true; }
             else { return false; }
         }
@@ -114,6 +111,7 @@ namespace VaultAgent {
 
 
 
+
         /// <summary>
         /// Lists all authentication methods in the current Vault System.
         /// </summary>
@@ -121,10 +119,12 @@ namespace VaultAgent {
         public async Task<Dictionary<string, AuthMethod>> AuthListAll () {
             string path = MountPointPath + "auth";
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "AuthListAll");
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "AuthListAll");
             if ( vdro.Success ) {
-                string json = vdro.GetDataPackageAsJSON();
-                Dictionary<string, AuthMethod> methods = JsonConvert.DeserializeObject<Dictionary<string, AuthMethod>> (json);
+	            Dictionary<string, AuthMethod> methods = await vdro.GetDotNetObject<Dictionary<string, AuthMethod>>();
+
+				//string json = vdro.GetDataPackageAsJSON();
+                //Dictionary<string, AuthMethod> methods = JsonConvert.DeserializeObject<Dictionary<string, AuthMethod>> (json);
 
                 // We need to place the dictionary key into each objects path value. 
                 foreach ( KeyValuePair<string, AuthMethod> kv in methods ) { kv.Value.Path = kv.Key; }
@@ -159,7 +159,7 @@ namespace VaultAgent {
             };
 
 
-            string inputVarsJSON = JsonConvert.SerializeObject (contentParams, Formatting.None);
+	        string inputVarsJSON = VaultSerializationHelper.ToJson(contentParams); //JsonConvert.SerializeObject (contentParams, Formatting.None);
             Dictionary<string, string> optionsList = new Dictionary<string, string>()
             {
                 //{ "path",@"c:\temp\avault.log" }
@@ -192,7 +192,7 @@ namespace VaultAgent {
         public async Task<bool> AuditDisable (string auditDeviceName) {
             string path = MountPointPath + "audit/" + auditDeviceName;
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync (path, "SysAuditDisable");
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "SysAuditDisable");
             if ( vdro.Success ) { return true; }
             else { return false; }
         }
@@ -216,14 +216,18 @@ namespace VaultAgent {
 
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync2 (path, "GetTokenCapabilityOnPaths", contentParams);
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "GetTokenCapabilityOnPaths", contentParams);
                 if ( vdro.Success ) {
-                    string js = vdro.GetDataPackageAsJSON();
+	                Dictionary<string, List<string>> capabilities = await vdro.GetDotNetObject<Dictionary<string, List<string>>>();
+					/*
+
+					string js = vdro.GetDataPackageAsJSON();
                     Dictionary<string, List<string>> capabilities;
                     capabilities = VaultUtilityFX.ConvertJSON<Dictionary<string, List<string>>> (js); //<Dictionary<string>,List<string>> (js);
 
                     //string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
                     //List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js);
+					*/
                     return capabilities;
                 }
 
@@ -231,8 +235,7 @@ namespace VaultAgent {
             }
 
             // 404 Errors mean there were no entities.  We just return an empty list.
-            catch ( VaultInvalidPathException e ) {
-                e = null;
+            catch ( VaultInvalidPathException) {
                 return null;
             }
         }
@@ -306,7 +309,7 @@ namespace VaultAgent {
             if ( config != null ) { createParams.Add ("config", config); }
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync2 (path, "SysMountEnable", createParams);
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "SysMountEnable", createParams,false);
                 if ( vdro.HttpStatusCode == 204 ) { return true; }
                 else { return false; }
             }
@@ -336,7 +339,7 @@ namespace VaultAgent {
         public async Task<bool> SysMountDelete (string name) {
             string path = MountPointPath + pathMounts + name;
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync (path, "SysMountDelete");
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "SysMountDelete");
             if ( vdro.Success ) { return true; }
 
             return false;
@@ -353,10 +356,11 @@ namespace VaultAgent {
             // Build Path
             string path = MountPointPath + pathMounts + mountPath + "/tune";
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "SysMountReadConfig");
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "SysMountReadConfig",null);
             if ( vdro.Success ) {
-                VaultSysMountConfig config = vdro.GetVaultTypedObject<VaultSysMountConfig>();
-                return config;
+	            return await vdro.GetDotNetObject<VaultSysMountConfig>();
+//                VaultSysMountConfig config = vdro.GetVaultTypedObject<VaultSysMountConfig>();
+  //              return config;
             }
 
             return null;
@@ -387,10 +391,10 @@ namespace VaultAgent {
 
             if ( description != null ) { content.Add ("description", description); }
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "SysMountUpdateConfig", content);
-
-            if ( vdro.HttpStatusCode == 204 ) { return true; }
-            else { return false; }
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "SysMountUpdateConfig", content,false);
+	        return vdro.Success;
+            //if ( vdro.HttpStatusCode == 204 ) { return true; }
+            //else { return false; }
         }
 
 
@@ -412,12 +416,16 @@ namespace VaultAgent {
             Dictionary<string, string> sendParams = new Dictionary<string, string>();
             sendParams.Add ("list", "true");
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "SysPoliciesACLList", sendParams);
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "SysPoliciesACLList", sendParams);
+	        return  await vdro.GetDotNetObject<List<string>>("data.keys");
+			//TODO Cleanup
+			/*
 
-            string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
+			string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
 
             List<string> keys = VaultUtilityFX.ConvertJSON<List<string>> (js);
             return keys;
+			*/
         }
 
 
@@ -433,12 +441,12 @@ namespace VaultAgent {
 
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync (path, "SysPoliciesACLDelete");
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "SysPoliciesACLDelete");
                 if ( vdro.Success ) { return true; }
                 else { return false; }
             }
-            catch ( VaultInvalidPathException e ) { return false; }
-            catch ( Exception e ) { throw e; }
+            catch ( VaultInvalidPathException ) { return false; }
+
         }
 
 
@@ -505,11 +513,11 @@ namespace VaultAgent {
         public async Task<VaultPolicyContainer> SysPoliciesACLRead (string policyName) {
             // Build Path
             string path = MountPointPath + "policies/acl/" + policyName;
-            VaultDataResponseObject vdro;
+            VaultDataResponseObjectB vdro;
 
             try {
-                vdro = await _parent._httpConnector.GetAsync (path, "SysPoliciesACLRead");
-                vdro.GetDataPackageAsDictionary();
+                vdro = await _parent._httpConnector.GetAsync_B (path, "SysPoliciesACLRead");
+                
             }
             catch ( VaultInvalidPathException e ) {
                 e.SpecificErrorCode = EnumVaultExceptionCodes.ObjectDoesNotExist;
@@ -530,8 +538,9 @@ namespace VaultAgent {
                 {"]", " ] "} // Mark end of an array.
             };
 
-
-            string val = vdro.GetDataPackageFieldAsJSON ("policy");
+	        string val = await vdro.GetDotNetObject<string>("data.policy");
+	        //vdro.GetDataPackageAsDictionary();
+			//string val = vdro.GetDataPackageFieldAsJSON ("policy");
 
 
             StringBuilder sb = new StringBuilder (val, val.Length * 2);
@@ -617,20 +626,6 @@ namespace VaultAgent {
                                     vp.AddPolicyPathObject (newPathObj);
                                 }
 
-
-                                // Now we need to determine if this is a new path object that should be added to the Dictionary OR
-                                // Can be combined with an already existing path object.  For instance Vault stores KeyValue V2 secret permissions
-                                // in several paths.  But we treat internally as a single path.                              
-                                //newPathObj = new VaultPolicyPathItem(pathObjects[i]);
-                                //if (!vp.TryAddPath (pathObjects[i], out newPathObj)) {
-                                // If the policy path object already existed, then we need to clear the metadata flag on it.  
-                                //    newPathObj.Clear_KV2Path();
-                                //}
-                                //newPathObj = vp.TryAddPath (pathObjects[i]);
-                                //vp.TryAddPath()
-                                //vp.PolicyPaths.Add(newPathObj.Key,newPathObj);
-
-                                //vpp.Add(newPathObj);
                             }
                         }
                         else {

@@ -15,7 +15,7 @@ namespace VaultAgentTests
     public class SecretBackendTest
     {
 		private VaultAgentAPI _vaultAgentAPI;
-		private readonly UniqueKeys _uniqueKeys = new UniqueKeys();       // Unique Key generator
+		private readonly UniqueKeys _uniqueKeys = new UniqueKeys("_");       // Unique Key generator
 
 		// The KeyValue Secret  Backend we will be using throughout our testing.
 		KeyValueSecretEngine _keyValueSecretEngine;

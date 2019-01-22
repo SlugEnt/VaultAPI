@@ -124,7 +124,7 @@ namespace VaultAgent.SecretEngines {
         public async Task<bool> DeleteEntity (Guid id) {
             string path = MountPointPath + "entity/id/" + id;
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteEntity");
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteEntity");
             return vdro.Success ? true : false;
         }
 
@@ -139,7 +139,7 @@ namespace VaultAgent.SecretEngines {
         public async Task<bool> DeleteEntity (string entityName) {
             string path = MountPointPath + "entity/name/" + entityName;
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteEntity (EntityName)");
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteEntity (EntityName)");
             return vdro.Success ? true : false;
         }
 
@@ -169,8 +169,7 @@ namespace VaultAgent.SecretEngines {
             }
 
             // 404 Errors mean there were no entities.  We just return an empty list.
-            catch ( VaultInvalidPathException e ) {
-                e = null;
+            catch ( VaultInvalidPathException) {
                 return new List<string>();
             }
         }
@@ -197,8 +196,7 @@ namespace VaultAgent.SecretEngines {
             }
 
             // 404 Errors mean there were no entities.  We just return an empty list.
-            catch ( VaultInvalidPathException e ) {
-                e = null;
+            catch ( VaultInvalidPathException) {
                 return new List<Guid>();
             }
         }
@@ -303,7 +301,7 @@ namespace VaultAgent.SecretEngines {
         public async Task<bool> DeleteAlias (Guid id) {
             string path = MountPointPath + "entity-alias/id/" + id;
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteEntityAlias");
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteEntityAlias");
             return vdro.Success ? true : false;
         }
 
@@ -329,8 +327,7 @@ namespace VaultAgent.SecretEngines {
             }
 
             // 404 Errors mean there were no entities.  We just return an empty list.
-            catch ( VaultInvalidPathException e ) {
-                e = null;
+            catch ( VaultInvalidPathException ) {
                 return new List<Guid>();
             }
         }

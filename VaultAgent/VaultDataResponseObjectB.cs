@@ -61,7 +61,7 @@ namespace VaultAgent {
 		public VaultDataResponseObjectB(HttpStatusCode statusCode) {
 			_httpResponseMessage = null;
 
-			HttpStatusCode = (int)_httpResponseMessage.StatusCode;
+			HttpStatusCode = (int) statusCode;
 
 			// Vault at this time only returns 2 successful codes:
 			//  200 - Success with data returned.

@@ -226,7 +226,7 @@ namespace VaultAgent.SecretEngines {
             }
 
             // VaultInvalidPathExceptions are not permission problems - despite what the error text hints at.  Instead they just mean no secret exists at that path.  We return null.	
-            catch ( VaultInvalidPathException e ) { return null; }
+            catch ( VaultInvalidPathException ) { return null; }
             catch ( VaultForbiddenException e ) {
                 if ( e.Message.Contains ("* permission denied") ) { e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied; }
 
@@ -276,7 +276,7 @@ namespace VaultAgent.SecretEngines {
                 }
                 else {
 					//TODO - Fix this once Deleted Returns VDROB
-	                VaultDataResponseObject vdrb;
+	                VaultDataResponseObjectB vdrb;
                     path = MountPointPath + "data/" + secretPath;
                     vdrb = await _parent._httpConnector.DeleteAsync (path, "DeleteSecretVersion");
 	                if ( vdrb.Success ) { return true; }
@@ -311,7 +311,7 @@ namespace VaultAgent.SecretEngines {
             }
 
             // 404 Errors mean there were no sub paths.  We just return an empty list.
-            catch ( VaultInvalidPathException e ) { return new List<string>(); }
+            catch ( VaultInvalidPathException ) { return new List<string>(); }
         }
 
 
@@ -426,7 +426,7 @@ namespace VaultAgent.SecretEngines {
                 // we need to use the MetaData Path
                 string path = MountPointPath + "metadata/" + secretNamePath;
 
-                VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync (path, "DestroySecretCompletely");
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "DestroySecretCompletely");
                 if ( vdro.Success ) { return true; }
 
                 return false;

@@ -77,7 +77,7 @@ namespace VaultAgentTests
 
 					// See if the AppRole Backend exists.  We need to add a trailing slash because vault returns the key with a trailing slash.  Swallow exception not found.
 					try { authMethod = authMethods[AppRoleEngine + "/"]; }
-					catch ( KeyNotFoundException e ) { }
+					catch ( KeyNotFoundException ) { }
 
 					if ( authMethod == null ) {
 						AuthMethod am = new AuthMethod(AppRoleEngine, EnumAuthMethods.AppRole);
@@ -94,7 +94,7 @@ namespace VaultAgentTests
 				_appRoleAccessor = authMethod.Accessor;
 			}
 
-			catch ( Exception e ) { Assert.False(true, "[SetupAliasTestConditions]  Try block errored"); }
+			catch ( Exception ) { Assert.False(true, "[SetupAliasTestConditions]  Try block errored"); }
 			finally {
 
 				lock (locking) { bLocking = false; }

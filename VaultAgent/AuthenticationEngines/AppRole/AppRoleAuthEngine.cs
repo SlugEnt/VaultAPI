@@ -110,8 +110,7 @@ namespace VaultAgent.AuthenticationEngines {
             }
 
             // 404 Errors mean there were no roles.  We just return an empty list.
-            catch ( VaultInvalidPathException e ) {
-                e = null;
+            catch ( VaultInvalidPathException ) {
                 return new List<string>();
             }
         }
@@ -148,8 +147,7 @@ namespace VaultAgent.AuthenticationEngines {
 		    }
 
 		    // 404 Errors mean there were no roles.  We just return an empty list.
-		    catch (VaultInvalidPathException e) {
-			    e = null;
+		    catch (VaultInvalidPathException) {
 			    return new List<string>();
 		    }
 	    }
@@ -221,7 +219,7 @@ namespace VaultAgent.AuthenticationEngines {
             string path = MountPointPath + "role/" + appRoleName;
 
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteRole");
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteRole");
             if ( vdro.Success ) { return true; }
             else { return false; }
         }
@@ -260,7 +258,7 @@ namespace VaultAgent.AuthenticationEngines {
 			    VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "ReadRoleID");
 			    return vdro.Success ? await vdro.GetDotNetObject<string>("data.role_id") : ""; 
 		    }
-		    catch (VaultInvalidPathException e) { return ""; }
+		    catch (VaultInvalidPathException) { return ""; }
 	    }
 
 
@@ -393,8 +391,7 @@ namespace VaultAgent.AuthenticationEngines {
             }
 
             // 404 Errors mean there were no roles.  We just return an empty list.
-            catch ( VaultInvalidPathException e ) {
-                e = null;
+            catch ( VaultInvalidPathException) {
                 return new List<string>();
             }
         }

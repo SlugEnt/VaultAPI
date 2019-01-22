@@ -12,13 +12,13 @@ namespace VaultClient
 		public static async Task Main(string[] args) {
 
 			string rootToken;
-			string lookupToken;
+			
 			string ip;
 			int port;
 
 			// Use local dev server.
 			rootToken = "tokenA";
-			lookupToken = "hi";
+			
 			ip = "127.0.0.1";
 			port = 47002;
 

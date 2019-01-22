@@ -44,17 +44,18 @@ namespace VaultAgent {
 
 
 
+
+		/// <summary>
+		/// Calls the HTTP Post method, to send data to the Vault API server.  
+		/// </summary>
+		/// <param name="APIPath">The path to call on the Vault server.</param>
+		/// <param name="callingRoutineName">String name of the routine that called this method.  Used for debugging and logging purposes only.</param>
+		/// <param name="inputParams">A Dictionary of key value pairs of parameters that should be sent in the body of the HTTP Call.  Should set to null if overriding 
+		/// with your own JSON string of parameters by setting the inputParamsJSON</param>
+		/// <param name="inputParamsJSON">JSON string of the parameters you want to put in the body of the HTTP call.  This is used to override the inputParams Dictionary.</param>
+		/// <returns>VaultDataResponseObject with the results of the call.</returns>
 		[Obsolete]
-        /// <summary>
-        /// Calls the HTTP Post method, to send data to the Vault API server.  
-        /// </summary>
-        /// <param name="APIPath">The path to call on the Vault server.</param>
-        /// <param name="callingRoutineName">String name of the routine that called this method.  Used for debugging and logging purposes only.</param>
-        /// <param name="inputParams">A Dictionary of key value pairs of parameters that should be sent in the body of the HTTP Call.  Should set to null if overriding 
-        /// with your own JSON string of parameters by setting the inputParamsJSON</param>
-        /// <param name="inputParamsJSON">JSON string of the parameters you want to put in the body of the HTTP call.  This is used to override the inputParams Dictionary.</param>
-        /// <returns>VaultDataResponseObject with the results of the call.</returns>
-        public async Task<VaultDataResponseObject> PostAsync (string APIPath,
+		public async Task<VaultDataResponseObject> PostAsync (string APIPath,
                                                               string callingRoutineName,
                                                               Dictionary<string, string> inputParams = null,
                                                               string inputParamsJSON = "") {
@@ -80,13 +81,13 @@ namespace VaultAgent {
 
 
 
-	    public async Task<VaultDataResponseObjectB> PostAsync_B (string APIPath, string callingRoutineName, Dictionary<string, string> inputParams) {
+	    public async Task<VaultDataResponseObjectB> PostAsync_B (string APIPath, string callingRoutineName, Dictionary<string, string> inputParams, bool expectReturnToHaveBody = true) {
 		    string paramJSON = JsonConvert.SerializeObject(inputParams, Formatting.None);
 		    return await PostAsync_B(APIPath, callingRoutineName, paramJSON);
 		}
 
 
-	    public async Task<VaultDataResponseObjectB> PostAsync_B(string APIPath, string callingRoutineName, Dictionary<string, object> inputParams) {
+	    public async Task<VaultDataResponseObjectB> PostAsync_B(string APIPath, string callingRoutineName, Dictionary<string, object> inputParams, bool expectReturnToHaveBody = true) {
 		    string paramJSON = JsonConvert.SerializeObject(inputParams, Formatting.None);
 		    return await PostAsync_B(APIPath, callingRoutineName, paramJSON);
 	    }
@@ -109,9 +110,6 @@ namespace VaultAgent {
 																//Dictionary<string, object> inputParams = null,
 																string inputParamsJSON = "",
 																 bool expectReturnToHaveBody = true) {
-		    //if ( inputParams != null ) { inputParamsJSON = JsonConvert.SerializeObject(inputParams, Formatting.None); }
-
-
 		    HttpContent contentBody = new StringContent(inputParamsJSON);
 		    contentBody.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
@@ -197,15 +195,16 @@ namespace VaultAgent {
         }
 
 
+
+		/// <summary>
+		/// Retrieves data from the Vault.
+		/// </summary>
+		/// <param name="APIPath">Path to the vault method you wish to execute.</param>
+		/// <param name="callingRoutineName">Name of routine that is calling us - used during error reporting.</param>
+		/// <param name="sendParameters">The parameters to send to the API method.</param>
+		/// <returns>A VaultDataResponseObject containing the return data or error codes.</returns>
 		[Obsolete]
-        /// <summary>
-        /// Retrieves data from the Vault.
-        /// </summary>
-        /// <param name="APIPath">Path to the vault method you wish to execute.</param>
-        /// <param name="callingRoutineName">Name of routine that is calling us - used during error reporting.</param>
-        /// <param name="sendParameters">The parameters to send to the API method.</param>
-        /// <returns>A VaultDataResponseObject containing the return data or error codes.</returns>
-        public async Task<VaultDataResponseObject> GetAsync (string APIPath, string callingRoutineName, Dictionary<string, string> sendParameters = null) {
+		public async Task<VaultDataResponseObject> GetAsync (string APIPath, string callingRoutineName, Dictionary<string, string> sendParameters = null) {
             string jsonResponse = "";
             string httpParameters = "";
 
@@ -242,7 +241,6 @@ namespace VaultAgent {
 	    /// <param name="sendParameters">The parameters to send to the API method.</param>
 	    /// <returns>A VaultDataResponseObject containing the return data or error codes.</returns>
 	    public async Task<VaultDataResponseObjectB> GetAsync_B (string APIPath, string callingRoutineName, Dictionary<string, string> sendParameters = null) {
-		    string jsonResponse;
 		    string fullURI;
 
 
@@ -282,7 +280,7 @@ namespace VaultAgent {
 		/// <param name="APIPath">The Vault path to call to perform a deletion on.</param>
 		/// <param name="callingRoutineName">Routine that called this function</param>
 		/// <returns>VaultDateResponseObject of the results of the operation.</returns>
-		public async Task<VaultDataResponseObject> DeleteAsync (string APIPath, string callingRoutineName) {
+		public async Task<VaultDataResponseObjectB> DeleteAsync (string APIPath, string callingRoutineName) {
             string jsonResponse = "";
             string httpParameters = "";
 
@@ -293,7 +291,7 @@ namespace VaultAgent {
             if ( response.IsSuccessStatusCode ) { jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait (false); }
             else { await HandleVaultErrors (response, fullURI, callingRoutineName); }
 
-            VaultDataResponseObject vdr = new VaultDataResponseObject (jsonResponse, response.StatusCode);
+            VaultDataResponseObjectB vdr = new VaultDataResponseObjectB (response);
             return vdr;
         }
 
@@ -312,7 +310,7 @@ namespace VaultAgent {
             List<string> errors = new List<string>();
 
             try { errors = ConvertJSONArrayToList (jsonResponse, "errors"); }
-            catch ( MissingFieldException e ) {
+            catch ( MissingFieldException ) {
                 //TODO - Not sure what to do with this.  Need to test some more.
                 // Swallow the error.  Latest updates to Vault V1.2.2 in KV2 do not necessarily populate the error object if object not foundf.
             }
@@ -370,7 +368,7 @@ namespace VaultAgent {
             }
 
 
-            catch ( Exception e ) { throw new MissingFieldException ("GetJSONPropertyValue method unable to find the field: " + fieldName); }
+            catch ( Exception ) { throw new MissingFieldException ("GetJSONPropertyValue method unable to find the field: " + fieldName); }
         }
     }
 }

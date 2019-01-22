@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 
 namespace VaultAgent {
+	[Obsolete]
     public class VaultDataResponseObject {
         private string _responseJSON; // Raw JSON data that was provided by called API.
         private string _responseData; // This is populated the first time we are asked for this data from the Raw JSON.
@@ -126,7 +127,7 @@ namespace VaultAgent {
                 string value = GetJSONPropertyValue (this._responseJSON, fieldName);
                 return true;
             }
-            catch ( Exception e ) { return false; }
+            catch ( Exception) { return false; }
         }
 
 
@@ -142,7 +143,7 @@ namespace VaultAgent {
                 string value = GetJSONPropertyValue (this._responseData, fieldName);
                 return true;
             }
-            catch ( Exception e ) { return false; }
+            catch ( Exception ) { return false; }
         }
 
 
@@ -170,7 +171,7 @@ namespace VaultAgent {
                 }
             }
 
-            catch ( Exception e ) { throw new MissingFieldException ("GetJSONPropertyValue method unable to find the field: " + fieldName); }
+            catch ( Exception ) { throw new MissingFieldException ("GetJSONPropertyValue method unable to find the field: " + fieldName); }
 
             return token.ToString();
         }
