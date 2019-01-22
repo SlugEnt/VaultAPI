@@ -63,9 +63,6 @@ namespace VaultAgent {
             IP = vaultIP;
             Port = port;
 
-            //Token tokenValue = new Token(token);
-            //Token = tokenValue;
-
 
             // Create the Secret Backend list.
             _secretBackends = new Dictionary<string, VaultSecretBackend>();
@@ -114,7 +111,7 @@ namespace VaultAgent {
         /// You should call RefreshActiveToken if you need to see its Current TTL, ExpireTime or NumberOfUses left values.
         /// </summary>
         public Token Token {
-            get { return _vaultAccessToken; }
+            get => _vaultAccessToken;
             set {
                 _vaultAccessToken = value;
                 _vaultAccessTokenID = value.ID;
@@ -127,7 +124,7 @@ namespace VaultAgent {
         // immediately.  This should rarely if ever need to be utilized in a production setting.  When set it will retrieve the latest version of the Token
         // object from Vault and updates the Token object of this class.
         internal string TokenID {
-            get { return _vaultAccessTokenID; }
+            get => _vaultAccessTokenID;
             set {
                 _vaultAccessTokenID = value;
                 _httpConnector.SetTokenHeader (_vaultAccessTokenID);
@@ -143,9 +140,7 @@ namespace VaultAgent {
         /// <summary>
         /// Provides access to the Vault Core System Backend which provides access to mount new engines/backends and manipulate the main Vault Store.
         /// </summary>
-        public VaultSystemBackend System {
-            get { return _vault; }
-        }
+        public VaultSystemBackend System => _vault;
 
 
 

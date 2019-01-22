@@ -15,8 +15,8 @@ namespace VaultAgent {
     /// This class represents the HTTP connection object for the Vault Agent Interface.  It handles all the connections to Vault Instance as well as all error handling.
     /// </summary>
     public class VaultAPI_Http {
-        private Uri _vaultIPAddress;
-        private HttpClient _httpClt;
+        private readonly Uri _vaultIPAddress;
+        private readonly HttpClient _httpClt;
 
 
         /// <summary>
@@ -43,41 +43,6 @@ namespace VaultAgent {
         }
 
 
-
-
-		/// <summary>
-		/// Calls the HTTP Post method, to send data to the Vault API server.  
-		/// </summary>
-		/// <param name="APIPath">The path to call on the Vault server.</param>
-		/// <param name="callingRoutineName">String name of the routine that called this method.  Used for debugging and logging purposes only.</param>
-		/// <param name="inputParams">A Dictionary of key value pairs of parameters that should be sent in the body of the HTTP Call.  Should set to null if overriding 
-		/// with your own JSON string of parameters by setting the inputParamsJSON</param>
-		/// <param name="inputParamsJSON">JSON string of the parameters you want to put in the body of the HTTP call.  This is used to override the inputParams Dictionary.</param>
-		/// <returns>VaultDataResponseObject with the results of the call.</returns>
-		[Obsolete]
-		public async Task<VaultDataResponseObject> PostAsync (string APIPath,
-                                                              string callingRoutineName,
-                                                              Dictionary<string, string> inputParams = null,
-                                                              string inputParamsJSON = "") {
-
-
-	        
-            if ( inputParams != null ) { inputParamsJSON = JsonConvert.SerializeObject (inputParams, Formatting.None); }
-
-
-            HttpContent contentBody = new StringContent (inputParamsJSON);
-            contentBody.Headers.ContentType = new MediaTypeHeaderValue ("application/json");
-
-            string jsonResponse = "";
-
-            HttpResponseMessage response = await _httpClt.PostAsync (APIPath, contentBody);
-            if ( response.IsSuccessStatusCode ) { jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait (false); }
-            else { await HandleVaultErrors (response, APIPath, callingRoutineName); }
-
-
-            VaultDataResponseObject vdr = new VaultDataResponseObject (jsonResponse, response.StatusCode);
-            return vdr;
-        }
 
 
 
@@ -131,39 +96,6 @@ namespace VaultAgent {
 
 
 
-		/// <summary>
-		/// Calls the HTTP Post method, to send data to the Vault API server.  
-		/// </summary>
-		/// <param name="APIPath">The path to call on the Vault server.</param>
-		/// <param name="callingRoutineName">String name of the routine that called this method.  Used for debugging and logging purposes only.</param>
-		/// <param name="inputParams">A Dictionary of key value pairs of parameters that should be sent in the body of the HTTP Call.  Should set to null if overriding 
-		/// with your own JSON string of parameters by setting the inputParamsJSON</param>
-		/// <param name="inputParamsJSON">JSON string of the parameters you want to put in the body of the HTTP call.  This is used to override the inputParams Dictionary.</param>
-		/// <returns>VaultDataResponseObject with the results of the call.</returns>
-		[Obsolete]
-		public async Task<VaultDataResponseObject> PostAsync2 (string APIPath,
-                                                               string callingRoutineName,
-                                                               Dictionary<string, object> inputParams = null,
-                                                               string inputParamsJSON = "") {
-            if ( inputParams != null ) { inputParamsJSON = JsonConvert.SerializeObject (inputParams, Formatting.None); }
-
-
-            HttpContent contentBody = new StringContent (inputParamsJSON);
-            contentBody.Headers.ContentType = new MediaTypeHeaderValue ("application/json");
-
-            string jsonResponse = "";
-
-            HttpResponseMessage response = await _httpClt.PostAsync (APIPath, contentBody);
-            if ( response.IsSuccessStatusCode ) { jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait (false); }
-            else { await HandleVaultErrors (response, APIPath, callingRoutineName); }
-
-
-            VaultDataResponseObject vdr = new VaultDataResponseObject (jsonResponse, response.StatusCode);
-            return vdr;
-        }
-
-
-
         /// <summary>
         /// Calls the HTTP PUT method, to send data to the Vault API server.  
         /// </summary>
@@ -191,43 +123,6 @@ namespace VaultAgent {
 
 
             VaultDataResponseObjectB vdr = new VaultDataResponseObjectB (response);
-            return vdr;
-        }
-
-
-
-		/// <summary>
-		/// Retrieves data from the Vault.
-		/// </summary>
-		/// <param name="APIPath">Path to the vault method you wish to execute.</param>
-		/// <param name="callingRoutineName">Name of routine that is calling us - used during error reporting.</param>
-		/// <param name="sendParameters">The parameters to send to the API method.</param>
-		/// <returns>A VaultDataResponseObject containing the return data or error codes.</returns>
-		[Obsolete]
-		public async Task<VaultDataResponseObject> GetAsync (string APIPath, string callingRoutineName, Dictionary<string, string> sendParameters = null) {
-            string jsonResponse = "";
-            string httpParameters = "";
-
-
-            // Determine if we need to send parameters
-            if ( sendParameters != null ) {
-                foreach ( KeyValuePair<string, string> item in sendParameters ) { httpParameters += item.Key + "=" + item.Value + "&"; }
-
-                // Remove trailing &
-                httpParameters = httpParameters.TrimEnd ('&');
-
-                // Add initial "?"
-                httpParameters = "?" + httpParameters;
-            }
-
-            string fullURI = APIPath + httpParameters;
-
-
-            HttpResponseMessage response = await _httpClt.GetAsync (fullURI);
-            if ( response.IsSuccessStatusCode ) { jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait (false); }
-            else { await HandleVaultErrors (response, fullURI, callingRoutineName); }
-
-            VaultDataResponseObject vdr = new VaultDataResponseObject (jsonResponse, response.StatusCode);
             return vdr;
         }
 
@@ -281,18 +176,18 @@ namespace VaultAgent {
 		/// <param name="callingRoutineName">Routine that called this function</param>
 		/// <returns>VaultDateResponseObject of the results of the operation.</returns>
 		public async Task<VaultDataResponseObjectB> DeleteAsync (string APIPath, string callingRoutineName) {
-            string jsonResponse = "";
-            string httpParameters = "";
-
-            string fullURI = APIPath + httpParameters;
+            string fullURI = APIPath;
             HttpResponseMessage response = await _httpClt.DeleteAsync (fullURI);
 
 
-            if ( response.IsSuccessStatusCode ) { jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait (false); }
-            else { await HandleVaultErrors (response, fullURI, callingRoutineName); }
+            if ( response.IsSuccessStatusCode ) {
+                VaultDataResponseObjectB vdr = new VaultDataResponseObjectB(response);
+                return vdr;
+            }
 
-            VaultDataResponseObjectB vdr = new VaultDataResponseObjectB (response);
-            return vdr;
+            
+            await HandleVaultErrors (response, fullURI, callingRoutineName);
+            return null;
         }
 
 
