@@ -22,7 +22,7 @@ namespace VaultAgentTests
 
 
         [OneTimeSetUp]
-        public async Task Backend_Init()
+        public void Backend_Init()
         {
             if (_vaultSystemBackend != null)
             {

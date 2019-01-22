@@ -39,7 +39,7 @@ namespace VaultAgentTests
 		/// </summary>
 		/// <returns></returns>
 		[OneTimeSetUp]
-		public async Task Identity_Init() {
+		public void Identity_Init() {
 			if ( _vaultAgentAPI != null ) { return; }
 
 			// Build Connection to Vault.
@@ -307,21 +307,22 @@ namespace VaultAgentTests
 		}
 
 
-
-		// Validates that trying to read an entity that does not exist throws the correct error.
-		[Test]
+#pragma warning disable CS1998
+        // Validates that trying to read an entity that does not exist throws the correct error.
+        [Test]
 		public async Task Read_NonExistentEntity_ThrowsError() {
 			Guid guid = Guid.NewGuid();
 
 			Assert.ThrowsAsync<VaultInvalidPathException>(async () => await _idEngine.ReadEntity(guid),"A10:  Expected to receive the VaultInvalidPathException error when trying to read a nonexistent Entity.");
 		}
+#pragma warning restore CS1998
 
-		#endregion
+        #endregion
 
 
-#region EntityAliasTests
+        #region EntityAliasTests
 
-		[Test]
+        [Test]
 		public async Task SaveEntityAlias_Success() {
 			// Ensure Alias Pre-Conditions are defined.
 			await SetupAliasTestConditions();
@@ -435,10 +436,10 @@ namespace VaultAgentTests
 
 
 		[Test]
-		public async Task EntityAlias_Update_Success() {
+		public void EntityAlias_Update_Success() {
 			throw new NotImplementedException();
 			// It is not working correctly.
-			
+			/*
 			// Ensure Alias Pre-Conditions are defined.
 			await SetupAliasTestConditions();
 
@@ -484,6 +485,7 @@ namespace VaultAgentTests
 
 			EntityAlias newAlias = await _idEngine.ReadAlias(guid);
 			Assert.AreEqual(newName,newAlias.Name,"Alias name does not appear to have been updated.");
+            */
 		}
 
 

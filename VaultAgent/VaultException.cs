@@ -168,8 +168,5 @@ namespace VaultAgent {
 
         protected VaultUnexpectedCodePathException (System.Runtime.Serialization.SerializationInfo info,
                                                     System.Runtime.Serialization.StreamingContext context) { }
-
-
-        public EnumVaultExceptionCodes SpecificErrorCode { get; set; }
-    }
+        }
 }

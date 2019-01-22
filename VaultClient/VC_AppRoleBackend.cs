@@ -54,11 +54,11 @@ namespace VaultClient
 
 
 		private AppRoleAuthEngine _appRoleAuthEngine;
-		private string _AppRoleName;
+		//private string _AppRoleName;
 	    private VaultAgentAPI _vaultAgent;
 	    
-	    private string _AppBEName;
-	    private IdentitySecretEngine _idEngine;
+	    private readonly string _AppBEName;
+	    private readonly IdentitySecretEngine _idEngine;
 
 
         // The Application Roles we will create in this scenario
@@ -383,6 +383,7 @@ namespace VaultClient
 
 
                 // List current roles.  Create role if does not exist.  Read the role.  List the roles again.
+                /*
                 List<string> appRoles = await AppRole_ListRoles();
 				if (!appRoles.Contains(_AppRoleName)) {
 					await AppRole_Create();
@@ -397,6 +398,7 @@ namespace VaultClient
 
 				// Now delete the app role.
 				bool rc = await _appRoleAuthEngine.DeleteRole(_AppRoleName);
+                */
 			}
 			catch (Exception e) { Console.WriteLine("Error: {0}", e.Message); }
 		}
@@ -595,33 +597,6 @@ namespace VaultClient
 			}
 			catch (VaultForbiddenException e) { Console.WriteLine("The role does not have permission to perform the requested operation. - Original Error - {0}", e.Message); }
 			catch (Exception e) { Console.WriteLine("Error detected in routine - PerformRole1Tasks - Error is - {0}", e.Message); }
-		}
-
-
-
-
-		private async Task ReadRole() {
-			AppRole art = await _appRoleAuthEngine.ReadRole(_AppRoleName);
-			Console.WriteLine("Read token: {0}", art);
-		}
-
-
-
-		private async Task<List<string>> AppRole_ListRoles() {
-			List<string> appRoles = await _appRoleAuthEngine.ListRoles();
-
-			foreach (string role in appRoles) {
-				Console.WriteLine("App Role: {0}", role);
-			}
-			return appRoles;
-		}
-
-
-		private async Task AppRole_Create() {
-			AppRole art = new AppRole(_AppRoleName);
-
-			await _appRoleAuthEngine.SaveRole(art);
-
 		}
 
 	}

@@ -52,21 +52,16 @@ namespace VaultAgent.SecretEngines {
         /// See the Update and Create methods for details about the CAS setting.
         /// <returns></returns>
         public async Task<bool> SetBackendConfiguration (UInt16 maxVersions = 10, bool casRequired = false) {
-            try {
-                // V2 Secret stores have a unique config path...
-                string path = MountPointPath + "config";
+            // V2 Secret stores have a unique config path...
+            string path = MountPointPath + "config";
 
-                // Build the content parameters, which will contain the maxVersions and casRequired settings.
-                Dictionary<string, string> contentParams = new Dictionary<string, string>();
-                contentParams.Add ("max_versions", maxVersions.ToString());
-                contentParams.Add ("cas_required", casRequired.ToString());
+            // Build the content parameters, which will contain the maxVersions and casRequired settings.
+            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+            contentParams.Add ("max_versions", maxVersions.ToString());
+            contentParams.Add ("cas_required", casRequired.ToString());
 
-                VaultDataResponseObject vdro = await _parent._httpConnector.PostAsync (path, "ConfigureBackend", contentParams);
-                if ( vdro.Success ) { return true; }
-
-                return false;
-            }
-            catch ( Exception e ) { throw e; }
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "ConfigureBackend", contentParams, false);
+            return vdro.Success;
         }
 
 
@@ -80,9 +75,11 @@ namespace VaultAgent.SecretEngines {
                 // V2 Secret stores have a unique config path...
                 string path = MountPointPath + "config";
 
-                VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "GetBackendConfiguration");
-                KV2SecretEngineSettings settings = vdro.GetVaultTypedObject<KV2SecretEngineSettings>();
-                return settings;
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "GetBackendConfiguration");
+                return await vdro.GetDotNetObject<KV2SecretEngineSettings>();
+
+                //KV2SecretEngineSettings settings = vdro.GetVaultTypedObject<KV2SecretEngineSettings>();
+                //return settings;
             }
             catch ( Exception e ) { throw e; }
         }
@@ -205,7 +202,7 @@ namespace VaultAgent.SecretEngines {
 
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ReadSecret", contentParams);
                 if ( vdro.Success ) {
-                    KV2SecretWrapper secretReadReturnObj = await vdro.GetDotNetObject<KV2SecretWrapper>("");
+                    KV2SecretWrapper secretReadReturnObj = await vdro.GetDotNetObject<KV2SecretWrapper> ("");
 
                     //KV2SecretWrapper secretReadReturnObj = KV2SecretWrapper.FromJson (vdro.GetResponsePackageAsJSON());
 
@@ -272,17 +269,17 @@ namespace VaultAgent.SecretEngines {
                     // Add the version parameter
                     string jsonParams = "{\"versions\": [" + version.ToString() + "]}";
                     vdro = await _parent._httpConnector.PostAsync_B (path, "DeleteSecretVersion", jsonParams);
-	                if ( vdro.Success ) { return true; }
+                    if ( vdro.Success ) { return true; }
                 }
                 else {
-					//TODO - Fix this once Deleted Returns VDROB
-	                VaultDataResponseObjectB vdrb;
+                    //TODO - Fix this once Deleted Returns VDROB
+                    VaultDataResponseObjectB vdrb;
                     path = MountPointPath + "data/" + secretPath;
                     vdrb = await _parent._httpConnector.DeleteAsync (path, "DeleteSecretVersion");
-	                if ( vdrb.Success ) { return true; }
+                    if ( vdrb.Success ) { return true; }
                 }
 
-				 return false; 
+                return false;
             }
             catch ( VaultForbiddenException e ) {
                 if ( e.Message.Contains ("* permission denied") ) { e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied; }
@@ -303,9 +300,7 @@ namespace VaultAgent.SecretEngines {
 
             try {
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListSecrets");
-                if ( vdro.Success ) {
-	                return await vdro.GetDotNetObject<List<string>>("data.keys");
-                }
+                if ( vdro.Success ) { return await vdro.GetDotNetObject<List<string>> ("data.keys"); }
 
                 throw new ApplicationException ("KV2SecretEngine:ListSecretsAtPath  Arrived at unexpected code block.");
             }
@@ -359,7 +354,7 @@ namespace VaultAgent.SecretEngines {
                 contentParams.Add ("versions", version.ToString());
 
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "UndeleteSecretVersion", contentParams);
-	            return vdro.Success;
+                return vdro.Success;
             }
             catch ( Exception e ) { throw e; }
         }
@@ -382,7 +377,7 @@ namespace VaultAgent.SecretEngines {
                 contentParams.Add ("versions", version.ToString());
 
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "DestroySecretVersion", contentParams);
-	            return vdro.Success;
+                return vdro.Success;
             }
             catch ( VaultForbiddenException e ) {
                 if ( e.Message.Contains ("* permission denied") ) { e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied; }
@@ -404,11 +399,12 @@ namespace VaultAgent.SecretEngines {
 
             VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "GetSecretMetaData");
             if ( vdro.Success ) {
-	            KV2SecretMetaDataInfo kvData = await vdro.GetDotNetObject<KV2SecretMetaDataInfo>();
-	            return kvData;
+                KV2SecretMetaDataInfo kvData = await vdro.GetDotNetObject<KV2SecretMetaDataInfo>();
+                return kvData;
+
 //				string ks = vdro.GetDataPackageAsJSON();
-  //              KV2SecretMetaDataInfo kvData = VaultUtilityFX.ConvertJSON<KV2SecretMetaDataInfo> (ks);
-    //            return kvData;
+                //              KV2SecretMetaDataInfo kvData = VaultUtilityFX.ConvertJSON<KV2SecretMetaDataInfo> (ks);
+                //            return kvData;
             }
 
             return null;

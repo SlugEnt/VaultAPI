@@ -25,8 +25,8 @@ namespace VaultAgentTests {
 
 
 		// Encryption keys we will generally use throughout tests.
-		string encKeyA = "Test_A";
-		string encKeyB = "Test_B";
+		readonly string encKeyA = "Test_A";
+		readonly string encKeyB = "Test_B";
 
 
 		// Used to ensure we have a random key.
@@ -485,7 +485,7 @@ namespace VaultAgentTests {
 		[Test]
 
 		// Test key deletion for a key that does not exist.  Should throw an exception.
-		public async Task DeleteKey_BadKeyValue_ThrowsException () {
+		public void DeleteKey_BadKeyValue_ThrowsException () {
 			string key = _uniqueKeys.GetKey();
 
 			// We don't create it however, so it will fail.

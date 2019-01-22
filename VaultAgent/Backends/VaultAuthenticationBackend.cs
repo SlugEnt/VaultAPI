@@ -38,11 +38,14 @@ namespace VaultAgent {
             string path = "/v1/auth/token/lookup-self";
 
             try {
-                VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "GetMyTokenInfo");
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "GetMyTokenInfo");
                 if ( vdro.Success ) {
-                    string js = vdro.GetDataPackageAsJSON();
-                    Token tokenInfo = VaultUtilityFX.ConvertJSON<Token> (js);
-                    return tokenInfo;
+                    return await vdro.GetDotNetObject<Token>();
+                    //TODO Clenaup
+
+                    //string js = vdro.GetDataPackageAsJSON();
+                    //Token tokenInfo = VaultUtilityFX.ConvertJSON<Token> (js);
+                    //return tokenInfo;
                 }
                 else { throw new VaultUnexpectedCodePathException(); }
             }

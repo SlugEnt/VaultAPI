@@ -5,11 +5,15 @@
 
     <IsPackable>false</IsPackable>
 
-    <AssemblyVersion>1.0.0.440</AssemblyVersion>
+    <AssemblyVersion>1.0.0.448</AssemblyVersion>
 
     <FileVersion>1.0.0.108</FileVersion>
 
     <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;IDE0017;IDE0028</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,6 +26,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\VaultAgent\VaultAgent.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="SupportFX\" />
   </ItemGroup>
 
 </Project>

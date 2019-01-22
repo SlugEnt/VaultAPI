@@ -31,7 +31,7 @@ namespace VaultClient
 			await optimize.Run();
 			return;
 
-
+            
 			VC_AppRoleAuthEngine roleBE = new VC_AppRoleAuthEngine(vaultAgent);
 			await roleBE.Run();
 
@@ -58,7 +58,7 @@ namespace VaultClient
 			Console.ReadKey();
 			return;
 
-			string path = "v1/auth/token/lookup";
+			//string path = "v1/auth/token/lookup";
 //TODO This should be able to be replaced with a native VaultAgent implementation.  VaultAPI_HTTP is no longer public.
 /*
 			// JSON the input variables

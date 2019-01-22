@@ -64,16 +64,15 @@ namespace VaultAgent.Backends.System {
     /// <para>   - We will interpret policies read from Vault with the / or /* pattern and  list permission, but always store the path as the /* upon a save.</para>
     /// </summary>
     public class VaultPolicyPathItem {
-        private static string [] KV2Keywords = new string [] {"data", "metadata", "delete", "undelete", "destroy"};
+        private static readonly string [] KV2Keywords = new string [] {"data", "metadata", "delete", "undelete", "destroy"};
 
         private string _key;
-        private string _path;
-        private string _backendMount;
+        private readonly string _backendMount;
         private string _protectedPath;
         private string _KV2_PathID = ""; // The KeyValue2 Path SubFolder that this object had upon creation.  See Property for details.
 
-        private bool _isSubFolderType = false;
-        private bool _isKV2Policy = false;
+        private readonly bool _isSubFolderType = false;
+        private readonly bool _isKV2Policy = false;
 
 
         private bool _createAllowed = false;

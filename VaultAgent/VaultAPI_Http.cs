@@ -173,7 +173,7 @@ namespace VaultAgent {
         /// with your own JSON string of parameters by setting the inputParamsJSON</param>
         /// <param name="inputParamsJSON">JSON string of the parameters you want to put in the body of the HTTP call.  This is used to override the inputParams Dictionary.</param>
         /// <returns>VaultDataResponseObject with the results of the call.</returns>
-        public async Task<VaultDataResponseObject> PutAsync (string APIPath,
+        public async Task<VaultDataResponseObjectB> PutAsync (string APIPath,
                                                              string callingRoutineName,
                                                              Dictionary<string, string> inputParams = null,
                                                              string inputParamsJSON = "") {
@@ -190,7 +190,7 @@ namespace VaultAgent {
             else { await HandleVaultErrors (response, APIPath, callingRoutineName); }
 
 
-            VaultDataResponseObject vdr = new VaultDataResponseObject (jsonResponse, response.StatusCode);
+            VaultDataResponseObjectB vdr = new VaultDataResponseObjectB (response);
             return vdr;
         }
 

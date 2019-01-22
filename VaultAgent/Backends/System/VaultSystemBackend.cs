@@ -177,9 +177,12 @@ namespace VaultAgent {
             }
 
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PutAsync (path, "SysAuditEnableFileDevice", null, bulkJSON);
-            if ( vdro.HttpStatusCode == 204 ) { return true; }
-            else { return false; }
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PutAsync (path, "SysAuditEnableFileDevice", null, bulkJSON);
+            return vdro.Success;
+
+            //TODO Cleanup
+            //if ( vdro.HttpStatusCode == 204 ) { return true; }
+            //else { return false; }
         }
 
 
@@ -488,7 +491,7 @@ namespace VaultAgent {
 
             string json = jsonBody.ToString();
 
-            VaultDataResponseObject vdro = await _parent._httpConnector.PutAsync (path, "SysPoliciesACLCreate", null, json);
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PutAsync (path, "SysPoliciesACLCreate", null, json);
             if ( vdro.Success ) { return true; }
             else { return false; }
         }
@@ -702,8 +705,7 @@ namespace VaultAgent {
                                             break;
                                         default:
                                             throw new DataException (
-                                                "Trying to set Update Permission for a VaultPolicyPathItem object resulted in arriving at an unexpected code path.  Do not know what to do.  Aborting.");
-                                            break;
+                                                "Trying to set Update Permission for a VaultPolicyPathItem object resulted in arriving at an unexpected code path.  Do not know what to do.  Aborting.");                                           
                                     }
 
                                     break;

@@ -33,17 +33,20 @@ namespace VaultClient
 		public OptimizeTests (VaultAgentAPI vaultAgent) {
 			_vault = vaultAgent;
 
-			CreateBackendMounts();
-
-			_appRoleAuthEngine = (AppRoleAuthEngine)vaultAgent.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _beAuthName, _beAuthName);
-			_idEngine = (IdentitySecretEngine)vaultAgent.ConnectToSecretBackend(EnumSecretBackendTypes.Identity);
-			_kv2SecretEngine =
-				(KV2SecretEngine)vaultAgent.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "KV2 Secrets", _beKV2Name);
 		}
 
 
 		public async Task Run () {
-			await AppRoleBE_UpdateRoleID(); 
+            await CreateBackendMounts();
+
+            _appRoleAuthEngine = (AppRoleAuthEngine)_vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _beAuthName, _beAuthName);
+            _idEngine = (IdentitySecretEngine)_vault.ConnectToSecretBackend(EnumSecretBackendTypes.Identity);
+            _kv2SecretEngine =
+                (KV2SecretEngine)_vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "KV2 Secrets", _beKV2Name);
+
+
+
+            await AppRoleBE_UpdateRoleID(); 
 			Console.WriteLine("Finished With Optimization Run.  Press any key to continue.");
 			Console.ReadKey();
 		}

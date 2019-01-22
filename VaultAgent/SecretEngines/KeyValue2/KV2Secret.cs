@@ -72,7 +72,6 @@ namespace VaultAgent.SecretEngines.KV2 {
 
             //TODO - Does this need to be an internal set? 
             set {
-                string temp;
                 if ( value == "/" ) { _path = ""; }
                 else { _path = value.TrimEnd ('/').TrimStart (('/')); }
             }

@@ -10,7 +10,7 @@ using System.Reflection;
 using VaultAgent;
 using System.Threading;
 
-using VaultAgent.SupportFX;
+
 
 // NOTE:  The only thing you ever really need to change here is the UseNewVaultServerEachRun variable in the TestInitializer class. 
 //   Set to True to use a new Vault development instance each time the tests are run.
@@ -47,7 +47,7 @@ namespace VaultAgentTests
 		// Set this flag to false if you do not want a new Vault instance started during each test run.  
 		// This can be useful if you want to be able to connect PostMan to the vault server to query for data to get a better handle on what is going on.
 		// Also, you can see the log files, etc.
-		private bool UseNewVaultServerEachRun = false;
+		private readonly bool UseNewVaultServerEachRun = false;
 
 		// The new Vault instance object if we needed to create it.
 		private VaultServerInstance VSI;
