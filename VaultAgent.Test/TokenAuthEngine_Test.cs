@@ -39,7 +39,7 @@ namespace VaultAgentTests
 		public async Task RetrieveCurrentToken_Success() {
 			Token tokenInfo = await _tokenAuthEngine.GetCurrentTokenInfo();
 			Assert.IsNotNull(tokenInfo);
-			Assert.AreEqual("tokenA", tokenInfo.ID);
+			Assert.AreEqual(VaultServerRef.rootToken, tokenInfo.ID);
 		}
 
 

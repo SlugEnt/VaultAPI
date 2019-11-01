@@ -317,7 +317,7 @@ namespace VaultAgent {
                 else { return false; }
             }
             catch ( VaultInvalidDataException e ) {
-                if ( e.Message.Contains ("existing mount at ") ) { e.SpecificErrorCode = EnumVaultExceptionCodes.BackendMountAlreadyExists; }
+                if ( e.Message.Contains ("path is already in use") ) { e.SpecificErrorCode = EnumVaultExceptionCodes.BackendMountAlreadyExists; }
 
                 throw e;
             }

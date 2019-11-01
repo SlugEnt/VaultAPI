@@ -9,7 +9,7 @@ to the caller.
 This is still very much a beta product and only implements a subset of the full Vault backend functionality, but probably the backends that most users would
 initially be looking for.  
 
-It has been Unit tested against Vault version 1.0.1 (Latest as of January 2019).
+It has been Unit tested against Vault version 1.2.3 (Latest as of November 1st 2019).
 
 ## Implemented Functionality
 This library is very much a Work In Process.  The core modules that we needed to use have been implemented.  Following is the status of the backends

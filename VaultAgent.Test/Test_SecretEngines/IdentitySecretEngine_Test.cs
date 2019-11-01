@@ -16,6 +16,9 @@ using SlugEnt;
 namespace VaultAgentTests
 {
 
+    /// <summary>
+    /// Tests the Identity Secret Engine
+    /// </summary>
 	[TestFixture]
 	[Parallelizable]
 	class IdentitySecretEngine_Test {
