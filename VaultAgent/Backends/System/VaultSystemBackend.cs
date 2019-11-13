@@ -123,9 +123,6 @@ namespace VaultAgent {
             if ( vdro.Success ) {
 	            Dictionary<string, AuthMethod> methods = await vdro.GetDotNetObject<Dictionary<string, AuthMethod>>();
 
-				//string json = vdro.GetDataPackageAsJSON();
-                //Dictionary<string, AuthMethod> methods = JsonConvert.DeserializeObject<Dictionary<string, AuthMethod>> (json);
-
                 // We need to place the dictionary key into each objects path value. 
                 foreach ( KeyValuePair<string, AuthMethod> kv in methods ) { kv.Value.Path = kv.Key; }
 
@@ -135,6 +132,29 @@ namespace VaultAgent {
             throw new ApplicationException ("KeyValueSecretEngine:ListSecrets  Arrived at unexpected code block.");
         }
 
+
+        /// <summary>
+        /// Returns true if the authentication provider with the given name exists.  False otherwise.
+        /// </summary>
+        /// <param name="authName"></param>
+        /// <returns></returns>
+        public async Task<bool> AuthExists(string authName)
+        {
+            string path = MountPointPath + "auth";
+
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "AuthExists");
+            if (vdro.Success)
+            {
+                Dictionary<string, AuthMethod> methods = await vdro.GetDotNetObject<Dictionary<string, AuthMethod>>();
+
+                // Now see if path exists - Auth names from vault have a trailing slash.
+                if (methods.ContainsKey(authName + "/"))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         #endregion
 

@@ -18,13 +18,18 @@ namespace VaultClient
 
 			// Use local dev server.
 			rootToken = "tokenA";
-			
-			ip = "127.0.0.1";
+            //rootToken = "f143acf1-0a72-964c-32da-658cda0286b7";
+
+            ip = "127.0.0.1";
 			port = 47002;
 
 			// Connect to Vault, add an authentication backend of AppRole.
 			VaultAgentAPI vaultAgent = new VaultAgentAPI("Vault", ip, port, rootToken, true);
 			
+
+            InitiateVault initiateVault = new InitiateVault(vaultAgent);
+            initiateVault.SetupLDAP();
+
 
 			// Perform optimize tests
 			OptimizeTests optimize = new OptimizeTests(vaultAgent);

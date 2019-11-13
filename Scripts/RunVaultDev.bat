@@ -1,1 +1,1 @@
-c:\a_dev\Tools\vault.exe server -dev -dev-root-token-id=tokenA -dev-listen-address=127.0.0.1:47002 -log-level=trace
+c:\a_dev\Utilities\vault.exe server -dev -dev-root-token-id=tokenA -dev-listen-address=127.0.0.1:47002 -log-level=trace
