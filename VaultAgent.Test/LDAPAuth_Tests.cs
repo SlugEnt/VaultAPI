@@ -50,7 +50,8 @@ namespace VaultAgentTests
             Assert.True (await _ldapAuthEngine.ConfigureLDAPBackend (_origConfig), "A100:  Expected the LDAP Configuration method to return True");
 
             // Load the Test Data Object
-            LoadTestData();
+            // TODO Uncomment
+        //    LoadTestData();
         }
 
 
@@ -76,7 +77,8 @@ namespace VaultAgentTests
             Assert.IsNotEmpty (exGroupAttr, "A20:  Expected the GroupFilter property to be set.");
             Assert.IsNotEmpty (exGroupAttr, "A30:  Expected the UserAttr property to be set.");
 
-
+            // TODO Delete or uncomment
+/*
             // Read a JSON Config file containing LDAP Credentials from a JSON file into the class.       
             JsonSerializer jsonSerializer = new JsonSerializer();
             string json = File.ReadAllText (@"C:\A_Dev\Configs\Vault_LDAPEngine_TestCredentials.json");
@@ -89,6 +91,7 @@ namespace VaultAgentTests
             Assert.AreEqual (exGroupAttr, config.GroupAttr, "A50:  GroupAttr was changed during the reading of the LDAP config file.");
             Assert.AreEqual (exGroupFilter, config.GroupFilter, "A60:  GroupFilter was changed during the reading of the LDAP config file.");
             Assert.AreEqual (exUserAttr, config.UserAttr, "A70:  UserAttr was changed during the reading of the LDAP config file.");
+*/
         }
 
 
@@ -102,6 +105,20 @@ namespace VaultAgentTests
 
             _testData = VaultSerializationHelper.FromJson<LDAPTestObj> (json);
         }
+
+
+
+        /// <summary>
+        /// Validates that we can load a LDAP Config file settings from a file.  This tests the Non-AD version
+        /// </summary>
+        [Test]
+        public void LoadsLDapConfig_NonAD()
+        {
+            LdapConfig ldapConfig =  _ldapAuthEngine.GetLDAPConfigFromFile(@"TestFiles\ldapConfig_Test_noAD.json");
+        //    Assert.True(ValidateConfigFromJSON(ldapConfig), "A10: LdapConfig read from JSON had initial validation errors");
+
+        }
+
 
 
 
@@ -174,7 +191,7 @@ namespace VaultAgentTests
             groupPolicyMap.Add (polA);
 
             // Final Group Case Sensitive Test.
-            Assert.IsTrue (await _ldapAuthEngine.SaveGroup (groupName, groupPolicyMap), "A10:  Saving of the group failed.");
+            Assert.IsTrue (await _ldapAuthEngine.CreateGroupToPolicyMapping (groupName, groupPolicyMap), "A10:  Saving of the group failed.");
             List<string> groups = await _ldapAuthEngine.ListGroups();
             CollectionAssert.Contains (groups, groupName, "A20:  Expected the group to have actually been saved.  Does not appear in the list of groups.");
 
@@ -207,7 +224,7 @@ namespace VaultAgentTests
             groupPolicyMap.Add (polB);
             groupPolicyMap.Add (polC);
 
-            Assert.IsTrue (await _ldapAuthEngine.SaveGroup (groupName, groupPolicyMap), "A10:  Saving of the group failed.");
+            Assert.IsTrue (await _ldapAuthEngine.CreateGroupToPolicyMapping (groupName, groupPolicyMap), "A10:  Saving of the group failed.");
             List<string> groups = await _ldapAuthEngine.ListGroups();
             CollectionAssert.Contains (groups, groupName, "A20:  Expected the group to have actually been saved.  Does not appear in the list of groups.");
         }
@@ -223,7 +240,7 @@ namespace VaultAgentTests
             groupPolicyMap.Add ("polb");
             groupPolicyMap.Add ("polc");
 
-            Assert.IsTrue (await _ldapAuthEngine.SaveGroup (groupName, groupPolicyMap), "A10:  Saving of the group failed.");
+            Assert.IsTrue (await _ldapAuthEngine.CreateGroupToPolicyMapping (groupName, groupPolicyMap), "A10:  Saving of the group failed.");
             List<string> groups = await _ldapAuthEngine.ListGroups();
             CollectionAssert.Contains (groups, groupName, "A20:  Expected the group to have actually been saved.  Does not appear in the list of groups.");
 
@@ -268,7 +285,7 @@ namespace VaultAgentTests
             groupPolicyMap.Add ("polb");
             groupPolicyMap.Add ("polc");
 
-            Assert.IsTrue (await _ldapAuthEngine.SaveGroup (groupName, groupPolicyMap), "A10:  Saving of the group failed.");
+            Assert.IsTrue (await _ldapAuthEngine.CreateGroupToPolicyMapping (groupName, groupPolicyMap), "A10:  Saving of the group failed.");
             List<string> groupPolicies = await _ldapAuthEngine.GetPoliciesAssignedToGroup (groupName);
             CollectionAssert.AreEquivalent (groupPolicyMap, groupPolicies, "A20:  The policies do not seem to have been saved correctly.");
 

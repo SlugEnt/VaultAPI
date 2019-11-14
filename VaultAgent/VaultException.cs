@@ -22,7 +22,18 @@ namespace VaultAgent {
 
         CAS_SecretExistsAlready =
             7, // The Check and Set (CAS) is set && User requested that the Save only happen if the secret does not already exist.  Secret exists and so this error.
-        PermissionDenied = 8 // Indicates a token does not have permission to a specific path.
+        PermissionDenied = 8, // Indicates a token does not have permission to a specific path.
+
+        /// <summary>
+        /// Problems connecting to the LDAP server, check name, protocol, ports, tls, etc
+        /// </summary>
+        LDAPLoginServerConnectionIssue = 9,
+
+        /// <summary>
+        /// Invalid username or password supplied for LDAP Login
+        /// </summary>
+        LDAPLoginCredentialsFailure = 10
+
     }
 
 

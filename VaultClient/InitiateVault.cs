@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using Newtonsoft.Json;
 using VaultAgent;
 using VaultAgent.AuthenticationEngines;
 using VaultAgent.AuthenticationEngines.LDAP;
@@ -26,14 +28,6 @@ namespace VaultClient
 
         public async void SetupLDAP()
         {
-            LdapConfig lc = new LdapConfig("dc=cin,dc=sheakley,dc=com");
-            lc.BindPassword = "7PNsEe%N9#am";
-            lc.BindDN = "cn=SVC_LDAP_Lookup";
-            lc.InsecureTLS = true;
-            lc.LDAPServers = "ldaps://cindsv10008.cin.sheakley.com:636";
-            lc.UserDN = "ou=SheakleyGroup";
-            lc.SetActiveDirectoryDefaults();
-
             _ldapMountName = "Cincinnati";
 
             // Define the engine.
@@ -48,6 +42,10 @@ namespace VaultClient
             AuthMethod authMethod = new AuthMethod(_ldapMountName, EnumAuthMethods.LDAP);
             authMethod.Description = "Cincinnati Prod Domain";
 
+
+            // Create Config object - load defaults from file.
+            LdapConfig ldapConfig = _ldapAuthEngine.GetLDAPConfigFromFile(@"C:\a_dev\Configs\AD_Cin_Connector.json");
+
             try
             {
                 if (!(await _vaultSystemBackend.AuthEnable(authMethod)))
@@ -59,7 +57,7 @@ namespace VaultClient
 
                 Console.WriteLine("LDAP Backend Mount created.");
 
-                if (!await _ldapAuthEngine.ConfigureLDAPBackend(lc))
+                if (!await _ldapAuthEngine.ConfigureLDAPBackend(ldapConfig))
                 {
                     Console.WriteLine("Error setting the LDAP Configuration");
                     return;
@@ -79,9 +77,31 @@ namespace VaultClient
 
             _vaultSystemBackend.AuthExists(_ldapMountName);
 
-            // Now connect
-            LoginResponse lr = await _ldapAuthEngine.Login("sherrmann", "1P@ssword12");
-            Console.WriteLine("Success");
+
+
+            // Now read credentials from test file
+            JsonSerializer jsonSerializer = new JsonSerializer();
+            string json = File.ReadAllText(@"C:\A_Dev\Configs\ClientLoginCredentials.json");
+
+            LDAPUserCredentials user = VaultSerializationHelper.FromJson<LDAPUserCredentials>(json);
+
+            try
+            {
+                // Now connect
+                LoginResponse lr = await _ldapAuthEngine.Login(user.UserId, user.Password);
+                Console.WriteLine("Success");
+            }
+            catch (VaultException e)
+            {
+                if (e.SpecificErrorCode == EnumVaultExceptionCodes.LDAPLoginServerConnectionIssue)
+                {
+                    Console.WriteLine("Error - Problem with LDAP Connection");
+                }
+                else
+                {
+                    Console.WriteLine("Exceptyion: {0}", e.Message);
+                }
+            }
         }
 
     }

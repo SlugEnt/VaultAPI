@@ -1,0 +1,8 @@
+{
+  "DN_Suffix": "DC=test,dc=org",
+  "url": "ldaps://testserver:686",
+  "binddn": "CN=SearchUser",
+  "bindpass": "password",
+  "groupdn": "OU=Groups",
+  "userdn": "OU=Users"
+}

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
@@ -70,13 +71,14 @@ namespace VaultAgent.AuthenticationEngines
 		}
 
 
+        #region "Group Methods"
 
-		/// <summary>
-		/// Returns a list of the LDAP groups that Vault has policies for.  Please note, this is not all the groups in the LDAP Backend.  If no
-		/// groups found it returns an empty List.  
-		/// </summary>
-		/// <returns></returns>
-	    public async Task<List<string>> ListGroups () {
+        /// <summary>
+        /// Returns a list of the LDAP groups that Vault has policies for.  Please note, this is not all the groups in the LDAP Backend.  If no
+        /// groups found it returns an empty List.  
+        /// </summary>
+        /// <returns></returns>
+        public async Task<List<string>> ListGroups () {
 		    string path = MountPointPath + "groups";
 
 		    try {
@@ -101,23 +103,21 @@ namespace VaultAgent.AuthenticationEngines
 
 
 		/// <summary>
-		/// Creates a Vault LDAP group to policy(ies) mapping object.  Note:  Group name is converted to all lowercase per Vault standard unless
-		/// CaseSensitiveNames parameter is set in the LDAP Engine Configuration.
+		/// Creates a mapping between an LDAP Group name and 1 or more Vault Policies.
+		/// Note:  Group name is converted to all lowercase per Vault standard unless CaseSensitiveNames parameter is set in the LDAP Engine Configuration.
 		/// </summary>
-		/// <param name="groupName">This is the name of the group as it exists in the LDAP backend.</param>
+		/// <param name="groupName">This is the name of the LDAP group as it exists in the LDAP backend.</param>
 		/// <param name="policies">A list of Vault policies that users in this LDAP group should receive.</param>
 		/// <returns></returns>
-	    public async Task<bool> SaveGroup (string groupName, List<string> policies) {
+	    public async Task<bool> CreateGroupToPolicyMapping (string groupName, List<string> policies) {
 		    string path = MountPointPath + "groups/" + groupName;
-
 
             // Build JSON object parameter containing policies
             JObject json = new JObject();
             string policyValue =  String.Join (",", policies);          
             json.Add("policies", policyValue);
 
-
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B(path, "LdapAuthEngine: SaveGroup", json.ToString(),false);
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B(path, "LdapAuthEngine: CreateGroupToPolicyMapping", json.ToString(),false);
             return vdro.Success;
 		}
 
@@ -151,15 +151,15 @@ namespace VaultAgent.AuthenticationEngines
             catch ( VaultInvalidPathException) { return new List<string>(); }
         }
 
-
+#endregion
 
 
         /// <summary>
-/// Returns a list of the LDAP groups that Vault has policies for.  Please note, this is not all the groups in the LDAP Backend.  If no
-/// groups found it returns an empty list.
-/// </summary>
-/// <returns></returns>
-public async Task<List<string>> ListUsers() {
+        /// Returns a list of the LDAP groups that Vault has policies for.  Please note, this is not all the groups in the LDAP Backend.  If no
+        /// groups found it returns an empty list.
+        /// </summary>
+        /// <returns></returns>
+        public async Task<List<string>> ListUsers() {
 		    string path = MountPointPath + "users";
 
 		    try {
@@ -202,17 +202,59 @@ public async Task<List<string>> ListUsers() {
 		    string path = MountPointPath + "login/" + userName;
 			JObject json = new JObject();
 			json.Add("password",password);
-
-		    VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B(path, "LdapAuthEngine:Login",  json.ToString());
-            if ( vdro.Success ) {
-                return await vdro.GetDotNetObject<LoginResponse> ("auth");
-                //TODO Cleanup
-                /*
-                LoginResponse lr = vdro.GetVaultTypedObjectFromResponseField<LoginResponse> ("auth");
-                return lr;
-                */
+            try
+            {
+                VaultDataResponseObjectB vdro =
+                    await _parent._httpConnector.PostAsync_B(path, "LdapAuthEngine:Login", json.ToString());
+                if (vdro.Success)
+                {
+                    return await vdro.GetDotNetObject<LoginResponse>("auth");
+                    //TODO Cleanup
+                    /*
+                    LoginResponse lr = vdro.GetVaultTypedObjectFromResponseField<LoginResponse> ("auth");
+                    return lr;
+                    */
+                }
+                else
+                {
+                    return null;
+                }
             }
-            else { return null; }
+            catch (Exception e)
+            {
+                if (e.Message.Contains("LDAP Result Code 200"))
+                {
+                    VaultException ve = new VaultException("Problems Connecting to the LDAP Server", e);
+                    ve.SpecificErrorCode = EnumVaultExceptionCodes.LDAPLoginServerConnectionIssue;
+                    throw ve;
+                }
+                else if (e.Message.Contains("ldap operation failed"))
+                {
+                    VaultException ve = new VaultException("Invalid username or password", e);
+                    ve.SpecificErrorCode = EnumVaultExceptionCodes.LDAPLoginCredentialsFailure;
+                    throw ve;
+                }
+                else throw e;
+            }
+        }
+
+
+
+        /// <summary>
+        /// Returns an LDAPConfig object that was initialized from values in a config file.
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <returns></returns>
+        public LdapConfig GetLDAPConfigFromFile(string filename)
+        {
+            // Read a JSON Config file containing LDAP Credentials from a JSON file into the class.       
+            JsonSerializer jsonSerializer = new JsonSerializer();
+            string json = File.ReadAllText(filename);
+
+            // Append JSON to existing objects values.
+            LdapConfig ldapConfig = new LdapConfig();
+            jsonSerializer.Populate(new StringReader(json), ldapConfig);
+            return ldapConfig;
         }
 	}
 }
