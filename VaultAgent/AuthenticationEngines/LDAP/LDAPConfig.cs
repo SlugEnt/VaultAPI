@@ -270,18 +270,30 @@ namespace VaultAgent.AuthenticationEngines.LDAP {
 		/// Sets Certain fields to their expected Active Directory Defaults.
 		/// </summary>
 		public void SetActiveDirectoryDefaults () {
-			GroupFilter = "(\u0026(objectClass=group)(member:1.2.840.113556.1.4.1941:={{.UserDN}}))";
-			GroupAttr = "cn";
-			UserAttr = "samaccountname";
-		}
+            //	GroupFilter = "(\u0026(objectClass=group)(member:1.2.840.113556.1.4.1941:={{.UserDN}}))";
+            GroupFilter = "(&(objectClass=group)(member:1.2.840.113556.1.4.1941:={{.UserDN}}))";
+            //GroupFilter = "(&(objectClass=person)(sAMAccountName={{.Username}}))";
+            //GroupAttr = "memberOf";
+            GroupAttr = "cn";
+            UserAttr = "samaccountname";
+            //UserAttr = "cn";
+            
+            UseTokenGroups = false;
+            UsePre111Groups = false;
+        }
 
 
-		/// <summary>
-		/// Takes the passed in dn and appends the DN_Suffix to it, returning the full value.
-		/// </summary>
-		/// <param name="dn"></param>
-		/// <returns></returns>
-		internal string FullDNValue (string dn) {
+
+        [JsonProperty("use_pre111_group_cn_behavior")]
+        public bool UsePre111Groups { get; set; } = false;
+		
+        
+        /// <summary>
+        /// Takes the passed in dn and appends the DN_Suffix to it, returning the full value.
+        /// </summary>
+        /// <param name="dn"></param>
+        /// <returns></returns>
+        internal string FullDNValue (string dn) {
 			if ( _dnSuffix == "" ) { return dn; }
 
 			return dn + "," + _dnSuffix;

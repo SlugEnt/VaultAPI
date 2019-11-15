@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Text;
 using VaultAgent.Models;
@@ -382,13 +383,37 @@ namespace VaultAgent {
             VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "SysMountReadConfig",null);
             if ( vdro.Success ) {
 	            return await vdro.GetDotNetObject<VaultSysMountConfig>();
-//                VaultSysMountConfig config = vdro.GetVaultTypedObject<VaultSysMountConfig>();
-  //              return config;
             }
 
             return null;
         }
 
+
+
+        /// <summary>
+        /// Attempts to read the sys mount config to determine if the path exists or not.  Returns true if the path exists, false otherwise
+        /// </summary>
+        /// <param name="mountPath">The name (path) of the backend to verify the existence of</param>
+        /// <returns></returns>
+        public async Task<bool> SysMountExists(string mountPath)
+        {
+            // Build Path
+            string path = MountPointPath + pathMounts + mountPath + "/tune";
+
+            try
+            {
+                VaultDataResponseObjectB vdro =
+                    await _parent._httpConnector.GetAsync_B(path, "SysMountReadConfig", null);
+                if (vdro.Success) return true;
+            }
+            catch (VaultInvalidDataException ve)
+            {
+                if (ve.Message.Contains("cannot fetch sysview for path")) return false;
+                throw ve;
+            }
+
+            return false;
+        }
 
 
         /// <summary>
@@ -416,8 +441,6 @@ namespace VaultAgent {
 
             VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "SysMountUpdateConfig", content,false);
 	        return vdro.Success;
-            //if ( vdro.HttpStatusCode == 204 ) { return true; }
-            //else { return false; }
         }
 
 

@@ -1,8 +1,11 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using VaultAgent;
 using VaultAgent.AuthenticationEngines;
 using VaultAgent.Backends;
+using VaultAgent.Models;
 
 
 namespace VaultClient
@@ -28,11 +31,18 @@ namespace VaultClient
 			
 
             InitiateVault initiateVault = new InitiateVault(vaultAgent);
-            initiateVault.SetupLDAP();
+            await initiateVault.WipeVault();
+            await initiateVault.InitialSetup();
+            
+            string config = await initiateVault.GetConfig();
+            await initiateVault.Login();
 
 
-			// Perform optimize tests
-			OptimizeTests optimize = new OptimizeTests(vaultAgent);
+
+
+
+            // Perform optimize tests
+            OptimizeTests optimize = new OptimizeTests(vaultAgent);
 			await optimize.Run();
 			return;
 

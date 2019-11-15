@@ -71,6 +71,22 @@ namespace VaultAgent.AuthenticationEngines
 		}
 
 
+
+        public async Task<string> ReadLDAPConfigAsJSON()
+        {
+            string path = MountPointPath + "config";
+
+            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "ReadLDAPConfigAsJSON");
+            if (vdro.Success)
+            {
+                return await vdro.GetJSON();
+            }
+
+            return null;
+
+        }
+
+
         #region "Group Methods"
 
         /// <summary>

@@ -2,45 +2,153 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CSharp;
 using Newtonsoft.Json;
+using NUnit.Framework;
 using VaultAgent;
 using VaultAgent.AuthenticationEngines;
 using VaultAgent.AuthenticationEngines.LDAP;
 using VaultAgent.Backends;
 using VaultAgent.Backends.System;
 using VaultAgent.Models;
+using VaultAgent.SecretEngines;
 
 namespace VaultClient
 {
     class InitiateVault
     {
+        private const string VAULT_KEYCRYPT_NAME = "AppVault";
+        private const string VAULT_KEYCRYPT_DESC = "KV2 AppData Vault";
+        private const string VAULT_HASH_NAME = "AppHash";
+        private const string VAULT_HASH_DESC = "Application Hash Vault";
+        private const string LDAP_MOUNTNAME = "ldapcin";
+        
+
         private VaultAgentAPI _vault;
         private LdapAuthEngine _ldapAuthEngine;
-        private string _ldapMountName;
         private VaultSystemBackend _vaultSystemBackend;
+        private AuthMethod _authMethod;
 
         public InitiateVault(VaultAgentAPI vaultAgent)
         {
             _vault = vaultAgent;
+            _vaultSystemBackend = _vault.System;
+
+            _ldapAuthEngine = (LdapAuthEngine)_vault.ConnectAuthenticationBackend(EnumBackendTypes.A_LDAP, LDAP_MOUNTNAME, LDAP_MOUNTNAME);
+
+            _authMethod = new AuthMethod(LDAP_MOUNTNAME, EnumAuthMethods.LDAP);
+            _authMethod.Description = LDAP_MOUNTNAME;
+            
+
         }
+
+
+
+        public async Task<bool> InitialSetup()
+        {
+            bool success;
+
+            SetupLDAP();
+
+            await _vaultSystemBackend.AuthEnable(_authMethod);
+
+            // Build the Application Data Vault
+            BuildBackends(VAULT_KEYCRYPT_NAME, VAULT_KEYCRYPT_DESC);
+            BuildBackends(VAULT_HASH_NAME, VAULT_HASH_DESC);
+            success = await BuildAdminPolicy();
+
+
+            // Connect to the KeyValue2 Vault that we will use 
+            KV2SecretEngine vaultAppCrypt;
+            vaultAppCrypt = (KV2SecretEngine)_vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, VAULT_KEYCRYPT_NAME, VAULT_KEYCRYPT_NAME);
+
+            // _vaultAgents = new List<VaultAgentAPI>();
+            return success;
+        }
+
+
+        /// <summary>
+        /// Builds the required Key Value 2 backends
+        /// </summary>
+        /// <param name="name">Name of the backend.  This is also its path</param>
+        /// <param name="desc">Brief description of the backend</param>
+        public async void BuildBackends(string name, string desc)
+        {
+            // Create the KV2 App backend if it does not exist
+            bool exists = await _vaultSystemBackend.SysMountExists(name);
+            if (!exists)
+            {
+                await _vaultSystemBackend.SysMountCreate(name, desc, EnumSecretBackendTypes.KeyValueV2);
+            }
+        }
+
+
+
+        public async Task<string> GetConfig()
+        {
+            string json = await _ldapAuthEngine.ReadLDAPConfigAsJSON();
+            return json;
+        }
+
+
+        public async Task<bool> WipeVault()
+        {
+            await _vaultSystemBackend.AuthDisable(_authMethod.Path);
+            await _vaultSystemBackend.SysMountDelete(VAULT_KEYCRYPT_NAME);
+            await _vaultSystemBackend.SysMountDelete(VAULT_HASH_NAME);
+            return true;
+        }
+
+
+
+        /// <summary>
+        /// Builds a policy for the full admins of the vault.
+        /// </summary>
+        /// <returns></returns>
+        internal async Task<bool> BuildAdminPolicy()
+        {
+            // FullAdmins will have full control to the HashPath
+            VaultPolicyPathItem hashPath = new VaultPolicyPathItem(true,VAULT_HASH_NAME, "/*");
+            hashPath.CRUDAllowed = true;
+
+            // FullAdmins will have full control to the AppKey Vault
+            VaultPolicyPathItem appPath = new VaultPolicyPathItem(true,VAULT_KEYCRYPT_NAME,"/*");
+            appPath.CRUDAllowed = true;
+
+            // Now create the policy.
+            VaultPolicyContainer adminContainer = new VaultPolicyContainer("FullAdmin");
+            adminContainer.AddPolicyPathObject(hashPath);
+            adminContainer.AddPolicyPathObject(appPath);
+
+            bool success = await _vaultSystemBackend.SysPoliciesACLCreate(adminContainer);
+
+            List<string> adminPolicies = new List<string>();
+            adminPolicies.Add(adminContainer.Name);
+
+            // Associate the Admin Active Directory group to the policy.
+            success = await _ldapAuthEngine.CreateGroupToPolicyMapping("_R_IT-VP", adminPolicies);
+
+            List<string> groups = await _ldapAuthEngine.ListGroups();
+
+
+            return success;
+        }
+
+
 
 
 
         public async void SetupLDAP()
         {
-            _ldapMountName = "Cincinnati";
-
-            // Define the engine.
-            _ldapAuthEngine = (LdapAuthEngine) _vault.ConnectAuthenticationBackend(EnumBackendTypes.A_LDAP, "ldap_test", _ldapMountName);
-            _vaultSystemBackend = _vault.System;
 
             // Delete mount point so create succeeds
-            _vaultSystemBackend.AuthDisable(_ldapMountName);
+            //await _vaultSystemBackend.AuthDisable(LDAP_MOUNTNAME);
 
 
             // Now create the Mount point.
-            AuthMethod authMethod = new AuthMethod(_ldapMountName, EnumAuthMethods.LDAP);
-            authMethod.Description = "Cincinnati Prod Domain";
+           // AuthMethod authMethod = new AuthMethod(LDAP_MOUNTNAME, EnumAuthMethods.LDAP);
+           // authMethod.Description = "Cincinnati Prod Domain";
 
 
             // Create Config object - load defaults from file.
@@ -48,7 +156,7 @@ namespace VaultClient
 
             try
             {
-                if (!(await _vaultSystemBackend.AuthEnable(authMethod)))
+                if (!(await _vaultSystemBackend.AuthEnable(_authMethod)))
                 {
 
                     Console.WriteLine("Error: unable to create the backend");
@@ -73,12 +181,16 @@ namespace VaultClient
                 }
             }
 
-            bool exists = await _vaultSystemBackend.AuthExists(_ldapMountName);
+            bool exists = await _vaultSystemBackend.AuthExists(LDAP_MOUNTNAME);
 
-            _vaultSystemBackend.AuthExists(_ldapMountName);
+            _vaultSystemBackend.AuthExists(LDAP_MOUNTNAME);
+        }
 
 
 
+        public async Task<bool> Login()
+        {
+            // Login
             // Now read credentials from test file
             JsonSerializer jsonSerializer = new JsonSerializer();
             string json = File.ReadAllText(@"C:\A_Dev\Configs\ClientLoginCredentials.json");
@@ -102,7 +214,9 @@ namespace VaultClient
                     Console.WriteLine("Exceptyion: {0}", e.Message);
                 }
             }
-        }
 
+            return true;
+
+        }
     }
 }

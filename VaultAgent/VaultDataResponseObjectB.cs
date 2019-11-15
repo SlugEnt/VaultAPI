@@ -115,5 +115,31 @@ namespace VaultAgent {
 
 			return json.ToObject<T>();
 		}
-	}
+
+
+        /// <summary>
+        /// Returns the Response from Vault as a JSON string.
+        /// </summary>
+        /// <param name="key">Allows you to pick a specific subpart of the JSON to retrieve an object from.  To specify multiple levels
+        /// you separate with a period.  So data.keys will create an object from whatever the keys json field contains.
+        /// <para>should be specified as all lower case.</para></param>
+        /// <returns></returns>
+        public async Task<string> GetJSON(string key = "data")
+        {
+            await AsyncReadResponse();
+
+            if (_respData == null)
+            {
+                throw new ArgumentNullException(
+                    "The response data from the HTTP call was empty.  Confirm the HTTP call was expected to return data in its body.");
+            }
+
+            JToken json;
+
+            if (key == "") { json = _respData; }
+            else { json = _respData.SelectToken(key); }
+
+            return json.ToString();
+        }
+    }
 }
