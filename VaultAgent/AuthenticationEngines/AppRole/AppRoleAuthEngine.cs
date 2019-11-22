@@ -318,7 +318,7 @@ namespace VaultAgent.AuthenticationEngines {
         /// </summary>
         /// <param name="returnFullSecret">Vault only returns an abbreviated secret object.  If you wish to have a fully populated one then set to true.  Default False.
         /// Note, that this in no way affects the secret itself.  By setting to true, we make an additional call to Vault to re-read the full secret object.  If you do not
-        /// need the full secret information then leacing at false is faster.</param>
+        /// need the full secret information then leaving at false is faster.</param>
         /// <param name="vaultMetadata">A Vault MetaData object that should be attached to the given secret. </param>
         /// <returns>AppRoleSecret object.  Whether this is fully populated or contains just the ID and accessor depends upon the returnFullSecret parameter.</returns>
         public async Task<AppRoleSecret> GenerateSecretID (string appRoleName, bool returnFullSecret = false, Dictionary<string, string> vaultMetadata = null) {

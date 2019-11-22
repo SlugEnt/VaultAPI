@@ -553,6 +553,8 @@ namespace VaultAgent {
 
         /// <summary>
         /// Reads the Vault policy with the given name.
+        /// <para>Returns the VaultPolicyContainer object or throws an error.</para>
+        /// <para>Throws: VaultInvalidPathException with SpecificErrorCode property set to ObjectDoesNotExist if not found</para>
         /// </summary>
         /// <param name="policyName">Name of the policy to retrieve.</param>
         /// <returns>A VaultPolicyContainer object with the values read from Vault.</returns>

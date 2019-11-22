@@ -72,6 +72,10 @@ namespace VaultAgent.AuthenticationEngines
 
 
 
+        /// <summary>
+        /// Reads the LDAP Config that corresponds to this engine.  Returns the JSON representation of the config.
+        /// </summary>
+        /// <returns></returns>
         public async Task<string> ReadLDAPConfigAsJSON()
         {
             string path = MountPointPath + "config";
@@ -81,9 +85,7 @@ namespace VaultAgent.AuthenticationEngines
             {
                 return await vdro.GetJSON();
             }
-
             return null;
-
         }
 
 

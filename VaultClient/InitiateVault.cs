@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -44,14 +45,17 @@ namespace VaultClient
         }
 
 
-
+        /// <summary>
+        /// Performs the initial setup of a vault instance.
+        /// </summary>
+        /// <returns></returns>
         public async Task<bool> InitialSetup()
         {
             bool success;
 
-            SetupLDAP();
+            await SetupLDAP();
 
-            await _vaultSystemBackend.AuthEnable(_authMethod);
+            
 
             // Build the Application Data Vault
             BuildBackends(VAULT_KEYCRYPT_NAME, VAULT_KEYCRYPT_DESC);
@@ -63,7 +67,6 @@ namespace VaultClient
             KV2SecretEngine vaultAppCrypt;
             vaultAppCrypt = (KV2SecretEngine)_vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, VAULT_KEYCRYPT_NAME, VAULT_KEYCRYPT_NAME);
 
-            // _vaultAgents = new List<VaultAgentAPI>();
             return success;
         }
 
@@ -84,7 +87,10 @@ namespace VaultClient
         }
 
 
-
+        /// <summary>
+        /// Reads the configuration of the LDAP Backend
+        /// </summary>
+        /// <returns></returns>
         public async Task<string> GetConfig()
         {
             string json = await _ldapAuthEngine.ReadLDAPConfigAsJSON();
@@ -108,6 +114,8 @@ namespace VaultClient
         /// <returns></returns>
         internal async Task<bool> BuildAdminPolicy()
         {
+            // Create the Permission Paths
+
             // FullAdmins will have full control to the HashPath
             VaultPolicyPathItem hashPath = new VaultPolicyPathItem(true,VAULT_HASH_NAME, "/*");
             hashPath.CRUDAllowed = true;
@@ -116,18 +124,32 @@ namespace VaultClient
             VaultPolicyPathItem appPath = new VaultPolicyPathItem(true,VAULT_KEYCRYPT_NAME,"/*");
             appPath.CRUDAllowed = true;
 
-            // Now create the policy.
+
+
+            // Now create the policy
             VaultPolicyContainer adminContainer = new VaultPolicyContainer("FullAdmin");
             adminContainer.AddPolicyPathObject(hashPath);
             adminContainer.AddPolicyPathObject(appPath);
 
             bool success = await _vaultSystemBackend.SysPoliciesACLCreate(adminContainer);
 
+
+            // Testing only
+            /*
+            VaultPolicyContainer testContainer = new VaultPolicyContainer("TestSysEng");
+            List<string> testpol = new List<string>();
+            testpol.Add("TestSysEng");
+            success = await _vaultSystemBackend.SysPoliciesACLCreate(testContainer);
+            success = await _ldapAuthEngine.CreateGroupToPolicyMapping("_IT-SystemEngineers", testpol);
+            */
+            // ENd Testing
+
+
             List<string> adminPolicies = new List<string>();
             adminPolicies.Add(adminContainer.Name);
 
             // Associate the Admin Active Directory group to the policy.
-            success = await _ldapAuthEngine.CreateGroupToPolicyMapping("_R_IT-VP", adminPolicies);
+            success = await _ldapAuthEngine.CreateGroupToPolicyMapping("_IT-SystemEngineers", adminPolicies);
 
             List<string> groups = await _ldapAuthEngine.ListGroups();
 
@@ -138,19 +160,12 @@ namespace VaultClient
 
 
 
-
-        public async void SetupLDAP()
+        /// <summary>
+        /// Configures the LDAP Backend for a new vault.
+        /// </summary>
+        /// <returns></returns>
+        public async Task SetupLDAP()
         {
-
-            // Delete mount point so create succeeds
-            //await _vaultSystemBackend.AuthDisable(LDAP_MOUNTNAME);
-
-
-            // Now create the Mount point.
-           // AuthMethod authMethod = new AuthMethod(LDAP_MOUNTNAME, EnumAuthMethods.LDAP);
-           // authMethod.Description = "Cincinnati Prod Domain";
-
-
             // Create Config object - load defaults from file.
             LdapConfig ldapConfig = _ldapAuthEngine.GetLDAPConfigFromFile(@"C:\a_dev\Configs\AD_Cin_Connector.json");
 
@@ -182,12 +197,14 @@ namespace VaultClient
             }
 
             bool exists = await _vaultSystemBackend.AuthExists(LDAP_MOUNTNAME);
-
-            _vaultSystemBackend.AuthExists(LDAP_MOUNTNAME);
         }
 
 
 
+        /// <summary>
+        /// Performs the login of a user to the vault
+        /// </summary>
+        /// <returns></returns>
         public async Task<bool> Login()
         {
             // Login
@@ -211,7 +228,7 @@ namespace VaultClient
                 }
                 else
                 {
-                    Console.WriteLine("Exceptyion: {0}", e.Message);
+                    Console.WriteLine("Exception: {0}", e.Message);
                 }
             }
 

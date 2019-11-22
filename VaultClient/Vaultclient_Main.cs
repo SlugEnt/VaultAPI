@@ -41,6 +41,7 @@ namespace VaultClient
 
 
 
+
             // Perform optimize tests
             OptimizeTests optimize = new OptimizeTests(vaultAgent);
 			await optimize.Run();
