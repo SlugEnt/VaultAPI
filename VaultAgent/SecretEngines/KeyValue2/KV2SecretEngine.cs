@@ -251,13 +251,22 @@ namespace VaultAgent.SecretEngines {
 
 
 
+
+        public async Task<(bool IsSuccess, KV2Secret Secret)> TryReadSecret(string secretName, string secretParentPath, int secretVersion = 0)
+        {
+            return await TryReadSecret(secretParentPath + "/" + secretName, secretVersion);
+
+        }
+
+
+
         /// <summary>
-        /// Deletes the version of the secret requested - or the most recent version if version parameter is zero.
-        /// </summary>
-        /// <param name="secretPath">The name of the secret to delete.</param>
-        /// <param name="version">The version to delete.  Defaults to zero which is the most recent or current version of the key.</param>
-        /// <returns>True if successful.  False otherwise.</returns>
-        public async Task<bool> DeleteSecretVersion (string secretPath, int version = 0) {
+            /// Deletes the version of the secret requested - or the most recent version if version parameter is zero.
+            /// </summary>
+            /// <param name="secretPath">The name of the secret to delete.</param>
+            /// <param name="version">The version to delete.  Defaults to zero which is the most recent or current version of the key.</param>
+            /// <returns>True if successful.  False otherwise.</returns>
+            public async Task<bool> DeleteSecretVersion (string secretPath, int version = 0) {
             string path;
             VaultDataResponseObjectB vdro;
 

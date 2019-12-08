@@ -150,30 +150,6 @@ namespace VaultAgent.AuthenticationEngines {
 
 
 
-/*
-		/// <summary>
-		/// Reads the AppRole with the given name.  Returns an AppRole object or Null if the AppRole does not exist.
-		/// </summary>
-		/// <param name="appRoleName">String name of the app role to retrieve.</param>
-		/// <returns>AppRole object.</returns>
-		public async Task<AppRole> ReadRole (string appRoleName, bool readRoleID = false) {
-            string path = MountPointPath + "role/" + appRoleName;
-
-            VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ReadRole");
-            if ( vdro.Success ) {
-                AppRole appRole = vdro.GetVaultTypedObjectV2<AppRole>();
-                appRole.Name = appRoleName;
-
-                // Read the roleID if requested to:
-                if ( readRoleID ) { appRole.RoleID = await ReadRoleID (appRole.Name); }
-
-                return appRole;
-            }
-
-            return null;
-        }
-		*/
-
 
         /// <summary>
         /// Reads the AppRole with the given name.  Returns an AppRole object or Null if the AppRole does not exist.
@@ -222,26 +198,7 @@ namespace VaultAgent.AuthenticationEngines {
         }
 
 
-        /* Old Code - To be removed at a later time.
-                /// <summary>
-                /// Retrieves the AppRoleID of the given AppRole.
-                /// </summary>
-                /// <param name="appRoleName"></param>
-                /// <returns>Returns a string representing the Role ID as stored in Vault.  Returns RoleID as empty string if RoleID could not be found.
-                /// VaultInvalidPathException with SpecificErrorCode = ObjectDoesNotExist, if the Role does not exist.
-                /// </returns>
-                public async Task<string> ReadRoleID (string appRoleName) {
-                    string path = MountPointPath + "role/" + appRoleName + "/role-id";
-
-                    try {
-                        VaultDataResponseObject vdro = await _parent._httpConnector.GetAsync (path, "ReadRoleID");
-                        return vdro.Success ? vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "role_id") : "";
-                    }
-                    catch ( VaultInvalidPathException e ) { return ""; }
-                }
-        */
-
-
+        
         /// <summary>
         /// Retrieves the AppRoleID of the given AppRole.
         /// </summary>
