@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using VaultAgent.SecretEngines.KeyValue2;
 
 
 // Allow Testing project to access KV2SecretWrapper to perform tests.
@@ -55,7 +56,7 @@ namespace VaultAgent.SecretEngines.KV2 {
         /// <summary>
         /// Gets or sets the actual secret object.  This is a shortcut for going to obj.data.secretobj.
         /// </summary>
-        public KV2Secret Secret {
+        public KV2SecretBase<T> Secret where T : KV2SecretBase<T> {
             get { return this.Data.SecretObj; }
             set { this.Data.SecretObj = value; }
         }
