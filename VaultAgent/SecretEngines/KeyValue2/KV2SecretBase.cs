@@ -11,13 +11,7 @@ using VaultAgent.SecretEngines.KeyValue2;
 namespace VaultAgent.SecretEngines.KeyValue2
 {
     /// <summary>
-    /// Represents a secret read from the Vault.  Secrets can have zero to many attributes which are just Key Value Pairs of a name and some data value.
-    /// However, a secret without at least one attribute is not a secret, for the attributes are where the value for the secret is retrieved from.  
-    /// Important is that when saving a secret, you must save it with all it's attributes or else any that are missing on the save will be removed from 
-    /// the vault.  So, if upon reading a secret it has attributes of canDelete:True and connection:db1 and you save it, but the only attribute in the 
-    /// list upon save is connection:db1 then canDelete will no longer exist after the save.  
-    /// 
-    /// Therefore it is best to read the secret, make changes to any existing attributes and then add any new ones, then save it.
+    /// Abstract class for a KeyValue 2 Secret object. 
     /// </summary>
 
     public abstract class KV2SecretBase<T> : ICloneable, IKV2Secret, IComparable<T> where T : KV2SecretBase<T>
@@ -31,7 +25,7 @@ namespace VaultAgent.SecretEngines.KeyValue2
             //TODO - Does name and path need to be only set thru constructor - even in JSON constructions?  
             //TODO - Do we need a Key value which returns what the key of this secret would be (Name+Path)?
 
-
+            
             /// <summary>
             /// Creates a new empty secret
             /// </summary>

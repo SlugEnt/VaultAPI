@@ -179,7 +179,7 @@ namespace VaultAgent.Test.ModelTests
         // Test that Secret shortcut access the actual backing value correctly.  Vault pushes
         public void SecretVersion()
         {
-            KV2SecretWrapper secretA = new KV2SecretWrapper
+            KV2SecretWrapper<KV2Secret> secretA = new KV2SecretWrapper<KV2Secret>
             {
                 Secret = new KV2Secret("test", "/"),
                 Version = 2

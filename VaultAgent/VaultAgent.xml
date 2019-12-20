@@ -1658,15 +1658,14 @@
             <param name="id">The Id of the entityAlias to be deleted.</param>
             <returns></returns>
         </member>
+        <member name="T:VaultAgent.SecretEngines.KeyValue2.IKV2Secret">
+            <summary>
+            Interface for a KV2Secret Object functionality that derived objects must implement
+            </summary>
+        </member>
         <member name="T:VaultAgent.SecretEngines.KeyValue2.KV2SecretBase`1">
             <summary>
-            Represents a secret read from the Vault.  Secrets can have zero to many attributes which are just Key Value Pairs of a name and some data value.
-            However, a secret without at least one attribute is not a secret, for the attributes are where the value for the secret is retrieved from.  
-            Important is that when saving a secret, you must save it with all it's attributes or else any that are missing on the save will be removed from 
-            the vault.  So, if upon reading a secret it has attributes of canDelete:True and connection:db1 and you save it, but the only attribute in the 
-            list upon save is connection:db1 then canDelete will no longer exist after the save.  
-            
-            Therefore it is best to read the secret, make changes to any existing attributes and then add any new ones, then save it.
+            Abstract class for a KeyValue 2 Secret object. 
             </summary>
         </member>
         <member name="M:VaultAgent.SecretEngines.KeyValue2.KV2SecretBase`1.#ctor">
@@ -1791,50 +1790,132 @@
             Therefore it is best to read the secret, make changes to any existing attributes and then add any new ones, then save it.
             </summary>
         </member>
+        <member name="M:VaultAgent.SecretEngines.KV2.KV2Secret.#ctor">
+            <summary>
+            Creates a new KV2Secret object
+            </summary>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KV2.KV2Secret.#ctor(System.String,System.String)">
+            <summary>
+            Creates a new KV2Secret object with the provided name and path/
+            </summary>
+            <param name="secretName"></param>
+            <param name="path"></param>
+        </member>
         <member name="T:VaultAgent.SecretEngines.KV2.KV2SecretEngineSettings">
             <summary>
             Represents a Vault Key Value Backend Version 2 settings object.
             </summary>
         </member>
-        <member name="T:VaultAgent.SecretEngines.KV2.KV2SecretWrapper">
+        <member name="F:VaultAgent.SecretEngines.KV2.KV2SecretEngineSettings.CASRequired">
+            <summary>
+            True if Check and Set operations are mandated to use version number
+            </summary>
+        </member>
+        <member name="F:VaultAgent.SecretEngines.KV2.KV2SecretEngineSettings.MaxVersions">
+            <summary>
+            Maximum number of versions that can be stored for a particular secret.  Defaults to 10.
+            </summary>
+        </member>
+        <member name="T:VaultAgent.SecretEngines.KV2.SecretMetaDataInfo.KV2SecretMetaDataInfo">
+            <summary>
+            Class used to hold a Key Value 2 Secret's metadata
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KV2.SecretMetaDataInfo.KV2SecretMetaDataInfo.CasRequired">
+            <summary>
+            Whether Check and Set is required during Secret Updates.  Check And Set determines if a secret can be overwritten always, never, or only if the current version matches the version number passed in.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KV2.SecretMetaDataInfo.KV2SecretMetaDataInfo.CreatedTime">
+            <summary>
+            Date and time that this version was created at.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KV2.SecretMetaDataInfo.KV2SecretMetaDataInfo.CurrentVersion">
+            <summary>
+            The Current version of this secret
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KV2.SecretMetaDataInfo.KV2SecretMetaDataInfo.MaxVersions">
+            <summary>
+            Maximum number of versions to keep of this particular secret
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KV2.SecretMetaDataInfo.KV2SecretMetaDataInfo.OldestVersion">
+            <summary>
+            What the oldest version number of this secret is
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KV2.SecretMetaDataInfo.KV2SecretMetaDataInfo.UpdatedTime">
+            <summary>
+            The data and time this secret was last updated
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KV2.SecretMetaDataInfo.KV2SecretMetaDataInfo.Versions">
+            <summary>
+            All of the MetaData for the current versions.
+            </summary>
+        </member>
+        <member name="T:VaultAgent.SecretEngines.KV2.SecretMetaDataInfo.MetaDataVersion">
+            <summary>
+            The MetaData Related Information in regards to the version
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KV2.SecretMetaDataInfo.MetaDataVersion.CreatedTime">
+            <summary>
+            The time this version was created
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KV2.SecretMetaDataInfo.MetaDataVersion.DeletionTime">
+            <summary>
+            The time this was Deleted
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KV2.SecretMetaDataInfo.MetaDataVersion.Destroyed">
+            <summary>
+            Whether this version has been permanently deleted or not.
+            </summary>
+        </member>
+        <member name="T:VaultAgent.SecretEngines.KV2.KV2SecretWrapper`1">
             <summary>
             The KV2SecretWrapper represents a Secret Container object that presents all the information Vault returns in regards to a secret.  
             Much of the info is just Informational, but some such as the version saved, etc is of critical nature.
             The main secret data is stored in the KV2Secret object.
             </summary>
         </member>
-        <member name="P:VaultAgent.SecretEngines.KV2.KV2SecretWrapper.Secret">
+        <member name="P:VaultAgent.SecretEngines.KV2.KV2SecretWrapper`1.Secret">
             <summary>
             Gets or sets the actual secret object.  This is a shortcut for going to obj.data.secretobj.
             </summary>
         </member>
-        <member name="P:VaultAgent.SecretEngines.KV2.KV2SecretWrapper.SecretAttributes">
+        <member name="P:VaultAgent.SecretEngines.KV2.KV2SecretWrapper`1.SecretAttributes">
             <summary>
             Accesses the attributes of the Secret.
             </summary>
         </member>
-        <member name="P:VaultAgent.SecretEngines.KV2.KV2SecretWrapper.Version">
+        <member name="P:VaultAgent.SecretEngines.KV2.KV2SecretWrapper`1.Version">
             <summary>
             The version of the current key.  Versions are numerically increasing
             </summary>
         </member>
-        <member name="M:VaultAgent.SecretEngines.KV2.SecretReadReturnObjData.#ctor">
+        <member name="M:VaultAgent.SecretEngines.KV2.SecretReadReturnObjData`1.#ctor">
             <summary>
             Default Constructor used by JSONConverter.
             </summary>
         </member>
-        <member name="M:VaultAgent.SecretEngines.KV2.SecretReadReturnObjData.#ctor(System.Boolean)">
+        <member name="M:VaultAgent.SecretEngines.KV2.SecretReadReturnObjData`1.#ctor(System.Boolean)">
             <summary>
             Constructor used when this object is being created manually, vs populated thru JSON Converter.
             </summary>
             <param name="manualCreation"></param>
         </member>
-        <member name="P:VaultAgent.SecretEngines.KV2.SecretReadReturnObjData.SecretObj">
+        <member name="P:VaultAgent.SecretEngines.KV2.SecretReadReturnObjData`1.SecretObj">
             <summary>
             The actual secret object - this is what most callers want.
             </summary>
         </member>
-        <member name="P:VaultAgent.SecretEngines.KV2.SecretReadReturnObjData.Metadata">
+        <member name="P:VaultAgent.SecretEngines.KV2.SecretReadReturnObjData`1.Metadata">
             <summary>
             The metadata - such as creation times, etc for this particular secret object.
             </summary>
@@ -1887,9 +1968,9 @@
             </summary>
             <returns>KV2BackendSettings object with the values of the current configuration.</returns>
         </member>
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.SaveSecret(VaultAgent.SecretEngines.KV2.KV2Secret,VaultAgent.Backends.KV2EnumSecretSaveOptions,System.Int32)">
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.SaveSecret(VaultAgent.SecretEngines.KeyValue2.IKV2Secret,VaultAgent.Backends.KV2EnumSecretSaveOptions,System.Int32)">
             <summary>
-            Saves the provided KV2Secret object.  You must specify a save option and optionally what the current version of the secret is.
+            Saves the provided IKV2Secret object.  You must specify a save option and optionally what the current version of the secret is.
             If the CAS setting is set on the backend then the following errors may be returned:
             <para></para>
             <para>Commonly Throws the Following Errors:</para>
@@ -1902,7 +1983,7 @@
             <para>     [SpecificErrorCode] = EnumVaultExceptionCodes.CAS_VersionMissing - The version you specified was invalid.  It must be equal to the current version number of the secret.</para>
             
             </summary>
-            <param name="secret">KV2Secret object to be saved.  This must contain minimally the Name and the Path of the secret and one or more optional attributes.</param>
+            <param name="secret">IKV2Secret object to be saved.  This must contain minimally the Name and the Path of the secret and one or more optional attributes.</param>
             <param name="casSaveOption">This must be set to the CAS option you desired:
               - OnlyIfKeyDoesNotExist = 0,
               - OnlyOnExistingVersionMatch = 1,
@@ -1911,23 +1992,23 @@
             <param name="currentVersion">What the current version of the secret is.  Required if the backend is in CAS mode (Default mode).</param>
             <returns></returns>
         </member>
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.ReadSecret(System.String,System.Int32)">
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.ReadSecret``1(System.String,System.Int32)">
             <summary>
             Reads the secret from Vault.  It defaults to reading the most recent version.  Set secretVersion to non zero to retrieve a
             specific version.
             <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
-            <para>Returns the KV2SecretWrapper if a secret was found at the location.</para>
+            <para>Returns the IKV2SecretWrapper if a secret was found at the location.</para>
             <para>Returns Null if no secret found at location.</para>
             </summary>
             <param name="secretPath">The Name (path) to the secret you wish to read.</param>
             <param name="secretVersion">The version of the secret to retrieve.  (Default) set to 0 to read most recent version. </param>
-            <returns>KV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
+            <returns>IKV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
         </member>
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.TryReadSecret(System.String,System.Int32)">
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.TryReadSecret``1(System.String,System.Int32)">
             <summary>
-            Attempts to read a secret if it exists.  Returns a tuple value (bool success, KV2Secret secret) as follows:
+            Attempts to read a secret if it exists.  Returns a tuple value (bool success, IKV2Secret secret) as follows:
             <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
-            <para>If secret was found the first value is True and the 2nd value is the KV2Secret that was read.</para>
+            <para>If secret was found the first value is True and the 2nd value is the IKV2Secret that was read.</para>
             <para>If not found, the first value is False and the second value is null.</para>
             </summary>
             <param name="secretPath">The path to the secret to check for existence and retrieve if it does exist.</param>
@@ -1988,7 +2069,7 @@
             <param name="secretNamePath">The name of the secret to delete</param>
             <returns>True if successful.</returns>
         </member>
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.DeleteSecretVersion(VaultAgent.SecretEngines.KV2.KV2Secret,System.Int32)">
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.DeleteSecretVersion(VaultAgent.SecretEngines.KeyValue2.IKV2Secret,System.Int32)">
             <summary>
             Deletes the version of the secret requested - or the most recent version if version parameter is zero.
             <para> Set secretVersion parameter as follows:</para>
@@ -2000,22 +2081,29 @@
             <param name="version">The version of the secret to delete.</param>
             <returns>True if successful.  False otherwise.</returns>
         </member>
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.ReadSecret(VaultAgent.SecretEngines.KV2.KV2Secret,System.Int32)">
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.ReadSecret``1(``0,System.Int32)">
             <summary>
             Reads the specified secret from Vault.  It defaults to reading the most recent version of the secret.
             <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
-            <para>Returns the KV2Secret if a secret was found at the location.</para>
+            <para>Returns the IKV2Secret if a secret was found at the location.</para>
             <para>Returns Null if no secret found at location.</para>
             </summary>
-            <param name="secretObj">An existing KV2Secret object that you wish to re-read.  The existing object will be deleted and replaced with the values for the new.</param>
+            <param name="secretObj">An existing IKV2Secret object that you wish to re-read.  The existing object will be deleted and replaced with the values for the new.</param>
             <param name="secretVersion">Version of the secret to retrieve.
             <para>  (Default) set to 0 to read most recent version.</para>
             <para>  Set to -1 to use the version number specified in the secret object.</para>
             <para>  Set to any positive number to read that specific version from the Vault Instance Store.</para>
             </param>
-            <returns>KV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
+            <returns>IKV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
         </member>
-        <!-- Badly formed XML comment ignored for member "M:VaultAgent.SecretEngines.KV2SecretEngine.TryReadSecret(VaultAgent.SecretEngines.KV2.KV2Secret,System.Int32)" -->
+        <!-- Badly formed XML comment ignored for member "M:VaultAgent.SecretEngines.KV2SecretEngine.TryReadSecret``1(``0,System.Int32)" -->
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.GetSecretMetaData(VaultAgent.SecretEngines.KeyValue2.IKV2Secret)">
+            <summary>
+            Returns the Secret MetaData Object Information for the provided Secret Object
+            </summary>
+            <param name="secretObj"></param>
+            <returns></returns>
+        </member>
         <member name="T:VaultAgent.SecretEngines.KeyValueSecret">
             <summary>
             Represents a KeyValue Version 1 secret read from the Vault.  Secrets can have many attributes which are just Key Value Pairs of a name and some data value.

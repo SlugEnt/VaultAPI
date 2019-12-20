@@ -26,7 +26,7 @@ namespace VaultAgent.SecretEngines {
     /// One of the unique things is that there are different root mounts within the given backend depending on what you want to do.  So having
     /// a std BackEnd path does not really work with this class.  It generally builds the unique path in each member method.
     /// </summary>
-    public class IKV2SecretEngine : VaultSecretBackend {
+    public class KV2SecretEngine : VaultSecretBackend {
         // ==============================================================================================================================================
         /// <summary>
         /// Constructor.  Initializes the connection to Vault and stores the token.
@@ -34,7 +34,7 @@ namespace VaultAgent.SecretEngines {
         /// <param name="backendName">The name of the secret backend to mount.  This is purely cosmetic.</param>
         /// <param name="backendMountPoint">The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/ and exclude trailing slash.</param>
         /// <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
-        public IKV2SecretEngine (string backendName, string backendMountPoint, VaultAgentAPI vaultAgentAPI) : base (backendName, backendMountPoint,
+        public KV2SecretEngine (string backendName, string backendMountPoint, VaultAgentAPI vaultAgentAPI) : base (backendName, backendMountPoint,
                                                                                                                    vaultAgentAPI) {
             Type = EnumBackendTypes.KeyValueV2;
             IsSecretBackend = true;
@@ -71,13 +71,13 @@ namespace VaultAgent.SecretEngines {
         /// Returns the configuration settings of the current KeyValue V2 secret store. 
         /// </summary>
         /// <returns>KV2BackendSettings object with the values of the current configuration.</returns>
-        public async Task<IKV2SecretEngineSettings> GetBackendConfiguration () {
+        public async Task<KV2SecretEngineSettings> GetBackendConfiguration () {
             try {
                 // V2 Secret stores have a unique config path...
                 string path = MountPointPath + "config";
 
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "GetBackendConfiguration");
-                return await vdro.GetDotNetObject<IKV2SecretEngineSettings>();
+                return await vdro.GetDotNetObject<KV2SecretEngineSettings>();
 
                 //IKV2SecretEngineSettings settings = vdro.GetVaultTypedObject<IKV2SecretEngineSettings>();
                 //return settings;
@@ -203,7 +203,7 @@ namespace VaultAgent.SecretEngines {
 
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ReadSecret", contentParams);
                 if ( vdro.Success ) {
-                    KV2SecretWrapper secretReadReturnObj = await vdro.GetDotNetObject<KV2SecretWrapper> ("");
+                    KV2SecretWrapper<T> secretReadReturnObj = await vdro.GetDotNetObject<KV2SecretWrapper<T>> ("");
 
                     //IKV2SecretWrapper secretReadReturnObj = IKV2SecretWrapper.FromJson (vdro.GetResponsePackageAsJSON());
 
@@ -245,8 +245,8 @@ namespace VaultAgent.SecretEngines {
         /// <param name="secretPath">The path to the secret to check for existence and retrieve if it does exist.</param>
         /// <param name="secretVersion">The secret version to be read.  0 for current.</param>
         /// <returns></returns>
-        public async Task<(bool IsSuccess, IKV2Secret Secret)> TryReadSecret (string secretPath, int secretVersion = 0) {
-            IKV2Secret secret = await ReadSecret (secretPath, secretVersion);
+        public async Task<(bool IsSuccess, T Secret)> TryReadSecret<T> (string secretPath, int secretVersion = 0) where T : KV2SecretBase<T> {
+            T secret = await ReadSecret<T> (secretPath, secretVersion);
 
             if ( secret == null ) { return (false, null); }
             else { return (true, secret); }
@@ -255,9 +255,9 @@ namespace VaultAgent.SecretEngines {
 
 
 
-        public async Task<(bool IsSuccess, IKV2Secret Secret)> TryReadSecret(string secretName, string secretParentPath, int secretVersion = 0)
+        public async Task<(bool IsSuccess, T Secret)> TryReadSecret<T>(string secretName, string secretParentPath, int secretVersion = 0) where T : KV2SecretBase<T>
         {
-            return await TryReadSecret(secretParentPath + "/" + secretName, secretVersion);
+            return await TryReadSecret<T>(secretParentPath + "/" + secretName, secretVersion);
 
         }
 
@@ -404,19 +404,15 @@ namespace VaultAgent.SecretEngines {
         /// Reads the Secret Metadata for the KeyValue V2 secret.  This includes version information, and critical timestamps such as destroy, delete, create etc.
         /// </summary>
         /// <param name="secretNamePath">The path to the secret to get metadata on.</param>
-        /// <returns>IKV2SecretMetaDataInfo object</returns>
-        public async Task<IKV2SecretMetaDataInfo> GetSecretMetaData (string secretNamePath) {
+        /// <returns>KV2SecretMetaDataInfo object</returns>
+        public async Task<KV2SecretMetaDataInfo> GetSecretMetaData (string secretNamePath) {
             // we need to use the MetaData Path
             string path = MountPointPath + "metadata/" + secretNamePath;
 
             VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "GetSecretMetaData");
             if ( vdro.Success ) {
-                IKV2SecretMetaDataInfo kvData = await vdro.GetDotNetObject<IKV2SecretMetaDataInfo>();
+                KV2SecretMetaDataInfo kvData = await vdro.GetDotNetObject<KV2SecretMetaDataInfo>();
                 return kvData;
-
-//				string ks = vdro.GetDataPackageAsJSON();
-                //              IKV2SecretMetaDataInfo kvData = VaultUtilityFX.ConvertJSON<IKV2SecretMetaDataInfo> (ks);
-                //            return kvData;
             }
 
             return null;
@@ -492,10 +488,10 @@ namespace VaultAgent.SecretEngines {
         /// <para>  Set to any positive number to read that specific version from the Vault Instance Store.</para>
         /// </param>
         /// <returns>IKV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
-        public async Task<IKV2Secret> ReadSecret (IKV2Secret secretObj, int secretVersion = 0) {
+        public async Task<T> ReadSecret<T> (T secretObj, int secretVersion = 0) where T: KV2SecretBase<T> {
             if ( secretVersion == -1 ) { secretVersion = secretObj.Version; }
 
-            return await ReadSecret (secretObj.FullPath, secretVersion);
+            return await ReadSecret<T> (secretObj.FullPath, secretVersion);
         }
 
 
@@ -512,15 +508,20 @@ namespace VaultAgent.SecretEngines {
         /// <para>  Set to -1 to use the version number specified in the secret object.</para>
         /// <para>  Set to any positive number to read that specific version from the Vault Instance Store.</para>
         /// <returns></returns>
-        public async Task<(bool IsSuccess, IKV2Secret Secret)> TryReadSecret (IKV2Secret secretObj, int secretVersion = 0) {
-            IKV2Secret secret = await ReadSecret (secretObj.FullPath, secretVersion);
+        public async Task<(bool IsSuccess, T Secret)> TryReadSecret<T> (T secretObj, int secretVersion = 0) where T: KV2SecretBase<T> {
+            T secret = await ReadSecret<T> (secretObj.FullPath, secretVersion);
 
             if ( secret == null ) { return (false, null); }
             else { return (true, secret); }
         }
 
 
-        public async Task<IKV2SecretMetaDataInfo> GetSecretMetaData (IKV2Secret secretObj) { return await GetSecretMetaData (secretObj.FullPath); }
+        /// <summary>
+        /// Returns the Secret MetaData Object Information for the provided Secret Object
+        /// </summary>
+        /// <param name="secretObj"></param>
+        /// <returns></returns>
+        public async Task<KV2SecretMetaDataInfo> GetSecretMetaData (IKV2Secret secretObj) { return await GetSecretMetaData (secretObj.FullPath); }
 
 
         #endregion

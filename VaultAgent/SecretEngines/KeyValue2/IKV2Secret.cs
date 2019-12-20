@@ -4,6 +4,9 @@ using System.Text;
 
 namespace VaultAgent.SecretEngines.KeyValue2
 {
+    /// <summary>
+    /// Interface for a KV2Secret Object functionality that derived objects must implement
+    /// </summary>
     public interface IKV2Secret
     {
         string Name { get; set; }

@@ -16,8 +16,17 @@ namespace VaultAgent.SecretEngines.KV2 {
     /// </summary>
     public class KV2Secret : KV2SecretBase<KV2Secret>
     {
+        /// <summary>
+        /// Creates a new KV2Secret object
+        /// </summary>
         public KV2Secret() : base() { }
 
+
+        /// <summary>
+        /// Creates a new KV2Secret object with the provided name and path/
+        /// </summary>
+        /// <param name="secretName"></param>
+        /// <param name="path"></param>
         public KV2Secret (string secretName, string path = "") : base (secretName, path) { }
     }
 }
