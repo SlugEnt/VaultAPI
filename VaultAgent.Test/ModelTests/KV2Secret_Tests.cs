@@ -10,7 +10,6 @@ namespace VaultAgent.Test.ModelTests
     [Parallelizable]
     class KV2Secret_Tests
     {
-
         // Validate that 2 secrets with the same name, path, number of attributes, same attribute keys and keys have the same values are equal.
         [Test]
         public void TwoSecrets_EvaluateToEquals_Success()
@@ -32,6 +31,25 @@ namespace VaultAgent.Test.ModelTests
             Assert.IsTrue(a.Equals(b));
         }
 
+
+
+        [Test]
+        public void SecretsCompareTo()
+        {
+            string nameA = "ABC/xyz";
+            string nameB = "BCD/r";
+            string nameC = nameA;
+
+            string path = "start";
+            KV2Secret a = new KV2Secret(nameA, path);
+            KV2Secret b = new KV2Secret(nameB, path);
+            KV2Secret c = new KV2Secret(nameC,path);
+
+            Assert.AreEqual(-1,a.CompareTo(b));
+            Assert.AreEqual(1,b.CompareTo(a));
+            Assert.AreEqual(0,a.CompareTo(c));
+            Assert.AreEqual(0, c.CompareTo(a));
+        }
 
 
         // Validate that 2 secrets with different names are not equal.
@@ -161,7 +179,7 @@ namespace VaultAgent.Test.ModelTests
         // Test that Secret shortcut access the actual backing value correctly.  Vault pushes
         public void SecretVersion()
         {
-            KV2SecretWrapper secretA = new KV2SecretWrapper
+            KV2SecretWrapper<KV2Secret> secretA = new KV2SecretWrapper<KV2Secret>
             {
                 Secret = new KV2Secret("test", "/"),
                 Version = 2

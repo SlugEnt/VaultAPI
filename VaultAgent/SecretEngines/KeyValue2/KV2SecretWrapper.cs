@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using VaultAgent.SecretEngines.KeyValue2;
 
 
 // Allow Testing project to access KV2SecretWrapper to perform tests.
@@ -16,11 +17,11 @@ namespace VaultAgent.SecretEngines.KV2 {
     /// Much of the info is just Informational, but some such as the version saved, etc is of critical nature.
     /// The main secret data is stored in the KV2Secret object.
     /// </summary>
-    internal partial class KV2SecretWrapper {
+    internal partial class KV2SecretWrapper<U> where U : KV2SecretBase<U> {
         [JsonConstructor]
 
         // Default constructor used when created outside of vault.
-        public KV2SecretWrapper () { Data = new SecretReadReturnObjData (true); }
+        public KV2SecretWrapper () { Data = new SecretReadReturnObjData<U> (true); }
 
 
         [JsonProperty ("request_id")]
@@ -36,7 +37,7 @@ namespace VaultAgent.SecretEngines.KV2 {
         public long LeaseDuration { get; internal set; }
 
         [JsonProperty ("data")]
-        public SecretReadReturnObjData Data { get; internal set; }
+        public SecretReadReturnObjData<U> Data { get; internal set; }
 
         [JsonProperty ("wrap_info")]
         public object WrapInfo { get; internal set; }
@@ -55,7 +56,7 @@ namespace VaultAgent.SecretEngines.KV2 {
         /// <summary>
         /// Gets or sets the actual secret object.  This is a shortcut for going to obj.data.secretobj.
         /// </summary>
-        public KV2Secret Secret {
+        public U Secret {
             get { return this.Data.SecretObj; }
             set { this.Data.SecretObj = value; }
         }
@@ -82,7 +83,7 @@ namespace VaultAgent.SecretEngines.KV2 {
 
 
 
-    internal partial class SecretReadReturnObjData {
+    internal partial class SecretReadReturnObjData<V> where V : KV2SecretBase<V> {
         /// <summary>
         /// Default Constructor used by JSONConverter.
         /// </summary>
@@ -95,7 +96,8 @@ namespace VaultAgent.SecretEngines.KV2 {
         /// </summary>
         /// <param name="manualCreation"></param>
         public SecretReadReturnObjData (bool manualCreation = true) {
-            SecretObj = new KV2Secret();
+            SecretObj = (V)Activator.CreateInstance(typeof(V));
+            //SecretObj = new V();
             Metadata = new Metadata();
         }
 
@@ -104,7 +106,7 @@ namespace VaultAgent.SecretEngines.KV2 {
         /// The actual secret object - this is what most callers want.
         /// </summary>
         [JsonProperty ("data")]
-        public KV2Secret SecretObj { get; set; }
+        public V SecretObj { get; set; }
 
 
         /// <summary>

@@ -1025,7 +1025,7 @@ namespace VaultAgentTests {
 
             // 2. Read Secret.
             //secretReadWrapper = await secEng.ReadSecret(pathNameRoot);
-            readSecret = await secEng.ReadSecret (pathNameRoot); // secretReadWrapper.Secret;
+            readSecret = await secEng.ReadSecret<KV2Secret> (pathNameRoot); // secretReadWrapper.Secret;
             Assert.AreEqual (secret.Attributes.Count, readSecret.Attributes.Count, "A40:  The secret read back was not the same as the one we saved.  Huh?");
 
             // 3. Validate the secret attributes.
@@ -1044,7 +1044,7 @@ namespace VaultAgentTests {
 
             // 5 Read the secret back and confirm.
             //secretReadWrapper = await secEng.ReadSecret(pathNameRoot);
-            readSecret = await secEng.ReadSecret (pathNameRoot); //secretReadWrapper.Secret;
+            readSecret = await secEng.ReadSecret<KV2Secret> (pathNameRoot); //secretReadWrapper.Secret;
             Assert.AreEqual (secret.Attributes.Count, readSecret.Attributes.Count, "A61:  The secret read back was not the same as the one we saved.  Huh?");
 
             // 6. Validate the secret attributes.

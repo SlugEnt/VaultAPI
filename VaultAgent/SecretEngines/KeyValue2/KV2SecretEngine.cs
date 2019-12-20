@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VaultAgent.Backends;
+using VaultAgent.SecretEngines.KeyValue2;
 using VaultAgent.SecretEngines.KV2;
 using VaultAgent.SecretEngines.KV2.SecretMetaDataInfo;
 
@@ -78,7 +79,7 @@ namespace VaultAgent.SecretEngines {
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "GetBackendConfiguration");
                 return await vdro.GetDotNetObject<KV2SecretEngineSettings>();
 
-                //KV2SecretEngineSettings settings = vdro.GetVaultTypedObject<KV2SecretEngineSettings>();
+                //IKV2SecretEngineSettings settings = vdro.GetVaultTypedObject<IKV2SecretEngineSettings>();
                 //return settings;
             }
             catch ( Exception e ) { throw e; }
@@ -90,7 +91,7 @@ namespace VaultAgent.SecretEngines {
 
 
         /// <summary>
-        /// Saves the provided KV2Secret object.  You must specify a save option and optionally what the current version of the secret is.
+        /// Saves the provided IKV2Secret object.  You must specify a save option and optionally what the current version of the secret is.
         /// If the CAS setting is set on the backend then the following errors may be returned:
         /// <para></para>
         /// <para>Commonly Throws the Following Errors:</para>
@@ -103,7 +104,7 @@ namespace VaultAgent.SecretEngines {
         /// <para>     [SpecificErrorCode] = EnumVaultExceptionCodes.CAS_VersionMissing - The version you specified was invalid.  It must be equal to the current version number of the secret.</para>
         /// 
         /// </summary>
-        /// <param name="secret">KV2Secret object to be saved.  This must contain minimally the Name and the Path of the secret and one or more optional attributes.</param>
+        /// <param name="secret">IKV2Secret object to be saved.  This must contain minimally the Name and the Path of the secret and one or more optional attributes.</param>
         /// <param name="casSaveOption">This must be set to the CAS option you desired:
         ///   - OnlyIfKeyDoesNotExist = 0,
         ///   - OnlyOnExistingVersionMatch = 1,
@@ -111,7 +112,7 @@ namespace VaultAgent.SecretEngines {
         /// </param>
         /// <param name="currentVersion">What the current version of the secret is.  Required if the backend is in CAS mode (Default mode).</param>
         /// <returns></returns>
-        public async Task<bool> SaveSecret (KV2Secret secret, KV2EnumSecretSaveOptions casSaveOption, int currentVersion = 0) {
+        public async Task<bool> SaveSecret (IKV2Secret secret, KV2EnumSecretSaveOptions casSaveOption, int currentVersion = 0) {
             string path = MountPointPath + "data/" + secret.FullPath;
 
 
@@ -185,13 +186,13 @@ namespace VaultAgent.SecretEngines {
         /// Reads the secret from Vault.  It defaults to reading the most recent version.  Set secretVersion to non zero to retrieve a
         /// specific version.
         /// <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
-        /// <para>Returns the KV2SecretWrapper if a secret was found at the location.</para>
+        /// <para>Returns the IKV2SecretWrapper if a secret was found at the location.</para>
         /// <para>Returns Null if no secret found at location.</para>
         /// </summary>
         /// <param name="secretPath">The Name (path) to the secret you wish to read.</param>
         /// <param name="secretVersion">The version of the secret to retrieve.  (Default) set to 0 to read most recent version. </param>
-        /// <returns>KV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
-        public async Task<KV2Secret> ReadSecret (string secretPath, int secretVersion = 0) {
+        /// <returns>IKV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
+        public async Task<T> ReadSecret<T>(string secretPath, int secretVersion = 0)  where T : KV2SecretBase<T> {
             string path = MountPointPath + "data/" + secretPath;
             Dictionary<string, string> contentParams = new Dictionary<string, string>();
 
@@ -202,11 +203,11 @@ namespace VaultAgent.SecretEngines {
 
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ReadSecret", contentParams);
                 if ( vdro.Success ) {
-                    KV2SecretWrapper secretReadReturnObj = await vdro.GetDotNetObject<KV2SecretWrapper> ("");
+                    KV2SecretWrapper<T> secretReadReturnObj = await vdro.GetDotNetObject<KV2SecretWrapper<T>> ("");
 
-                    //KV2SecretWrapper secretReadReturnObj = KV2SecretWrapper.FromJson (vdro.GetResponsePackageAsJSON());
+                    //IKV2SecretWrapper secretReadReturnObj = IKV2SecretWrapper.FromJson (vdro.GetResponsePackageAsJSON());
 
-                    // We now need to move some fields from the KV2SecretWrapper into the KV2Secret which is embedded in the 
+                    // We now need to move some fields from the IKV2SecretWrapper into the IKV2Secret which is embedded in the 
                     // wrapper class.
                     secretReadReturnObj.Secret.CreatedTime = secretReadReturnObj.Data.Metadata.CreatedTime;
                     secretReadReturnObj.Secret.DeletionTime = secretReadReturnObj.Data.Metadata.DeletionTime;
@@ -214,7 +215,9 @@ namespace VaultAgent.SecretEngines {
                     secretReadReturnObj.Secret.Version = secretReadReturnObj.Data.Metadata.Version;
 
                     // Now get the secret obj, remove it from the wrapper - so the class can be deleted and then return to caller.
-                    KV2Secret secret = secretReadReturnObj.Secret;
+                    T secret  = (T) secretReadReturnObj.Secret;
+
+                    //IKV2Secret secret = secretReadReturnObj.Secret;
                     secretReadReturnObj.Secret = null;
                     return secret;
                 }
@@ -234,16 +237,16 @@ namespace VaultAgent.SecretEngines {
 
 
         /// <summary>
-        /// Attempts to read a secret if it exists.  Returns a tuple value (bool success, KV2Secret secret) as follows:
+        /// Attempts to read a secret if it exists.  Returns a tuple value (bool success, IKV2Secret secret) as follows:
         /// <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
-        /// <para>If secret was found the first value is True and the 2nd value is the KV2Secret that was read.</para>
+        /// <para>If secret was found the first value is True and the 2nd value is the IKV2Secret that was read.</para>
         /// <para>If not found, the first value is False and the second value is null.</para>
         /// </summary>
         /// <param name="secretPath">The path to the secret to check for existence and retrieve if it does exist.</param>
         /// <param name="secretVersion">The secret version to be read.  0 for current.</param>
         /// <returns></returns>
-        public async Task<(bool IsSuccess, KV2Secret Secret)> TryReadSecret (string secretPath, int secretVersion = 0) {
-            KV2Secret secret = await ReadSecret (secretPath, secretVersion);
+        public async Task<(bool IsSuccess, T Secret)> TryReadSecret<T> (string secretPath, int secretVersion = 0) where T : KV2SecretBase<T> {
+            T secret = await ReadSecret<T> (secretPath, secretVersion);
 
             if ( secret == null ) { return (false, null); }
             else { return (true, secret); }
@@ -252,9 +255,9 @@ namespace VaultAgent.SecretEngines {
 
 
 
-        public async Task<(bool IsSuccess, KV2Secret Secret)> TryReadSecret(string secretName, string secretParentPath, int secretVersion = 0)
+        public async Task<(bool IsSuccess, T Secret)> TryReadSecret<T>(string secretName, string secretParentPath, int secretVersion = 0) where T : KV2SecretBase<T>
         {
-            return await TryReadSecret(secretParentPath + "/" + secretName, secretVersion);
+            return await TryReadSecret<T>(secretParentPath + "/" + secretName, secretVersion);
 
         }
 
@@ -311,7 +314,7 @@ namespace VaultAgent.SecretEngines {
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListSecrets");
                 if ( vdro.Success ) { return await vdro.GetDotNetObject<List<string>> ("data.keys"); }
 
-                throw new ApplicationException ("KV2SecretEngine:ListSecretsAtPath  Arrived at unexpected code block.");
+                throw new ApplicationException ("IKV2SecretEngine:ListSecretsAtPath  Arrived at unexpected code block.");
             }
 
             // 404 Errors mean there were no sub paths.  We just return an empty list.
@@ -410,10 +413,6 @@ namespace VaultAgent.SecretEngines {
             if ( vdro.Success ) {
                 KV2SecretMetaDataInfo kvData = await vdro.GetDotNetObject<KV2SecretMetaDataInfo>();
                 return kvData;
-
-//				string ks = vdro.GetDataPackageAsJSON();
-                //              KV2SecretMetaDataInfo kvData = VaultUtilityFX.ConvertJSON<KV2SecretMetaDataInfo> (ks);
-                //            return kvData;
             }
 
             return null;
@@ -441,20 +440,20 @@ namespace VaultAgent.SecretEngines {
 
 
 
-        #region "KV2Secret Object Methods"
+        #region "IKV2Secret Object Methods"
 
 
-        public async Task<bool> DestroySecretCompletely (KV2Secret secretObj) { return await DestroySecretCompletely (secretObj.FullPath); }
-        public async Task<bool> DestroySecretVersion (KV2Secret secretObj, int version) { return await DestroySecretVersion (secretObj.FullPath, version); }
-        public async Task<bool> UndeleteSecretVersion (KV2Secret secretObj, int version) { return await UndeleteSecretVersion (secretObj.FullPath, version); }
+        public async Task<bool> DestroySecretCompletely (IKV2Secret secretObj) { return await DestroySecretCompletely (secretObj.FullPath); }
+        public async Task<bool> DestroySecretVersion (IKV2Secret secretObj, int version) { return await DestroySecretVersion (secretObj.FullPath, version); }
+        public async Task<bool> UndeleteSecretVersion (IKV2Secret secretObj, int version) { return await UndeleteSecretVersion (secretObj.FullPath, version); }
 
 
-        public async Task<bool> UpdateSecretSettings (KV2Secret secretObj, UInt16 maxVersions, bool casRequired) {
+        public async Task<bool> UpdateSecretSettings (IKV2Secret secretObj, UInt16 maxVersions, bool casRequired) {
             return await UpdateSecretSettings (secretObj.FullPath, maxVersions, casRequired);
         }
 
 
-        public async Task<List<string>> ListSecretsAtPath (KV2Secret secretObj) { return await ListSecretsAtPath (secretObj.FullPath); }
+        public async Task<List<string>> ListSecretsAtPath (IKV2Secret secretObj) { return await ListSecretsAtPath (secretObj.FullPath); }
 
 
 
@@ -468,7 +467,7 @@ namespace VaultAgent.SecretEngines {
         /// <param name="secretPath">The name of the secret to delete.</param>
         /// <param name="version">The version of the secret to delete.</param>
         /// <returns>True if successful.  False otherwise.</returns>
-        public async Task<bool> DeleteSecretVersion (KV2Secret secretObj, int secretVersion = 0) {
+        public async Task<bool> DeleteSecretVersion (IKV2Secret secretObj, int secretVersion = 0) {
             if ( secretVersion == -1 ) { secretVersion = secretObj.Version; }
 
             return await DeleteSecretVersion (secretObj.FullPath, secretVersion);
@@ -479,28 +478,28 @@ namespace VaultAgent.SecretEngines {
         /// <summary>
         /// Reads the specified secret from Vault.  It defaults to reading the most recent version of the secret.
         /// <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
-        /// <para>Returns the KV2Secret if a secret was found at the location.</para>
+        /// <para>Returns the IKV2Secret if a secret was found at the location.</para>
         /// <para>Returns Null if no secret found at location.</para>
         /// </summary>
-        /// <param name="secretObj">An existing KV2Secret object that you wish to re-read.  The existing object will be deleted and replaced with the values for the new.</param>
+        /// <param name="secretObj">An existing IKV2Secret object that you wish to re-read.  The existing object will be deleted and replaced with the values for the new.</param>
         /// <param name="secretVersion">Version of the secret to retrieve.
         /// <para>  (Default) set to 0 to read most recent version.</para>
         /// <para>  Set to -1 to use the version number specified in the secret object.</para>
         /// <para>  Set to any positive number to read that specific version from the Vault Instance Store.</para>
         /// </param>
-        /// <returns>KV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
-        public async Task<KV2Secret> ReadSecret (KV2Secret secretObj, int secretVersion = 0) {
+        /// <returns>IKV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
+        public async Task<T> ReadSecret<T> (T secretObj, int secretVersion = 0) where T: KV2SecretBase<T> {
             if ( secretVersion == -1 ) { secretVersion = secretObj.Version; }
 
-            return await ReadSecret (secretObj.FullPath, secretVersion);
+            return await ReadSecret<T> (secretObj.FullPath, secretVersion);
         }
 
 
 
         /// <summary>
-        /// Attempts to read a secret if it exists.  Returns a tuple value (bool success, KV2Secret secret) as follows:
+        /// Attempts to read a secret if it exists.  Returns a tuple value (bool success, IKV2Secret secret) as follows:
         /// <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
-        /// <para>If secret was found the first value is True and the 2nd value is the KV2Secret that was read.</para>
+        /// <para>If secret was found the first value is True and the 2nd value is the IKV2Secret that was read.</para>
         /// <para>If not found, the first value is False and the second value is null.</para>
         /// </summary>
         /// <param name="secretPath">The path to the secret to check for existence and retrieve if it does exist.</param>
@@ -509,15 +508,20 @@ namespace VaultAgent.SecretEngines {
         /// <para>  Set to -1 to use the version number specified in the secret object.</para>
         /// <para>  Set to any positive number to read that specific version from the Vault Instance Store.</para>
         /// <returns></returns>
-        public async Task<(bool IsSuccess, KV2Secret Secret)> TryReadSecret (KV2Secret secretObj, int secretVersion = 0) {
-            KV2Secret secret = await ReadSecret (secretObj.FullPath, secretVersion);
+        public async Task<(bool IsSuccess, T Secret)> TryReadSecret<T> (T secretObj, int secretVersion = 0) where T: KV2SecretBase<T> {
+            T secret = await ReadSecret<T> (secretObj.FullPath, secretVersion);
 
             if ( secret == null ) { return (false, null); }
             else { return (true, secret); }
         }
 
 
-        public async Task<KV2SecretMetaDataInfo> GetSecretMetaData (KV2Secret secretObj) { return await GetSecretMetaData (secretObj.FullPath); }
+        /// <summary>
+        /// Returns the Secret MetaData Object Information for the provided Secret Object
+        /// </summary>
+        /// <param name="secretObj"></param>
+        /// <returns></returns>
+        public async Task<KV2SecretMetaDataInfo> GetSecretMetaData (IKV2Secret secretObj) { return await GetSecretMetaData (secretObj.FullPath); }
 
 
         #endregion

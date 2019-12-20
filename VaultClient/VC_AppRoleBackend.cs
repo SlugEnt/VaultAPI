@@ -421,7 +421,7 @@ namespace VaultClient
 		    string rootPath = Constants.appData + "/" + Constants.appName_A + "/";
 		    KV2Secret secretA1 = new KV2Secret("Database", rootPath);
 		    bool readSuccess = false;
-		    (readSuccess, secretA1) = await secretEngine.TryReadSecret(secretA1,0);
+		    (readSuccess, secretA1) = await secretEngine.TryReadSecret<KV2Secret>(secretA1,0);
 
 
 		    if (!readSuccess) {
@@ -439,7 +439,7 @@ namespace VaultClient
 			    // Lets try and read an AppA secret.  Should fail.
 			    string rootBPath = Constants.appData + "/" + Constants.appName_B + "/";
 			    KV2Secret secretB1 = new KV2Secret("Database", rootBPath);
-			    (readSuccess, secretB1) = await secretEngine.TryReadSecret(secretB1, 0);
+			    (readSuccess, secretB1) = await secretEngine.TryReadSecret<KV2Secret>(secretB1, 0);
 		    }
 		    catch (VaultForbiddenException) {
 			    Console.WriteLine("[SUCCESS-EXPECTED RESULT:  User A does not have access to read from User B's secret store.");

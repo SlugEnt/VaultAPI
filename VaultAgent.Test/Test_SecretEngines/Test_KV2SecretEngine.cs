@@ -839,7 +839,7 @@ namespace VaultAgentTests {
             Assert.True (await _defaultMount.SaveSecret (secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
 
             // Confirm it exists - we will use the Path version of the method just to exercise both methods:
-            KV2Secret s2 = await _defaultMount.ReadSecret (secretV2.FullPath);
+            KV2Secret s2 = await _defaultMount.ReadSecret<KV2Secret> (secretV2.FullPath);
             Assert.True (secretV2.Path == s2.Path, "A3: Secret saved and secret read were not the same.");
 
             // Save a new version
@@ -1024,13 +1024,13 @@ namespace VaultAgentTests {
 
 
             // Now try the TryVersion.  Should have success.
-            (bool success, KV2Secret secReturn) = await _casMount.TryReadSecret (secretV2.FullPath);
+            (bool success, KV2Secret secReturn) = await _casMount.TryReadSecret<KV2Secret> (secretV2.FullPath);
             Assert.True (success, "A40:  Unable to read the secret back.");
             Assert.IsInstanceOf<KV2Secret> (secReturn);
 
 
             // Now try one that does not exist.  It should fail.
-            var resultF = await _casMount.TryReadSecret (secretV2.FullPath + "jhjhhmvmf");
+            var resultF = await _casMount.TryReadSecret<KV2Secret> (secretV2.FullPath + "jhjhhmvmf");
             Assert.False (resultF.IsSuccess, "A50:  Unable to read the secret back.");
             Assert.IsNull (resultF.Secret);
         }
