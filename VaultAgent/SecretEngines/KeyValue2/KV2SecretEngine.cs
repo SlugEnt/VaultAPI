@@ -211,7 +211,7 @@ namespace VaultAgent.SecretEngines {
                     // wrapper class.
                     secretReadReturnObj.Secret.CreatedTime = secretReadReturnObj.Data.Metadata.CreatedTime;
                     secretReadReturnObj.Secret.DeletionTime = secretReadReturnObj.Data.Metadata.DeletionTime;
-                    secretReadReturnObj.Secret.Destroyed = secretReadReturnObj.Data.Metadata.Destroyed;
+                    secretReadReturnObj.Secret.IsDestroyed = secretReadReturnObj.Data.Metadata.Destroyed;
                     secretReadReturnObj.Secret.Version = secretReadReturnObj.Data.Metadata.Version;
 
                     // Now get the secret obj, remove it from the wrapper - so the class can be deleted and then return to caller.

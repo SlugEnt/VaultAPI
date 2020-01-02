@@ -1717,7 +1717,7 @@
             When this particular secret version was deleted from the Vault data store.
             </summary>
         </member>
-        <member name="P:VaultAgent.SecretEngines.KeyValue2.KV2SecretBase`1.Destroyed">
+        <member name="P:VaultAgent.SecretEngines.KeyValue2.KV2SecretBase`1.IsDestroyed">
             <summary>
             Boolean - Whether this particular secret version is soft deleted or destroyed.  True means this secret data cannot be undeleted.
             </summary>

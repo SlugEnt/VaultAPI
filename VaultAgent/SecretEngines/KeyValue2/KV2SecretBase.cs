@@ -5,6 +5,7 @@ using System.Text;
 using System;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using VaultAgent.SecretEngines.KeyValue2;
 
 
@@ -141,7 +142,7 @@ namespace VaultAgent.SecretEngines.KeyValue2
             /// <summary>
             /// Boolean - Whether this particular secret version is soft deleted or destroyed.  True means this secret data cannot be undeleted.
             /// </summary>
-            public bool Destroyed { get; internal set; }
+            public bool IsDestroyed { get; internal set; }
 
 
             /// <summary>
@@ -150,6 +151,20 @@ namespace VaultAgent.SecretEngines.KeyValue2
             public int Version { get; internal set; }
 
 
+
+            public string GetParentPath()
+            {
+                int pos = FullPath.LastIndexOf('/');
+                if (pos < 1)
+                {
+                    return "/";
+                }
+                
+                string value = FullPath.Substring(0, pos);
+
+
+                return value;
+            }
 
             #region "EqualityComparers"
 

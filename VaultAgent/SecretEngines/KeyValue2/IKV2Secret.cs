@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Text;
 
 namespace VaultAgent.SecretEngines.KeyValue2
@@ -17,7 +18,7 @@ namespace VaultAgent.SecretEngines.KeyValue2
         Dictionary<string, string> Metadata { get; set; }
         DateTimeOffset CreatedTime { get; }
         string DeletionTime { get; }
-        bool Destroyed { get;   }
+        bool IsDestroyed { get;   }
         int Version { get;  }
     }
 }
