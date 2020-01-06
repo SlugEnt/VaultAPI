@@ -303,16 +303,31 @@ namespace VaultAgent.SecretEngines {
 
 
         /// <summary>
-        /// Returns a list of secrets at a given path
+        /// Returns a list of secrets at a given path.  If the parameter includeFolderSecrets is true (default) then it will remove secret names with a trailing slash. This is generally what callers want.
         /// </summary>
         /// <param name="secretPath">The path "folder" to retrieve secrets for.  This may be the entire path including the name (if the secret has subfolders) or just a partial path. </param>
+        /// <param name="includeFolderSecrets">If false (default) it will remove secrets that contain a trailing slash which in Vault indicates that this is a folder or parent to other secret objects</param>
         /// <returns>List of strings which contain secret names.</returns>
-        public async Task<List<string>> ListSecretsAtPath (string secretPath) {
+        /// <remarks>https://github.com/SlugEnt/VaultAPI/issues/3</remarks>
+        public async Task<List<string>> ListSecretsAtPath (string secretPath, bool includeFolderSecrets = false) {
             string path = MountPointPath + "metadata/" + secretPath + "?list=true";
 
             try {
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListSecrets");
-                if ( vdro.Success ) { return await vdro.GetDotNetObject<List<string>> ("data.keys"); }
+                if (vdro.Success)
+                {
+                    List<string> secrets = await vdro.GetDotNetObject<List<string>>("data.keys");
+
+                    if (includeFolderSecrets) return secrets;
+
+                    // Caller only wants a secret listed once, remove any secrets with trailing slashes as these are the folder secrets.
+                    for (int i = secrets.Count - 1; i > -1; i--)
+                    {
+                        if (secrets[i].EndsWith("/")) secrets.RemoveAt(i);
+                    }
+
+                    return secrets;
+                }
 
                 throw new ApplicationException ("IKV2SecretEngine:ListSecretsAtPath  Arrived at unexpected code block.");
             }

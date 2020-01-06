@@ -2023,12 +2023,14 @@
             <param name="version">The version to delete.  Defaults to zero which is the most recent or current version of the key.</param>
             <returns>True if successful.  False otherwise.</returns>
         </member>
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.ListSecretsAtPath(System.String)">
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.ListSecretsAtPath(System.String,System.Boolean)">
             <summary>
-            Returns a list of secrets at a given path
+            Returns a list of secrets at a given path.  If the parameter includeFolderSecrets is true (default) then it will remove secret names with a trailing slash. This is generally what callers want.
             </summary>
             <param name="secretPath">The path "folder" to retrieve secrets for.  This may be the entire path including the name (if the secret has subfolders) or just a partial path. </param>
+            <param name="includeFolderSecrets">If false (default) it will remove secrets that contain a trailing slash which in Vault indicates that this is a folder or parent to other secret objects</param>
             <returns>List of strings which contain secret names.</returns>
+            <remarks>https://github.com/SlugEnt/VaultAPI/issues/3</remarks>
         </member>
         <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.UpdateSecretSettings(System.String,System.UInt16,System.Boolean)">
             <summary>
