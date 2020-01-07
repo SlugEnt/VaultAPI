@@ -309,7 +309,7 @@ namespace VaultAgent.SecretEngines {
         /// <param name="includeFolderSecrets">If false (default) it will remove secrets that contain a trailing slash which in Vault indicates that this is a folder or parent to other secret objects</param>
         /// <returns>List of strings which contain secret names.</returns>
         /// <remarks>https://github.com/SlugEnt/VaultAPI/issues/3</remarks>
-        public async Task<List<string>> ListSecretsAtPath (string secretPath, bool includeFolderSecrets = false) {
+        public async Task<List<string>> ListSecretsAtPath (string secretPath, bool includeFolderSecrets = false, bool sorted = false) {
             string path = MountPointPath + "metadata/" + secretPath + "?list=true";
 
             try {
@@ -326,6 +326,9 @@ namespace VaultAgent.SecretEngines {
                         if (secrets[i].EndsWith("/")) secrets.RemoveAt(i);
                     }
 
+                    // If caller wants the secrets sorted, then do so.
+                    if (sorted) secrets.Sort();
+
                     return secrets;
                 }
 
@@ -335,6 +338,50 @@ namespace VaultAgent.SecretEngines {
             // 404 Errors mean there were no sub paths.  We just return an empty list.
             catch ( VaultInvalidPathException ) { return new List<string>(); }
         }
+
+
+
+
+
+
+        /// <summary>
+        /// Returns a list of secrets at a given path.  If the parameter includeFolderSecrets is true (default) then it will remove secret names with a trailing slash. This is generally what callers want.
+        /// </summary>
+        /// <param name="secretPath">The path "folder" to retrieve secrets for.  This may be the entire path including the name (if the secret has subfolders) or just a partial path. </param>
+        /// <param name="includeFolderSecrets">If false (default) it will remove secrets that contain a trailing slash which in Vault indicates that this is a folder or parent to other secret objects</param>
+        /// <returns>List of strings which contain secret names.</returns>
+        /// <remarks>https://github.com/SlugEnt/VaultAPI/issues/3</remarks>
+        public async Task<SortedList<string,string>> ListSecretsSorted(string secretPath, bool includeFolderSecrets = false)
+        {
+            string path = MountPointPath + "metadata/" + secretPath + "?list=true";
+
+            try
+            {
+                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "ListSecrets");
+                if (vdro.Success)
+                {
+                    SortedList<string,string> secrets = await vdro.GetDotNetObject<SortedList<string,string>>("data.keys");
+
+                    if (includeFolderSecrets) return secrets;
+
+                    // Caller only wants a secret listed once, remove any secrets with trailing slashes as these are the folder secrets.
+                    for (int i = secrets.Count - 1; i > -1; i--)
+                    {
+                        
+                        if (secrets.Keys[i].EndsWith("/")) secrets.RemoveAt(i);
+                    }
+
+                    return secrets;
+                }
+
+                throw new ApplicationException("IKV2SecretEngine:ListSecretsAtPath  Arrived at unexpected code block.");
+            }
+
+            // 404 Errors mean there were no sub paths.  We just return an empty list.
+            catch (VaultInvalidPathException) { return new SortedList<string,string>(); }
+        }
+
+
 
 
 
