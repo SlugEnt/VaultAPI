@@ -1017,6 +1017,13 @@
             reading from the Vault Instance.
             </summary>
         </member>
+        <member name="T:VaultAgent.Backends.System.VaultPolicyPathItemKV2">
+            <summary>
+            A Vault Policy Path Item object that represents Vault Permissions for a given path in a KV2 secret database.  See VaultPolicyPathItem class info for all
+            implementation details.
+            </summary>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:VaultAgent.Backends.System.VaultPolicyPathItemKV2.#ctor(System.String,System.String)" -->
         <member name="T:VaultAgent.Backends.System.VaultSysMountConfig">
             <summary>
             Represents the configuration settings for a given Vault Mount.  
