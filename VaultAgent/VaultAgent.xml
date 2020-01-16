@@ -1227,6 +1227,14 @@
             <param name="policyContainerItem">The VaultPolicyPathItem object that should be updated in Vault.</param>
             <returns>True if successful.  False otherwise.</returns>
         </member>
+        <member name="M:VaultAgent.VaultSystemBackend.SysPoliciesACLExists(System.String)">
+            <summary>
+            Returns true if a policy exists, false if it does not.  This is a much more efficient and faster operation than calling Read, if all you need to
+            know is if the Policy exists.  
+            </summary>
+            <param name="policyName"></param>
+            <returns></returns>
+        </member>
         <member name="M:VaultAgent.VaultSystemBackend.SysPoliciesACLRead(System.String)">
             <summary>
             Reads the Vault policy with the given name.

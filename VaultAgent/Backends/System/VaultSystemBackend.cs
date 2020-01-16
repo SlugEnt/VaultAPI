@@ -552,6 +552,34 @@ namespace VaultAgent {
 
 
         /// <summary>
+        /// Returns true if a policy exists, false if it does not.  This is a much more efficient and faster operation than calling Read, if all you need to
+        /// know is if the Policy exists.  
+        /// </summary>
+        /// <param name="policyName"></param>
+        /// <returns></returns>
+        public async Task<bool> SysPoliciesACLExists(string policyName)
+        {
+            // Build Path
+            string path = MountPointPath + "policies/acl/" + policyName;
+            VaultDataResponseObjectB vdro;
+
+            try
+            {
+                vdro = await _parent._httpConnector.GetAsync_B(path, "SysPoliciesACLRead");
+                return true;
+            }
+            catch (VaultInvalidPathException e)
+            {
+                return false;
+//                e.SpecificErrorCode = EnumVaultExceptionCodes.ObjectDoesNotExist;
+  //              throw e;
+            }
+
+        }
+
+
+
+        /// <summary>
         /// Reads the Vault policy with the given name.
         /// <para>Returns the VaultPolicyContainer object or throws an error.</para>
         /// <para>Throws: VaultInvalidPathException with SpecificErrorCode property set to ObjectDoesNotExist if not found</para>
