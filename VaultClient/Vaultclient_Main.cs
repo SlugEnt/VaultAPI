@@ -39,17 +39,20 @@ namespace VaultClient
 
 
 
-
+            // Run the Policy Secret Tutorial Example
+            PolicyRoleSecurityExample policySecretExample = new PolicyRoleSecurityExample(vaultAgent);
+            await policySecretExample.Run();
 
 
             // Perform optimize tests
+/*
             OptimizeTests optimize = new OptimizeTests(vaultAgent);
 			await optimize.Run();
 			return;
-
+            */
             
-			VC_AppRoleAuthEngine roleBE = new VC_AppRoleAuthEngine(vaultAgent);
-			await roleBE.Run();
+//			VC_AppRoleAuthEngine roleBE = new VC_AppRoleAuthEngine(vaultAgent);
+	//		await roleBE.Run();
 
 
 			// System Backend Examples:

@@ -614,6 +614,35 @@ namespace VaultAgentTests {
         }
 
 
+        [Test]
+        public async Task IfExists_ReturnsTrue_If_PolicyExists()
+        {
+            // Ensure there is at least one policy saved.
+            VaultPolicyContainer VP = new VaultPolicyContainer("IfExistsTrue");
+            VaultPolicyPathItem vpi = new VaultPolicyPathItem("secret/listpol2000A");
+            vpi.ListAllowed = true;
+            VP.AddPolicyPathObject(vpi);
+
+            Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(VP));
+
+            bool exists = await _vaultSystemBackend.SysPoliciesACLExists(VP.Name);
+            Assert.IsTrue(exists);
+        }
+
+
+
+        [Test]
+        public async Task IfExists_ReturnsFalse_If_PolicyDoesNotExist()
+        {
+            VaultPolicyContainer VP = new VaultPolicyContainer("IfExistsFalse");
+            VaultPolicyPathItem vpi = new VaultPolicyPathItem("secret/listpol2000A");
+            vpi.ListAllowed = true;
+            VP.AddPolicyPathObject(vpi);
+
+            // We never saved the policy - it does not exist.
+            bool exists = await _vaultSystemBackend.SysPoliciesACLExists(VP.Name);
+            Assert.IsFalse(exists);
+        }
 
         // Validates that Attempting to read a non-existent policy returns the expected VaultException and the SpecificErrorCode value is set to ObjectDoesNotExist.
         [Test]
@@ -1025,7 +1054,7 @@ namespace VaultAgentTests {
 
             // 2. Read Secret.
             //secretReadWrapper = await secEng.ReadSecret(pathNameRoot);
-            readSecret = await secEng.ReadSecret (pathNameRoot); // secretReadWrapper.Secret;
+            readSecret = await secEng.ReadSecret<KV2Secret> (pathNameRoot); // secretReadWrapper.Secret;
             Assert.AreEqual (secret.Attributes.Count, readSecret.Attributes.Count, "A40:  The secret read back was not the same as the one we saved.  Huh?");
 
             // 3. Validate the secret attributes.
@@ -1044,7 +1073,7 @@ namespace VaultAgentTests {
 
             // 5 Read the secret back and confirm.
             //secretReadWrapper = await secEng.ReadSecret(pathNameRoot);
-            readSecret = await secEng.ReadSecret (pathNameRoot); //secretReadWrapper.Secret;
+            readSecret = await secEng.ReadSecret<KV2Secret> (pathNameRoot); //secretReadWrapper.Secret;
             Assert.AreEqual (secret.Attributes.Count, readSecret.Attributes.Count, "A61:  The secret read back was not the same as the one we saved.  Huh?");
 
             // 6. Validate the secret attributes.

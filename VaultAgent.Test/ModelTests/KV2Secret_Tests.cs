@@ -10,7 +10,6 @@ namespace VaultAgent.Test.ModelTests
     [Parallelizable]
     class KV2Secret_Tests
     {
-
         // Validate that 2 secrets with the same name, path, number of attributes, same attribute keys and keys have the same values are equal.
         [Test]
         public void TwoSecrets_EvaluateToEquals_Success()
@@ -32,6 +31,25 @@ namespace VaultAgent.Test.ModelTests
             Assert.IsTrue(a.Equals(b));
         }
 
+
+
+        [Test]
+        public void SecretsCompareTo()
+        {
+            string nameA = "ABC/xyz";
+            string nameB = "BCD/r";
+            string nameC = nameA;
+
+            string path = "start";
+            KV2Secret a = new KV2Secret(nameA, path);
+            KV2Secret b = new KV2Secret(nameB, path);
+            KV2Secret c = new KV2Secret(nameC,path);
+
+            Assert.AreEqual(-1,a.CompareTo(b));
+            Assert.AreEqual(1,b.CompareTo(a));
+            Assert.AreEqual(0,a.CompareTo(c));
+            Assert.AreEqual(0, c.CompareTo(a));
+        }
 
 
         // Validate that 2 secrets with different names are not equal.
@@ -161,7 +179,7 @@ namespace VaultAgent.Test.ModelTests
         // Test that Secret shortcut access the actual backing value correctly.  Vault pushes
         public void SecretVersion()
         {
-            KV2SecretWrapper secretA = new KV2SecretWrapper
+            KV2SecretWrapper<KV2Secret> secretA = new KV2SecretWrapper<KV2Secret>
             {
                 Secret = new KV2Secret("test", "/"),
                 Version = 2
@@ -171,6 +189,36 @@ namespace VaultAgent.Test.ModelTests
         }
 
 
+
+        // Validate that GetParentPath returns correct result.
+        [Test]
+        [TestCase("aRoot/second/third","")]
+        [TestCase("z/second","")]
+        [TestCase("secret","/")]
+        [TestCase("z","/")]
+        // Tests the GetParentPath method
+        public void ParentPath(string initialPath, string expected)
+        {
+            KV2Secret secret = new KV2Secret("A",initialPath);
+            if (expected == "") expected = initialPath;
+            Assert.AreEqual(initialPath,secret.GetParentPath());
+        }
+
+
+        // Validate that successive GetParentPath calls work
+        [Test]
+        public void ParentPathRecurse()
+        {
+            string initial = "root/first/second/third";
+            KV2Secret secretA = new KV2Secret("a",initial);
+            Assert.AreEqual(initial,secretA.GetParentPath());
+
+            KV2Secret secretB = new KV2Secret(initial);
+            Assert.AreEqual("root/first/second", secretB.GetParentPath(),"A20");
+        }
+
+
+        #region "Equatable Methods"
 
         // Test for Reflexive Equality property (One of the 5 required tests for Referential Object Equality)
         [Test]
@@ -258,7 +306,7 @@ namespace VaultAgent.Test.ModelTests
             // Set extended attribute values.
             a.CreatedTime = DateTimeOffset.Now;
             a.DeletionTime = "abc";
-            a.Destroyed = true;
+            a.IsDestroyed = true;
             a.Version = 19;
 
             // Now clone
@@ -268,7 +316,7 @@ namespace VaultAgent.Test.ModelTests
             Assert.AreEqual(a.Path, b.Path, "A20:  Paths are not equal.");
             Assert.AreEqual(a.FullPath, b.FullPath, "A30:  FullPaths are not equal.");
             Assert.AreEqual(a.Attributes.Count,b.Attributes.Count,"A40: Attribute counts are different");
-            Assert.AreEqual(a.Destroyed,b.Destroyed,"A50:  Destroyed booleans are not same");
+            Assert.AreEqual(a.IsDestroyed,b.IsDestroyed,"A50:  Destroyed booleans are not same");
             Assert.AreEqual(a.CreatedTime,b.CreatedTime,"A60:   Created Times are different");
             Assert.AreEqual(a.Version,b.Version,"A70:  Version numbers are different.");
             Assert.AreEqual(a.DeletionTime,b.DeletionTime,"A80:  Deletion times are different");
@@ -276,5 +324,6 @@ namespace VaultAgent.Test.ModelTests
                 CollectionAssert.Contains(b.Attributes,attr,"A100:  Attribute Key: " + attr.Key + " with value: " + attr.Value + " was not found.");               
             }
         }
+#endregion
     }
 }

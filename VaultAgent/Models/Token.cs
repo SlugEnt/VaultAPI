@@ -37,8 +37,11 @@ namespace VaultAgent.Models {
 
 
 
-        //TODO figure out what type of value this is, long, DateTimeOffset?
-        //   "expire_time": "2017-04-30T11:18:11.228946708-08:00",
+        //TODO figure out what type of value this is, long, DateTimeOffset and change property type accordingly
+        /// <summary>
+        /// When (Date and Time) the Token is set to expire
+        /// Example from Vault docs:  expire_time         2018-01-11T20:21:17.900969673Z
+        /// </summary>
         [JsonProperty ("expire_time")]
         public string ExpireTimeStr { get; private set; }
 
@@ -109,7 +112,9 @@ namespace VaultAgent.Models {
         public bool IsRenewable { get; set; }
 
 
-        // Comes from Vault as a long, but should be set as 1h or 5m... Need to figure out.
+        /// <summary>
+        /// The TTL or number of seconds until the Token expires
+        /// </summary>
         [JsonProperty ("ttl")]
         public long TTL {
             get { return _ttl; }
@@ -117,7 +122,10 @@ namespace VaultAgent.Models {
         }
 
 
-        // Alternative method of getting/setting the TTL of the token in a more readable TimeUnit Class.
+
+        /// <summary>
+        /// Alternative method of getting/setting the TTL of the token in a more readable TimeUnit Class.
+        /// </summary>
         public TimeUnit TTLasTimeUnit {
             get { return new TimeUnit (_ttl); }
             set { _ttl = value.InSecondsLong; }
@@ -178,7 +186,9 @@ namespace VaultAgent.Models {
 
 
 
-        // The entity this token is related to.
+        /// <summary>
+        /// The Entity The token is associated with if any.
+        /// </summary>
         [JsonProperty ("entity_id")]
         public string EntityId { get; private set; }
 
@@ -199,7 +209,7 @@ namespace VaultAgent.Models {
         /// <summary>
         /// This value should never be set by a caller.  Only read.
         /// </summary>
-        public EnumTokenType TokenType { get; set; }
+        public EnumTokenType TokenType { get;  internal set; }
 
 
         /// <summary>
@@ -230,7 +240,7 @@ namespace VaultAgent.Models {
         /// <summary>
         /// Constructor that accepts the token ID value
         /// </summary>
-        /// <param name="tokenValue"></param>
+        /// <param name="tokenID"></param>
         public Token (string tokenID) {
             ID = tokenID;
             ReadFromVault = false;

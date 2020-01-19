@@ -6,23 +6,46 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace VaultAgent {
+    /// <summary>
+    /// Various Utility Functions Needed by the Library
+    /// </summary>
     public static class VaultUtilityFX {
+        /// <summary>
+        /// Converts a time from Unix Timestamp into .Net Datetime
+        /// </summary>
+        /// <param name="unixTimeStamp"></param>
+        /// <returns></returns>
         public static DateTime ConvertUnixTimeStamp (string unixTimeStamp) {
             return new DateTime (1970, 1, 1, 0, 0, 0).AddSeconds (Convert.ToDouble (unixTimeStamp));
         }
 
 
+        /// <summary>
+        /// Converts a DateTime into a Unix TimeStamp
+        /// </summary>
+        /// <param name="unixTimeStamp"></param>
+        /// <returns></returns>
         public static DateTime ConvertUnixTimeStamp (long unixTimeStamp) {
             return new DateTime (1970, 1, 1, 0, 0, 0).AddSeconds (Convert.ToDouble (unixTimeStamp));
         }
 
 
+        /// <summary>
+        /// Encodes an Ascii value into Base64
+        /// </summary>
+        /// <param name="textToEncode">Ascii text to be encoded</param>
+        /// <returns></returns>
         public static string Base64EncodeAscii (string textToEncode) {
             byte [] rawBytes = ASCIIEncoding.ASCII.GetBytes (textToEncode);
             return Convert.ToBase64String (rawBytes);
         }
 
 
+        /// <summary>
+        /// Decodes a Base64 value into an Ascii string
+        /// </summary>
+        /// <param name="textToDecode">The Base64 text to decode into Ascii</param>
+        /// <returns></returns>
         public static string Base64DecodeAscii (string textToDecode) {
             byte [] decoded = Convert.FromBase64String (textToDecode);
             return ASCIIEncoding.ASCII.GetString (decoded);

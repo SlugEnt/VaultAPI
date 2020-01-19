@@ -5,6 +5,9 @@ namespace VaultAgent.Backends.Transit.Models {
     /// Represents a Vault Encrypted value.
     /// </summary>
     public class TransitEncryptedItem {
+        /// <summary>
+        /// The Encrypted Item
+        /// </summary>
         [JsonProperty ("ciphertext")]
         public string EncryptedValue { get; set; }
     }

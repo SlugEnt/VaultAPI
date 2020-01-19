@@ -36,7 +36,9 @@ namespace VaultAgent.AuthenticationEngines {
         /// Creates an empty Vault AppRole object.  This should only be used by internal routines.  Callers should use the one with the name parameter.
         /// </summary>
         [JsonConstructor]
-        public AppRole () { }
+        public AppRole () {
+            Policies = new List<string>();
+        }
 
 
         /// <summary>

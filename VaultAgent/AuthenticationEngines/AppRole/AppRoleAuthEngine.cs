@@ -33,7 +33,7 @@ namespace VaultAgent.AuthenticationEngines {
         /// </summary>
         /// <param name="backendMountName"></param>
         /// <param name="backendMountPath"></param>
-        /// <param name="httpConnector"></param>
+        /// <param name="vault">A VaultAgentAPI object with connection info and a Token that can be used to perform AppRoleAuth Engine functions</param>
         public AppRoleAuthEngine (string backendMountName, string backendMountPath, VaultAgentAPI vault) : base (backendMountName, backendMountPath, vault) {
             Type = EnumBackendTypes.A_AppRole;
             MountPointPrefix = "/v1/auth/";
@@ -44,7 +44,6 @@ namespace VaultAgent.AuthenticationEngines {
         /// <summary>
         /// Constructor for the default AppRole authentication backend in Vault.
         /// </summary>
-        /// <param name="httpConnector"></param>
         public AppRoleAuthEngine (VaultAgentAPI vault) : base ("AppRole", "approle", vault) {
             Type = EnumBackendTypes.A_AppRole;
             MountPointPrefix = "/v1/auth/";
@@ -115,46 +114,14 @@ namespace VaultAgent.AuthenticationEngines {
         }
 
 
-        // This is an attempt at optimizing and changing the HTTP calls for faster performance.
-        /// <summary>
-        /// Lists all Application Roles.  Returns an empty list if no roles found.
-        /// </summary>
-        /// <returns>List[string] of role names.  Empty list if no roles found.</returns>
-        public async Task<List<string>> ListRoles_B () {
-            string path = MountPointPath + "role";
-
-            try {
-                // Setup List Parameter
-                Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"list", "true"}};
-
-
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListRoles", contentParams);
-                if ( vdro.Success ) {
-                    List<string> keys2 = await vdro.GetDotNetObject<List<string>> ("data.keys");
-                    return keys2;
-                    /*
-                    //string js = await vdro.AccessResponse();
-
-                    string js2 = vdro.GetJSONPropertyValue(js, "keys");
-                    //List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js2);
-                    return keys;
-                    */
-                }
-
-                throw new ApplicationException ("AppRoleAuthEngine:ListRoles -> Arrived at unexpected code block.");
-            }
-
-            // 404 Errors mean there were no roles.  We just return an empty list.
-            catch ( VaultInvalidPathException ) { return new List<string>(); }
-        }
-
-
 
 
         /// <summary>
         /// Reads the AppRole with the given name.  Returns an AppRole object or Null if the AppRole does not exist.
         /// </summary>
         /// <param name="appRoleName">String name of the app role to retrieve.</param>
+        /// <param name="readRoleID">If True, the method, will perform a second Read operation to get the Role ID.  By Default Vault does
+        /// not return the RoleID.  So, if you do not need the RoleID, then leaving this false is faster and more efficient</param>
         /// <returns>AppRole object.</returns>
         public async Task<AppRole> ReadRole (string appRoleName, bool readRoleID = false) {
             string path = MountPointPath + "role/" + appRoleName;
@@ -273,6 +240,7 @@ namespace VaultAgent.AuthenticationEngines {
         /// Generates a secret ID for a given Application Role.
         /// TODO - At this time this method does not support the cidr_list or token_bound_cidrs properties that restrict the IP addresses that can use a given token.
         /// </summary>
+        /// <param name="appRoleName">The name of the Application Role that you wish to generate a Secret ID For</param>
         /// <param name="returnFullSecret">Vault only returns an abbreviated secret object.  If you wish to have a fully populated one then set to true.  Default False.
         /// Note, that this in no way affects the secret itself.  By setting to true, we make an additional call to Vault to re-read the full secret object.  If you do not
         /// need the full secret information then leaving at false is faster.</param>

@@ -51,7 +51,7 @@ namespace VaultAgentTests
 
             // Load the Test Data Object
             // TODO Uncomment
-        //    LoadTestData();
+            LoadTestData();
         }
 
 
@@ -78,10 +78,10 @@ namespace VaultAgentTests
             Assert.IsNotEmpty (exGroupAttr, "A30:  Expected the UserAttr property to be set.");
 
             // TODO Delete or uncomment
-/*
+
             // Read a JSON Config file containing LDAP Credentials from a JSON file into the class.       
             JsonSerializer jsonSerializer = new JsonSerializer();
-            string json = File.ReadAllText (@"C:\A_Dev\Configs\Vault_LDAPEngine_TestCredentials.json");
+            string json = File.ReadAllText (@"C:\A_Dev\Configs\ClientLoginCredentials.json");
 
             // Append JSON to existing objects values.
             jsonSerializer.Populate (new StringReader (json), config);
@@ -91,7 +91,7 @@ namespace VaultAgentTests
             Assert.AreEqual (exGroupAttr, config.GroupAttr, "A50:  GroupAttr was changed during the reading of the LDAP config file.");
             Assert.AreEqual (exGroupFilter, config.GroupFilter, "A60:  GroupFilter was changed during the reading of the LDAP config file.");
             Assert.AreEqual (exUserAttr, config.UserAttr, "A70:  UserAttr was changed during the reading of the LDAP config file.");
-*/
+
         }
 
 

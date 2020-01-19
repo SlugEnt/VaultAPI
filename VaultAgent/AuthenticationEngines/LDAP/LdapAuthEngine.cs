@@ -32,6 +32,12 @@ namespace VaultAgent.AuthenticationEngines
 	/// </summary>
 	public class LdapAuthEngine : VaultAuthenticationBackend
     {
+        /// <summary>
+        /// Constructor for the LDAPAuthEngine, which provides a means to login via LDAP.
+        /// </summary>
+        /// <param name="ldapName">Name to be given to this engine</param>
+        /// <param name="backendMountPoint">The MountPoint in Vault that this engine should mount to</param>
+        /// <param name="vault">VaultAgentAPI object that contains connection and token information with sufficient access to allow the Engine to perform its tasks.</param>
         public LdapAuthEngine (string ldapName, string backendMountPoint, VaultAgentAPI vault) : base (ldapName, backendMountPoint, vault) {
             Type = EnumBackendTypes.A_LDAP;
             MountPointPrefix = "/v1/auth/";
@@ -55,7 +61,7 @@ namespace VaultAgent.AuthenticationEngines
 
 
 		/// <summary>
-		/// Reads the LDAP Config that corresponds to this engine.  Returns a LdapConfig object if it can find the config.
+		/// Reads the LDAP Config from the Vault that corresponds to this engine.  Returns a LdapConfig object if it can find the config.
 		/// </summary>
 		/// <returns></returns>
 	    public async Task<LdapConfig> ReadLDAPConfig () {
@@ -213,8 +219,8 @@ namespace VaultAgent.AuthenticationEngines
 		/// Logs the user into the LDAP backend.
 		/// <para>Throws a VaultInvalidaDataException if the login failed for any reason.</para>
 		/// </summary>
-		/// <param name="userName"></param>
-		/// <param name="password"></param>
+		/// <param name="userName">The ldap user name that wants to login</param>
+		/// <param name="password">The password for said user</param>
 		/// <returns></returns>
 	    public async Task<LoginResponse> Login (string userName, string password) {
 		    string path = MountPointPath + "login/" + userName;
@@ -261,7 +267,7 @@ namespace VaultAgent.AuthenticationEngines
         /// <summary>
         /// Returns an LDAPConfig object that was initialized from values in a config file.
         /// </summary>
-        /// <param name="filename"></param>
+        /// <param name="filename">The file that contains the LDAP configuration you wish to load</param>
         /// <returns></returns>
         public LdapConfig GetLDAPConfigFromFile(string filename)
         {

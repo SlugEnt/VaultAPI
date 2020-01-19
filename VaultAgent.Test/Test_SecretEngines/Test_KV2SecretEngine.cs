@@ -528,57 +528,68 @@ namespace VaultAgentTests {
         }
 
 
+        /// <summary>
+        /// Used to generate a random secret and optionally save it to DB.
+        /// </summary>
+        /// <param name="saveSecret"></param>
+        /// <returns></returns>
+        internal async Task<KV2Secret> GenerateASecret(string parentPath = "/", bool saveSecret = true)
+        {
+            string secName = _uniqueKey.GetKey();
+            KV2Secret secretV2;
+
+            if (parentPath != "/") secretV2 = new KV2Secret(secName, parentPath);
+            else secretV2 = new KV2Secret(secName);
+
+            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("A1", "AAA");
+            KeyValuePair<string, string> kv2 = new KeyValuePair<string, string>("B2", "bbb");
+            KeyValuePair<string, string> kv3 = new KeyValuePair<string, string>("C3", "123");
+            secretV2.Attributes.Add(kv1.Key, kv1.Value);
+            secretV2.Attributes.Add(kv2.Key, kv2.Value);
+            secretV2.Attributes.Add(kv3.Key, kv3.Value);
+
+            if (saveSecret) Assert.True(await _defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.AlwaysAllow), "GenerateASecret:A10:  Failed to save a randomly generated secret.");
+
+            return secretV2;
+        }
+
 
         /// <summary>
         /// Can List secrets at a given path.
         /// </summary>
         /// <returns></returns>
         [Test]
-        public async Task ListSecrets () {
-            string secName = _uniqueKey.GetKey();
-            KV2Secret secretV2 = new KV2Secret (secName);
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("A1", "aaaa1");
-            KeyValuePair<string, string> kv2 = new KeyValuePair<string, string> ("B2", "bbbbb2");
-            KeyValuePair<string, string> kv3 = new KeyValuePair<string, string> ("C3", "cccccc3");
-            secretV2.Attributes.Add (kv1.Key, kv1.Value);
-            secretV2.Attributes.Add (kv2.Key, kv2.Value);
-            secretV2.Attributes.Add (kv3.Key, kv3.Value);
+        [TestCase(1,false,1,Description = "One secret off the root secret")]
+        [TestCase(1,true,2, Description = "One root secret off root, but because it has children it will be listed twice")]
+        [TestCase(4,false,4, Description = "Two children secrets")]
+        [TestCase(4,true,8, Description = "Two children secrets, but because they have children they are listed twice")]
+        public async Task ListSecrets (int rootSecretCount, bool ListFolderSecrets, int expectedCount) {
+            // Root secret
+            KV2Secret secretA = await GenerateASecret();
 
-            Assert.True (await _defaultMount.SaveSecret (secretV2, KV2EnumSecretSaveOptions.AlwaysAllow));
+            List<string> childSecrets = new List<string>(30);
 
-            // Create a child secret of the first secret.
-            string secName2 = _uniqueKey.GetKey();
-            KV2Secret secretV2B = new KV2Secret (secName2, secretV2.FullPath);
-            KeyValuePair<string, string> kv4 = new KeyValuePair<string, string> ("A1", "aaaa1");
-            KeyValuePair<string, string> kv5 = new KeyValuePair<string, string> ("B2", "bbbbb2");
-            KeyValuePair<string, string> kv6 = new KeyValuePair<string, string> ("C3", "cccccc3");
-            secretV2B.Attributes.Add (kv4.Key, kv4.Value);
-            secretV2B.Attributes.Add (kv5.Key, kv5.Value);
-            secretV2B.Attributes.Add (kv6.Key, kv6.Value);
-
-            Assert.True (await _defaultMount.SaveSecret (secretV2B, KV2EnumSecretSaveOptions.AlwaysAllow));
+            // Now generate children secrets.  Each with 3 grand children
+            for (int i=0; i < rootSecretCount;i++)
+            {
+                KV2Secret childSecret = await GenerateASecret(secretA.FullPath);
+                childSecrets.Add(childSecret.FullPath);
+                KV2Secret grandchildSecret = await GenerateASecret(childSecret.FullPath);
+                KV2Secret grandchildSecret2 = await GenerateASecret(childSecret.FullPath);
+                KV2Secret grandchildSecret3 = await GenerateASecret(childSecret.FullPath);
+            }
 
 
-            // Create a third child secret of secret 2.
-            string secName3 = _uniqueKey.GetKey();
-            KV2Secret secretV2C = new KV2Secret (secName3, secretV2B.FullPath);
-            KeyValuePair<string, string> kv7 = new KeyValuePair<string, string> ("A1", "aaaa1");
-            KeyValuePair<string, string> kv8 = new KeyValuePair<string, string> ("B2", "bbbbb2");
-            KeyValuePair<string, string> kv9 = new KeyValuePair<string, string> ("C3", "cccccc3");
-            secretV2C.Attributes.Add (kv7.Key, kv7.Value);
-            secretV2C.Attributes.Add (kv8.Key, kv8.Value);
-            secretV2C.Attributes.Add (kv9.Key, kv9.Value);
+            // Now get list of secrets at root secret
+            List<string> secrets = await (_defaultMount.ListSecretsAtPath (secretA.FullPath,ListFolderSecrets));
+            Assert.AreEqual (expectedCount, secrets.Count, "A10:  List secrets did not return the expected number of secret names.");
 
-            Assert.True (await _defaultMount.SaveSecret (secretV2C, KV2EnumSecretSaveOptions.AlwaysAllow));
-
-
-            // Now get list of secrets at root secrt.
-            List<string> secrets = await (_defaultMount.ListSecretsAtPath (secName));
-
-
-            Assert.AreEqual (2, secrets.Count, "Expected 2 secrets to be listed.");
-            Assert.AreEqual (secName2, secrets [0], "Secret name at list position 0 is not what was expected.");
-            Assert.AreEqual (secName2 + "/", secrets [1], "Secret name at list position 1 is not what was expected.");
+            // Ensure all children have 3 secrets only
+            foreach (string secretPath in childSecrets)
+            {
+                List<string>  kids = await _defaultMount.ListSecretsAtPath(secretPath);
+                Assert.AreEqual(3,kids.Count, "A20:  Kids secret count is incorrect.");
+            }
         }
 
 
@@ -839,7 +850,7 @@ namespace VaultAgentTests {
             Assert.True (await _defaultMount.SaveSecret (secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist), "A2: SaveSecret failed to return True.");
 
             // Confirm it exists - we will use the Path version of the method just to exercise both methods:
-            KV2Secret s2 = await _defaultMount.ReadSecret (secretV2.FullPath);
+            KV2Secret s2 = await _defaultMount.ReadSecret<KV2Secret> (secretV2.FullPath);
             Assert.True (secretV2.Path == s2.Path, "A3: Secret saved and secret read were not the same.");
 
             // Save a new version
@@ -1024,13 +1035,13 @@ namespace VaultAgentTests {
 
 
             // Now try the TryVersion.  Should have success.
-            (bool success, KV2Secret secReturn) = await _casMount.TryReadSecret (secretV2.FullPath);
+            (bool success, KV2Secret secReturn) = await _casMount.TryReadSecret<KV2Secret> (secretV2.FullPath);
             Assert.True (success, "A40:  Unable to read the secret back.");
             Assert.IsInstanceOf<KV2Secret> (secReturn);
 
 
             // Now try one that does not exist.  It should fail.
-            var resultF = await _casMount.TryReadSecret (secretV2.FullPath + "jhjhhmvmf");
+            var resultF = await _casMount.TryReadSecret<KV2Secret> (secretV2.FullPath + "jhjhhmvmf");
             Assert.False (resultF.IsSuccess, "A50:  Unable to read the secret back.");
             Assert.IsNull (resultF.Secret);
         }

@@ -57,6 +57,7 @@ namespace VaultAgent.Backends.System {
         /// </summary>
         /// <param name="path">The path to add to this policies permission list.  If the path already exists in the list then the existing object is returned.
         /// Otherwise a new defaulted object is returned.</param>
+        /// <param name="vaultPolicyPathItem">The VaultPolicyPathItem that was addeed or if it already existed, the existing one</param>
         /// <returns></returns>
         public bool TryAddPath (string path, out VaultPolicyPathItem vaultPolicyPathItem) {
             string key = VaultPolicyPathItem.CalculateKeyValue (path);

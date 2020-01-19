@@ -51,6 +51,7 @@ namespace VaultAgent {
         /// <summary>
         /// Constructor to create a new VaultAgentAPI object which is used to connect to a single Vault Instance.  Automatically connects to the Token Backend and will optionally connect
         /// to system backend if requested.
+        /// <para>Will Throw ApplicationException if unable to establish a connection to the backend vault server.</para>
         /// </summary>
         /// <param name="name">The name this Vault Instance should be known by.  This is purely cosmetic and serves no functional purpose other than being able to uniquely identify this Vault Instance from another.</param>
         /// <param name="port">The network port the Vault instance is listening on.</param>
@@ -70,16 +71,33 @@ namespace VaultAgent {
             // Create the Authentication backends Dictionary
             _authenticationBackends = new Dictionary<string, VaultAuthenticationBackend>();
 
-            // Create HTTP Connector object
-            _httpConnector = new VaultAPI_Http (IP, port);
+            try
+            {
+                // Create HTTP Connector object
+                _httpConnector = new VaultAPI_Http(IP, port);
 
-            // Establish a connection to the backend
-            if ( connectSystemBackend ) { _vault = new VaultSystemBackend (tokenID, this); }
+                // Establish a connection to the backend
+                if (connectSystemBackend)
+                {
+                    _vault = new VaultSystemBackend(tokenID, this);
+                }
 
-            // Establish a connection to the token backend.
-            _tokenEngine = (TokenAuthEngine) ConnectAuthenticationBackend (EnumBackendTypes.A_Token);
+                // Establish a connection to the token backend.
+                _tokenEngine = (TokenAuthEngine) ConnectAuthenticationBackend(EnumBackendTypes.A_Token);
 
-            if ( tokenID != "" ) {TokenID = tokenID;}
+                if (tokenID != "")
+                {
+                    TokenID = tokenID;
+                }
+            }
+            catch (Exception e)
+            {
+                if (e.InnerException.Message.StartsWith("No connection"))
+                {
+                    throw new ApplicationException("Unable to establish connection to remote Vault Server.");
+                }
+                throw e;
+            }
         }
 
 
@@ -180,6 +198,7 @@ namespace VaultAgent {
         /// <param name="secretBackendType">The type of backend you wish to connect to.</param>
         /// <param name="backendName">The name you wish to refer to this backend by.  This is NOT the Vault mount path.</param>
         /// <param name="backendMountPath">The path to the vault mount point that this backend is located at.</param>
+        /// <param name="description">Description for the backend</param>
         /// <param name="config">(Optional) A VaultSysMountConfig object that contains the connection configuration you wish to use to connect to the backend.  If not specified defaults will be used.</param>
         /// <returns>True if it was able to create the backend and connect to it.  False if it encountered an error.</returns>
         public async Task<VaultBackend> CreateSecretBackendMount (EnumSecretBackendTypes secretBackendType,
