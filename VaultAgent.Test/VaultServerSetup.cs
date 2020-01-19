@@ -71,7 +71,7 @@ namespace VaultAgentTests
 				// Connect to an already running Vault instance.
 				VaultServerRef.rootToken = "tokenA";
 				VaultServerRef.ipAddress = "127.0.0.1";
-				VaultServerRef.ipPort = 47002;
+				VaultServerRef.ipPort = 16101;
 			}
 
 			VaultServerRef.vaultFolder = "C:\\A_Dev\\Utilities\\";

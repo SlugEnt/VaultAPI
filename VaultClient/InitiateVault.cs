@@ -4,9 +4,7 @@ using System.Dynamic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.CSharp;
 using Newtonsoft.Json;
-using NUnit.Framework;
 using VaultAgent;
 using VaultAgent.AuthenticationEngines;
 using VaultAgent.AuthenticationEngines.LDAP;
@@ -132,17 +130,6 @@ namespace VaultClient
             adminContainer.AddPolicyPathObject(appPath);
 
             bool success = await _vaultSystemBackend.SysPoliciesACLCreate(adminContainer);
-
-
-            // Testing only
-            /*
-            VaultPolicyContainer testContainer = new VaultPolicyContainer("TestSysEng");
-            List<string> testpol = new List<string>();
-            testpol.Add("TestSysEng");
-            success = await _vaultSystemBackend.SysPoliciesACLCreate(testContainer);
-            success = await _ldapAuthEngine.CreateGroupToPolicyMapping("_IT-SystemEngineers", testpol);
-            */
-            // ENd Testing
 
 
             List<string> adminPolicies = new List<string>();
