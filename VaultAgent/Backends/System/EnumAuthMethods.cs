@@ -6,24 +6,69 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace VaultAgent.Backends.System {
+    /// <summary>
+    /// The types of Authentication Methods that Vault Supports.  Note, many of these are not implemented in this library but are listed here for completeness.
+    /// </summary>
     public enum EnumAuthMethods {
+        /// <summary>
+        /// An Application Role Authentication Method
+        /// </summary>
         [Description ("approle")] AppRole = 0,
+
+
+        /// <summary>
+        /// An Amazon Web Services Authentication Method
+        /// </summary>
         AWS = 1,
+
+        /// <summary>
+        /// A Google Cloud Authentication Method
+        /// </summary>
         GoogleCloud = 2,
+
+        /// <summary>
+        /// A Kurbernetes Authentication Method
+        /// </summary>
         Kubernetes = 3,
+
+        /// <summary>
+        /// A GitHub Authentication Method
+        /// </summary>
         GitHub = 4,
+
+
+        /// <summary>
+        /// An LDAP Authentication Method
+        /// </summary>
         LDAP = 5,
+
+        /// <summary>
+        /// A Okta Authentication Method
+        /// </summary>
         Okta = 6,
 
-        //Radius = 7,
+
+        /// <summary>
+        /// A TLSCertificate Authentication Method
+        /// </summary>
         TLSCertificates = 7,
+
+        /// <summary>
+        /// A UserNamePassword Authentication Method
+        /// </summary>
         UsernamePassword = 8,
 
-        Token = 9 //,
-        //Azure = 10
+        /// <summary>
+        /// An Azure Authentication Method
+        /// </summary>
+        Token = 9
     }
 
 
+
+    /// <summary>
+    /// Utility Class to convert Enum values of AuthMethods into strings
+    /// </summary>
     public static class AuthMethodEnumConverters {
         /// <summary>
         /// This function takes the EnumAuthMethods value and converts it to the Vault proper string name.

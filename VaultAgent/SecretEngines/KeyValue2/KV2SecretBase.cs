@@ -1,12 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-
-using System;
 using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using VaultAgent.SecretEngines.KeyValue2;
 
 
 namespace VaultAgent.SecretEngines.KeyValue2
@@ -86,7 +80,9 @@ namespace VaultAgent.SecretEngines.KeyValue2
 
 
 
-            // Returns the entire path to the Vault Secret.  This is the Path + the Name.
+            /// <summary>
+            /// Returns the FullPath to the Secret.  The Fullpath is the path plus the Name of the secret.  So, Path1/path2/path3/secretName
+            /// </summary>
             public string FullPath
             {
                 get
@@ -152,6 +148,10 @@ namespace VaultAgent.SecretEngines.KeyValue2
 
 
 
+            /// <summary>
+            /// Returns the Path that this secret belongs to.
+            /// </summary>
+            /// <returns></returns>
             public string GetParentPath()
             {
                 int pos = FullPath.LastIndexOf('/');

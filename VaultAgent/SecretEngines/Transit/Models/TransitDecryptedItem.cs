@@ -8,6 +8,9 @@ namespace VaultAgent.Backends.Transit.Models {
         private string decrypted;
 
 
+        /// <summary>
+        /// The decrypted Value
+        /// </summary>
         [JsonProperty ("plaintext")]
         public string DecryptedValue {
             get { return decrypted; }

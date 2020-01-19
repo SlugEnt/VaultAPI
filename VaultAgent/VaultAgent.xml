@@ -1390,7 +1390,7 @@
             identity associated with this token.  IE.  TokenPolicies + IdentityPolicies
             </summary>
         </member>
-        <member name="P:VaultAgent.Models.Token.IsRenewable">
+        <member name="P:VaultAgent.Models.Token.IsIsRenewable">
             <summary>
             Indicates if this token is renewable.
             </summary>
@@ -1530,7 +1530,7 @@
             the given period. Requires a root/sudo token to use
             </summary>
         </member>
-        <member name="P:VaultAgent.Models.TokenRole.IsRenewable">
+        <member name="P:VaultAgent.Models.TokenRole.IsIsRenewable">
             <summary>
             Set to false to disable the ability of the token to be renewed past its initial TTL. 
             Setting the value to true will allow the token to be renewable up to the system/mount maximum TTL

@@ -9,6 +9,11 @@ using VaultAgent.Models;
 
 
 namespace VaultAgent.SecretEngines {
+    /// <summary>
+    /// The transit secrets engine handles cryptographic functions on data in-transit. Vault doesn't store the data sent to the secrets engine.
+    /// It can also be viewed as "cryptography as a service" or "encryption as a service". The transit secrets engine can also sign and verify data;
+    /// generate hashes and HMACs of data; and act as a source of random bytes.
+    /// </summary>
     public class TransitSecretEngine : VaultSecretBackend {
         const string PathKeys = "keys/";
         const string PathEncrypt = "encrypt/";
@@ -21,7 +26,7 @@ namespace VaultAgent.SecretEngines {
         /// </summary>
         /// <param name="backendMountName">The name of the transit backend to mount.  For example for a mount at /mine/transitA use mine/transitA as value.</param>
         /// <param name="backendMountPath">The path to the Transit Backend mountpoint.</param>
-        /// <param name="httpConnector">The VaultAPI_http Http Connection object</param>
+        /// <param name="vaultAgentAPI">The Vault Agent API object that contains conenctivity information and a Token with the permissions required to access the Transit Engine</param>
         public TransitSecretEngine (string backendMountName, string backendMountPath, VaultAgentAPI vaultAgentAPI) : base (
             backendMountName, backendMountPath, vaultAgentAPI) {
             Type = EnumBackendTypes.Transit;
@@ -123,14 +128,17 @@ namespace VaultAgent.SecretEngines {
 
 
         // ==============================================================================================================================================
+        /// <summary>
+        /// Reads the Encrypted Key specified
+        /// </summary>
+        /// <param name="keyName">The name of the key to read</param>
+        /// <returns></returns>
         public async Task<TransitKeyInfo> ReadEncryptionKey (string keyName) {
             // The keyname forms the last part of the path
             string path = MountPointPath + PathKeys + keyName;
 
             VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ReadEncryptionKey");
 	        return await vdro.GetDotNetObject<TransitKeyInfo>();
-//            TransitKeyInfo TKI = vdro.GetVaultTypedObject<TransitKeyInfo>();
-  //          return TKI;
         }
 
 
@@ -151,7 +159,10 @@ namespace VaultAgent.SecretEngines {
 
 
 
-        // ==============================================================================================================================================
+        /// <summary>
+        /// Returns a List of Encryption keys
+        /// </summary>
+        /// <returns></returns>
         public async Task<List<string>> ListEncryptionKeys () {
             string path = MountPointPath + PathKeys;
 
@@ -162,10 +173,6 @@ namespace VaultAgent.SecretEngines {
             VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListEncryptionKeys", sendParams);
 
 	        return await vdro.GetDotNetObject<List<string>>("data.keys");
-//            string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
-//
-  //          List<string> keys = VaultUtilityFX.ConvertJSON<List<string>> (js);
-    //        return keys;
         }
 
 
@@ -183,9 +190,6 @@ namespace VaultAgent.SecretEngines {
             VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "EncryptToVault", contentParams);
             if ( vdro.HttpStatusCode == 200 ) {
 	            return await vdro.GetDotNetObject<TransitEncryptedItem>();
-//                string js = vdro.GetDataPackageAsJSON();
-  //              TransitEncryptedItem data = VaultUtilityFX.ConvertJSON<TransitEncryptedItem> (js);
-    //            return data;
             }
             else { return null; }
         }
@@ -263,9 +267,6 @@ namespace VaultAgent.SecretEngines {
 
             // Pull out the results and send back.  
 			return await vdro.GetDotNetObject<TransitEncryptionResultsBulk>();
-//            string js = vdro.GetDataPackageAsJSON();
-  //          TransitEncryptionResultsBulk bulkData = VaultUtilityFX.ConvertJSON<TransitEncryptionResultsBulk> (js);
-    //        return bulkData;
         }
 
 
@@ -295,9 +296,6 @@ namespace VaultAgent.SecretEngines {
             VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "Decrypt", contentParams);
             if ( vdro.HttpStatusCode == 200 ) {
 	            return await vdro.GetDotNetObject<TransitDecryptedItem>();
-//                string js = vdro.GetDataPackageAsJSON();
-  //              TransitDecryptedItem data = VaultUtilityFX.ConvertJSON<TransitDecryptedItem> (js);
-    //            return data;
             }
 
             // This code should never get hit.  
@@ -347,9 +345,6 @@ namespace VaultAgent.SecretEngines {
 
             // Pull out the results and send back.  
 	        return await vdro.GetDotNetObject<TransitDecryptionResultsBulk>();
-//            string js = vdro.GetDataPackageAsJSON();
-  //          TransitDecryptionResultsBulk bulkData = VaultUtilityFX.ConvertJSON<TransitDecryptionResultsBulk> (js);
-    //        return bulkData;
         }
 
 
@@ -402,9 +397,6 @@ namespace VaultAgent.SecretEngines {
             VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "ReEncrypt", contentParams);
             if ( vdro.HttpStatusCode == 200 ) {
 	            return await vdro.GetDotNetObject<TransitEncryptedItem>();
-//                string js = vdro.GetDataPackageAsJSON();
-  //              TransitEncryptedItem data = VaultUtilityFX.ConvertJSON<TransitEncryptedItem> (js);
-    //            return data;
             }
             else { return null; }
         }
@@ -418,7 +410,7 @@ namespace VaultAgent.SecretEngines {
         /// </summary>
         /// <param name="keyName">The encryption key to use to encrypt the values.</param>
         /// <param name="bulkItems">The list of items that are currently encrypted that need to be re-encrypted with newer key.  If it is a derived context item then
-        /// you need to make sure you supply the context along with each encrypted item.
+        /// you need to make sure you supply the context along with each encrypted item.</param>
         /// <param name="keyVersion">Optional numeric value of the key version to use to encrypt the data with.  If not specified it defaults to the latest version 
         /// of the encryption key.</param>
         /// <returns>TransitEncryptionResultsBulk - which is a list or the encrypted values.</returns>
@@ -451,9 +443,6 @@ namespace VaultAgent.SecretEngines {
 
             // Pull out the results and send back.  
 	        return await vdro.GetDotNetObject<TransitEncryptionResultsBulk>();
-//            string js = vdro.GetDataPackageAsJSON();
-  //          TransitEncryptionResultsBulk bulkData = VaultUtilityFX.ConvertJSON<TransitEncryptionResultsBulk> (js);
-     //       return bulkData;
         }
 
 
@@ -521,7 +510,10 @@ namespace VaultAgent.SecretEngines {
         }
 
 
-
+        /// <summary>
+        /// Not Implemented
+        /// </summary>
+        /// <param name="keyName"></param>
         public void ExportKey (string keyName) { throw new NotImplementedException(); }
 
 
@@ -557,9 +549,6 @@ namespace VaultAgent.SecretEngines {
 
             // Pull out the results and send back.  
 	        return await vdro.GetDotNetObject<TransitDataKey>();
-//            string js = vdro.GetDataPackageAsJSON();
-  //          TransitDataKey TDK = VaultUtilityFX.ConvertJSON<TransitDataKey> (js);
-    //        return TDK;
         }
 
 
@@ -581,8 +570,6 @@ namespace VaultAgent.SecretEngines {
 				// Pull out the results and send back.  
 	            TransitBackupRestoreItem tbri = await vdro.GetDotNetObject<TransitBackupRestoreItem>();
 
-//				string js = vdro.GetDataPackageAsJSON();
-  //              TransitBackupRestoreItem tbri = VaultUtilityFX.ConvertJSON<TransitBackupRestoreItem> (js);
                 if ( tbri.KeyBackup != null ) { tbri.Success = true; }
 
                 return tbri;
@@ -601,8 +588,6 @@ namespace VaultAgent.SecretEngines {
                     ErrorMsg = errMsg
                 };
 
-                //tbri.Success = false;
-                //tbri.ErrorMsg = errMsg;
                 return tbri;
             }
         }
@@ -654,7 +639,6 @@ namespace VaultAgent.SecretEngines {
             VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "GenerateRandomBytes", contentParams);
             if ( vdro.Success ) {
 	            string bytes = await vdro.GetDotNetObject<string>("data.random_bytes");
-                //string bytes = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "random_bytes");
                 if ( hexOutputFormat ) { return bytes; }
                 else { return VaultUtilityFX.Base64DecodeAscii (bytes); }
             }
@@ -708,10 +692,19 @@ namespace VaultAgent.SecretEngines {
         }
 
 
+        /// <summary>
+        ///  Not Implemented
+        /// </summary>
         public void GenerateHMAC () { throw new NotImplementedException(); }
 
+        /// <summary>
+        ///  Not Implemented
+        /// </summary>
         public void SignData () { throw new NotImplementedException(); }
 
+        /// <summary>
+        /// Not Implemented
+        /// </summary>
         public void VerifySignedData () { throw new NotImplementedException(); }
     }
 }

@@ -3,7 +3,15 @@ using Newtonsoft.Json.Converters;
 using System.Collections.Generic;
 
 namespace VaultAgent.Models {
+
+    /// <summary>
+    /// A Token and its related properties that represent a Role
+    /// </summary>
     public class TokenRole {
+
+        /// <summary>
+        /// Constructs a new TokenRole Object
+        /// </summary>
         [JsonConstructor()]
         public TokenRole () {
             // This is required for now as Vault has not implemented the BoundCIDRS functionality yet, so it comes back null.  This 

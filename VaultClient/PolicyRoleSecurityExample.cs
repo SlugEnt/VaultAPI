@@ -13,6 +13,9 @@ using VaultAgent.SecretEngines.KV2;
 
 namespace VaultClient
 {
+    /// <summary>
+    /// The paths for the House that will be stored in Vault.
+    /// </summary>
     public class HOUSE
     {
         public const string HOUSE_PATH = "house";
@@ -113,6 +116,11 @@ namespace VaultClient
         private VaultPolicyContainer _policyToddlerBedroom_Full;
 
 
+
+        /// <summary>
+        /// Constructor for the Family Role/Policy Tutorial
+        /// </summary>
+        /// <param name="masterVaultAgent"></param>
         public PolicyRoleSecurityExample(VaultAgentAPI masterVaultAgent)
         {
             UniqueKeys uniqueKeys = new UniqueKeys();
@@ -129,6 +137,10 @@ namespace VaultClient
 
 
 
+        /// <summary>
+        /// Start The Scenario
+        /// </summary>
+        /// <returns></returns>
         public async Task Run()
         {
             // Create the mounts and policies and store in Vault
@@ -169,7 +181,10 @@ namespace VaultClient
         }
 
 
-
+        /// <summary>
+        /// Perform tasks the mother wants to do
+        /// </summary>
+        /// <returns></returns>
         private async Task Perform_MotherTasks()
         {
             // We cannot use the Vault Agent _masterVaultAgent, since it has the Master Token tied to it.  We will create a new VaultAgent and SecretEngine for use during this Task, which will have our
@@ -229,6 +244,10 @@ namespace VaultClient
 
 
 
+        /// <summary>
+        /// Performs tasks that the teen wants to to.  
+        /// </summary>
+        /// <returns></returns>
         private async Task Perform_TeenTasks()
         {
             // We cannot use the Vault Agent _masterVaultAgent, since it has the Master Token tied to it.  We will create a new VaultAgent and SecretEngine for use during this Task, which will have our
@@ -298,7 +317,12 @@ namespace VaultClient
         }
 
 
-
+        /// <summary>
+        /// Reads the Secret from the Engine
+        /// </summary>
+        /// <param name="engine"></param>
+        /// <param name="secretPath"></param>
+        /// <returns></returns>
         private async Task<(bool isSuccess, KV2Secret theSecret)> ReadSecret(KV2SecretEngine engine, string secretPath)
         {
             try
@@ -385,6 +409,11 @@ namespace VaultClient
             }
         }
 
+
+        /// <summary>
+        /// Create all the policies required for this scenario
+        /// </summary>
+        /// <returns></returns>
         private async Task CreatePolicies()
         {
             _policyHouse_Full = await GetPolicy("policyHouse_F");

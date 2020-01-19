@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace VaultAgent.Backends.System {
+    /// <summary>
+    /// Class the represents a Vault Authentication Method
+    /// </summary>
     public class AuthMethod {
         // _typeEnum is always considered the key identifier for this object.
         private EnumAuthMethods _typeEnum;
@@ -41,6 +44,7 @@ namespace VaultAgent.Backends.System {
         /// <summary>
         /// Constructor that accepts our EnumAuthMethod argument for constructing the method.
         /// </summary>
+        /// <param name="path">The path to the mount point for the provided Authentication Method</param>
         /// <param name="authenticationMethod">EnumAuthMethod - Type of authentication method object to create</param>
         public AuthMethod (string path, EnumAuthMethods authenticationMethod) {
             _typeEnum = authenticationMethod;
@@ -129,11 +133,10 @@ namespace VaultAgent.Backends.System {
         public AuthConfig Config { get; private set; }
 
 
-        [JsonProperty ("accessor")]
-
         /// <summary>
         /// Returned by Vault.
         /// </summary>
+        [JsonProperty ("accessor")]
         public string Accessor { get; private set; }
 
 

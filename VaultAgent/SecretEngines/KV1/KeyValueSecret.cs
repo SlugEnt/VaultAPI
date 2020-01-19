@@ -9,15 +9,27 @@ namespace VaultAgent.SecretEngines {
     /// list upon save is connection:db1 then canDelete will no longer exist after the save.  
     /// </summary>
     public class KeyValueSecret {
+        /// <summary>
+        /// Constructor for a Key Value Secret - Version 1.  It is recommended to use a KV2Secret instead.
+        /// </summary>
         public KeyValueSecret () { Attributes = new Dictionary<string, string>(); }
 
 
+        /// <summary>
+        /// Constructor for a Key Value Secret - Version 1.  It is recommended to use a KV2Secret instead.
+        /// </summary>
+        /// <param name="nameAndPath">The full path and name of the secret to be built</param>
         public KeyValueSecret (string nameAndPath) {
             Path = nameAndPath;
             Attributes = new Dictionary<string, string>();
         }
 
 
+        /// <summary>
+        /// Constructor for a Key Value Secret - Version 1.  It is recommended to use a KV2Secret instead.
+        /// </summary>
+        /// <param name="nameAndPath">The full path and name of the secret to be built</param>
+        /// <param name="refreshInterval">How often this secret should be refreshed</param>
         public KeyValueSecret (string nameAndPath, int refreshInterval) {
             Path = nameAndPath;
             RefreshInterval = refreshInterval;

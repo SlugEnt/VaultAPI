@@ -22,7 +22,7 @@ namespace VaultAgent {
         /// </summary>
         /// <param name="backendName">A Name for the backend.  This is noy used or stored internally in Vault anywhere. </param>
         /// <param name="backendMountPoint">The mount point where the backend is mounted at.</param>
-        /// <param name="httpConnector">The HTTP Connector object used to establish a connection to Vault.</param>
+        /// <param name="vault">The Vault object to use to establish a connection to Vault.</param>
         internal VaultAuthenticationBackend (string backendName, string backendMountPoint, VaultAgentAPI vault) : base (backendName, backendMountPoint, vault) {
             IsAuthenticationBackend = true;
         }

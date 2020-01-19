@@ -8,16 +8,28 @@ using VaultAgent.SecretEngines.KV2.SecretMetaDataInfo;
 
 namespace VaultAgent.SecretEngines
 {
+    /// <summary>
+    /// Some Constants used by the KV2Secret Engine
+    /// </summary>
     public static class Constants
     {
+        /// <summary>
+        /// Messages explaining the Error_CAS_Set
+        /// </summary>
         public const string Error_CAS_Set =
             "The backend storage engine has the CAS property set.  This requires that all secret saves must have " +
             "the CAS value set to zero upon saving a new key or the latest version of the key must be specified in the version parameter.";
 
+        /// <summary>
+        /// Message explaining the Error_CAS_InvalidVersion
+        /// </summary>
         public const string Error_CAS_InvalidVersion =
             "The backend storage engine has the CAS property set.  This requires that all secret saves must " +
             "specify the current version of the key in order to update it.  The calling routine provided an incorrect version.";
 
+        /// <summary>
+        /// Message explaining the Error_CAS_SecretAlreadyExists error
+        /// </summary>
         public const string Error_CAS_SecretAlreadyExists =
             "The backend storage engine has the CAS property set.  In addition, the calling routine specified that the secret save should " +
             "only happen if the secret does not exist.  The secret already exists and thus cannot be saved.";
@@ -42,7 +54,8 @@ namespace VaultAgent.SecretEngines
         ///     The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/
         ///     and exclude trailing slash.
         /// </param>
-        /// <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
+        /// <param name="vaultAgentAPI">The Vault API Agent Object that contains connectivity information for authenticating and connecting to the Vault</param>
+        
         public KV2SecretEngine(string backendName, string backendMountPoint, VaultAgentAPI vaultAgentAPI) : base(
             backendName, backendMountPoint,
             vaultAgentAPI)
@@ -105,8 +118,8 @@ namespace VaultAgent.SecretEngines
         ///     <para>  Set to -1 to use the version number specified in the secret object as the version to delete.</para>
         ///     <para>  Set to any positive number to delete that specific version from the Vault Instance Store.</para>
         /// </summary>
-        /// <param name="secretPath">The name of the secret to delete.</param>
-        /// <param name="version">The version of the secret to delete.</param>
+        /// <param name="secretObj">The KV2Secret object to be deleted from the Vault</param>
+        /// <param name="secretVersion">The version of the secret to delete.</param>
         /// <returns>True if successful.  False otherwise.</returns>
         public async Task<bool> DeleteSecretVersion(IKV2Secret secretObj, int secretVersion = 0)
         {
@@ -142,7 +155,11 @@ namespace VaultAgent.SecretEngines
         }
 
 
-
+        /// <summary>
+        /// Completely destroys a secret, removing all evidence of it from the Vault
+        /// </summary>
+        /// <param name="secretObj">The Secret Object to be permanently removed</param>
+        /// <returns></returns>
         public async Task<bool> DestroySecretCompletely(IKV2Secret secretObj)
         {
             return await DestroySecretCompletely(secretObj.FullPath);
@@ -181,7 +198,12 @@ namespace VaultAgent.SecretEngines
         }
 
 
-
+        /// <summary>
+        /// Permanently deletes the given secret.
+        /// </summary>
+        /// <param name="secretObj">The secret object to be deleted</param>
+        /// <param name="version">The specific version of the secret to be deleted.</param>
+        /// <returns></returns>
         public async Task<bool> DestroySecretVersion(IKV2Secret secretObj, int version)
         {
             return await DestroySecretVersion(secretObj.FullPath, version);
@@ -262,6 +284,7 @@ namespace VaultAgent.SecretEngines
         ///     If false (default) it will remove secrets that contain a trailing slash which in
         ///     Vault indicates that this is a folder or parent to other secret objects
         /// </param>
+        /// <param name="sorted">Whether the secrets should be sorted in alphabetical order</param>
         /// <returns>List of strings which contain secret names.</returns>
         /// <remarks>https://github.com/SlugEnt/VaultAPI/issues/3</remarks>
         public async Task<List<string>> ListSecretsAtPath(string secretPath, bool includeFolderSecrets = false,
@@ -300,7 +323,11 @@ namespace VaultAgent.SecretEngines
         }
 
 
-
+        /// <summary>
+        /// Lists all the children secrets of the provided Secret Object
+        /// </summary>
+        /// <param name="secretObj">The secret object that you wish to get a list of children of</param>
+        /// <returns></returns>
         public async Task<List<string>> ListSecretsAtPath(IKV2Secret secretObj)
         {
             return await ListSecretsAtPath(secretObj.FullPath);
@@ -583,7 +610,7 @@ namespace VaultAgent.SecretEngines
         /// <param name="casRequired">
         ///     Check-And-Set parameter. If set to True then all writes (creates and updates) to keys will need to have the CAS
         ///     parameter specified.
-        ///     See the Update and Create methods for details about the CAS setting.
+        ///     See the Update and Create methods for details about the CAS setting. </param>
         ///     <returns></returns>
         public async Task<bool> SetBackendConfiguration(ushort maxVersions = 10, bool casRequired = false)
         {
@@ -629,6 +656,17 @@ namespace VaultAgent.SecretEngines
 
 
 
+        /// <summary>
+        ///     Attempts to read a secret if it exists.  Returns a tuple value (bool success, T secret) as follows:
+        ///     <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
+        ///     <para>If secret was found the first value is True and the 2nd value is the IKV2Secret that was read.</para>
+        ///     <para>If not found, the first value is False and the second value is null.</para>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="secretName">The name of the secret to retrieve</param>
+        /// <param name="secretParentPath">The path that contains the secret</param>
+        /// <param name="secretVersion">If you want a specific version of the secret, specify it here.  Otherwise it defaults to current version.</param>
+        /// <returns></returns>
         public async Task<(bool IsSuccess, T Secret)> TryReadSecret<T>(string secretName, string secretParentPath,
             int secretVersion = 0) where T : KV2SecretBase<T>
         {
@@ -643,12 +681,12 @@ namespace VaultAgent.SecretEngines
         ///     <para>If secret was found the first value is True and the 2nd value is the IKV2Secret that was read.</para>
         ///     <para>If not found, the first value is False and the second value is null.</para>
         /// </summary>
-        /// <param name="secretPath">The path to the secret to check for existence and retrieve if it does exist.</param>
+        /// <param name="secretObj">The secret object that should be Read.</param>
         /// <param name="secretVersion">
         ///     Version of the secret to retrieve.
         ///     <para>  (Default) set to 0 to read most recent version.</para>
         ///     <para>  Set to -1 to use the version number specified in the secret object.</para>
-        ///     <para>  Set to any positive number to read that specific version from the Vault Instance Store.</para>
+        ///     <para>  Set to any positive number to read that specific version from the Vault Instance Store.</para></param>
         ///     <returns></returns>
         public async Task<(bool IsSuccess, T Secret)> TryReadSecret<T>(T secretObj, int secretVersion = 0)
             where T : KV2SecretBase<T>
@@ -697,7 +735,12 @@ namespace VaultAgent.SecretEngines
         }
 
 
-
+        /// <summary>
+        /// Undeletes the specified version of a secret
+        /// </summary>
+        /// <param name="secretObj">The secret object that should be undeleted</param>
+        /// <param name="version">The specific version number to be undeleted.</param>
+        /// <returns></returns>
         public async Task<bool> UndeleteSecretVersion(IKV2Secret secretObj, int version)
         {
             return await UndeleteSecretVersion(secretObj.FullPath, version);
@@ -738,7 +781,13 @@ namespace VaultAgent.SecretEngines
         }
 
 
-
+        /// <summary>
+        /// Updates the IKV2Secret objects settings based upon the parameters passed in.
+        /// </summary>
+        /// <param name="secretObj">The Secret Object to be updated</param>
+        /// <param name="maxVersions">How many versions of the secret that should be kept</param>
+        /// <param name="casRequired">Whether CAS is required or not</param>
+        /// <returns></returns>
         public async Task<bool> UpdateSecretSettings(IKV2Secret secretObj, ushort maxVersions, bool casRequired)
         {
             return await UpdateSecretSettings(secretObj.FullPath, maxVersions, casRequired);

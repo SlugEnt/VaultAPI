@@ -51,9 +51,17 @@ namespace VaultAgent.Models {
         [JsonProperty ("metadata")]
         public Dictionary<string, string> Metadata { get; internal set; }
 
+
+        /// <summary>
+        /// How long this is valid for
+        /// </summary>
         [JsonProperty ("lease_duration")]
         public long LeaseDuration { get; internal set; }
 
+
+        /// <summary>
+        /// Whether the token is renewable or not.
+        /// </summary>
         [JsonProperty ("renewable")]
         public bool Renewable { get; internal set; }
 

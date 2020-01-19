@@ -4,7 +4,13 @@ using System.Text;
 using VaultAgent.Backends;
 
 namespace VaultAgent {
+    /// <summary>
+    /// Represents the Abstract elements of a Vault Backend Object
+    /// </summary>
     public abstract class VaultBackend {
+        /// <summary>
+        /// The Vault Agent API object that this Backend will use to talk to Vault.  
+        /// </summary>
         protected VaultAgentAPI _parent;
 
         //protected  VaultAPI_Http _vaultHTTP;
@@ -16,14 +22,14 @@ namespace VaultAgent {
         /// </summary>
         /// <param name="name">The name used to identify this backend, this is not the mount point!</param>
         /// <param name="mountPoint">The name of the mount point in vault to connect to.</param>
-        /// <param name="vaultAgentAPI">This should be a reference to the VaultAgentAPI object.</param>
+        /// <param name="vaultAgentAPI">This is the Vault Agent API object that contains Connection info to the Vault.
+        /// It should also contain a Token that has the necessary permissions to do the Backend Tasks</param>
         /// <param name="mountPointPrefix">If the path is prefixed in vault with some value, specify it here.  It defaults to /v1/ which is typical Vault default value.</param>
         public VaultBackend (string name, string mountPoint, VaultAgentAPI vaultAgentAPI, string mountPointPrefix = "/v1/") {
             Name = name;
             MountPoint = mountPoint;
             MountPointPrefix = mountPointPrefix;
 
-            //_vaultHTTP = vaultAPI_Http;
             _parent = vaultAgentAPI;
 
             Type = EnumBackendTypes.NotDefined;
@@ -51,6 +57,9 @@ namespace VaultAgent {
 
 
         //TODO - Unit Test this.
+        /// <summary>
+        /// The Mount Point prefix of the Backend
+        /// </summary>
         public string MountPointPrefix {
             get { return _mountPrefix; }
             protected set {

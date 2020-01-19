@@ -224,7 +224,7 @@ namespace VaultAgentTests
 				ID = tokenID,
 				Name = tokenName,
 				NumberOfUses = numUses,
-				Renewable = true,
+				IsRenewable = true,
 				RenewalPeriod = "1800"
 			};
 
@@ -260,7 +260,7 @@ namespace VaultAgentTests
 				ID = tokenID,
 				Name = tokenName,
 				NumberOfUses = numUses,
-				Renewable = true,
+				IsRenewable = true,
 				MaxTTL = "86400"
 			};
 

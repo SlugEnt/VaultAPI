@@ -7,12 +7,16 @@ using VaultAgent.Backends;
 using VaultAgent.SecretEngines;
 
 namespace VaultAgent.SecretEngines {
+    /// <summary>
+    /// A Vault Identity Secret Engine.
+    /// <para>https://www.vaultproject.io/docs/secrets/identity/index.html</para>
+    /// </summary>
     public class IdentitySecretEngine : VaultSecretBackend {
         // ==============================================================================================================================================
         /// <summary>
         /// Constructor.  Initializes the connection to Vault Identity Store.  Store has a fixed mounting location and name.
         /// </summary>
-        /// <param name="httpConnector">The VaultAPI_http Http Connection object</param>
+        /// <param name="vaultAgentAPI">The Vault API Agent object that contains connectivity information for establishing a connection to Vault</param>
         public IdentitySecretEngine (VaultAgentAPI vaultAgentAPI) : base ("Identity", "identity", vaultAgentAPI) {
             Type = EnumBackendTypes.Identity;
             IsSecretBackend = true;
@@ -57,7 +61,6 @@ namespace VaultAgent.SecretEngines {
                 if ( entity.Id != Guid.Empty ) { guid = entity.Id; }
                 else {
 	                string id = await vdro.GetDotNetObject<string>("data.id");
-                    //string id = vdro.GetDataPackageFieldAsJSON ("id");
                     guid = new Guid (id);
                 }
 
@@ -85,8 +88,6 @@ namespace VaultAgent.SecretEngines {
             VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "IdentityEngine: ReadEntity", null);
             if ( vdro.Success ) {
 	            return await vdro.GetDotNetObject<Entity>();
-                //Entity entity = vdro.GetVaultTypedObjectV2<Entity>();
-                //return entity;
             }
 
             return null;
@@ -106,8 +107,6 @@ namespace VaultAgent.SecretEngines {
             VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "IdentityEngine: ReadEntity (EntityName)", null);
             if ( vdro.Success ) {
 	            return await vdro.GetDotNetObject<Entity>();
-                //Entity entity = vdro.GetVaultTypedObjectV2<Entity>();
-                //return entity;
             }
 
             return null;
@@ -134,7 +133,7 @@ namespace VaultAgent.SecretEngines {
         /// Deletes an Entity and all of it's associated aliases.  Returns True if successful.  Will also return True if the name passed in does not
         /// exist in the Vault Database.
         /// </summary>
-        /// <param name="id">The Id of the entity to be deleted.</param>
+        /// <param name="entityName">The name of the entity to be deleted.</param>
         /// <returns></returns>
         public async Task<bool> DeleteEntity (string entityName) {
             string path = MountPointPath + "entity/name/" + entityName;
@@ -160,9 +159,6 @@ namespace VaultAgent.SecretEngines {
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListEntitesByName", contentParams);
                 if ( vdro.Success ) {
 	                return await vdro.GetDotNetObject<List<string>>("data.keys");
-//	                string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
-  //                  List<string> keys = VaultUtilityFX.ConvertJSON<List<string>> (js);
-    //                return keys;
                 }
 
                 throw new ApplicationException ("IdentitySecretEngine:ListEntitiesByName -> Arrived at unexpected code block.");
@@ -175,7 +171,10 @@ namespace VaultAgent.SecretEngines {
         }
 
 
-
+        /// <summary>
+        /// Lists the Entities by ID value
+        /// </summary>
+        /// <returns></returns>
         public async Task<List<Guid>> ListEntitiesByID () {
             string path = MountPointPath + "entity/id";
 
@@ -187,9 +186,6 @@ namespace VaultAgent.SecretEngines {
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListEntitesByID", contentParams);
                 if ( vdro.Success ) {
 	                return await vdro.GetDotNetObject<List<Guid>>("data.keys");
-                    //string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
-//                    List<Guid> keys = VaultUtilityFX.ConvertJSON<List<Guid>> (js);
-  //                  return keys;
                 }
 
                 throw new ApplicationException ("IdentitySecretEngine:ListEntitiesByID -> Arrived at unexpected code block.");
@@ -202,7 +198,11 @@ namespace VaultAgent.SecretEngines {
         }
 
 
-
+        /// <summary>
+        /// Merges Entities Together.  This is not Implemented at this time.
+        /// </summary>
+        /// <param name="idToMergeTo"></param>
+        /// <param name="entityIDsToMerge"></param>
         public void MergeEntities (string idToMergeTo, string [] entityIDsToMerge) { throw new NotImplementedException(); }
 
 
@@ -230,7 +230,6 @@ namespace VaultAgent.SecretEngines {
             VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "IdentityEngine: SaveAlias", contentParams);
             if ( vdro.Success ) {
 	            string id = await vdro.GetDotNetObject<string>("data.id");
-//                string id = vdro.GetDataPackageFieldAsJSON ("id");
                 Guid guid = new Guid (id);
                 return guid;
             }
@@ -251,11 +250,6 @@ namespace VaultAgent.SecretEngines {
             VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "IdentityEngine: ReadAlias (AliasID)", null);
             if ( vdro.Success ) {
 	            return await vdro.GetDotNetObject<EntityAlias>();
-//                string json = vdro.GetDataPackageAsJSON();
-
-                //return true;
-  //              EntityAlias entityAlias = vdro.GetVaultTypedObject<EntityAlias>();
-    //            return entityAlias;
             }
 
             return null;
@@ -307,6 +301,10 @@ namespace VaultAgent.SecretEngines {
 
 
 
+        /// <summary>
+        /// Returns a List of Entity Aliasa
+        /// </summary>
+        /// <returns></returns>
         public async Task<List<Guid>> ListAliases () {
             string path = MountPointPath + "entity-alias/id";
 
@@ -318,9 +316,6 @@ namespace VaultAgent.SecretEngines {
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListAliases", contentParams);
                 if ( vdro.Success ) {
 	                return await vdro.GetDotNetObject<List<Guid>>("data.keys");
-//                    string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
-  //                  List<Guid> keys = VaultUtilityFX.ConvertJSON<List<Guid>> (js);
-    //                return keys;
                 }
 
                 throw new ApplicationException ("IdentitySecretEngine:ListAliases -> Arrived at unexpected code block.");
