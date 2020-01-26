@@ -305,7 +305,7 @@ namespace VaultAgent.Test.ModelTests
 
             // Set extended attribute values.
             a.CreatedTime = DateTimeOffset.Now;
-            a.DeletionTime = "abc";
+            a.DeletionTime = DateTimeOffset.Now;
             a.IsDestroyed = true;
             a.Version = 19;
 

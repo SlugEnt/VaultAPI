@@ -36,7 +36,7 @@ namespace VaultAgent.SecretEngines.KeyValue2
         /// <summary>
         /// The Attributes of the secret.  These are the names and values that are being stored in this secret.
         /// </summary>
-        Dictionary<string, string> Attributes { get; set; }
+        Dictionary<string, string> Attributes { get; }
 
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace VaultAgent.SecretEngines.KeyValue2
         /// <summary>
         /// When the secret was deleted.
         /// </summary>
-        string DeletionTime { get; }
+        DateTimeOffset DeletionTime { get; }
 
 
         /// <summary>
@@ -64,8 +64,8 @@ namespace VaultAgent.SecretEngines.KeyValue2
 
 
         /// <summary>
-        /// Version number of this iteration of the secret, if using versioning.
+        /// Version number of this iteration of the secret, if using versioning. You should NEVER SET this property.  It is settable because the engine needs to update it.
         /// </summary>
-        int Version { get;  }
+        int Version { get; }
     }
 }
