@@ -98,7 +98,7 @@ namespace VaultAgent.SecretEngines.KV2 {
         public SecretReadReturnObjData (bool manualCreation = true) {
             SecretObj = (V)Activator.CreateInstance(typeof(V));
             //SecretObj = new V();
-            Metadata = new Metadata();
+            Metadata = new KV2VaultReadSaveReturnObj();
         }
 
 
@@ -113,11 +113,11 @@ namespace VaultAgent.SecretEngines.KV2 {
         /// The metadata - such as creation times, etc for this particular secret object.
         /// </summary>
         [JsonProperty ("metadata")]
-        public Metadata Metadata { get; internal set; }
+        public KV2VaultReadSaveReturnObj Metadata { get; internal set; }
     }
 
 
-
+    /* TODO Remove PErmanently once tested.  This internal class was replaced with a public class - KV2VaultReadSaveReturnObj.cs since it was used in more than 1 method
     /// <summary>
     /// This class is Vault Secret MetaData that tracks some values related to a given secret.
     /// Items tracked include when it was created and/or deleted, as well as if it is currently marked soft deleted and what the version # is.
@@ -150,7 +150,7 @@ namespace VaultAgent.SecretEngines.KV2 {
         [JsonProperty ("version")]
         public int Version { get; internal set; }
     }
-
+    */
 
 
     // All of the following code is for the JSON conversion.

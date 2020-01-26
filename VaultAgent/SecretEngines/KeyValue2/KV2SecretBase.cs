@@ -132,7 +132,7 @@ namespace VaultAgent.SecretEngines.KeyValue2
             /// <summary>
             /// When this particular secret version was deleted from the Vault data store.
             /// </summary>
-            public string DeletionTime { get; internal set; }
+            public DateTimeOffset DeletionTime { get; internal set; }
 
 
             /// <summary>
@@ -144,7 +144,7 @@ namespace VaultAgent.SecretEngines.KeyValue2
             /// <summary>
             /// The version number of this particular secret.  Is > 0 if the secret was read from the Vault.  Is zero if this object was created in application.
             /// </summary>
-            public int Version { get; internal set; }
+            public int Version { get; internal set; } = 0;
 
 
 

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using NUnit.Framework;
@@ -84,6 +85,50 @@ namespace VaultAgentTests {
 
 
 
+        // Confirms that when Reading or Saving a secret, the KV2VaultReadReturnObjData element is read correctly from Vault and updates the secrets properties
+        [Test]
+        public async Task KV2VaultReadReturnObjData_Works () {
+	        KV2SecretEngineSettings s = await _casMount.GetBackendConfiguration();
+	        Assert.AreEqual(true, s.CASRequired, "A1: Expected the Backend to be mounted in CAS Mode, but it was not.  Cannot test further.");
+
+
+	        // Generate a key.
+	        string secName = _uniqueKey.GetKey("KVRRODW");
+	        KV2Secret secretV2 = new KV2Secret(secName);
+	        KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
+            secretV2.Attributes.Add(kv1.Key,kv1.Value);
+
+            // Verify before values
+            Assert.AreEqual(DateTimeOffset.MinValue,secretV2.CreatedTime);
+            Assert.AreEqual(DateTimeOffset.MinValue, secretV2.DeletionTime);
+            Assert.IsFalse(secretV2.IsDestroyed);
+            Assert.AreEqual(0,secretV2.Version,"A10:  Initial Secret Version should be 0");
+
+
+            // Save the Secret, which will updated the Version and Created fields
+            Assert.True(await _casMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist));
+
+	        // Validate the Values
+	        Assert.AreEqual(1, secretV2.Version, "A20:  Secret Version was not set correctly after save");
+            Assert.AreNotEqual(DateTimeOffset.MinValue,secretV2.CreatedTime,"A30:  Secret Creation Time was not updated during save");
+            Assert.AreEqual(DateTimeOffset.MinValue, secretV2.DeletionTime);
+            Assert.IsFalse(secretV2.IsDestroyed);
+
+
+
+            // 2. Read the secret back in a new secret object to confirm read also sets these values
+            KV2Secret s2 = await _casMount.ReadSecret<KV2Secret>(secName);
+	        Assert.True(secretV2.Path == s2.Path);
+	        Assert.Contains(kv1,s2.Attributes);
+
+	        Assert.AreEqual(1, secretV2.Version, "A100:  Secret Version was not set correctly after save");
+	        Assert.AreNotEqual(DateTimeOffset.MinValue, secretV2.CreatedTime, "A100:  Secret Creation Time was not updated during save");
+	        Assert.AreEqual(DateTimeOffset.MinValue, secretV2.DeletionTime);
+	        Assert.IsFalse(secretV2.IsDestroyed);
+        }
+
+
+
         #region "CAS True Testing"
 
 
@@ -94,8 +139,7 @@ namespace VaultAgentTests {
             Assert.AreEqual (6, s.MaxVersions, "A10: Expected the backend to have the property MaxVersions set to 6.  But it was: " + s.MaxVersions.ToString());
         }
 
-
-
+        
         /// <summary>
         /// Confirms that if the backend is set to require CAS, then a secret without CAS specified will fail.
         /// </summary>
@@ -140,12 +184,15 @@ namespace VaultAgentTests {
             Assert.True (await _casMount.SaveSecret (secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist),
                          "A10: Expected the secret to be saved and return True, but it returned False instead.");
 
+            // Secret Version should have been updated.
+            Assert.AreEqual(1,secretV2.Version, "A12:  Secret Version was not set correctly");
 
             // Read the Secret back to confirm the save.
             KV2Secret s2 = await _casMount.ReadSecret (secretV2);
             Assert.AreEqual (secretV2.Path, s2.Path, "A20: Expected the secret paths to be the same.  They were different.");
             Assert.Contains (kv1, s2.Attributes, "A30:  The secret appears to be missing some Attributes that we requested be saved.");
             Assert.Contains (kv2, s2.Attributes, "A40:  The secret appears to be missing some Attributes that we requested be saved.");
+            Assert.AreEqual(1, s2.Version, "A42:  Secret Version was not set correctly");
 
             TestContext.WriteLine ("Secret Info:");
             TestContext.WriteLine ("  Backend MountPoint:  {0}", _casMount.MountPointPath);
@@ -177,6 +224,10 @@ namespace VaultAgentTests {
             // Save Secret passing CAS option of 0 for new update.
             Assert.True (await _casMount.SaveSecret (secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist));
 
+            // Secret Version should have been updated.
+            Assert.AreEqual(1, secretV2.Version, "A12:  Secret Version was not set correctly");
+
+
 
             // 2. Read the secret back and get the version
             KV2Secret s2 = await _casMount.ReadSecret (secretV2);
@@ -188,6 +239,10 @@ namespace VaultAgentTests {
             KeyValuePair<string, string> kv2 = new KeyValuePair<string, string> ("b", "2");
             secretV2.Attributes.Add (kv2.Key, kv2.Value);
             Assert.True (await _casMount.SaveSecret (secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, s2.Version));
+
+            // Secret Version should have been updated.
+            Assert.AreEqual(2, secretV2.Version, "A22:  Secret Version was not set correctly");
+
         }
 
 

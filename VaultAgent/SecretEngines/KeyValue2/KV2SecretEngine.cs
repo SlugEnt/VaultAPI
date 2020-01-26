@@ -412,19 +412,16 @@ namespace VaultAgent.SecretEngines
                 {
                     KV2SecretWrapper<T> secretReadReturnObj = await vdro.GetDotNetObject<KV2SecretWrapper<T>>("");
 
-                    //IKV2SecretWrapper secretReadReturnObj = IKV2SecretWrapper.FromJson (vdro.GetResponsePackageAsJSON());
-
                     // We now need to move some fields from the IKV2SecretWrapper into the IKV2Secret which is embedded in the 
                     // wrapper class.
                     secretReadReturnObj.Secret.CreatedTime = secretReadReturnObj.Data.Metadata.CreatedTime;
-                    secretReadReturnObj.Secret.DeletionTime = secretReadReturnObj.Data.Metadata.DeletionTime;
+                    secretReadReturnObj.Secret.DeletionTime = (DateTimeOffset) secretReadReturnObj.Data.Metadata.DeletionTime;
                     secretReadReturnObj.Secret.IsDestroyed = secretReadReturnObj.Data.Metadata.Destroyed;
                     secretReadReturnObj.Secret.Version = secretReadReturnObj.Data.Metadata.Version;
 
                     // Now get the secret obj, remove it from the wrapper - so the class can be deleted and then return to caller.
                     T secret = secretReadReturnObj.Secret;
 
-                    //IKV2Secret secret = secretReadReturnObj.Secret;
                     secretReadReturnObj.Secret = null;
                     return secret;
                 }
@@ -475,8 +472,9 @@ namespace VaultAgent.SecretEngines
 
 
         /// <summary>
-        ///     Saves the provided IKV2Secret object.  You must specify a save option and optionally what the current version of
-        ///     the secret is.
+        ///     Saves the provided K2Secret object.  You must specify a save option and optionally what the current version of
+        ///     the secret is.  The KV2Secret object's version # will be updated on success with what the new version of the
+        ///     secret it.
         ///     If the CAS setting is set on the backend then the following errors may be returned:
         ///     <para></para>
         ///     <para>Commonly Throws the Following Errors:</para>
@@ -516,8 +514,10 @@ namespace VaultAgent.SecretEngines
         ///     (Default mode).
         /// </param>
         /// <returns></returns>
-        public async Task<bool> SaveSecret(IKV2Secret secret, KV2EnumSecretSaveOptions casSaveOption,
-            int currentVersion = 0)
+        //public async Task<bool> SaveSecret(IKV2Secret secret, KV2EnumSecretSaveOptions casSaveOption,
+        //    int currentVersion = 0)
+        public async Task<bool> SaveSecret<T>(T secret, KV2EnumSecretSaveOptions casSaveOption,
+                                              int currentVersion = 0) where T : KV2SecretBase<T>
         {
             string path = MountPointPath + "data/" + secret.FullPath;
 
@@ -546,59 +546,57 @@ namespace VaultAgent.SecretEngines
             reqData.Add("options", options);
             reqData.Add("data", secret);
 
-            try
-            {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B(path, "SaveSecret", reqData);
-                if (vdro.Success) return true;
+            try {
+	            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B(path, "SaveSecret", reqData);
+	            if ( vdro.Success ) {
+		            KV2VaultReadSaveReturnObj obj = await vdro.GetDotNetObject<KV2VaultReadSaveReturnObj>();
+		            if ( obj != null ) {
+			            secret.Version = obj.Version;
+			            secret.CreatedTime = obj.CreatedTime;
+			            secret.DeletionTime = (DateTimeOffset) obj.DeletionTime;
+			            secret.IsDestroyed = obj.Destroyed;
+		            }
 
-                return false;
+		            return true;
+	            }
+
+	            return false;
             }
-            catch (VaultInvalidDataException e)
-            {
-                if (e.Message.Contains("check-and-set parameter required for this call"))
-                {
-                    VaultInvalidDataException eNew =
-                        new VaultInvalidDataException(Constants.Error_CAS_Set + " | Original Error message was: " +
-                                                      e.Message);
-                    eNew.SpecificErrorCode = EnumVaultExceptionCodes.CheckAndSetMissing;
-                    throw eNew;
-                }
+            catch ( VaultInvalidDataException e ) {
+	            if ( e.Message.Contains("check-and-set parameter required for this call") ) {
+		            VaultInvalidDataException eNew = new VaultInvalidDataException(Constants.Error_CAS_Set + " | Original Error message was: " + e.Message);
+		            eNew.SpecificErrorCode = EnumVaultExceptionCodes.CheckAndSetMissing;
+		            throw eNew;
+	            }
 
-                // Check for Version errors:
+	            // Check for Version errors:
 
-                if (e.Message.Contains("did not match the current version"))
-                {
-                    // If user requested that the save happen only if the key does not already exist then return customized error message.
-                    if (casSaveOption == KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist)
-                    {
-                        VaultInvalidDataException eNew = new VaultInvalidDataException(
-                            Constants.Error_CAS_SecretAlreadyExists +
-                            " | Original Error message was: " +
-                            e.Message);
-                        eNew.SpecificErrorCode = EnumVaultExceptionCodes.CAS_SecretExistsAlready;
-                        throw eNew;
-                    }
+	            if ( e.Message.Contains("did not match the current version") ) {
+		            // If user requested that the save happen only if the key does not already exist then return customized error message.
+		            if ( casSaveOption == KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist ) {
+			            VaultInvalidDataException eNew = new VaultInvalidDataException(
+				            Constants.Error_CAS_SecretAlreadyExists + " | Original Error message was: " + e.Message);
+			            eNew.SpecificErrorCode = EnumVaultExceptionCodes.CAS_SecretExistsAlready;
+			            throw eNew;
+		            }
 
-                    // Customize the version discrepancy message
-                    else
-                    {
-                        VaultInvalidDataException eNew = new VaultInvalidDataException(
-                            Constants.Error_CAS_InvalidVersion + " Version specified was: " + currentVersion +
-                            " | Original Error message was: " + e.Message);
-                        eNew.SpecificErrorCode = EnumVaultExceptionCodes.CAS_VersionMissing;
-                        throw eNew;
-                    }
-                }
+		            // Customize the version discrepancy message
+		            else {
+			            VaultInvalidDataException eNew = new VaultInvalidDataException(
+				            Constants.Error_CAS_InvalidVersion + " Version specified was: " + currentVersion + " | Original Error message was: " + e.Message);
+			            eNew.SpecificErrorCode = EnumVaultExceptionCodes.CAS_VersionMissing;
+			            throw eNew;
+		            }
+	            }
 
-                throw new VaultInvalidDataException(e.Message);
+	            throw new VaultInvalidDataException(e.Message);
             }
-            catch (VaultForbiddenException e)
-            {
-                if (e.Message.Contains("* permission denied"))
-                    e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied;
+            catch ( VaultForbiddenException e ) {
+	            if ( e.Message.Contains("* permission denied") ) e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied;
 
-                throw e;
+	            throw e;
             }
+            catch ( Exception e ) { throw e; }
         }
 
 

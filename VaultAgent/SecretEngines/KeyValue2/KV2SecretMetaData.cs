@@ -9,7 +9,7 @@ using Newtonsoft.Json.Converters;
 namespace VaultAgent.SecretEngines.KV2.SecretMetaDataInfo {
 
     /// <summary>
-    /// Class used to hold a Key Value 2 Secret's metadata
+    /// Class used to hold a Key Value 2 Secret's metadata or information about the secret that Vault Stores.  Mostly Timestamps and Version Info
     /// </summary>
     public partial class KV2SecretMetaDataInfo {
         /// <summary>
@@ -57,7 +57,7 @@ namespace VaultAgent.SecretEngines.KV2.SecretMetaDataInfo {
 
 
     /// <summary>
-    /// The MetaData Related Information in regards to the version
+    /// The MetaData Related Information in regards to the particular version of the secret
     /// </summary>
     public partial class MetaDataVersion {
 
