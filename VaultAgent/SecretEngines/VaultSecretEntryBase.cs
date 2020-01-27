@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using VaultAgent.Backends;
@@ -7,6 +8,10 @@ using VaultAgent.SecretEngines;
 using VaultAgent.SecretEngines.KeyValue2;
 using VaultAgent.SecretEngines.KV2;
 using VaultAgent.SecretEngines.KV2.SecretMetaDataInfo;
+
+// Allow Testing project to access KV2SecretWrapper to perform tests.
+[assembly: InternalsVisibleTo("VaultAgent.Test")]
+
 
 namespace VaultAgent.SecretEngines
 {
@@ -18,8 +23,8 @@ namespace VaultAgent.SecretEngines
 	/// </summary>
 	public abstract class VaultSecretEntryBase : IKV2Secret { //: KV2SecretBase<VaultSecretEntryNoCAS> {
 		private KV2SecretEngine _kv2SecretEngine = null;
-		private KV2Secret _secret;
-		private KV2SecretMetaDataInfo _info;
+		protected KV2Secret _secret;
+		protected KV2SecretMetaDataInfo _info;
 
 
 		/// <summary>
@@ -328,6 +333,159 @@ namespace VaultAgent.SecretEngines
 		public async Task<VaultSecretEntryBase> VSE_SaveAs (string name, string path, KV2SecretEngine secretEngine = null) {
 			throw new NotImplementedException();
 		}
-		#endregion
-	}
+        #endregion
+
+        #region "Attribute Accessor Methods"
+
+
+        /// <summary>
+        /// Retrieves the attributeName from the Attributes List.  If it does not exist of if the value is not a number (including empty string) then null is returned.  Otherwise the integer is returned
+        /// </summary>
+        /// <param name="attributeName">Name of the attribute to retrieve</param>
+        /// <returns></returns>
+        protected internal int? GetIntAttributeNullable(string attributeName)
+        {
+            // Try and Get the value.
+            bool result = _secret.Attributes.TryGetValue(attributeName, out string value);
+            if (result)
+            {
+                if (value == "") return null;
+
+                // Now try and convert to integer
+                result = int.TryParse(value, out int number);
+                if (result) return number;
+
+                string errMsg =
+                    string.Format(
+                        "VSE Secret [{0}] had an issue converting one of it's attribute values from a string to an integer.  Attribute Name [{1}].  The value was [{2}]",
+                        _secret.Name, attributeName, value);
+                throw new ArgumentOutOfRangeException(errMsg);
+            }
+
+            return null;
+        }
+
+
+        /// <summary>
+        /// Retrieves the attributeName from the Attributes List.  If it does not exist or if the value is not a number (including empty string) then 0 is returned.  Otherwise the integer is returned.
+        /// </summary>
+        /// <param name="attributeName">Name of the attribute to retrieve</param>
+        /// <returns></returns>
+        protected internal int GetIntAttributeDefault (string attributeName)
+        {
+            int defaultValue = 0;
+
+            // Try and Get the value.
+            bool result = _secret.Attributes.TryGetValue(attributeName, out string value);
+            if (result)
+            {
+                if (value == "") return defaultValue;
+
+                // Now try and convert to integer
+                result = int.TryParse(value, out int number);
+                if (result) return number;
+
+                string errMsg =
+                    string.Format(
+                        "VSE Secret [{0}] had an issue converting one of it's attribute values from a string to an integer.  Attribute Name [{1}].  The value was [{2}]",
+                        _secret.Name, attributeName, value);
+                throw new ArgumentOutOfRangeException(errMsg);
+            }
+
+            return defaultValue;
+        }
+
+
+
+        /// <summary>
+        /// Saves the given integer value into the Attributes List under the provided AttributeName
+        /// </summary>
+        /// <param name="attributeName">Name of the Attribute to save the value under</param>
+        /// <param name="value">The value to be stored</param>
+        protected internal void SetIntAttribute(string attributeName, int value)
+        {
+            _secret.Attributes[attributeName] = value.ToString();
+        }
+
+
+
+        /// <summary>
+        /// Saves the given DateTimeOffset value into the Attributes List under the provided AttributeName
+        /// </summary>
+        /// <param name="attributeName">Name of the Attribute to save the value under</param>
+        /// <param name="value">The value to be stored</param>
+        protected internal void SetDateTimeOffsetAttribute(string attributeName, DateTimeOffset value)
+        {
+            _secret.Attributes[attributeName] = value.ToUnixTimeSeconds().ToString();
+        }
+
+
+
+        /// <summary>
+        /// Retrieves the attributeName from the Attributes List.  If it does not exist or if the value is not a number (including empty string) then DateTimeOffset.MinValue is returned.  Otherwise the integer is returned.
+        /// </summary>
+        /// <param name="attributeName">Name of the attribute to retrieve</param>
+        /// <returns></returns>
+        protected internal DateTimeOffset GetDateTimeOffsetAttributeDefault(string attributeName)
+        {
+            DateTimeOffset defaultValue = DateTimeOffset.MinValue;
+
+            // Try and Get the value.
+            bool result = _secret.Attributes.TryGetValue(attributeName, out string value);
+            if (result)
+            {
+                if (value == "") return defaultValue;
+
+                // Now try and convert to long
+                result = long.TryParse(value, out long number);
+                if (!result)
+                {
+                    string errMsg =
+                        string.Format(
+                            "VSE Secret [{0}] had an issue converting one of it's attribute values from a string to a DateTimeOffset.  Attribute Name [{1}].  The value was [{2}]",
+                            _secret.Name, attributeName, value);
+                    throw new ArgumentOutOfRangeException(errMsg);
+                }
+                DateTimeOffset returnDate = DateTimeOffset.FromUnixTimeSeconds(number);
+                return returnDate;
+            }
+
+            return defaultValue;
+        }
+
+
+
+        /// <summary>
+        /// Retrieves the attributeName from the Attributes List.  If it does not exist or if the value is not a number (including empty string) then null is returned.  Otherwise the integer is returned.
+        /// </summary>
+        /// <param name="attributeName">Name of the attribute to retrieve</param>
+        /// <returns></returns>
+        protected internal DateTimeOffset? GetDateTimeOffsetAttributeNullable(string attributeName)
+        {
+            // Try and Get the value.
+            bool result = _secret.Attributes.TryGetValue(attributeName, out string value);
+            if (result)
+            {
+                if (value == "") return null;
+
+                // Now try and convert to long
+                result = long.TryParse(value, out long number);
+                if (!result)
+                {
+                    string errMsg =
+                        string.Format(
+                            "VSE Secret [{0}] had an issue converting one of it's attribute values from a string to a DateTimeOffset.  Attribute Name [{1}].  The value was [{2}]",
+                            _secret.Name, attributeName, value);
+                    throw new ArgumentOutOfRangeException(errMsg);
+                }
+                DateTimeOffset returnDate = DateTimeOffset.FromUnixTimeSeconds(number);
+                return returnDate;
+            }
+
+            return null;
+        }
+
+
+        #endregion
+    }
 }

@@ -1,8 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using VaultAgent.Backends;
+
+// Allow Testing project to access KV2SecretWrapper to perform tests.
+[assembly: InternalsVisibleTo("VaultAgent.Test")]
+
 
 namespace VaultAgent.SecretEngines
 {
