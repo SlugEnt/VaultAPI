@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -20,9 +21,13 @@ namespace VaultAgentTests
 		private VaultAgentAPI _vaultAgentAPI;
 		private SlugEnt.UniqueKeys _uniqueKey = new UniqueKeys();
 
-        
 
-		[OneTimeSetUp]
+        // 1/27/2020 1:50:35 PM GMT
+        private long _unixEpochTime = 1580133035;
+        private DateTimeOffset _theDate = new DateTimeOffset();
+
+
+        [OneTimeSetUp]
 		public async Task Setup () {
             if (_vaultAgentAPI != null) { return; }
 
@@ -57,6 +62,13 @@ namespace VaultAgentTests
             // Set backend mount config.
             Assert.True(await _noCASMount.SetBackendConfiguration(8, false));
             Assert.True(await _casMount.SetBackendConfiguration(8, false));
+
+
+
+
+            // Setup the DateTimeOffset Fields
+            _theDate = DateTimeOffset.FromUnixTimeSeconds(_unixEpochTime);
+
         }
 
 
@@ -265,6 +277,198 @@ namespace VaultAgentTests
             success = await secretA.VSE_SaveUpdate();
             Assert.IsTrue(success);
             Assert.AreEqual(3, secretA.Version);
+        }
+
+
+
+        #endregion
+
+        #region "Attribute Accessor Methods"
+
+        [Test]
+        [TestCase(0)]
+        [TestCase(-990)]
+        [TestCase(2050)]
+        public void IntAttributeSet_Success (int value)
+        {
+            string attrName = "AttrA";
+            VaultSecretEntry vseA = new VaultSecretEntry();
+
+            // Save value
+            vseA.SetIntAttribute(attrName, value);
+
+            string lookupValue = vseA.Attributes[attrName];
+            Assert.AreEqual(value.ToString(),lookupValue);
+        }
+
+
+
+        // Validates that GetIntAttributeNullable Works
+        [Test]
+        [TestCase(0)]
+        [TestCase(-990)]
+        [TestCase(2050)]
+        public void IntAttributeGetNullable_Success (int value)
+        {
+            string attrName = "AttrA";
+            VaultSecretEntry vseA = new VaultSecretEntry();
+
+            // Save value
+            vseA.SetIntAttribute(attrName, value);
+
+            // Get Value
+            int? answer = vseA.GetIntAttributeNullable(attrName);
+            Assert.NotNull(answer, "A10:  Expected a number, not a Null value");
+            Assert.AreEqual(value, answer);
+        }
+
+
+
+        // Validates that GetIntAttributeNullable returns null when value does not exist
+        [Test]
+        public void IntAttributeGetNullable_ReturnsNull()
+        {
+            string attrName = "AttrA";
+            VaultSecretEntry vseA = new VaultSecretEntry();
+
+            // We do not save anything in the Attributes, to force a null
+            
+            // Get Value
+            int? answer = vseA.GetIntAttributeNullable(attrName);
+            Assert.IsNull(answer);
+        }
+
+
+        // Validates that GetIntAttributeNullable returns null when empty string
+        [Test]
+        public void IntAttributeGetNullable_ReturnsNullOnEmptyString_Success()
+        {
+            string attrName = "AttrA";
+            string value = "";
+
+            VaultSecretEntry vseA = new VaultSecretEntry();
+            vseA.Attributes[attrName] = value;
+
+
+            // Get Value
+            int? answer = vseA.GetIntAttributeNullable(attrName);
+            Assert.IsNull (answer, "A10:  Expected a null value when string is empty");
+        }
+
+
+
+        [Test]
+        public void DateTimeOffsetSet_Success()
+        {
+            // 1/27/2020 1:50:35 PM GMT
+
+            // Validate the date is correct
+            Assert.AreEqual(1,_theDate.Month);
+            Assert.AreEqual(27, _theDate.Day);
+            Assert.AreEqual(2020,_theDate.Year);
+            Assert.AreEqual(13,_theDate.Hour);
+            Assert.AreEqual(50,_theDate.Minute);
+            Assert.AreEqual(35,_theDate.Second);
+
+
+            string attrName = "AttrA";
+            VaultSecretEntry vseA = new VaultSecretEntry();
+
+            // Save value
+            vseA.SetDateTimeOffsetAttribute(attrName, _theDate);
+
+            string lookupValue = vseA.Attributes[attrName];
+            Assert.AreEqual(_unixEpochTime.ToString(), lookupValue);
+        }
+
+
+
+        [Test]
+        public void DateTimeOffsetGetNullable_ReturnsNullOnEmptyString_Success()
+        {
+            string attrName = "AttrA";
+            string value = "";
+
+            VaultSecretEntry vseA = new VaultSecretEntry();
+            vseA.Attributes[attrName] = value;
+
+
+            // Get Value
+            DateTimeOffset? answer = vseA.GetDateTimeOffsetAttributeNullable(attrName);
+            Assert.IsNull(answer, "A10:  Expected a null value when string is empty");
+        }
+
+
+
+
+        // Validates that GetDateTimeOffsetAttributeNullable returns null when value does not exist
+        [Test]
+        public void DateTimeOffsetAttributeGetNullable_ReturnsNull()
+        {
+            string attrName = "AttrA";
+            VaultSecretEntry vseA = new VaultSecretEntry();
+
+            // We do not save anything in the Attributes, to force a null
+
+            // Get Value
+            DateTimeOffset? answer = vseA.GetDateTimeOffsetAttributeNullable(attrName);
+            Assert.IsNull(answer);
+        }
+
+
+
+
+        // Validates that GetDateTimeOffsetAttributeNullable Works
+        [Test]
+        [TestCase(0)]
+        [TestCase(95660023)]
+        [TestCase(5450343433)]
+        public void DateTimeOffsetAttributeGetNullable_Success(long value)
+        {
+            string attrName = "AttrA";
+            VaultSecretEntry vseA = new VaultSecretEntry();
+
+            DateTimeOffset aDate = new DateTimeOffset();
+            aDate = DateTimeOffset.FromUnixTimeSeconds(value);
+
+            // Save value
+            vseA.SetDateTimeOffsetAttribute(attrName, aDate);
+
+            // Get Value
+            DateTimeOffset? answer = vseA.GetDateTimeOffsetAttributeNullable(attrName);
+            Assert.NotNull(answer, "A10:  Expected a DateTime, not a Null value");
+
+            DateTimeOffset answer2 = (DateTimeOffset) answer;
+
+            long unixTimeSeconds = answer2.ToUnixTimeSeconds();
+
+            Assert.AreEqual(value, unixTimeSeconds);
+        }
+
+
+        // Validates that GetDateTimeOffsetAttributeNullable Works
+        [Test]
+        [TestCase(0)]
+        [TestCase(95660023)]
+        [TestCase(5450343433)]
+        public void DateTimeOffsetAttributeGetDefault_Success(long value)
+        {
+            string attrName = "AttrA";
+            VaultSecretEntry vseA = new VaultSecretEntry();
+
+            DateTimeOffset aDate = new DateTimeOffset();
+            aDate = DateTimeOffset.FromUnixTimeSeconds(value);
+
+            // Save value
+            vseA.SetDateTimeOffsetAttribute(attrName, aDate);
+
+            // Get Value
+            DateTimeOffset answer = vseA.GetDateTimeOffsetAttributeDefault(attrName);
+            Assert.NotNull(answer, "A10:  Expected a DateTime, not a Null value");
+
+            long unixTimeSeconds = answer.ToUnixTimeSeconds();
+
+            Assert.AreEqual(value, unixTimeSeconds);
         }
 
 

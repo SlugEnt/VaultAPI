@@ -125,13 +125,12 @@
             </summary>
             <param name="backendMountName"></param>
             <param name="backendMountPath"></param>
-            <param name="httpConnector"></param>
+            <param name="vault">A VaultAgentAPI object with connection info and a Token that can be used to perform AppRoleAuth Engine functions</param>
         </member>
         <member name="M:VaultAgent.AuthenticationEngines.AppRoleAuthEngine.#ctor(VaultAgent.VaultAgentAPI)">
             <summary>
             Constructor for the default AppRole authentication backend in Vault.
             </summary>
-            <param name="httpConnector"></param>
         </member>
         <member name="M:VaultAgent.AuthenticationEngines.AppRoleAuthEngine.SaveRole(VaultAgent.AuthenticationEngines.AppRole)">
             <summary>
@@ -159,6 +158,8 @@
             Reads the AppRole with the given name.  Returns an AppRole object or Null if the AppRole does not exist.
             </summary>
             <param name="appRoleName">String name of the app role to retrieve.</param>
+            <param name="readRoleID">If True, the method, will perform a second Read operation to get the Role ID.  By Default Vault does
+            not return the RoleID.  So, if you do not need the RoleID, then leaving this false is faster and more efficient</param>
             <returns>AppRole object.</returns>
         </member>
         <member name="M:VaultAgent.AuthenticationEngines.AppRoleAuthEngine.DeleteRole(VaultAgent.AuthenticationEngines.AppRole)">
@@ -211,6 +212,7 @@
             Generates a secret ID for a given Application Role.
             TODO - At this time this method does not support the cidr_list or token_bound_cidrs properties that restrict the IP addresses that can use a given token.
             </summary>
+            <param name="appRoleName">The name of the Application Role that you wish to generate a Secret ID For</param>
             <param name="returnFullSecret">Vault only returns an abbreviated secret object.  If you wish to have a fully populated one then set to true.  Default False.
             Note, that this in no way affects the secret itself.  By setting to true, we make an additional call to Vault to re-read the full secret object.  If you do not
             need the full secret information then leaving at false is faster.</param>
@@ -257,6 +259,67 @@
             <param name="roleName">Name of the application Role to check.</param>
             <returns>True if the role exists.</returns>
         </member>
+        <member name="T:VaultAgent.AuthenticationEngines.AppRoleSecret">
+            <summary>
+            An AppRoleSercret is the Secret ID which is associated with a particular Application Role.  This class represents the information that is 
+            returned from the Vault Engine when requesting the SecretID.
+            </summary>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.AppRoleSecret.#ctor">
+            <summary>
+            Constructor
+            </summary>
+        </member>
+        <member name="P:VaultAgent.AuthenticationEngines.AppRoleSecret.ID">
+            <summary>
+            The Secret ID value
+            </summary>
+        </member>
+        <member name="P:VaultAgent.AuthenticationEngines.AppRoleSecret.Accessor">
+            <summary>
+            An accessor that can be used to access this secret ID, without the need to know the SecretID.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.AuthenticationEngines.AppRoleSecret.CIDR_List">
+            <summary>
+            List of IP's that are allowed to access
+            </summary>
+        </member>
+        <member name="P:VaultAgent.AuthenticationEngines.AppRoleSecret.CreationTime">
+            <summary>
+            When this Secret ID was created
+            </summary>
+        </member>
+        <member name="P:VaultAgent.AuthenticationEngines.AppRoleSecret.ExpirationTime">
+            <summary>
+            When this secret ID expires
+            </summary>
+        </member>
+        <member name="P:VaultAgent.AuthenticationEngines.AppRoleSecret.LastUpdatedTime">
+            <summary>
+            The last time this secret ID was updated
+            </summary>
+        </member>
+        <member name="P:VaultAgent.AuthenticationEngines.AppRoleSecret.NumberOfUses">
+            <summary>
+            The number of uses remaining for this SecretID.  If 0, it is unlimited
+            </summary>
+        </member>
+        <member name="P:VaultAgent.AuthenticationEngines.AppRoleSecret.SecretID_TTl">
+            <summary>
+            How long in seconds until this SecretId expires
+            </summary>
+        </member>
+        <member name="P:VaultAgent.AuthenticationEngines.AppRoleSecret.TokenBoundCidrs">
+            <summary>
+            List of IP address blocks that can authenticate with this role ID.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.AuthenticationEngines.AppRoleSecret.Metadata">
+            <summary>
+            Additional information about this SecretID
+            </summary>
+        </member>
         <member name="T:VaultAgent.AuthenticationEngines.LdapAuthEngine">
              <summary>
              This is the Vault LDAP Authentication Backend.  One or more instances of this can facilitate the use of an Active Directory or LDAP
@@ -277,6 +340,14 @@
              
              </summary>
         </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LdapAuthEngine.#ctor(System.String,System.String,VaultAgent.VaultAgentAPI)">
+            <summary>
+            Constructor for the LDAPAuthEngine, which provides a means to login via LDAP.
+            </summary>
+            <param name="ldapName">Name to be given to this engine</param>
+            <param name="backendMountPoint">The MountPoint in Vault that this engine should mount to</param>
+            <param name="vault">VaultAgentAPI object that contains connection and token information with sufficient access to allow the Engine to perform its tasks.</param>
+        </member>
         <member name="M:VaultAgent.AuthenticationEngines.LdapAuthEngine.ConfigureLDAPBackend(VaultAgent.AuthenticationEngines.LDAP.LdapConfig)">
             <summary>
             Sets the configuration for the given LDAP Backend.  The configuration is everything need to setup an LDAP connection.
@@ -286,7 +357,7 @@
         </member>
         <member name="M:VaultAgent.AuthenticationEngines.LdapAuthEngine.ReadLDAPConfig">
             <summary>
-            Reads the LDAP Config that corresponds to this engine.  Returns a LdapConfig object if it can find the config.
+            Reads the LDAP Config from the Vault that corresponds to this engine.  Returns a LdapConfig object if it can find the config.
             </summary>
             <returns></returns>
         </member>
@@ -332,15 +403,15 @@
             Logs the user into the LDAP backend.
             <para>Throws a VaultInvalidaDataException if the login failed for any reason.</para>
             </summary>
-            <param name="userName"></param>
-            <param name="password"></param>
+            <param name="userName">The ldap user name that wants to login</param>
+            <param name="password">The password for said user</param>
             <returns></returns>
         </member>
         <member name="M:VaultAgent.AuthenticationEngines.LdapAuthEngine.GetLDAPConfigFromFile(System.String)">
             <summary>
             Returns an LDAPConfig object that was initialized from values in a config file.
             </summary>
-            <param name="filename"></param>
+            <param name="filename">The file that contains the LDAP configuration you wish to load</param>
             <returns></returns>
         </member>
         <member name="T:VaultAgent.AuthenticationEngines.LDAP.LdapConfig">
@@ -413,10 +484,23 @@
             <para>Example: ou=Groups,dc=example,dc=com</para>
             </summary>
         </member>
-        <!-- Badly formed XML comment ignored for member "P:VaultAgent.AuthenticationEngines.LDAP.LdapConfig.GroupFilter" -->
+        <member name="P:VaultAgent.AuthenticationEngines.LDAP.LdapConfig.GroupFilter">
+            <summary>
+            Go template used when constructing the group membership query. The template can access the following context
+            variables: [UserDN, Username]. The default is (|(memberUid={{.Username}})(member={{.UserDN}})(uniqueMember={{.UserDN}})),
+            which is compatible with several common directory schemas. To support nested group resolution for Active Directory,
+            instead use the following query: ( [AMPERSANd] (objectClass=group)(member:1.2.840.113556.1.4.1941:={{.UserDN}}))
+            <para>See the SetADGroupFilter to automatically set it to the correct value for AD.</para>
+            </summary>
+        </member>
         <member name="P:VaultAgent.AuthenticationEngines.LDAP.LdapConfig.InsecureTLS">
             <summary>
              If true, skips LDAP server SSL certificate verification - insecure, use with caution!
+            </summary>
+        </member>
+        <member name="P:VaultAgent.AuthenticationEngines.LDAP.LdapConfig.IsActiveDirectoryConnection">
+            <summary>
+            True if this is an Active Directory LDAP Connection
             </summary>
         </member>
         <member name="P:VaultAgent.AuthenticationEngines.LDAP.LdapConfig.StartTLS">
@@ -470,6 +554,11 @@
             Sets Certain fields to their expected Active Directory Defaults.
             </summary>
         </member>
+        <member name="P:VaultAgent.AuthenticationEngines.LDAP.LdapConfig.UsePre111Groups">
+            <summary>
+            Uses Pre Vault 1.11 Group Behavior.  See Vault Documentation for details
+            </summary>
+        </member>
         <member name="M:VaultAgent.AuthenticationEngines.LDAP.LdapConfig.FullDNValue(System.String)">
             <summary>
             Takes the passed in dn and appends the DN_Suffix to it, returning the full value.
@@ -477,11 +566,16 @@
             <param name="dn"></param>
             <returns></returns>
         </member>
+        <member name="T:VaultAgent.AuthenticationEngines.TokenAuthEngine">
+            <summary>
+            The TokenAuthEngine is what enables users to authenticate with a token and perform token related tasks.
+            </summary>
+        </member>
         <member name="M:VaultAgent.AuthenticationEngines.TokenAuthEngine.#ctor(VaultAgent.VaultAgentAPI)">
             <summary>
             Constructor for the TokenAuthEngine
             </summary>
-            <param name="httpConnector">VaultAPI_Http object used to communicate with the Vault Instance.</param>
+            <param name="vaultAgentAPI">Vault object with connectivity and Token information to be used to connect to the Token Engine.</param>
         </member>
         <member name="M:VaultAgent.AuthenticationEngines.TokenAuthEngine.ListTokenAccessors">
             <summary>
@@ -588,6 +682,12 @@
             <param name="tokenRoleName">Name of the tokenRole to retrieve.</param>
             <returns>TokenRole object requested if valid name provided.</returns>
         </member>
+        <member name="M:VaultAgent.AuthenticationEngines.TokenAuthEngine.ListTokenRoles">
+            <summary>
+            Returns a List of Roles assigned to the Token
+            </summary>
+            <returns></returns>
+        </member>
         <member name="M:VaultAgent.AuthenticationEngines.TokenAuthEngine.DeleteTokenRole(System.String)">
             <summary>
             Deletes the specified tokenRoleName
@@ -596,9 +696,9 @@
             <returns>True if token role has been deleted.</returns>
         </member>
         <member name="T:VaultAgent.Backends.System.AuthConfig">
-            <summary>
-            Used to set configuration options for a particular Auth Method.
-            </summary>
+             <summary>
+            Class that represents Authentication information from the sys/Auth engine.
+             </summary>
         </member>
         <member name="P:VaultAgent.Backends.System.AuthConfig.DefaultLeaseTTL">
             <summary>
@@ -610,9 +710,39 @@
             Maximum amount of time that the token can be leased for before requiring a renewal.  
             </summary>
         </member>
+        <member name="P:VaultAgent.Backends.System.AuthConfig.PluginName">
+            <summary>
+            Unknown
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Backends.System.AuthConfig.Audit_NonHMAC_RequestKeys">
+            <summary>
+            List of keys that will not be HMAC'd by audit devices in the request object.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Backends.System.AuthConfig.Audit_NonHMAC_ResponseKeys">
+            <summary>
+            List of keys that will not be HMAC'd by audit devices in the response object.
+            </summary>
+        </member>
         <member name="P:VaultAgent.Backends.System.AuthConfig.ListingVisibility">
             <summary>
             Determines if this authentication method is listed in the GUI.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Backends.System.AuthConfig.PassThroughRequestHeaders">
+            <summary>
+            List of headers to whitelist and pass from the request to the plugin
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Backends.System.AuthConfig.AllowedResponseHeaders">
+            <summary>
+            List of headers to whitelist allowing a plugin to include them in the response.
+            </summary>
+        </member>
+        <member name="T:VaultAgent.Backends.System.AuthMethod">
+            <summary>
+            Class the represents a Vault Authentication Method
             </summary>
         </member>
         <member name="M:VaultAgent.Backends.System.AuthMethod.#ctor(System.String,System.String)">
@@ -629,6 +759,7 @@
             <summary>
             Constructor that accepts our EnumAuthMethod argument for constructing the method.
             </summary>
+            <param name="path">The path to the mount point for the provided Authentication Method</param>
             <param name="authenticationMethod">EnumAuthMethod - Type of authentication method object to create</param>
         </member>
         <member name="M:VaultAgent.Backends.System.AuthMethod.SetPathAndName(System.String)">
@@ -668,6 +799,11 @@
             A Vault Authentication Method configuration object that provides additional details about the Authentication Method.
             </summary>
         </member>
+        <member name="P:VaultAgent.Backends.System.AuthMethod.Accessor">
+            <summary>
+            Returned by Vault.
+            </summary>
+        </member>
         <member name="P:VaultAgent.Backends.System.AuthMethod.Local">
             <summary>
             Returned by Vault.  Not sure of purpose.
@@ -676,6 +812,66 @@
         <member name="P:VaultAgent.Backends.System.AuthMethod.SealWrap">
             <summary>
             /// Returned by Vault.  Not sure of purpose.
+            </summary>
+        </member>
+        <member name="T:VaultAgent.Backends.System.EnumAuthMethods">
+            <summary>
+            The types of Authentication Methods that Vault Supports.  Note, many of these are not implemented in this library but are listed here for completeness.
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumAuthMethods.AppRole">
+            <summary>
+            An Application Role Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumAuthMethods.AWS">
+            <summary>
+            An Amazon Web Services Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumAuthMethods.GoogleCloud">
+            <summary>
+            A Google Cloud Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumAuthMethods.Kubernetes">
+            <summary>
+            A Kurbernetes Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumAuthMethods.GitHub">
+            <summary>
+            A GitHub Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumAuthMethods.LDAP">
+            <summary>
+            An LDAP Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumAuthMethods.Okta">
+            <summary>
+            A Okta Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumAuthMethods.TLSCertificates">
+            <summary>
+            A TLSCertificate Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumAuthMethods.UsernamePassword">
+            <summary>
+            A UserNamePassword Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumAuthMethods.Token">
+            <summary>
+            An Azure Authentication Method
+            </summary>
+        </member>
+        <member name="T:VaultAgent.Backends.System.AuthMethodEnumConverters">
+            <summary>
+            Utility Class to convert Enum values of AuthMethods into strings
             </summary>
         </member>
         <member name="M:VaultAgent.Backends.System.AuthMethodEnumConverters.EnumAuthMethodsToString(VaultAgent.Backends.System.EnumAuthMethods)">
@@ -691,6 +887,56 @@
             </summary>
             <param name="authMethod">Vault proper string name for the authentication method.</param>
             <returns>EnumAuthMethod value for the given string name.</returns>
+        </member>
+        <member name="T:VaultAgent.Backends.System.EnumSecretBackendTypes">
+            <summary>
+            Enumeration that defines a numeric value for each Secret Backend Type
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumSecretBackendTypes.Transit">
+            <summary>
+            A Transit Secret Backend        
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumSecretBackendTypes.Secret">
+            <summary>
+            A Vault Secret Backend Version 1
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumSecretBackendTypes.AWS">
+            <summary>
+            An Amazon Web Services Secret Backend
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumSecretBackendTypes.CubbyHole">
+            <summary>
+            A CubbyHole Secret Backend
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumSecretBackendTypes.Generic">
+            <summary>
+            Not sure why I created this?
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumSecretBackendTypes.PKI">
+            <summary>
+            A PKI Certificate Secret Backend
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumSecretBackendTypes.SSH">
+            <summary>
+            An SSH Secret Backend
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumSecretBackendTypes.KeyValueV2">
+            <summary>
+            A Vault Secret Backend Version 2.  Also known as KV2.  This is preferred over the Secret Version 1 backend
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumSecretBackendTypes.Identity">
+            <summary>
+            An Identity Secret Backend
+            </summary>
         </member>
         <member name="T:VaultAgent.Backends.System.VaultPolicyContainer">
             <summary>
@@ -730,6 +976,7 @@
             </summary>
             <param name="path">The path to add to this policies permission list.  If the path already exists in the list then the existing object is returned.
             Otherwise a new defaulted object is returned.</param>
+            <param name="vaultPolicyPathItem">The VaultPolicyPathItem that was addeed or if it already existed, the existing one</param>
             <returns></returns>
         </member>
         <member name="M:VaultAgent.Backends.System.VaultPolicyContainer.AddPolicyPathObject(VaultAgent.Backends.System.VaultPolicyPathItem)">
@@ -812,16 +1059,24 @@
             Creates a Vault Policy Path Item object.  Note, that the protectedPath parameter will be interrogated to see if it indicates that
             this is an IsSubFolder or IsKV2 policy AND if the Answer is Yes, it WILL OVERRIDE any False setting for isSubFolder and isKV2 parameters
             passed in.
-            </summary>
             <param name="protectedPath">The path that this policy is applicable to and it must include the backend as the first part of the path in this method call.
             The following reserved words immediately following the backend mount name mean something special to KeyValue V2 backends and thus should never be used to identify
             the start of the path in ANY backend.  This class treats those as Extended Attribute Identifiers and the paths will not protect what you think:
             <para>    You have been warned.  These are:  metadata, data, destroy, delete, undelete.</para>
-            
             If the path ends with a trailing slash or /* then it is considered a SubSecretPolicyType (Meaning its permissions apply to subsecrets).
             If the path starts with a KV2 SubFolder then it will be considered to be a KV2Policy type.  </param>
+            </summary>
         </member>
-        <!-- Badly formed XML comment ignored for member "M:VaultAgent.Backends.System.VaultPolicyPathItem.#ctor(System.Boolean,System.String,System.String)" -->
+        <member name="M:VaultAgent.Backends.System.VaultPolicyPathItem.#ctor(System.Boolean,System.String,System.String)">
+            <summary>
+            Constructor for creating a KeyValue2 (KV2) type of policy object.  The protectedPath parameter MUST NOT contain the KV2 path prefix (data, metadata, etc).
+            If it does you will end up with a true protected path of /backend/data/data/pathA/pathB/secret
+            <param name="KeyValue2Type">MUST BE TRUE.  If set to false it will throw an error.</param>
+            <param name="backendMount">The name/path to the backend that this policy applies to.  Note, all leading/trailing slashes are removed.</param>
+            <param name="protectedPath">The path that this policy is applicable to.  If the path ends with a trailing slash or a trailing /* then it is considered
+            a SubFolderPolicyType (Meaning its permissions apply to subsecrets only). </param>
+            </summary>
+        </member>
         <member name="P:VaultAgent.Backends.System.VaultPolicyPathItem.Key">
             <summary>
             The key is simply the backend name + the protectedPath .
@@ -916,6 +1171,11 @@
             Sets the Sudo allowed attribute.  Sudo allows access to paths that are root-protected.  Tokens are not allowed to access these paths unless they have the sudo capability.
             </summary>
         </member>
+        <member name="P:VaultAgent.Backends.System.VaultPolicyPathItem.RootAllowed">
+            <summary>
+            The Root Allowed Permission
+            </summary>
+        </member>
         <member name="P:VaultAgent.Backends.System.VaultPolicyPathItem.Denied">
             <summary>
             Sets or Gets the Denied property.  This property will have one of 3 values:
@@ -992,8 +1252,6 @@
             </summary>
             <param name="backend">The Backend Mount component of the object.</param>
             <param name="protectedPath">The path that the policy is protecting.</param>
-            <param name="isKV2">True if the path object represents a KeyValue version 2 ACL property.</param>
-            <param name="isSubFolder">True if the path object represents sub items of the current path.</param>
             <returns></returns>
         </member>
         <member name="M:VaultAgent.Backends.System.VaultPolicyPathItem.ToVaultHCLPolicyFormat">
@@ -1023,7 +1281,15 @@
             implementation details.
             </summary>
         </member>
-        <!-- Badly formed XML comment ignored for member "M:VaultAgent.Backends.System.VaultPolicyPathItemKV2.#ctor(System.String,System.String)" -->
+        <member name="M:VaultAgent.Backends.System.VaultPolicyPathItemKV2.#ctor(System.String,System.String)">
+            <summary>
+            Constructor for creating a KeyValue2 (KV2) type of policy object.  The protectedPath parameter MUST NOT contain the KV2 path prefix (data, metadata, etc).
+            If it does you will end up with a true protected path of /backend/data/data/pathA/pathB/secret
+            <param name="backendMount">The name/path to the backend that this policy applies to.  Note, all leading/trailing slashes are removed.</param>
+            <param name="protectedPath">The path that this policy is applicable to.  If the path ends with a trailing slash or a trailing /* then it is considered
+            a SubFolderPolicyType (Meaning its permissions apply to subsecrets only).</param>
+            </summary>
+        </member>
         <member name="T:VaultAgent.Backends.System.VaultSysMountConfig">
             <summary>
             Represents the configuration settings for a given Vault Mount.  
@@ -1079,9 +1345,203 @@
             Comma-separated list of headers to whitelist and pass from the request to the backend.
             </summary>
         </member>
+        <member name="T:VaultAgent.Backends.EnumBackendTypes">
+            <summary>
+            Enum representing the possible  backends that Vault can support.  Note, not everything listed here is implemented at this time in this library.
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.Transit">
+            <summary>
+            A Transit Secret Backend
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.Secret">
+            <summary>
+            A Vault Secret Backend Version 1
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.AWS">
+            <summary>
+            An Amazon Web Services Secret Backend
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.CubbyHole">
+            <summary>
+            A CubbyHole Secret Backend
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.Generic">
+            <summary>
+            Not sure why I created this?
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.PKI">
+            <summary>
+            A PKI Certificate Secret Backend
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.SSH">
+            <summary>
+            An SSH Secret Backend
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.KeyValueV2">
+            <summary>
+            A Vault Secret Backend Version 2.  Also known as KV2.  This is preferred over the Secret Version 1 backend
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.Identity">
+            <summary>
+            An Identity Secret Backend
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.A_AppRole">
+            <summary>
+            An Application Role Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.A_AWS">
+            <summary>
+            An Amazon Web Services Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.A_GoogleCloud">
+            <summary>
+            A Google Cloud Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.A_Kubernetes">
+            <summary>
+            A Kurbernetes Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.A_GitHub">
+            <summary>
+            A GitHub Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.A_LDAP">
+            <summary>
+            An LDAP Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.A_Okta">
+            <summary>
+            A Okta Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.A_TLSCertificates">
+            <summary>
+            A TLSCertificate Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.A_UsernamePassword">
+            <summary>
+            A UserNamePassword Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.A_Token">
+            <summary>
+            An Azure Authentication Method
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.EnumBackendTypes.NotDefined">
+            <summary>
+            This is the default.  Unit tests should test each backend and make sure each class overrides the type.
+            </summary>
+        </member>
+        <member name="T:VaultAgent.Backends.KV2EnumSecretSaveOptions">
+            <summary>
+            The options that determine when a KeyValue2 Type Secret will be allowed to be saved to the Vault.
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist">
+            <summary>
+            Saving of the Secret in Vault will be permitted only if it does not already exist in the Vault.
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch">
+            <summary>
+            Only allow the saving of the Secret, if the caller has provided the current version of the Secret.
+            <para>This prevents distributed apps, in which multiple apps attempt to overwrite a secret.</para>
+            <para>Only an app that knows the current version number of the secret will be allowed to save the secret</para>
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.KV2EnumSecretSaveOptions.AlwaysAllow">
+            <summary>
+            The save should always be allowed - allows overwriting the current version of a secret.
+            </summary>
+        </member>
+        <member name="T:VaultAgent.Backends.Transit.Models.TransitBackupRestoreItem">
+            <summary>
+            A Vault Response Object For a BackupRestore Item
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Backends.Transit.Models.TransitBackupRestoreItem.KeyBackup">
+            <summary>
+            The backup contains all the configuration data and keys of all the versions along with the HMAC key
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Backends.Transit.Models.TransitBackupRestoreItem.Success">
+            <summary>
+            True if successful
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Backends.Transit.Models.TransitBackupRestoreItem.ErrorMsg">
+            <summary>
+            If Errors encountered then this contains the error message
+            </summary>
+        </member>
         <member name="T:VaultAgent.Backends.Transit.Models.TransitBulkItemToDecrypt">
             <summary>
             Represents a single item within a list of items that need to be decrypted.  
+            </summary>
+        </member>
+        <member name="M:VaultAgent.Backends.Transit.Models.TransitBulkItemToDecrypt.#ctor(System.String,System.String)">
+            <summary>
+            Constructor
+            </summary>
+            <param name="encryptedValue">The Encrypted Value</param>
+            <param name="context"></param>
+        </member>
+        <member name="P:VaultAgent.Backends.Transit.Models.TransitBulkItemToDecrypt.base64Context">
+            <summary>
+            Base64 encoded Context for key derivation
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Backends.Transit.Models.TransitBulkItemToDecrypt.encryptedItem">
+            <summary>
+            The Cipher Text to decrypt
+            </summary>
+        </member>
+        <member name="T:VaultAgent.Backends.Transit.Models.TransitConstants">
+            <summary>
+            Constants used by the Transit Backend
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.Transit.Models.TransitConstants.KeyConfig_MinDecryptVers">
+            <summary>
+            Minimum Decryption version
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.Transit.Models.TransitConstants.KeyConfig_MinEncryptVers">
+            <summary>
+            Min Encytpyion Version
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.Transit.Models.TransitConstants.KeyConfig_DeleteAllowed">
+            <summary>
+            Deletion Allowed
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.Transit.Models.TransitConstants.KeyConfig_Exportable">
+            <summary>
+            Is Exportable
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.Transit.Models.TransitConstants.KeyConfig_Allow_Backup">
+            <summary>
+            Plaintext Backup is allowed
             </summary>
         </member>
         <member name="T:VaultAgent.Backends.Transit.Models.TransitDataKey">
@@ -1089,14 +1549,34 @@
             Represents the response object from the GenerateDataKey method.  Provides the encrypting and decrypting key values.
             </summary>
         </member>
+        <member name="P:VaultAgent.Backends.Transit.Models.TransitDataKey.PlainText">
+            <summary>
+            Plain Text version of the Key
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Backends.Transit.Models.TransitDataKey.CipherText">
+            <summary>
+            The cipher text
+            </summary>
+        </member>
         <member name="T:VaultAgent.Backends.Transit.Models.TransitDecryptedItem">
             <summary>
             A single Vault Decrypted value.  
             </summary>
         </member>
+        <member name="P:VaultAgent.Backends.Transit.Models.TransitDecryptedItem.DecryptedValue">
+            <summary>
+            The decrypted Value
+            </summary>
+        </member>
         <member name="T:VaultAgent.Backends.Transit.Models.TransitDecryptionResultsBulk">
             <summary>
-            Contains the results of a bulk decryption operation.  The items are ordered in the list in the same arder as the original encrypted values.
+            Contains the results of a bulk decryption operation.  The items are ordered in the list in the same order as the original encrypted values.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Backends.Transit.Models.TransitDecryptionResultsBulk.DecryptedValues">
+            <summary>
+            A List Of TransitDecryptedItems
             </summary>
         </member>
         <member name="T:VaultAgent.Backends.Transit.Models.TransitEncryptedItem">
@@ -1104,14 +1584,76 @@
             Represents a Vault Encrypted value.
             </summary>
         </member>
+        <member name="P:VaultAgent.Backends.Transit.Models.TransitEncryptedItem.EncryptedValue">
+            <summary>
+            The Encrypted Item
+            </summary>
+        </member>
         <member name="T:VaultAgent.Backends.Transit.Models.TransitEncryptionResultsBulk">
             <summary>
             Contains the encrypted values from the bulk encrypt operation.  Values are ordered in same order as they were provided on the input side.
             </summary>
         </member>
+        <member name="P:VaultAgent.Backends.Transit.Models.TransitEncryptionResultsBulk.EncryptedValues">
+            <summary>
+            A List of TransitEncryptedItems
+            </summary>
+        </member>
         <member name="T:VaultAgent.Backends.TransitBulkItemToEncrypt">
             <summary>
             Represents a single item to be encrypted as part of a Bulk Encryption call.  
+            </summary>
+        </member>
+        <member name="M:VaultAgent.Backends.TransitBulkItemToEncrypt.#ctor(System.String,System.String)">
+            <summary>
+            Constructor for a single item to be encrypted.
+            </summary>
+            <param name="itemToEncrypt">The string value of the item to encrypt</param>
+            <param name="context">The Base64 Context for key derivation if desired</param>
+        </member>
+        <member name="M:VaultAgent.Backends.TransitBulkItemToEncrypt.#ctor">
+            <summary>
+            Constructor
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Backends.TransitBulkItemToEncrypt.base64Context">
+            <summary>
+            The Base64 Context for Key Derivation if desired
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Backends.TransitBulkItemToEncrypt.base64ItemToEncrypt">
+            <summary>
+            The Item to be encrypted
+            </summary>
+        </member>
+        <member name="T:VaultAgent.Backends.TransitEnumHashingAlgorithm">
+            <summary>
+            The Hashing Methods supported by Transit
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.TransitEnumHashingAlgorithm.sha2_224">
+            <summary>
+            224 bit Key Length
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.TransitEnumHashingAlgorithm.sha2_256">
+            <summary>
+            256 bit Key Length
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.TransitEnumHashingAlgorithm.sha2_384">
+            <summary>
+            384 bit Key Length
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.TransitEnumHashingAlgorithm.sha2_512">
+            <summary>
+            512 bit Key Length
+            </summary>
+        </member>
+        <member name="T:VaultAgent.Backends.TransitEnumKeyType">
+            <summary>
+            Transit Key Types
             </summary>
         </member>
         <member name="T:VaultAgent.VaultSystemBackend">
@@ -1124,7 +1666,7 @@
             <summary>
             Constructor.  Initializes the connection to Vault and stores the token.
             <param name="token">Token value that has permissions to Vault.</param>
-            <param name="vaultAPI_Http">The Vault API Connector</param>
+            <param name="vaultAgentAPI">The Vault API Connector</param>
             <param name="name">The name you wish to give the Vault System backend.  At the present time this is purely cosmetic and does nothing.</param>
             </summary>
         </member>
@@ -1144,7 +1686,19 @@
             <param name="authName"></param>
             <returns></returns>
         </member>
-        <!-- Badly formed XML comment ignored for member "M:VaultAgent.VaultSystemBackend.AuthListAll" -->
+        <member name="M:VaultAgent.VaultSystemBackend.AuthDisable(VaultAgent.Backends.System.AuthMethod)">
+            <summary>
+            Disables the given authentication method 
+            </summary>
+            <param name="am">The AuthMethod that should be disabled</param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.VaultSystemBackend.AuthListAll">
+            <summary>
+            Lists all authentication methods in the current Vault System.
+            <returns>Dictionary\string,AuthMethod> containing all Authentication Methods</returns>
+            </summary>
+        </member>
         <member name="M:VaultAgent.VaultSystemBackend.AuthExists(System.String)">
             <summary>
             Returns true if the authentication provider with the given name exists.  False otherwise.
@@ -1156,7 +1710,7 @@
             <summary>
             Creates a new audit device with the specified name.
             </summary>
-            <param name="auditDeviceName">A name to be given to the audit device</param>
+            <param name="auditorName">A name to be given to the audit device</param>
             <param name="filePath">A full path and filename specification of where the audit entries should be written.</param>
             <param name="description">A description of the audit device.</param>
             <returns>True if successfully created.</returns>
@@ -1168,12 +1722,38 @@
             <param name="auditDeviceName">Name of the Audit device to delete.</param>
             <returns>True if audit device successfully deleted.  False otherwise.</returns>
         </member>
-        <!-- Badly formed XML comment ignored for member "M:VaultAgent.VaultSystemBackend.SysMountCreate(System.String,System.String,VaultAgent.Backends.System.EnumSecretBackendTypes,VaultAgent.Backends.System.VaultSysMountConfig)" -->
+        <member name="M:VaultAgent.VaultSystemBackend.GetTokenCapabilityOnPaths(System.String,System.Collections.Generic.List{System.String})">
+            <summary>
+            Returns a Dictionary of objects and the permissions they contains, as well as an overall Capabilities object that summarizes the
+            permissions that a Token has on the List of paths provided.
+            <para>https://www.vaultproject.io/api/system/capabilities.html</para>
+            </summary>
+            <param name="tokenID">The Token to evaluate</param>
+            <param name="paths">A list of paths to check the token against</param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.VaultSystemBackend.SysMountCreate(System.String,System.String,VaultAgent.Backends.System.EnumSecretBackendTypes,VaultAgent.Backends.System.VaultSysMountConfig)">
+            <summary>
+            Creates (Enables in Vault terminology) a new backend secrets engine with the given name, type and configuration settings.
+            Throws:  [VaultInvalidDataException] when the mount point already exists.  SpecificErrorCode will be set to: [BackendMountAlreadyExists]
+            <param name="mountPath">The root path to this secrets engine that it will be mounted at.  Is a part of every URL to this backend.</param>
+            <param name="description">Brief human friendly name for the mount.</param>
+            <param name="backendType">The type of secrets backend this mount is.  </param>
+            <param name="config">The configuration to be applied to this mount.</param>
+            <returns>Bool:  True if successful in creating the backend mount point.  False otherwise.</returns>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultSystemBackend.SysMountListSecretEngines">
+            <summary>
+            [Not Implemented Yet] Returns a List of Secret Engines
+            </summary>
+            <returns></returns>
+        </member>
         <member name="M:VaultAgent.VaultSystemBackend.SysMountDelete(System.String)">
             <summary>
             Deletes the backend Mount.
             </summary>
-            <param name="Name">Name of the mount to delete.</param>
+            <param name="name">Name of the mount to delete.</param>
             <returns>True if successful.  False otherwise.</returns>
         </member>
         <member name="M:VaultAgent.VaultSystemBackend.SysMountReadConfig(System.String)">
@@ -1223,7 +1803,6 @@
             <summary>
             Updates a given policy.  Is merely a wrapper for SysPoliciesACLCreate since Vault has no update function.
             </summary>
-            <param name="policyName">The name of the policy to update.</param>
             <param name="policyContainerItem">The VaultPolicyPathItem object that should be updated in Vault.</param>
             <returns>True if successful.  False otherwise.</returns>
         </member>
@@ -1270,7 +1849,7 @@
             </summary>
             <param name="backendName">A Name for the backend.  This is noy used or stored internally in Vault anywhere. </param>
             <param name="backendMountPoint">The mount point where the backend is mounted at.</param>
-            <param name="httpConnector">The HTTP Connector object used to establish a connection to Vault.</param>
+            <param name="vault">The Vault object to use to establish a connection to Vault.</param>
         </member>
         <member name="M:VaultAgent.VaultAuthenticationBackend.GetMyTokenInfo">
             <summary>
@@ -1282,6 +1861,26 @@
         <member name="T:VaultAgent.VaultSecretBackend">
             <summary>
             Internal abstract class representing a secret backend.
+            </summary>
+        </member>
+        <member name="T:VaultAgent.Models.EnumTokenType">
+            <summary>
+            The Type of Token
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Models.EnumTokenType.Root">
+            <summary>
+            The token is a root token.  These should almost never be used.
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Models.EnumTokenType.Client">
+            <summary>
+            Token is a client token. This is the typical type of token
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Models.EnumTokenType.Accessor">
+            <summary>
+            Token is an accessor token.
             </summary>
         </member>
         <member name="T:VaultAgent.Models.LoginResponse">
@@ -1321,6 +1920,16 @@
             Additional informational items that are associated with the token.
             </summary>
         </member>
+        <member name="P:VaultAgent.Models.LoginResponse.LeaseDuration">
+            <summary>
+            How long this is valid for
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.LoginResponse.Renewable">
+            <summary>
+            Whether the token is renewable or not.
+            </summary>
+        </member>
         <member name="P:VaultAgent.Models.LoginResponse.EntityId">
             <summary>
             The Entity this login is associated with.
@@ -1351,6 +1960,12 @@
         <member name="P:VaultAgent.Models.Token.APIPath">
             <summary>
             Readonly field.  The path where the token was created at.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.Token.ExpireTimeStr">
+            <summary>
+            When (Date and Time) the Token is set to expire
+            Example from Vault docs:  expire_time         2018-01-11T20:21:17.900969673Z
             </summary>
         </member>
         <member name="M:VaultAgent.Models.Token.ExpireTimeAsDateTime">
@@ -1390,9 +2005,19 @@
             identity associated with this token.  IE.  TokenPolicies + IdentityPolicies
             </summary>
         </member>
-        <member name="P:VaultAgent.Models.Token.IsIsRenewable">
+        <member name="P:VaultAgent.Models.Token.IsRenewable">
             <summary>
             Indicates if this token is renewable.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.Token.TTL">
+            <summary>
+            The TTL or number of seconds until the Token expires
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.Token.TTLasTimeUnit">
+            <summary>
+            Alternative method of getting/setting the TTL of the token in a more readable TimeUnit Class.
             </summary>
         </member>
         <member name="P:VaultAgent.Models.Token.AccessorTokenID">
@@ -1425,6 +2050,11 @@
             The TTL time period the token originally had upon creation.  This value does not change.  Not sure this has an real use?
             </summary>
         </member>
+        <member name="P:VaultAgent.Models.Token.EntityId">
+            <summary>
+            The Entity The token is associated with if any.
+            </summary>
+        </member>
         <member name="P:VaultAgent.Models.Token.IssueTime">
             <summary>
             The Date and Time the token was originally issued.
@@ -1454,22 +2084,97 @@
             <summary>
             Constructor that accepts the token ID value
             </summary>
-            <param name="tokenValue"></param>
+            <param name="tokenID"></param>
         </member>
         <member name="P:VaultAgent.Models.Token.HasParent">
             <summary>
             Returns True if this token has a parent token.
             </summary>
         </member>
+        <member name="T:VaultAgent.Models.TokenNewSettings">
+            <summary>
+            Class that captures the attributes that Vault Returns when requesting Token Information.  Some of the properties are also used when saving a Token.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TokenNewSettings.ID">
+            <summary>
+            The Token's ID.  Typically this is set by Vault.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TokenNewSettings.RoleName">
+            <summary>
+            Name of the Role to create token against.  If speficied the Role may override other manually set Token Options
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TokenNewSettings.Policies">
+            <summary>
+            The policies that are associated with the Token
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TokenNewSettings.MetaData">
+            <summary>
+            Arbirtray data that is associated with the token
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TokenNewSettings.NoParentToken">
+            <summary>
+            True if the token has no parent.  
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TokenNewSettings.NoDefaultPolicy">
+            <summary>
+            Detach the default policy from the policy set for this token.  See Vault for what this means...
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TokenNewSettings.IsRenewable">
+            <summary>
+            If the Token can be renewed
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TokenNewSettings.TTL">
+            <summary>
+            Initial TTL to associate with the Token.  
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TokenNewSettings.MaxTTL">
+            <summary>
+            The Maximum amout of time that the TTL for this token can be set to
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TokenNewSettings.Name">
+            <summary>
+            Name of this Token
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TokenNewSettings.NumberOfUses">
+            <summary>
+            How many times this token can be used
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TokenNewSettings.RenewalPeriod">
+            <summary>
+            How much time to extend the Token, when it is renewed.
+            </summary>
+        </member>
         <member name="M:VaultAgent.Models.TokenNewSettings.#ctor(System.String)">
             <summary>
             Constructor for use when reading the Settings from Vault.  Sets the ID.
             </summary>
-            <param name="id"></param>
+            <param name="id">The token ID that Vault assigned</param>
         </member>
         <member name="M:VaultAgent.Models.TokenNewSettings.#ctor">
             <summary>
             Creates a new TokenSettings object with an empty initialized Policies list and empty Metadata Dictionary.
+            </summary>
+        </member>
+        <member name="T:VaultAgent.Models.TokenRole">
+            <summary>
+            A Token and its related properties that represent a Role
+            </summary>
+        </member>
+        <member name="M:VaultAgent.Models.TokenRole.#ctor">
+            <summary>
+            Constructs a new TokenRole Object
             </summary>
         </member>
         <member name="M:VaultAgent.Models.TokenRole.#ctor(System.String)">
@@ -1530,7 +2235,7 @@
             the given period. Requires a root/sudo token to use
             </summary>
         </member>
-        <member name="P:VaultAgent.Models.TokenRole.IsIsRenewable">
+        <member name="P:VaultAgent.Models.TokenRole.IsRenewable">
             <summary>
             Set to false to disable the ability of the token to be renewed past its initial TTL. 
             Setting the value to true will allow the token to be renewable up to the system/mount maximum TTL
@@ -1541,16 +2246,173 @@
             This class represents a Vault Transit key object. 
             </summary>
         </member>
+        <member name="P:VaultAgent.Models.TransitKeyInfo.Name">
+            <summary>
+            Name of the Transit Key
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TransitKeyInfo.Type">
+            <summary>
+            The Type
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TransitKeyInfo.LatestVersionNum">
+            <summary>
+            Latest Version Number of this key
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TransitKeyInfo.MinDecryptionVersion">
+            <summary>
+            The minimum version decrypted
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TransitKeyInfo.MinEncryptionVersion">
+            <summary>
+            The minimum encrypted Version
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TransitKeyInfo.SupportsDecryption">
+            <summary>
+            If Decryption is allowed
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TransitKeyInfo.SupportsDerivation">
+            <summary>
+            If Key Derivation is allowed
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TransitKeyInfo.SupportsEncryption">
+            <summary>
+            If Encryption is supported
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TransitKeyInfo.SupportsSigning">
+            <summary>
+             If the key supports signing
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TransitKeyInfo.AllowsPlainTextBackup">
+            <summary>
+            If plaintext backup is allowed
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TransitKeyInfo.SupportsConvergentEncryption">
+            <summary>
+            True if it supports Convergent Encryption
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TransitKeyInfo.CanDelete">
+            <summary>
+            If deletion is allowed
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TransitKeyInfo.IsDerivable">
+            <summary>
+            If Key is derivable
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TransitKeyInfo.IsExportable">
+            <summary>
+            If Key is exportable
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TransitKeyInfo.KDF">
+            <summary>
+            Unknown
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TransitKeyInfo.Keys">
+            <summary>
+            List of Keys
+            </summary>
+        </member>
+        <member name="P:VaultAgent.Models.TransitKeyInfo.EncryptionMethod">
+            <summary>
+            The Encryption Method this key uses
+            </summary>
+        </member>
+        <member name="M:VaultAgent.Models.TransitKeyInfo.ToString">
+            <summary>
+            Returns basic information about the key
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:VaultAgent.SecretEngines.Entity">
             <summary>
-            Represents a Vault identity entity object.  Entities are used to provide a single identified for a group of ID's across different
+            Represents a Vault identity entity object.  Entities are used to provide a single identifier for a group of ID's across different
             authentication backends that are all really the same thing.  For instance a user has an LDAP, GitHub and AWS credentials.  The ID allows
             us to combine all of those into a single object.
             </summary>
         </member>
+        <member name="M:VaultAgent.SecretEngines.Entity.#ctor(System.String)">
+            <summary>
+            Constructor for a Vault Entity.
+            </summary>
+            <param name="entityName">Name of the Entity</param>
+        </member>
         <member name="M:VaultAgent.SecretEngines.Entity.#ctor">
             <summary>
             This constructor should only be used by the JSON Backend.  Use the parameter constructor for creation of new entities
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.Entity.Aliases">
+            <summary>
+            Other Names for this Entity.  See Vault Documentation for Details
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.Entity.CreationTime">
+            <summary>
+            When this entity was created.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.Entity.DirectGroupIds">
+            <summary>
+            See Vault Documentation for Details
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.Entity.IsDisabled">
+            <summary>
+            If this Entity is disabled. Disabled Entities tokens cannot be used.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.Entity.GroupIds">
+            <summary>
+            See Vault Documentation for Details
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.Entity.Id">
+            <summary>
+            The ID of this Entity
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.Entity.InheritedGroupIds">
+            <summary>
+            See Vault Documentation for Details
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.Entity.LastUpdateTime">
+            <summary>
+            Last time this Entity was updated
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.Entity.MergedEntityIds">
+            <summary>
+            See Vault Documentation for Details
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.Entity.Metadata">
+            <summary>
+            Additional information to associate with this Entity
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.Entity.Name">
+            <summary>
+            Name of this Entity
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.Entity.Policies">
+            <summary>
+            Policies to be assigned to this Entity
             </summary>
         </member>
         <member name="M:VaultAgent.SecretEngines.Entity.ShouldSerializeId">
@@ -1559,6 +2421,11 @@
             <remarks>This prevents us from sending the ID if it was initialized to empty in the C# class constructor (ie. this is a new entity not yet saved to Vault.</remarks>
             </summary>
             <returns></returns>
+        </member>
+        <member name="T:VaultAgent.SecretEngines.EntityAlias">
+            <summary>
+            Represents a Vault Alias to an Entity
+            </summary>
         </member>
         <member name="P:VaultAgent.SecretEngines.EntityAlias.CanonicalId">
             <summary>
@@ -1590,11 +2457,42 @@
             A list of Entity ID's that were merged into this Alias.
             </summary>
         </member>
+        <member name="P:VaultAgent.SecretEngines.EntityAlias.Metadata">
+            <summary>
+            Additional Information that is associated with this Entity
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.EntityAlias.MountAccessor">
+            <summary>
+            The Accessor ID of the Mount to which the Alias belongs to
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.EntityAlias.MountPath">
+            <summary>
+            The Mount Path
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.EntityAlias.MountType">
+            <summary>
+            The Type of Mount
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.EntityAlias.Name">
+            <summary>
+            Name of this Entity Alias
+            </summary>
+        </member>
+        <member name="T:VaultAgent.SecretEngines.IdentitySecretEngine">
+            <summary>
+            A Vault Identity Secret Engine.
+            <para>https://www.vaultproject.io/docs/secrets/identity/index.html</para>
+            </summary>
+        </member>
         <member name="M:VaultAgent.SecretEngines.IdentitySecretEngine.#ctor(VaultAgent.VaultAgentAPI)">
             <summary>
             Constructor.  Initializes the connection to Vault Identity Store.  Store has a fixed mounting location and name.
             </summary>
-            <param name="httpConnector">The VaultAPI_http Http Connection object</param>
+            <param name="vaultAgentAPI">The Vault API Agent object that contains connectivity information for establishing a connection to Vault</param>
         </member>
         <member name="M:VaultAgent.SecretEngines.IdentitySecretEngine.SaveEntity(VaultAgent.SecretEngines.Entity)">
             <summary>
@@ -1633,7 +2531,7 @@
             Deletes an Entity and all of it's associated aliases.  Returns True if successful.  Will also return True if the name passed in does not
             exist in the Vault Database.
             </summary>
-            <param name="id">The Id of the entity to be deleted.</param>
+            <param name="entityName">The name of the entity to be deleted.</param>
             <returns></returns>
         </member>
         <member name="M:VaultAgent.SecretEngines.IdentitySecretEngine.ListEntitiesByName">
@@ -1641,6 +2539,19 @@
             Lists all the entities by name.
             </summary>	
             <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.IdentitySecretEngine.ListEntitiesByID">
+            <summary>
+            Lists the Entities by ID value
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.IdentitySecretEngine.MergeEntities(System.String,System.String[])">
+            <summary>
+            Merges Entities Together.  This is not Implemented at this time.
+            </summary>
+            <param name="idToMergeTo"></param>
+            <param name="entityIDsToMerge"></param>
         </member>
         <member name="M:VaultAgent.SecretEngines.IdentitySecretEngine.SaveAlias(System.Guid,System.String,System.String)">
             <summary>
@@ -1673,9 +2584,65 @@
             <param name="id">The Id of the entityAlias to be deleted.</param>
             <returns></returns>
         </member>
+        <member name="M:VaultAgent.SecretEngines.IdentitySecretEngine.ListAliases">
+            <summary>
+            Returns a List of Entity Aliasa
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:VaultAgent.SecretEngines.KeyValue2.IKV2Secret">
             <summary>
             Interface for a KV2Secret Object functionality that derived objects must implement
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KeyValue2.IKV2Secret.Name">
+            <summary>
+            Name of the Secret
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KeyValue2.IKV2Secret.Path">
+            <summary>
+            Path where the Secret should be placed
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KeyValue2.IKV2Secret.FullPath">
+            <summary>
+            Returns the Full path and name of the secret, so path/path/path/secretName
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KeyValue2.IKV2Secret.WasReadFromVault">
+            <summary>
+            If true then this secret was read from Vault, versus being created in C#
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KeyValue2.IKV2Secret.Attributes">
+            <summary>
+            The Attributes of the secret.  These are the names and values that are being stored in this secret.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KeyValue2.IKV2Secret.Metadata">
+            <summary>
+            Additional data that should be stored in this secret
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KeyValue2.IKV2Secret.CreatedTime">
+            <summary>
+            When the secret was created
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KeyValue2.IKV2Secret.DeletionTime">
+            <summary>
+            When the secret was deleted.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KeyValue2.IKV2Secret.IsDestroyed">
+            <summary>
+            If true then the secret has been permanently deleted from Vault
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KeyValue2.IKV2Secret.Version">
+            <summary>
+            Version number of this iteration of the secret, if using versioning. You should NEVER SET this property.  It is settable because the engine needs to update it.
             </summary>
         </member>
         <member name="T:VaultAgent.SecretEngines.KeyValue2.KV2SecretBase`1">
@@ -1705,6 +2672,11 @@
             <summary>
             The path where the secret should be stored.  So if a secret is stored at app/AppA/username then the secret path would be app/AppA.
             Note:  All leading and trailing slashes are removed from the passed in value.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KeyValue2.KV2SecretBase`1.FullPath">
+            <summary>
+            Returns the FullPath to the Secret.  The Fullpath is the path plus the Name of the secret.  So, Path1/path2/path3/secretName
             </summary>
         </member>
         <member name="P:VaultAgent.SecretEngines.KeyValue2.KV2SecretBase`1.WasReadFromVault">
@@ -1741,6 +2713,12 @@
             <summary>
             The version number of this particular secret.  Is > 0 if the secret was read from the Vault.  Is zero if this object was created in application.
             </summary>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KeyValue2.KV2SecretBase`1.GetParentPath">
+            <summary>
+            Returns the Path that this secret belongs to.
+            </summary>
+            <returns></returns>
         </member>
         <member name="M:VaultAgent.SecretEngines.KeyValue2.KV2SecretBase`1.Equals(System.Object)">
             <summary>
@@ -1794,6 +2772,32 @@
             <param name="other"></param>
             <returns></returns>
         </member>
+        <member name="T:VaultAgent.SecretEngines.KeyValue2.KV2VaultReadSaveReturnObj">
+            <summary>
+            This class represents data that Vault returns on certain KV2 Secret Engine functions, such as Read and Save Secret.
+            It mostly consists of TimeStamps, a Destroyed Flag and the Version that was operated on.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KeyValue2.KV2VaultReadSaveReturnObj.CreatedTime">
+            <summary>
+            When this particular secret version was created.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KeyValue2.KV2VaultReadSaveReturnObj.DeletionTime">
+            <summary>
+            When this particular secret version was deleted.  Note, you will need to case the Get to DateTimeOffset, since the property accepts DateTimeOffset Nullable
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KeyValue2.KV2VaultReadSaveReturnObj.Destroyed">
+            <summary>
+            Boolean - Whether this particular secret version is soft deleted.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.KeyValue2.KV2VaultReadSaveReturnObj.Version">
+            <summary>
+            The version number of this particular secret version.
+            </summary>
+        </member>
         <member name="T:VaultAgent.SecretEngines.KV2.KV2Secret">
             <summary>
             Represents a secret read from the Vault.  Secrets can have zero to many attributes which are just Key Value Pairs of a name and some data value.
@@ -1834,7 +2838,7 @@
         </member>
         <member name="T:VaultAgent.SecretEngines.KV2.SecretMetaDataInfo.KV2SecretMetaDataInfo">
             <summary>
-            Class used to hold a Key Value 2 Secret's metadata
+            Class used to hold a Key Value 2 Secret's metadata or information about the secret that Vault Stores.  Mostly Timestamps and Version Info
             </summary>
         </member>
         <member name="P:VaultAgent.SecretEngines.KV2.SecretMetaDataInfo.KV2SecretMetaDataInfo.CasRequired">
@@ -1874,7 +2878,7 @@
         </member>
         <member name="T:VaultAgent.SecretEngines.KV2.SecretMetaDataInfo.MetaDataVersion">
             <summary>
-            The MetaData Related Information in regards to the version
+            The MetaData Related Information in regards to the particular version of the secret
             </summary>
         </member>
         <member name="P:VaultAgent.SecretEngines.KV2.SecretMetaDataInfo.MetaDataVersion.CreatedTime">
@@ -1935,30 +2939,24 @@
             The metadata - such as creation times, etc for this particular secret object.
             </summary>
         </member>
-        <member name="T:VaultAgent.SecretEngines.KV2.Metadata">
+        <member name="T:VaultAgent.SecretEngines.Constants">
             <summary>
-            This class is Vault Secret MetaData that tracks some values related to a given secret.
-            Items tracked include when it was created and/or deleted, as well as if it is currently marked soft deleted and what the version # is.
+            Some Constants used by the KV2Secret Engine
             </summary>
         </member>
-        <member name="P:VaultAgent.SecretEngines.KV2.Metadata.CreatedTime">
+        <member name="F:VaultAgent.SecretEngines.Constants.Error_CAS_Set">
             <summary>
-            When this particular secret version was created.
+            Messages explaining the Error_CAS_Set
             </summary>
         </member>
-        <member name="P:VaultAgent.SecretEngines.KV2.Metadata.DeletionTime">
+        <member name="F:VaultAgent.SecretEngines.Constants.Error_CAS_InvalidVersion">
             <summary>
-            When this particular secret version was deleted.
+            Message explaining the Error_CAS_InvalidVersion
             </summary>
         </member>
-        <member name="P:VaultAgent.SecretEngines.KV2.Metadata.Destroyed">
+        <member name="F:VaultAgent.SecretEngines.Constants.Error_CAS_SecretAlreadyExists">
             <summary>
-            Boolean - Whether this particular secret version is soft deleted.
-            </summary>
-        </member>
-        <member name="P:VaultAgent.SecretEngines.KV2.Metadata.Version">
-            <summary>
-            The version number of this particular secret version.
+            Message explaining the Error_CAS_SecretAlreadyExists error
             </summary>
         </member>
         <member name="T:VaultAgent.SecretEngines.KV2SecretEngine">
@@ -1979,7 +2977,7 @@
                 The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/
                 and exclude trailing slash.
             </param>
-            <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
+            <param name="vaultAgentAPI">The Vault API Agent Object that contains connectivity information for authenticating and connecting to the Vault</param>
         </member>
         <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.DeleteSecretVersion(System.String,System.Int32)">
             <summary>
@@ -1997,8 +2995,8 @@
                 <para>  Set to -1 to use the version number specified in the secret object as the version to delete.</para>
                 <para>  Set to any positive number to delete that specific version from the Vault Instance Store.</para>
             </summary>
-            <param name="secretPath">The name of the secret to delete.</param>
-            <param name="version">The version of the secret to delete.</param>
+            <param name="secretObj">The KV2Secret object to be deleted from the Vault</param>
+            <param name="secretVersion">The version of the secret to delete.</param>
             <returns>True if successful.  False otherwise.</returns>
         </member>
         <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.DestroySecretCompletely(System.String)">
@@ -2008,6 +3006,13 @@
             <param name="secretNamePath">The name of the secret to delete</param>
             <returns>True if successful.</returns>
         </member>
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.DestroySecretCompletely(VaultAgent.SecretEngines.KeyValue2.IKV2Secret)">
+            <summary>
+            Completely destroys a secret, removing all evidence of it from the Vault
+            </summary>
+            <param name="secretObj">The Secret Object to be permanently removed</param>
+            <returns></returns>
+        </member>
         <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.DestroySecretVersion(System.String,System.Int32)">
             <summary>
                 Permanently deletes a given secret version.  This is unable to be undone.
@@ -2015,6 +3020,14 @@
             <param name="secretNamePath">The secret name to be undeleted.</param>
             <param name="version">The specific version of the secret to be unnamed.</param>
             <returns>True if successful.  False otherwise.</returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.DestroySecretVersion(VaultAgent.SecretEngines.KeyValue2.IKV2Secret,System.Int32)">
+            <summary>
+            Permanently deletes the given secret.
+            </summary>
+            <param name="secretObj">The secret object to be deleted</param>
+            <param name="version">The specific version of the secret to be deleted.</param>
+            <returns></returns>
         </member>
         <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.GetBackendConfiguration">
             <summary>
@@ -2050,8 +3063,16 @@
                 If false (default) it will remove secrets that contain a trailing slash which in
                 Vault indicates that this is a folder or parent to other secret objects
             </param>
+            <param name="sorted">Whether the secrets should be sorted in alphabetical order</param>
             <returns>List of strings which contain secret names.</returns>
             <remarks>https://github.com/SlugEnt/VaultAPI/issues/3</remarks>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.ListSecretsAtPath(VaultAgent.SecretEngines.KeyValue2.IKV2Secret)">
+            <summary>
+            Lists all the children secrets of the provided Secret Object
+            </summary>
+            <param name="secretObj">The secret object that you wish to get a list of children of</param>
+            <returns></returns>
         </member>
         <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.ListSecretsSorted(System.String,System.Boolean)">
             <summary>
@@ -2101,10 +3122,11 @@
             </param>
             <returns>IKV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
         </member>
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.SaveSecret(VaultAgent.SecretEngines.KeyValue2.IKV2Secret,VaultAgent.Backends.KV2EnumSecretSaveOptions,System.Int32)">
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.SaveSecret``1(``0,VaultAgent.Backends.KV2EnumSecretSaveOptions,System.Int32)">
             <summary>
-                Saves the provided IKV2Secret object.  You must specify a save option and optionally what the current version of
-                the secret is.
+                Saves the provided K2Secret object.  You must specify a save option and optionally what the current version of
+                the secret is.  The KV2Secret object's version # will be updated on success with what the new version of the
+                secret it.
                 If the CAS setting is set on the backend then the following errors may be returned:
                 <para></para>
                 <para>Commonly Throws the Following Errors:</para>
@@ -2145,7 +3167,17 @@
             </param>
             <returns></returns>
         </member>
-        <!-- Badly formed XML comment ignored for member "M:VaultAgent.SecretEngines.KV2SecretEngine.SetBackendConfiguration(System.UInt16,System.Boolean)" -->
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.SetBackendConfiguration(System.UInt16,System.Boolean)">
+            <summary>
+                Configures the Key Value V2 backend.
+            </summary>
+            <param name="maxVersions">The maximum number of versions of a key to keep.  Defaults to 10.</param>
+            <param name="casRequired">
+                Check-And-Set parameter. If set to True then all writes (creates and updates) to keys will need to have the CAS
+                parameter specified.
+                See the Update and Create methods for details about the CAS setting. </param>
+                <returns></returns>
+        </member>
         <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.TryReadSecret``1(System.String,System.Int32)">
             <summary>
                 Attempts to read a secret if it exists.  Returns a tuple value (bool success, IKV2Secret secret) as follows:
@@ -2156,7 +3188,34 @@
             <param name="secretVersion">The secret version to be read.  0 for current.</param>
             <returns></returns>
         </member>
-        <!-- Badly formed XML comment ignored for member "M:VaultAgent.SecretEngines.KV2SecretEngine.TryReadSecret``1(``0,System.Int32)" -->
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.TryReadSecret``1(System.String,System.String,System.Int32)">
+            <summary>
+                Attempts to read a secret if it exists.  Returns a tuple value (bool success, T secret) as follows:
+                <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
+                <para>If secret was found the first value is True and the 2nd value is the IKV2Secret that was read.</para>
+                <para>If not found, the first value is False and the second value is null.</para>
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="secretName">The name of the secret to retrieve</param>
+            <param name="secretParentPath">The path that contains the secret</param>
+            <param name="secretVersion">If you want a specific version of the secret, specify it here.  Otherwise it defaults to current version.</param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.TryReadSecret``1(``0,System.Int32)">
+            <summary>
+                Attempts to read a secret if it exists.  Returns a tuple value (bool success, IKV2Secret secret) as follows:
+                <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
+                <para>If secret was found the first value is True and the 2nd value is the IKV2Secret that was read.</para>
+                <para>If not found, the first value is False and the second value is null.</para>
+            </summary>
+            <param name="secretObj">The secret object that should be Read.</param>
+            <param name="secretVersion">
+                Version of the secret to retrieve.
+                <para>  (Default) set to 0 to read most recent version.</para>
+                <para>  Set to -1 to use the version number specified in the secret object.</para>
+                <para>  Set to any positive number to read that specific version from the Vault Instance Store.</para></param>
+                <returns></returns>
+        </member>
         <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.UndeleteSecretVersion(System.String,System.Int32)">
             <summary>
                 Undeletes a given secret AND version.
@@ -2164,6 +3223,14 @@
             <param name="secretsecretNamePath">The secret name and path to be undeleted.</param>
             <param name="version">The specific version of the secret to be unnamed.</param>
             <returns>True if successful.  False otherwise.</returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.UndeleteSecretVersion(VaultAgent.SecretEngines.KeyValue2.IKV2Secret,System.Int32)">
+            <summary>
+            Undeletes the specified version of a secret
+            </summary>
+            <param name="secretObj">The secret object that should be undeleted</param>
+            <param name="version">The specific version number to be undeleted.</param>
+            <returns></returns>
         </member>
         <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.UpdateSecretSettings(System.String,System.UInt16,System.Boolean)">
             <summary>
@@ -2175,6 +3242,15 @@
             <param name="casRequired">Boolean determining if the CAS parameter needs to be set on save/update of a key.</param>
             <returns></returns>
         </member>
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.UpdateSecretSettings(VaultAgent.SecretEngines.KeyValue2.IKV2Secret,System.UInt16,System.Boolean)">
+            <summary>
+            Updates the IKV2Secret objects settings based upon the parameters passed in.
+            </summary>
+            <param name="secretObj">The Secret Object to be updated</param>
+            <param name="maxVersions">How many versions of the secret that should be kept</param>
+            <param name="casRequired">Whether CAS is required or not</param>
+            <returns></returns>
+        </member>
         <member name="T:VaultAgent.SecretEngines.KeyValueSecret">
             <summary>
             Represents a KeyValue Version 1 secret read from the Vault.  Secrets can have many attributes which are just Key Value Pairs of a name and some data value.
@@ -2182,6 +3258,24 @@
             the vault.  So, if upon reading a secret it has attributes of canDelete:True and connection:db1 and you save it, but the only attribute in the 
             list upon save is connection:db1 then canDelete will no longer exist after the save.  
             </summary>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KeyValueSecret.#ctor">
+            <summary>
+            Constructor for a Key Value Secret - Version 1.  It is recommended to use a KV2Secret instead.
+            </summary>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KeyValueSecret.#ctor(System.String)">
+            <summary>
+            Constructor for a Key Value Secret - Version 1.  It is recommended to use a KV2Secret instead.
+            </summary>
+            <param name="nameAndPath">The full path and name of the secret to be built</param>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KeyValueSecret.#ctor(System.String,System.Int32)">
+            <summary>
+            Constructor for a Key Value Secret - Version 1.  It is recommended to use a KV2Secret instead.
+            </summary>
+            <param name="nameAndPath">The full path and name of the secret to be built</param>
+            <param name="refreshInterval">How often this secret should be refreshed</param>
         </member>
         <member name="P:VaultAgent.SecretEngines.KeyValueSecret.Path">
             <summary>
@@ -2203,13 +3297,18 @@
             Returns the Refresh Interval in Minutes.
             </summary>
         </member>
+        <member name="T:VaultAgent.SecretEngines.KeyValueSecretEngine">
+            <summary>
+            The Vault Key Value Version 1 Secret Backend.  Should prefer to use the KV2SecretEngine
+            </summary>
+        </member>
         <member name="M:VaultAgent.SecretEngines.KeyValueSecretEngine.#ctor(System.String,System.String,VaultAgent.VaultAgentAPI)">
             <summary>
             Constructor.  Initializes the connection to Vault and stores the token.
             </summary>
             <param name="backendName">The name of the secret backend to mount.  This is purely cosmetic.</param>
             <param name="backendMountPoint">The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/ and exclude trailing slash.</param>
-            <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
+            <param name="vaultAgentAPI">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
         </member>
         <member name="M:VaultAgent.SecretEngines.KeyValueSecretEngine.CreateSecret(VaultAgent.SecretEngines.KeyValueSecret)">
             <summary>
@@ -2325,13 +3424,20 @@
             <param name="secretPath">The path to the Vault secret to permanently delete.</param>
             <returns>True for success, False otherwise.</returns>
         </member>
+        <member name="T:VaultAgent.SecretEngines.TransitSecretEngine">
+            <summary>
+            The transit secrets engine handles cryptographic functions on data in-transit. Vault doesn't store the data sent to the secrets engine.
+            It can also be viewed as "cryptography as a service" or "encryption as a service". The transit secrets engine can also sign and verify data;
+            generate hashes and HMACs of data; and act as a source of random bytes.
+            </summary>
+        </member>
         <member name="M:VaultAgent.SecretEngines.TransitSecretEngine.#ctor(System.String,System.String,VaultAgent.VaultAgentAPI)">
             <summary>
             Constructor.  Initializes the connection to Vault and stores the token.
             </summary>
             <param name="backendMountName">The name of the transit backend to mount.  For example for a mount at /mine/transitA use mine/transitA as value.</param>
             <param name="backendMountPath">The path to the Transit Backend mountpoint.</param>
-            <param name="httpConnector">The VaultAPI_http Http Connection object</param>
+            <param name="vaultAgentAPI">The Vault Agent API object that contains conenctivity information and a Token with the permissions required to access the Transit Engine</param>
         </member>
         <member name="M:VaultAgent.SecretEngines.TransitSecretEngine.CreateEncryptionKey(System.String,System.Boolean,System.Boolean,VaultAgent.Backends.TransitEnumKeyType,System.Boolean,System.Boolean)">
             <summary>
@@ -2359,12 +3465,25 @@
             in the calling routing.  The Key should match the Vault API keyname and the Value should be the value in the format vault is expecting.</param>
             <returns>True if the key is successfully created.</returns>
         </member>
+        <member name="M:VaultAgent.SecretEngines.TransitSecretEngine.ReadEncryptionKey(System.String)">
+            <summary>
+            Reads the Encrypted Key specified
+            </summary>
+            <param name="keyName">The name of the key to read</param>
+            <returns></returns>
+        </member>
         <member name="M:VaultAgent.SecretEngines.TransitSecretEngine.IfExists(System.String)">
             <summary>
             Returns true or false if a given key exists.
             </summary>
             <param name="keyName">Name of the key you want to validate if it exists.</param>
             <returns>True if key exists.  False if it does not.</returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.TransitSecretEngine.ListEncryptionKeys">
+            <summary>
+            Returns a List of Encryption keys
+            </summary>
+            <returns></returns>
         </member>
         <member name="M:VaultAgent.SecretEngines.TransitSecretEngine.EncryptToVault(System.String,System.Collections.Generic.Dictionary{System.String,System.String})">
             <summary>
@@ -2439,7 +3558,18 @@
             <param name="keyVersion">Version of the key to use.  Defaults to current version (0).</param>
             <returns>The data element encrypted with the version of the key specified.  (Default is latest version of the key).  Returns null if operation failed.</returns>
         </member>
-        <!-- Badly formed XML comment ignored for member "M:VaultAgent.SecretEngines.TransitSecretEngine.ReEncryptBulk(System.String,System.Collections.Generic.List{VaultAgent.Backends.Transit.Models.TransitBulkItemToDecrypt},System.Int32)" -->
+        <member name="M:VaultAgent.SecretEngines.TransitSecretEngine.ReEncryptBulk(System.String,System.Collections.Generic.List{VaultAgent.Backends.Transit.Models.TransitBulkItemToDecrypt},System.Int32)">
+            <summary>
+            Perform a re-encryption of multiple items at one time.  It is expected that the caller has maintained an order list separate from this list of the items 
+            that need to be re-encrypted with newer encryption key. The encrypted results will be returned to the caller in a List in the exact same order they were sent.  
+            </summary>
+            <param name="keyName">The encryption key to use to encrypt the values.</param>
+            <param name="bulkItems">The list of items that are currently encrypted that need to be re-encrypted with newer key.  If it is a derived context item then
+            you need to make sure you supply the context along with each encrypted item.</param>
+            <param name="keyVersion">Optional numeric value of the key version to use to encrypt the data with.  If not specified it defaults to the latest version 
+            of the encryption key.</param>
+            <returns>TransitEncryptionResultsBulk - which is a list or the encrypted values.</returns>
+        </member>
         <member name="M:VaultAgent.SecretEngines.TransitSecretEngine.UpdateKey(System.String,System.Collections.Generic.Dictionary{System.String,System.String})">
             <summary>
             Updates the configuration settings for the given key.  Use the TransitConstants KeyConfig... values for input to the inputParams Dictionary.
@@ -2457,6 +3587,12 @@
             <returns>True if deletion successful.
             False if the key does not allow deletion because its deletion_allowed config parameters is not set to true.
             Throws VaultInvalidDataException with message of "could not delete policy; not found.</returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.TransitSecretEngine.ExportKey(System.String)">
+            <summary>
+            Not Implemented
+            </summary>
+            <param name="keyName"></param>
         </member>
         <member name="M:VaultAgent.SecretEngines.TransitSecretEngine.GenerateDataKey(System.String,System.Boolean,System.String,System.Int32)">
             <summary>
@@ -2503,6 +3639,320 @@
             <param name="hashing">The hashing algorithm to use.</param>
             <param name="hexOutputFormat">Boolean.  Set to true if you wish the hashing output to be returned in Hexadecimal format. False means Base64 format.</param>
             <returns>The hashing of the input data returned in either hexadecimal or Base64 format.</returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.TransitSecretEngine.GenerateHMAC">
+            <summary>
+             Not Implemented
+            </summary>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.TransitSecretEngine.SignData">
+            <summary>
+             Not Implemented
+            </summary>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.TransitSecretEngine.VerifySignedData">
+            <summary>
+            Not Implemented
+            </summary>
+        </member>
+        <member name="T:VaultAgent.SecretEngines.VaultSecretEntry">
+            <summary>
+            Represents a "Smart" Vault Secret (KV2Secret) for KV2 Secret Engines.  This secret type can only be used with KV2SecretEngines that DO NOT
+            support the Check and Set Operations.  There is a separate class VaultSecretEntryCAS for those secret types.
+            While all of the functionality exposed by this class can be done with a combination of the
+            KV2SecretEngine and the KV2SecretBase objects, it puts that functionality into a single class, that makes for much less lines of code and a
+            much easier to work with functionality when it comes to moving a KV2Secret's information to and from the Vault.
+            <para>The main add is a set of VSE_ methods that enable the reading, saving, deleting, getting info on the secret you are working with</para>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntry.#ctor">
+            <summary>
+            Constructor
+            </summary>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntry.#ctor(VaultAgent.SecretEngines.KV2SecretEngine)">
+            <summary>
+            Constructs a VaultSecretEntry object Without CAS functionality
+            </summary>
+            <param name="secretEngine"></param>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntry.#ctor(VaultAgent.SecretEngines.KV2SecretEngine,System.String,System.String)">
+            <summary>
+            Constructs a VaultSecretEntry object Without CAS functionality
+            </summary>
+            <param name="secretEngine"></param>
+            <param name="name">The Name of this secret</param>
+            <param name="path">The Path of this secret</param>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntry.VSE_Save">
+            <summary>
+            Saves the object to the Vault
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:VaultAgent.SecretEngines.VaultSecretEntryBase">
+            <summary>
+            Represents a "Smart" Vault Secret (KV2Secret).  While all of the functionality exposed by this class can be done with a combination of the
+            KV2SecretEngine and the KV2SecretBase objects, it puts that functionality into a single class, that makes for much less lines of code and a
+            much easier to work with functionality when it comes to moving a KV2Secret's information to and from the Vault.
+            <para>The main add is a set of VSE_ methods that enable the reading, saving, deleting, getting info on the secret you are working with</para>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.#ctor">
+            <summary>
+            Constructor
+            </summary>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.#ctor(VaultAgent.SecretEngines.KV2SecretEngine)">
+            <summary>
+            Constructor accepting the SecretEngine that this secret's Vault Operations (VSE) should be applied to.
+            </summary>
+            <param name="secretEngine">The KV2SecretEngine that this secret should operate with</param>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.#ctor(VaultAgent.SecretEngines.KV2SecretEngine,System.String,System.String)">
+            <summary>
+            Constructor accepting the SecretEngine that this secret's Vault Operations (VSE) should be applied to.
+            </summary>
+            <param name="secretEngine">The KV2SecretEngine that this secret should operate with</param>
+            <param name="name">The Name of this secret</param>
+            <param name="path">The Path of this secret</param>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.InitializeNew">
+            <summary>
+            Initializes this class' variables to initial values
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.SecretEngine">
+            <summary>
+            The Secret Engine that this secret will read from and save to.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.IsEngineDefined">
+            <summary>
+            Returns true if the Engine property has been initialized to a value.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.IsSecretInfoLoaded">
+            <summary>
+            Returns True if this secrets extended Information has been read from the Vault.  You must specifically request this thru the VSE_Info method
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.Info">
+            <summary>
+            The KV2SecretMetaData Information about this secret.  If it returns null, then you have not requested this information (Run VSE_Info).
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.Name">
+            <summary>
+            The Name of this Secret
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.Path">
+            <summary>
+            The Parent path of this secret
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.FullPath">
+            <summary>
+            The full path to this secret (path + name)
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.WasReadFromVault">
+            <summary>
+            True if this secret's data was read from the Vault
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.Attributes">
+            <summary>
+            The Dictionary of items that this secret is storing.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.Metadata">
+            <summary>
+            Access to the Vault MetaData for this particular secret.  Each secret can have additional data stored with it.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.CreatedTime">
+            <summary>
+            When this secret was created.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.DeletionTime">
+            <summary>
+            When this secret was deleted
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.IsDestroyed">
+            <summary>
+            If this secret is currently destroyed.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.Version">
+            <summary>
+            The Version of this secret.  This will be the version of this secret as it was last Read or Saved to Vault.  
+            </summary>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.VSE_Read">
+            <summary>
+            Reads this VSE's Vault Secret data from the Vault.  Returns True on Success.  Note, this will overwrite any existing values that exist
+            in this VSE's secret object that have not been saved to the Vault.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.VSE_ReadVersion(System.Int32)">
+            <summary>
+            Reads the requested version of this VSE's Vault Secret data from the Vault.  Returns True on Success.  Note, this will overwrite any existing values that exist
+            in this VSE's secret object that have not been saved to the Vault.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.VSE_Save">
+            <summary>
+            Saves this secret to the Vault.  Returns True on Success
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.VSE_SaveNew">
+            <summary>
+            Saves this secret to the Vault.  It will succeed only if this is the First time this secret has ever been saved.
+            <para>Only applies to secret that are stored in Engines using Check And Set</para>
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.VSE_SaveUpdate">
+            <summary>
+            Saves this secret to the Vault.  It will succeed only if the version of the secret in Vault matches the Version property on this
+            Object.  If someone else has saved an updated version since the time you last read it, you will need to re-read it and then try
+            your save again.
+            <para>Only applies to secret that are stored in Engines using Check And Set</para>
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.VSE_Exists">
+            <summary>
+            Returns True if a VSE with this name and path, already exist in the Vault.  False if it does not Exist.
+            <para>If you are going to end up reading the Vault Entry anyway, then it is more efficient to use VSE_Read instead.</para>
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.VSE_Delete">
+            <summary>
+            Deletes this secret's current version from the Vault
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.VSE_Info">
+            <summary>
+            Performs a read of the Vault Secret's MetaData Information which mostly provides version information about the secret, including
+            Current Version, Max # of versions it keeps, the oldest version and timestamp information about each of the versions.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.VSE_DestroyAll">
+            <summary>
+            Completely Destroys this secret from the Vault.  All Versions are removed as though it never existed.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.VSE_Destroy">
+            <summary>
+            Destroys the given version of the secret, resulting in the complete removal of all evidence THIS VERSION of the secret ever existed in the vault
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.VSE_SaveAs(System.String,System.String,VaultAgent.SecretEngines.KV2SecretEngine)">
+            <summary>
+            Allows the Saving of this secret under a new name and path.
+            </summary>
+            <param name="name"></param>
+            <param name="path"></param>
+            <param name="secretEngine"></param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.GetIntAttributeNullable(System.String)">
+            <summary>
+            Retrieves the attributeName from the Attributes List.  If it does not exist of if the value is not a number (including empty string) then null is returned.  Otherwise the integer is returned
+            </summary>
+            <param name="attributeName">Name of the attribute to retrieve</param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.GetIntAttributeDefault(System.String)">
+            <summary>
+            Retrieves the attributeName from the Attributes List.  If it does not exist or if the value is not a number (including empty string) then 0 is returned.  Otherwise the integer is returned.
+            </summary>
+            <param name="attributeName">Name of the attribute to retrieve</param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.SetIntAttribute(System.String,System.Int32)">
+            <summary>
+            Saves the given integer value into the Attributes List under the provided AttributeName
+            </summary>
+            <param name="attributeName">Name of the Attribute to save the value under</param>
+            <param name="value">The value to be stored</param>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.SetDateTimeOffsetAttribute(System.String,System.DateTimeOffset)">
+            <summary>
+            Saves the given DateTimeOffset value into the Attributes List under the provided AttributeName
+            </summary>
+            <param name="attributeName">Name of the Attribute to save the value under</param>
+            <param name="value">The value to be stored</param>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.GetDateTimeOffsetAttributeDefault(System.String)">
+            <summary>
+            Retrieves the attributeName from the Attributes List.  If it does not exist or if the value is not a number (including empty string) then DateTimeOffset.MinValue is returned.  Otherwise the integer is returned.
+            </summary>
+            <param name="attributeName">Name of the attribute to retrieve</param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.GetDateTimeOffsetAttributeNullable(System.String)">
+            <summary>
+            Retrieves the attributeName from the Attributes List.  If it does not exist or if the value is not a number (including empty string) then null is returned.  Otherwise the integer is returned.
+            </summary>
+            <param name="attributeName">Name of the attribute to retrieve</param>
+            <returns></returns>
+        </member>
+        <member name="T:VaultAgent.SecretEngines.VaultSecretEntryCAS">
+            <summary>
+            Represents a "Smart" Vault Secret (KV2Secret) for KV2 Secret Engines that require Check And Set Functionality when saving secrets.
+            While all of the functionality exposed by this class can be done with a combination of the
+            KV2SecretEngine and the KV2SecretBase objects, it puts that functionality into a single class, that makes for much less lines of code and a
+            much easier to work with functionality when it comes to moving a KV2Secret's information to and from the Vault.
+            <para>The main add is a set of VSE_ methods that enable the reading, saving, deleting, getting info on the secret you are working with</para>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryCAS.#ctor">
+            <summary>
+            Constructor a VaultSecretEntry object that supports the Vault Check And Set Operations
+            </summary>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryCAS.#ctor(VaultAgent.SecretEngines.KV2SecretEngine)">
+            <summary>
+            Constructor a VaultSecretEntry object that supports the Vault Check And Set Operations
+            </summary>
+            <param name="secretEngine">The KV2SecretEngine that this secret should operate with</param>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryCAS.#ctor(VaultAgent.SecretEngines.KV2SecretEngine,System.String,System.String)">
+            <summary>
+            Constructor a VaultSecretEntry object that supports the Vault Check And Set Operations
+            </summary>
+            <param name="secretEngine">The KV2SecretEngine that this secret should operate with</param>
+            <param name="name">The Name of this secret</param>
+            <param name="path">The Path of this secret</param>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryCAS.VSE_SaveNew">
+            <summary>
+            Saves the secret to the Vault if it has never existed in the Vault before.  Use SaveUpdate for updates
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryCAS.VSE_SaveUpdate">
+            <summary>
+            Saves the secret to the Vault, using a Check and Set operation.  This means the version of the secret currently saved in Vault
+            must be the same as the version we are trying to save now.  If they are the same, then the save is allowed, and the version on
+            this object is incremented to match the Vault version.
+            <para>If it fails, then you may need to re-read the secret from the Vault, apply your changes and then save.</para>
+            </summary>
+            <returns></returns>
         </member>
         <member name="T:VaultAgent.VaultAgentAPI">
              <summary>
@@ -2578,6 +4028,7 @@
             <param name="secretBackendType">The type of backend you wish to connect to.</param>
             <param name="backendName">The name you wish to refer to this backend by.  This is NOT the Vault mount path.</param>
             <param name="backendMountPath">The path to the vault mount point that this backend is located at.</param>
+            <param name="description">Description for the backend</param>
             <param name="config">(Optional) A VaultSysMountConfig object that contains the connection configuration you wish to use to connect to the backend.  If not specified defaults will be used.</param>
             <returns>True if it was able to create the backend and connect to it.  False if it encountered an error.</returns>
         </member>
@@ -2634,6 +4085,26 @@
             </summary>
             <param name="tokenID"></param>
         </member>
+        <member name="M:VaultAgent.VaultAPI_Http.PostAsync_B(System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.String},System.Boolean)">
+            <summary>
+            Post Method
+            </summary>
+            <param name="APIPath">The path in Vault</param>
+            <param name="callingRoutineName">Name of the calling routine</param>
+            <param name="inputParams">Dictionary of string, string input parameters</param>
+            <param name="expectReturnToHaveBody">Set to True if you expect the return object to have a body</param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.VaultAPI_Http.PostAsync_B(System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Boolean)">
+            <summary>
+            Post Method
+            </summary>
+            <param name="APIPath">The path in Vault</param>
+            <param name="callingRoutineName">Name of the calling routine</param>
+            <param name="inputParams">Dictionary of string,object input parameters</param>
+            <param name="expectReturnToHaveBody">Set to True if you expect the return object to have a body</param>
+            <returns></returns>
+        </member>
         <member name="M:VaultAgent.VaultAPI_Http.PostAsync_B(System.String,System.String,System.String,System.Boolean)">
             <summary>
             Calls the HTTP Post method, to send data to the Vault API server.
@@ -2641,8 +4112,6 @@
             </summary>
             <param name="APIPath">The path to call on the Vault server.</param>
             <param name="callingRoutineName">String name of the routine that called this method.  Used for debugging and logging purposes only.</param>
-            <param name="inputParams">A Dictionary of key value pairs of parameters that should be sent in the body of the HTTP Call.  Should set to null if overriding 
-            with your own JSON string of parameters by setting the inputParamsJSON</param>
             <param name="inputParamsJSON">JSON string of the parameters you want to put in the body of the HTTP call.  This is used to override the inputParams Dictionary.</param>
             <param name="expectReturnToHaveBody">Set to true to optimize the call by not retrieving the body from the response because it is not needed or expected to be empty.</param>
             <returns>VaultDataResponseObject with the results of the call.</returns>
@@ -2696,13 +4165,24 @@
             <param name="fieldName">The specific field or subfield you want JSON for in dot notation.  field.subfield.subsubfield....</param>
             <returns>JSON representation of the specified field.</returns>
         </member>
+        <member name="T:VaultAgent.VaultBackend">
+            <summary>
+            Represents the Abstract elements of a Vault Backend Object
+            </summary>
+        </member>
+        <member name="F:VaultAgent.VaultBackend._parent">
+            <summary>
+            The Vault Agent API object that this Backend will use to talk to Vault.  
+            </summary>
+        </member>
         <member name="M:VaultAgent.VaultBackend.#ctor(System.String,System.String,VaultAgent.VaultAgentAPI,System.String)">
             <summary>
             Constructor for the Backend.  
             </summary>
             <param name="name">The name used to identify this backend, this is not the mount point!</param>
             <param name="mountPoint">The name of the mount point in vault to connect to.</param>
-            <param name="vaultAgentAPI">This should be a reference to the VaultAgentAPI object.</param>
+            <param name="vaultAgentAPI">This is the Vault Agent API object that contains Connection info to the Vault.
+            It should also contain a Token that has the necessary permissions to do the Backend Tasks</param>
             <param name="mountPointPrefix">If the path is prefixed in vault with some value, specify it here.  It defaults to /v1/ which is typical Vault default value.</param>
         </member>
         <member name="P:VaultAgent.VaultBackend.Name">
@@ -2718,6 +4198,11 @@
         <member name="P:VaultAgent.VaultBackend.MountPointPath">
             <summary>
             The mount path is the exact path in Vault to get to the specific mount Point.  Usually it is /v1/(MountPoint)/
+            </summary>
+        </member>
+        <member name="P:VaultAgent.VaultBackend.MountPointPrefix">
+            <summary>
+            The Mount Point prefix of the Backend
             </summary>
         </member>
         <member name="P:VaultAgent.VaultBackend.Type">
@@ -2794,6 +4279,51 @@
             Used to specifically identify certain Vault Errors as to the exact cause or reason.
             </summary>
         </member>
+        <member name="F:VaultAgent.EnumVaultExceptionCodes.UnclassifiedError">
+            <summary>
+            The default value for all VaultExceptions.  Indicates we have not classified the error any more specifically than what Vault provided.
+            </summary>
+        </member>
+        <member name="F:VaultAgent.EnumVaultExceptionCodes.BackendMountAlreadyExists">
+            <summary>
+            Indicates that there is already a backend mounted at the specified location.
+            </summary>
+        </member>
+        <member name="F:VaultAgent.EnumVaultExceptionCodes.ObjectDoesNotExist">
+            <summary>
+            The object cannot be found
+            </summary>
+        </member>
+        <member name="F:VaultAgent.EnumVaultExceptionCodes.LoginRoleID_NotFound">
+            <summary>
+            Indicates that login failed because the login RoleID was invalid.
+            </summary>
+        </member>
+        <member name="F:VaultAgent.EnumVaultExceptionCodes.LoginSecretID_NotFound">
+            <summary>
+            Indicates that the login failed because the login SecretID supplied is not valid.
+            </summary>
+        </member>
+        <member name="F:VaultAgent.EnumVaultExceptionCodes.CheckAndSetMissing">
+            <summary>
+            The Check and Set (CAS) parameter was missing.  This is required on some KV2 keystores depending on config.
+            </summary>
+        </member>
+        <member name="F:VaultAgent.EnumVaultExceptionCodes.CAS_VersionMissing">
+            <summary>
+            The Check and Set (CAS) secret version was missing OR the secret already exists, but was told it should only save if it does not exist.
+            </summary>
+        </member>
+        <member name="F:VaultAgent.EnumVaultExceptionCodes.CAS_SecretExistsAlready">
+            <summary>
+            The Check and Set (CAS) is set and User requested that the Save only happen if the secret does not already exist.  Secret exists and so this error.
+            </summary>
+        </member>
+        <member name="F:VaultAgent.EnumVaultExceptionCodes.PermissionDenied">
+            <summary>
+            Indicates a token does not have permission to a specific path.
+            </summary>
+        </member>
         <member name="F:VaultAgent.EnumVaultExceptionCodes.LDAPLoginServerConnectionIssue">
             <summary>
             Problems connecting to the LDAP server, check name, protocol, ports, tls, etc
@@ -2803,6 +4333,408 @@
             <summary>
             Invalid username or password supplied for LDAP Login
             </summary>
+        </member>
+        <member name="T:VaultAgent.VaultCustomException">
+            <summary>
+            Represents a Vault Custom Exception
+            </summary>
+        </member>
+        <member name="P:VaultAgent.VaultCustomException.SpecificErrorCode">
+            <summary>
+            The specific Exception Code returned by Vault
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultCustomException.#ctor">
+            <summary>
+            Constructor for a Custom Vault Exception
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultCustomException.#ctor(System.String)">
+            <summary>
+            Constructor for a custom Vault Exception
+            </summary>
+            <param name="message">Message to be stored with the Exception</param>
+        </member>
+        <member name="M:VaultAgent.VaultCustomException.#ctor(System.String,System.Exception)">
+            <summary>
+            Constructor for a custom Vault Exception
+            </summary>
+            <param name="message">Message to be stored with the Exception</param>
+            <param name="innerException">The original Exception if this was triggered by another error</param>
+        </member>
+        <member name="M:VaultAgent.VaultCustomException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Allows Serializing of the exception
+            </summary>
+            <param name="info"></param>
+            <param name="context"></param>
+        </member>
+        <member name="T:VaultAgent.VaultException">
+            <summary>
+            Represents a generic unclassified VaultException
+            </summary>
+        </member>
+        <member name="P:VaultAgent.VaultException.SpecificErrorCode">
+            <summary>
+            The specific Exception Code returned by Vault
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultException.#ctor">
+            <summary>
+            Constructor for a Generic Unclassified Vault Exception
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultException.#ctor(System.String)">
+            <summary>
+            Constructor for a Generic Unclassified Vault Exception
+            </summary>
+            <param name="message">Message to be stored with the Exception</param>
+        </member>
+        <member name="M:VaultAgent.VaultException.#ctor(System.String,System.Exception)">
+            <summary>
+            Constructor for a Generic Unclassified Vault Exception
+            </summary>
+            <param name="message">Message to be stored with the Exception</param>
+            <param name="innerException">The original Exception if this was triggered by another error</param>
+        </member>
+        <member name="M:VaultAgent.VaultException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Serializer for the VaultException Class
+            </summary>
+            <param name="info"></param>
+            <param name="context"></param>
+        </member>
+        <member name="T:VaultAgent.VaultFieldNotFoundException">
+            <summary>
+            Represents a Vault Error that indicates a field was not found
+            </summary>
+        </member>
+        <member name="P:VaultAgent.VaultFieldNotFoundException.SpecificErrorCode">
+            <summary>
+            The specific Exception Code returned by Vault
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultFieldNotFoundException.#ctor">
+            <summary>
+            Constructor for a Vault Field Not Found Exception
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultFieldNotFoundException.#ctor(System.String)">
+            <summary>
+            Constructor for a Vault Field Not Found Exception
+            <param name="message">Message to be stored with the Exception</param>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultFieldNotFoundException.#ctor(System.String,System.Exception)">
+            <summary>
+            Constructor for a Vault Field Not Found Exception
+            <param name="message">Message to be stored with the Exception</param>
+            <param name="innerException">The original Exception if this was triggered by another error</param>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultFieldNotFoundException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Serializer for Vault Field Not Found Exception
+            </summary>
+            <param name="info"></param>
+            <param name="context"></param>
+        </member>
+        <member name="T:VaultAgent.VaultInvalidDataException">
+            <summary>
+            Represents A Vault Error that indicates that the provided data was incorrect, improperly formatted or some other type of Data related issue
+            </summary>
+        </member>
+        <member name="P:VaultAgent.VaultInvalidDataException.SpecificErrorCode">
+            <summary>
+            The specific Exception Code returned by Vault
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultInvalidDataException.#ctor">
+            <summary>
+            Constructor for a Vault Invalid Data Exception
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultInvalidDataException.#ctor(System.String)">
+            <summary>
+            Constructor for a Vault Invalid Data Exception
+            <param name="message">Message to be stored with the Exception</param>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultInvalidDataException.#ctor(System.String,System.Exception)">
+            <summary>
+            Constructor for a Vault Invalid Data Exception
+            <param name="message">Message to be stored with the Exception</param>
+            <param name="innerException">The original Exception if this was triggered by another error</param>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultInvalidDataException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Serializer
+            </summary>
+            <param name="info"></param>
+            <param name="context"></param>
+        </member>
+        <member name="T:VaultAgent.VaultForbiddenException">
+            <summary>
+            Vault Forbidden Exception.  Authentication details may be incorrect.  or Permission or CORS request issue is going on.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.VaultForbiddenException.SpecificErrorCode">
+            <summary>
+            The specific Exception Code returned by Vault
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultForbiddenException.#ctor">
+            <summary>
+            Constructor for a Vault Forbidden Exception which usually indicates a permission error, but sometimes is thrown if a path just does not exist.
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultForbiddenException.#ctor(System.String)">
+            <summary>
+            Constructor for a Vault Forbidden Exception which usually indicates a permission error, but sometimes is thrown if a path just does not exist.
+            <param name="message">Message to be stored with the Exception</param>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultForbiddenException.#ctor(System.String,System.Exception)">
+            <summary>
+            Constructor for a Vault Forbidden Exception which usually indicates a permission error, but sometimes is thrown if a path just does not exist.
+            <param name="message">Message to be stored with the Exception</param>
+            <param name="innerException">The original Exception if this was triggered by another error</param>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultForbiddenException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Serializer
+            </summary>
+            <param name="info"></param>
+            <param name="context"></param>
+        </member>
+        <member name="T:VaultAgent.VaultInvalidPathException">
+            <summary>
+            There was an issue with the Path provided to the Vault Methods.  Either the caller does not have permission or the path may not exist.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.VaultInvalidPathException.SpecificErrorCode">
+            <summary>
+            The specific Exception Code returned by Vault
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultInvalidPathException.#ctor">
+            <summary>
+            Constructor for a Vault Invalid Path Exception which usually indicates a permission error, but sometimes is thrown if a path just does not exist.
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultInvalidPathException.#ctor(System.String)">
+            <summary>
+            Constructor for a Vault Invalid Path Exception which usually indicates a permission error, but sometimes is thrown if a path just does not exist.
+            <param name="message">Message to be stored with the Exception</param>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultInvalidPathException.#ctor(System.String,System.Exception)">
+            <summary>
+            Constructor for a Vault Invalid Path Exception which usually indicates a permission error, but sometimes is thrown if a path just does not exist.
+            <param name="message">Message to be stored with the Exception</param>
+            <param name="innerException">The original Exception if this was triggered by another error</param>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultInvalidPathException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Serialization
+            </summary>
+            <param name="info"></param>
+            <param name="context"></param>
+        </member>
+        <member name="T:VaultAgent.VaultInternalErrorException">
+            <summary>
+            There was an internal error detected in Vault
+            </summary>
+        </member>
+        <member name="P:VaultAgent.VaultInternalErrorException.SpecificErrorCode">
+            <summary>
+            The specific Exception Code returned by Vault
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultInternalErrorException.#ctor">
+            <summary>
+            Constructor for a Vault Internal Error Exception which usually indicates sometype of issue with the Vault System.
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultInternalErrorException.#ctor(System.String)">
+            <summary>
+            Constructor for a Vault Internal Error Exception which usually indicates sometype of issue with the Vault System.
+            <param name="message">Message to be stored with the Exception</param>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultInternalErrorException.#ctor(System.String,System.Exception)">
+            <summary>
+            Constructor for a Vault Internal Error Exception which usually indicates sometype of issue with the Vault System.
+            <param name="message">Message to be stored with the Exception</param>
+            <param name="innerException">The original Exception if this was triggered by another error</param>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultInternalErrorException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Serializer
+            </summary>
+            <param name="info"></param>
+            <param name="context"></param>
+        </member>
+        <member name="T:VaultAgent.VaultStandbyNodesErrorException">
+            <summary>
+            There is an error with the Vault Standby Nodes
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultStandbyNodesErrorException.#ctor">
+            <summary>
+            Constructor for a Vault StandBy Nodes Exception
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultStandbyNodesErrorException.#ctor(System.String)">
+            <summary>
+            Constructor for a Vault StandBy Nodes Exception
+            <param name="message">Message to be stored with the Exception</param>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultStandbyNodesErrorException.#ctor(System.String,System.Exception)">
+            <summary>
+            Constructor for a Vault StandBy Nodes Exception
+            <param name="message">Message to be stored with the Exception</param>
+            <param name="innerException">The original Exception if this was triggered by another error</param>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultStandbyNodesErrorException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Serializer
+            </summary>
+            <param name="info"></param>
+            <param name="context"></param>
+        </member>
+        <member name="T:VaultAgent.VaultSealedException">
+            <summary>
+            The Vault is Sealed
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultSealedException.#ctor">
+            <summary>
+            Constructor for a Vault Sealed Exception
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultSealedException.#ctor(System.String)">
+            <summary>
+            Constructor for a Vault StandBy Nodes Exception
+            <param name="message">Message to be stored with the Exception</param>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultSealedException.#ctor(System.String,System.Exception)">
+            <summary>
+            Constructor for a Vault Sealed Exception
+            <param name="message">Message to be stored with the Exception</param>
+            <param name="innerException">The original Exception if this was triggered by another error</param>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultSealedException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Serializer
+            </summary>
+            <param name="info"></param>
+            <param name="context"></param>
+        </member>
+        <member name="M:VaultAgent.VaultSealedException.#ctor(System.Exception)">
+            <summary>
+            Constructor for a Vault Sealed Exception
+            <param name="innerException">The original Exception if this was triggered by another error</param>
+            </summary>
+        </member>
+        <member name="T:VaultAgent.VaultUnexpectedCodePathException">
+            <summary>
+            An Unexpected Vault Code Path was executed
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultUnexpectedCodePathException.#ctor">
+            <summary>
+            Constructor for a Vault Unexpected Code Path Error
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultUnexpectedCodePathException.#ctor(System.String)">
+            <summary>
+            Constructor for a Vault Unexpected Code Path Error
+            <param name="message">Message to be stored with the Exception</param>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultUnexpectedCodePathException.#ctor(System.String,System.Exception)">
+            <summary>
+            Constructor for a Vault Unexpected Code Path Error
+            <param name="message">Message to be stored with the Exception</param>
+            <param name="innerException">The original Exception if this was triggered by another error</param>
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultUnexpectedCodePathException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Serializer
+            </summary>
+            <param name="info"></param>
+            <param name="context"></param>
+        </member>
+        <member name="T:VaultAgent.VaultSerializationHelper">
+            <summary>
+            NewtonSoft JSON Serialization settings for all of Vault
+            </summary>
+        </member>
+        <member name="F:VaultAgent.VaultSerializationHelper.serializationSettings">
+            <summary>
+            Serialization Settings
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultSerializationHelper.FromJson``1(System.String)">
+            <summary>
+            Deserializes a JSON string into a C# object
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="json"></param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.VaultSerializationHelper.ToJson``1(``0)">
+            <summary>
+            Universal Serializer for JSON
+            universal method for serialization to json
+            this "this" keyword means, its "extension method"
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="self"></param>
+            <returns></returns>
+        </member>
+        <member name="T:VaultAgent.VaultUtilityFX">
+            <summary>
+            Various Utility Functions Needed by the Library
+            </summary>
+        </member>
+        <member name="M:VaultAgent.VaultUtilityFX.ConvertUnixTimeStamp(System.String)">
+            <summary>
+            Converts a time from Unix Timestamp into .Net Datetime
+            </summary>
+            <param name="unixTimeStamp"></param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.VaultUtilityFX.ConvertUnixTimeStamp(System.Int64)">
+            <summary>
+            Converts a DateTime into a Unix TimeStamp
+            </summary>
+            <param name="unixTimeStamp"></param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.VaultUtilityFX.Base64EncodeAscii(System.String)">
+            <summary>
+            Encodes an Ascii value into Base64
+            </summary>
+            <param name="textToEncode">Ascii text to be encoded</param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.VaultUtilityFX.Base64DecodeAscii(System.String)">
+            <summary>
+            Decodes a Base64 value into an Ascii string
+            </summary>
+            <param name="textToDecode">The Base64 text to decode into Ascii</param>
+            <returns></returns>
         </member>
         <member name="M:VaultAgent.VaultUtilityFX.ConvertJSON``1(System.String)">
             <summary>
