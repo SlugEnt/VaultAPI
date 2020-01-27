@@ -43,22 +43,6 @@ namespace VaultAgent.AuthenticationEngines.LDAP {
         /// </summary>
         public LdapConfig() { }
 
-
-        // TODO - not sure needed any longer
-        /// <summary>
-        /// This constructor is for JSON use.  We pass the DiscoverDN value merely to uniquely mark this constructor for JSON.
-        /// We need to do this because we need the parameterless constructor for C# creation.
-        /// </summary>
-        /// <param name="url"></param>
-        /*
-        [JsonConstructor]
-        public LdapConfig(bool discoverDn)
-        {
-            _dnSuffix = "";
-            DiscoverDN = discoverDn;
-        }
-        */
-
         #endregion
 
         /// <summary>
@@ -142,7 +126,7 @@ namespace VaultAgent.AuthenticationEngines.LDAP {
         /// Go template used when constructing the group membership query. The template can access the following context
         /// variables: [UserDN, Username]. The default is (|(memberUid={{.Username}})(member={{.UserDN}})(uniqueMember={{.UserDN}})),
         /// which is compatible with several common directory schemas. To support nested group resolution for Active Directory,
-        /// instead use the following query: (&(objectClass=group)(member:1.2.840.113556.1.4.1941:={{.UserDN}}))
+        /// instead use the following query: ( [AMPERSANd] (objectClass=group)(member:1.2.840.113556.1.4.1941:={{.UserDN}}))
         /// <para>See the SetADGroupFilter to automatically set it to the correct value for AD.</para>
         /// </summary>
         [JsonProperty("groupfilter")]
@@ -157,6 +141,9 @@ namespace VaultAgent.AuthenticationEngines.LDAP {
         public bool InsecureTLS { get; set; } = true;
 
 
+        /// <summary>
+        /// True if this is an Active Directory LDAP Connection
+        /// </summary>
         [JsonProperty("is_activedirectory")]
         public bool IsActiveDirectoryConnection
         {
@@ -236,7 +223,6 @@ namespace VaultAgent.AuthenticationEngines.LDAP {
 		/// <para>groupdn</para>
 		/// <para>binddn</para>
 		/// </summary>
-		//[JsonIgnore]
 		public string DN_Suffix {
 			get => _dnSuffix;
             set
@@ -248,42 +234,22 @@ namespace VaultAgent.AuthenticationEngines.LDAP {
 
 
 
-
-        //TODO Remove this obsolete function
-		/// <summary>
-		/// Called by constructors (non JSON - JSON will set all of these) to set some standard default values for some properties.
-		/// </summary>
-		/* 
-		internal void SetDefaults () {
-			CaseSensitiveNames = false;
-			DenyNullBind = true;
-			DiscoverDN = false;
-			TLSMinVersion = "tls12";
-			TLSMaxVersion = "tls12";
-			Certificate = "";
-			Upndomain = "";
-			UseTokenGroups = false;
-		}
-        */
-
 		/// <summary>
 		/// Sets Certain fields to their expected Active Directory Defaults.
 		/// </summary>
 		public void SetActiveDirectoryDefaults () {
-            //	GroupFilter = "(\u0026(objectClass=group)(member:1.2.840.113556.1.4.1941:={{.UserDN}}))";
             GroupFilter = "(&(objectClass=group)(member:1.2.840.113556.1.4.1941:={{.UserDN}}))";
-            //GroupFilter = "(&(objectClass=person)(sAMAccountName={{.Username}}))";
-            //GroupAttr = "memberOf";
             GroupAttr = "cn";
             UserAttr = "samaccountname";
-            //UserAttr = "cn";
-            
             UseTokenGroups = false;
             UsePre111Groups = false;
         }
 
 
 
+        /// <summary>
+        /// Uses Pre Vault 1.11 Group Behavior.  See Vault Documentation for details
+        /// </summary>
         [JsonProperty("use_pre111_group_cn_behavior")]
         public bool UsePre111Groups { get; set; } = false;
 		

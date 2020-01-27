@@ -6,11 +6,14 @@ using VaultAgent.Models;
 using SlugEnt;
 
 namespace VaultAgent.AuthenticationEngines {
+    /// <summary>
+    /// The TokenAuthEngine is what enables users to authenticate with a token and perform token related tasks.
+    /// </summary>
     public class TokenAuthEngine : VaultAuthenticationBackend {
         /// <summary>
         /// Constructor for the TokenAuthEngine
         /// </summary>
-        /// <param name="httpConnector">VaultAPI_Http object used to communicate with the Vault Instance.</param>
+        /// <param name="vaultAgentAPI">Vault object with connectivity and Token information to be used to connect to the Token Engine.</param>
         public TokenAuthEngine (VaultAgentAPI vaultAgentAPI) : base ("Token", "token", vaultAgentAPI) {
             Type = Backends.EnumBackendTypes.A_Token;
             MountPointPrefix = "/v1/auth/";
@@ -28,9 +31,6 @@ namespace VaultAgent.AuthenticationEngines {
             VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListTokenAccessors");
             if ( vdro.Success ) {
 	            return await vdro.GetDotNetObject<List<string>>("data.keys");
-                //string js = vdro.GetDataPackageFieldAsJSON ("keys");
-                //List<string> tokenAccessors = VaultUtilityFX.ConvertJSON<List<string>> (js);
-                //return tokenAccessors;
             }
 
             return null;
@@ -68,10 +68,7 @@ namespace VaultAgent.AuthenticationEngines {
 
             VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "CreateToken", json);
             if ( vdro.Success ) {
-
-                //string js = vdro.GetResponsePackageFieldAsJSON ("auth");
-                //LoginResponse loginResponse = VaultUtilityFX.ConvertJSON<LoginResponse> (js);
-	            LoginResponse loginResponse = await vdro.GetDotNetObject<LoginResponse>("auth");
+                LoginResponse loginResponse = await vdro.GetDotNetObject<LoginResponse>("auth");
 
                 // Now read the token.back.
                 return (await this.GetTokenWithID (loginResponse.ClientToken));
@@ -154,8 +151,6 @@ namespace VaultAgent.AuthenticationEngines {
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "GetTokenViaAccessor", contentParams);
                 if ( vdro.Success ) {
 	                Token token = await vdro.GetDotNetObject<Token>();
-//                    string js = vdro.GetDataPackageAsJSON();
-//                    Token token = VaultUtilityFX.ConvertJSON<Token> (js);
                     token.TokenType = EnumTokenType.Accessor;
                     return token;
                 }
@@ -360,7 +355,10 @@ namespace VaultAgent.AuthenticationEngines {
         }
 
 
-
+        /// <summary>
+        /// Returns a List of Roles assigned to the Token
+        /// </summary>
+        /// <returns></returns>
         public async Task<List<string>> ListTokenRoles () {
             string path = MountPointPath + "roles?list=true";
 

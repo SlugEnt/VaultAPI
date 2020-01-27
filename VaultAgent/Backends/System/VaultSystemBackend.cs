@@ -24,7 +24,7 @@ namespace VaultAgent {
         /// <summary>
         /// Constructor.  Initializes the connection to Vault and stores the token.
         /// <param name="token">Token value that has permissions to Vault.</param>
-        /// <param name="vaultAPI_Http">The Vault API Connector</param>
+        /// <param name="vaultAgentAPI">The Vault API Connector</param>
         /// <param name="name">The name you wish to give the Vault System backend.  At the present time this is purely cosmetic and does nothing.</param>
         /// </summary>
         public VaultSystemBackend (string token, VaultAgentAPI vaultAgentAPI, string name = "System") : base (name, "sys", vaultAgentAPI) {
@@ -107,7 +107,12 @@ namespace VaultAgent {
 
 
 
-        // Disables the given authentication method 
+
+        /// <summary>
+        /// Disables the given authentication method 
+        /// </summary>
+        /// <param name="am">The AuthMethod that should be disabled</param>
+        /// <returns></returns>
         public async Task<bool> AuthDisable (AuthMethod am) { return await AuthDisable (am.Name); }
 
 
@@ -115,8 +120,8 @@ namespace VaultAgent {
 
         /// <summary>
         /// Lists all authentication methods in the current Vault System.
+        /// <returns>Dictionary\string,AuthMethod> containing all Authentication Methods</returns>
         /// </summary>
-        /// <returns>Dictionary\<string,AuthMethod> containing all Authentication Methods</string></returns>
         public async Task<Dictionary<string, AuthMethod>> AuthListAll () {
             string path = MountPointPath + "auth";
 
@@ -166,7 +171,7 @@ namespace VaultAgent {
         /// <summary>
         /// Creates a new audit device with the specified name.
         /// </summary>
-        /// <param name="auditDeviceName">A name to be given to the audit device</param>
+        /// <param name="auditorName">A name to be given to the audit device</param>
         /// <param name="filePath">A full path and filename specification of where the audit entries should be written.</param>
         /// <param name="description">A description of the audit device.</param>
         /// <returns>True if successfully created.</returns>
@@ -228,6 +233,14 @@ namespace VaultAgent {
         #region "SysCapabilities"
 
 
+        /// <summary>
+        /// Returns a Dictionary of objects and the permissions they contains, as well as an overall Capabilities object that summarizes the
+        /// permissions that a Token has on the List of paths provided.
+        /// <para>https://www.vaultproject.io/api/system/capabilities.html</para>
+        /// </summary>
+        /// <param name="tokenID">The Token to evaluate</param>
+        /// <param name="paths">A list of paths to check the token against</param>
+        /// <returns></returns>
         public async Task<Dictionary<string, List<string>>> GetTokenCapabilityOnPaths (string tokenID, List<string> paths) {
             string path = MountPointPath + "capabilities";
 
@@ -243,15 +256,6 @@ namespace VaultAgent {
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "GetTokenCapabilityOnPaths", contentParams);
                 if ( vdro.Success ) {
 	                Dictionary<string, List<string>> capabilities = await vdro.GetDotNetObject<Dictionary<string, List<string>>>();
-					/*
-
-					string js = vdro.GetDataPackageAsJSON();
-                    Dictionary<string, List<string>> capabilities;
-                    capabilities = VaultUtilityFX.ConvertJSON<Dictionary<string, List<string>>> (js); //<Dictionary<string>,List<string>> (js);
-
-                    //string js = vdro.GetJSONPropertyValue(vdro.GetDataPackageAsJSON(), "keys");
-                    //List<string> keys = VaultUtilityFX.ConvertJSON<List<string>>(js);
-					*/
                     return capabilities;
                 }
 
@@ -277,15 +281,15 @@ namespace VaultAgent {
         /// <summary>
         /// Creates (Enables in Vault terminology) a new backend secrets engine with the given name, type and configuration settings.
         /// Throws:  [VaultInvalidDataException] when the mount point already exists.  SpecificErrorCode will be set to: [BackendMountAlreadyExists]
-        /// </summary>
-        /// <param name="mountPath">The root path to this secrets engine that it will be mounted at.  Is a part of every URL to this backend.
+        /// <param name="mountPath">The root path to this secrets engine that it will be mounted at.  Is a part of every URL to this backend.</param>
         /// <param name="description">Brief human friendly name for the mount.</param>
         /// <param name="backendType">The type of secrets backend this mount is.  </param>
         /// <param name="config">The configuration to be applied to this mount.</param>
         /// <returns>Bool:  True if successful in creating the backend mount point.  False otherwise.</returns>
+        /// </summary>
         public async Task<bool> SysMountCreate (string mountPath, string description, EnumSecretBackendTypes backendType, VaultSysMountConfig config = null) {
-            // The keyname forms the last part of the path
-            string path = MountPointPath + pathMounts + mountPath;
+        // The keyname forms the last part of the path
+        string path = MountPointPath + pathMounts + mountPath;
 
 
             // Build out the parameters dictionary.
@@ -345,7 +349,10 @@ namespace VaultAgent {
         }
 
 
-
+        /// <summary>
+        /// [Not Implemented Yet] Returns a List of Secret Engines
+        /// </summary>
+        /// <returns></returns>
         public List<string> SysMountListSecretEngines () {
             // Build Path
             string path = MountPointPath + pathMounts;
@@ -358,7 +365,7 @@ namespace VaultAgent {
         /// <summary>
         /// Deletes the backend Mount.
         /// </summary>
-        /// <param name="Name">Name of the mount to delete.</param>
+        /// <param name="name">Name of the mount to delete.</param>
         /// <returns>True if successful.  False otherwise.</returns>
         public async Task<bool> SysMountDelete (string name) {
             string path = MountPointPath + pathMounts + name;
@@ -544,10 +551,35 @@ namespace VaultAgent {
         /// <summary>
         /// Updates a given policy.  Is merely a wrapper for SysPoliciesACLCreate since Vault has no update function.
         /// </summary>
-        /// <param name="policyName">The name of the policy to update.</param>
         /// <param name="policyContainerItem">The VaultPolicyPathItem object that should be updated in Vault.</param>
         /// <returns>True if successful.  False otherwise.</returns>
         public async Task<bool> SysPoliciesACLUpdate (VaultPolicyContainer policyContainerItem) { return await SysPoliciesACLCreate (policyContainerItem); }
+
+
+
+        /// <summary>
+        /// Returns true if a policy exists, false if it does not.  This is a much more efficient and faster operation than calling Read, if all you need to
+        /// know is if the Policy exists.  
+        /// </summary>
+        /// <param name="policyName"></param>
+        /// <returns></returns>
+        public async Task<bool> SysPoliciesACLExists(string policyName)
+        {
+            // Build Path
+            string path = MountPointPath + "policies/acl/" + policyName;
+            VaultDataResponseObjectB vdro;
+
+            try
+            {
+                vdro = await _parent._httpConnector.GetAsync_B(path, "SysPoliciesACLRead");
+                return true;
+            }
+            catch (VaultInvalidPathException e)
+            {
+                return false;
+            }
+
+        }
 
 
 

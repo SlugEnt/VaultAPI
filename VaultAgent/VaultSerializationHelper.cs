@@ -4,7 +4,13 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace VaultAgent {
+    /// <summary>
+    /// NewtonSoft JSON Serialization settings for all of Vault
+    /// </summary>
     public static class VaultSerializationHelper {
+        /// <summary>
+        /// Serialization Settings
+        /// </summary>
         private static readonly JsonSerializerSettings serializationSettings = new JsonSerializerSettings
         {
             MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
@@ -12,13 +18,23 @@ namespace VaultAgent {
         };
 
 
-        // universal method for deserialization from json
-        // the generic type "T" represents the result type of deserialization
+        /// <summary>
+        /// Deserializes a JSON string into a C# object
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="json"></param>
+        /// <returns></returns>
         public static T FromJson<T> (string json) { return JsonConvert.DeserializeObject<T> (json, serializationSettings); }
 
 
-        // universal method for serialization to json
-        // this "this" keyword means, its "extension method"
+        /// <summary>
+        /// Universal Serializer for JSON
+        /// universal method for serialization to json
+        /// this "this" keyword means, its "extension method"
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="self"></param>
+        /// <returns></returns>
         public static string ToJson<T> (this T self) { return JsonConvert.SerializeObject (self, serializationSettings); }
     }
 }

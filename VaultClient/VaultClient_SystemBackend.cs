@@ -23,18 +23,11 @@ namespace VaultClient
 
 
         public async Task Run() {
-			// Not Working - bool rc = await _vaultSystemBackend.SysAuditEnable("testABC");
-			//await AuthEnableExample();
-			
 			await PolicyCreateExamples();
 			await PolicyReadExamples();
 			await PolicyListExamples();
 			await PolicyDeleteExamples();
 		}
-
-
-		
-
 
 
 
@@ -74,10 +67,6 @@ namespace VaultClient
 
 
 			var rc = await _vaultSystemBackend.SysPoliciesACLCreate(VP);
-
-
-
-
 		}
 
 

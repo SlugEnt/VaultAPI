@@ -209,7 +209,7 @@ namespace VaultClient
 	        vpitemVar.FullControl = true;
 	        _polCommon.AddPolicyPathObject(vpitemVar);
 	        if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polCommon))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polCommon.Name); }
-			/*
+			
 						// RoleAppA Policy.  FC on apps/AppA
 						VaultPolicyPathItem vpItemA1 = new VaultPolicyPathItem(true, _beKV2Name, "appData/appA/*");
 						vpItemA1.FullControl = true;
@@ -221,7 +221,7 @@ namespace VaultClient
 						vpItemB1.FullControl = true;
 						_polRoleAppB.AddPolicyPathObject(vpItemB1);
 						if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRoleAppB))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRoleAppB.Name); }
-			*/
+			
 			// Shared DB Policy
 			VaultPolicyPathItem vpITemDB = new VaultPolicyPathItem(true, _beKV2Name , "shared/dbConfig");
             _polSharedDB.AddPolicyPathObject(vpITemDB);
@@ -336,10 +336,10 @@ namespace VaultClient
 			    roleMaster = await CreateRole ("roleMaster", _polRoleMaster.Name);
 			    role1 = await CreateRole ("role1", _polRole1.Name);
 			    role2 = await CreateRole("role2", _polRole2.Name);
-				roleAppA = await CreateRole("roleAppA", _polCommon.Name, _polSharedDB.Name);
-				roleAppB = await CreateRole("roleAppB", _polCommon.Name, _polSharedDB.Name);
-				//roleAppA = await CreateRole ("roleAppA", _polRoleAppA.Name,_polSharedDB.Name);
-				//roleAppB = await CreateRole("roleAppB", _polRoleAppB.Name, _polSharedDB.Name, _polSharedEmail.Name);
+//				roleAppA = await CreateRole("roleAppA", _polCommon.Name, _polSharedDB.Name);
+//				roleAppB = await CreateRole("roleAppB", _polCommon.Name, _polSharedDB.Name);
+				roleAppA = await CreateRole ("roleAppA", _polRoleAppA.Name,_polSharedDB.Name);
+				roleAppB = await CreateRole("roleAppB", _polRoleAppB.Name, _polSharedDB.Name, _polSharedEmail.Name);
 
 
 				// Create Secret ID's for each of the Application Roles                
@@ -423,8 +423,8 @@ namespace VaultClient
 		    bool readSuccess = false;
 		    (readSuccess, secretA1) = await secretEngine.TryReadSecret<KV2Secret>(secretA1,0);
 
-
-		    if (!readSuccess) {
+            // If it did not exist then create it.
+            if (!readSuccess) {
 			    secretA1 = new KV2Secret("Database", rootPath);
 				// Create Some Secrets.
 				secretA1.Attributes.Add("username", "abcUser");
@@ -433,9 +433,14 @@ namespace VaultClient
 
 			    await secretEngine.SaveSecret(secretA1, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist , 0);
 		    }
+            
+            // Try to read the parent secret - should fail
+            KV2Secret secretParent = new KV2Secret(Constants.appData);
+            (readSuccess, secretParent) = await secretEngine.TryReadSecret<KV2Secret>(secretParent, 0);
 
-			// Lets try and read an AppB secret.  Should fail.
-		    try {
+
+            // Lets try and read an AppB secret.  Should fail.
+            try {
 			    // Lets try and read an AppA secret.  Should fail.
 			    string rootBPath = Constants.appData + "/" + Constants.appName_B + "/";
 			    KV2Secret secretB1 = new KV2Secret("Database", rootBPath);
@@ -552,8 +557,13 @@ namespace VaultClient
 				Token token = await authEngine.Login(role1.RoleID, _SIDRole1.ID);
 
 
+
 				// Create the secrets if they do not exist.  We can attempt to Read the Secret on the path1 paths as we have full control
-				var result = await secretEngine.TryReadSecret(path1AppA);
+
+                var result = await secretEngine.TryReadSecret(appData);
+                if (!result.IsSuccess)
+                    await secretEngine.SaveSecret(appData, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist);
+                result = await secretEngine.TryReadSecret(path1AppA);
 				if (!result.IsSuccess) {
 					await secretEngine.SaveSecret(path1AppA, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist);
 				}

@@ -190,6 +190,36 @@ namespace VaultAgent.Test.ModelTests
 
 
 
+        // Validate that GetParentPath returns correct result.
+        [Test]
+        [TestCase("aRoot/second/third","")]
+        [TestCase("z/second","")]
+        [TestCase("secret","/")]
+        [TestCase("z","/")]
+        // Tests the GetParentPath method
+        public void ParentPath(string initialPath, string expected)
+        {
+            KV2Secret secret = new KV2Secret("A",initialPath);
+            if (expected == "") expected = initialPath;
+            Assert.AreEqual(initialPath,secret.GetParentPath());
+        }
+
+
+        // Validate that successive GetParentPath calls work
+        [Test]
+        public void ParentPathRecurse()
+        {
+            string initial = "root/first/second/third";
+            KV2Secret secretA = new KV2Secret("a",initial);
+            Assert.AreEqual(initial,secretA.GetParentPath());
+
+            KV2Secret secretB = new KV2Secret(initial);
+            Assert.AreEqual("root/first/second", secretB.GetParentPath(),"A20");
+        }
+
+
+        #region "Equatable Methods"
+
         // Test for Reflexive Equality property (One of the 5 required tests for Referential Object Equality)
         [Test]
         public void RefObjEqual_SecretEqualsSelf_True() {
@@ -275,8 +305,8 @@ namespace VaultAgent.Test.ModelTests
 
             // Set extended attribute values.
             a.CreatedTime = DateTimeOffset.Now;
-            a.DeletionTime = "abc";
-            a.Destroyed = true;
+            a.DeletionTime = DateTimeOffset.Now;
+            a.IsDestroyed = true;
             a.Version = 19;
 
             // Now clone
@@ -286,7 +316,7 @@ namespace VaultAgent.Test.ModelTests
             Assert.AreEqual(a.Path, b.Path, "A20:  Paths are not equal.");
             Assert.AreEqual(a.FullPath, b.FullPath, "A30:  FullPaths are not equal.");
             Assert.AreEqual(a.Attributes.Count,b.Attributes.Count,"A40: Attribute counts are different");
-            Assert.AreEqual(a.Destroyed,b.Destroyed,"A50:  Destroyed booleans are not same");
+            Assert.AreEqual(a.IsDestroyed,b.IsDestroyed,"A50:  Destroyed booleans are not same");
             Assert.AreEqual(a.CreatedTime,b.CreatedTime,"A60:   Created Times are different");
             Assert.AreEqual(a.Version,b.Version,"A70:  Version numbers are different.");
             Assert.AreEqual(a.DeletionTime,b.DeletionTime,"A80:  Deletion times are different");
@@ -294,5 +324,6 @@ namespace VaultAgent.Test.ModelTests
                 CollectionAssert.Contains(b.Attributes,attr,"A100:  Attribute Key: " + attr.Key + " with value: " + attr.Value + " was not found.");               
             }
         }
+#endregion
     }
 }

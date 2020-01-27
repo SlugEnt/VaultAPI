@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Text;
 
 namespace VaultAgent.SecretEngines.KeyValue2
@@ -9,15 +10,62 @@ namespace VaultAgent.SecretEngines.KeyValue2
     /// </summary>
     public interface IKV2Secret
     {
+        /// <summary>
+        /// Name of the Secret
+        /// </summary>
         string Name { get; set; }
+
+
+        /// <summary>
+        /// Path where the Secret should be placed
+        /// </summary>
         string Path { get; set; }
+        
+        
+        /// <summary>
+        /// Returns the Full path and name of the secret, so path/path/path/secretName
+        /// </summary>
         string FullPath { get; }
+
+
+        /// <summary>
+        /// If true then this secret was read from Vault, versus being created in C#
+        /// </summary>
         bool WasReadFromVault { get; }
-        Dictionary<string, string> Attributes { get; set; }
+
+        /// <summary>
+        /// The Attributes of the secret.  These are the names and values that are being stored in this secret.
+        /// </summary>
+        Dictionary<string, string> Attributes { get; }
+
+
+        /// <summary>
+        /// Additional data that should be stored in this secret
+        /// </summary>
         Dictionary<string, string> Metadata { get; set; }
+
+
+        /// <summary>
+        /// When the secret was created
+        /// </summary>
         DateTimeOffset CreatedTime { get; }
-        string DeletionTime { get; }
-        bool Destroyed { get;   }
-        int Version { get;  }
+
+
+        /// <summary>
+        /// When the secret was deleted.
+        /// </summary>
+        DateTimeOffset DeletionTime { get; }
+
+
+        /// <summary>
+        /// If true then the secret has been permanently deleted from Vault
+        /// </summary>
+        bool IsDestroyed { get;   }
+
+
+        /// <summary>
+        /// Version number of this iteration of the secret, if using versioning. You should NEVER SET this property.  It is settable because the engine needs to update it.
+        /// </summary>
+        int Version { get; }
     }
 }

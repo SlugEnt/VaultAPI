@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-
-using System;
 using Newtonsoft.Json;
-using System.Collections.Generic;
-using VaultAgent.SecretEngines.KeyValue2;
 
 
 namespace VaultAgent.SecretEngines.KeyValue2
@@ -85,7 +80,9 @@ namespace VaultAgent.SecretEngines.KeyValue2
 
 
 
-            // Returns the entire path to the Vault Secret.  This is the Path + the Name.
+            /// <summary>
+            /// Returns the FullPath to the Secret.  The Fullpath is the path plus the Name of the secret.  So, Path1/path2/path3/secretName
+            /// </summary>
             public string FullPath
             {
                 get
@@ -135,21 +132,39 @@ namespace VaultAgent.SecretEngines.KeyValue2
             /// <summary>
             /// When this particular secret version was deleted from the Vault data store.
             /// </summary>
-            public string DeletionTime { get; internal set; }
+            public DateTimeOffset DeletionTime { get; internal set; }
 
 
             /// <summary>
             /// Boolean - Whether this particular secret version is soft deleted or destroyed.  True means this secret data cannot be undeleted.
             /// </summary>
-            public bool Destroyed { get; internal set; }
+            public bool IsDestroyed { get; internal set; }
 
 
             /// <summary>
             /// The version number of this particular secret.  Is > 0 if the secret was read from the Vault.  Is zero if this object was created in application.
             /// </summary>
-            public int Version { get; internal set; }
+            public int Version { get; internal set; } = 0;
 
 
+
+            /// <summary>
+            /// Returns the Path that this secret belongs to.
+            /// </summary>
+            /// <returns></returns>
+            public string GetParentPath()
+            {
+                int pos = FullPath.LastIndexOf('/');
+                if (pos < 1)
+                {
+                    return "/";
+                }
+                
+                string value = FullPath.Substring(0, pos);
+
+
+                return value;
+            }
 
             #region "EqualityComparers"
 

@@ -132,14 +132,13 @@ namespace VaultAgent.Backends.System {
         /// Creates a Vault Policy Path Item object.  Note, that the protectedPath parameter will be interrogated to see if it indicates that
         /// this is an IsSubFolder or IsKV2 policy AND if the Answer is Yes, it WILL OVERRIDE any False setting for isSubFolder and isKV2 parameters
         /// passed in.
-        /// </summary>
         /// <param name="protectedPath">The path that this policy is applicable to and it must include the backend as the first part of the path in this method call.
         /// The following reserved words immediately following the backend mount name mean something special to KeyValue V2 backends and thus should never be used to identify
         /// the start of the path in ANY backend.  This class treats those as Extended Attribute Identifiers and the paths will not protect what you think:
         /// <para>    You have been warned.  These are:  metadata, data, destroy, delete, undelete.</para>
-        /// 
         /// If the path ends with a trailing slash or /* then it is considered a SubSecretPolicyType (Meaning its permissions apply to subsecrets).
         /// If the path starts with a KV2 SubFolder then it will be considered to be a KV2Policy type.  </param>
+        /// </summary>
         public VaultPolicyPathItem (string protectedPath) {
             (_backendMount, _protectedPath, _isKV2Policy, _isSubFolderType, _KV2_PathID) = SeparatePathIntoComponents (protectedPath);
             _key = CalculateKeyValue (_backendMount, _protectedPath);
@@ -148,13 +147,13 @@ namespace VaultAgent.Backends.System {
 
 
         /// <summary>
-        /// Constructor for creating a KeyValue2 (KV2) type of policy object.  True must be the first parameter or else an exception will be thrown.  In addition the
-        /// protectedPath parameter MUST NOT contain the KV2 path prefix (data, metadata, etc).  If it does you will end up with a true protected path of /backend/data/data/pathA/pathB/secret
-        /// </summary>
+        /// Constructor for creating a KeyValue2 (KV2) type of policy object.  The protectedPath parameter MUST NOT contain the KV2 path prefix (data, metadata, etc).
+        /// If it does you will end up with a true protected path of /backend/data/data/pathA/pathB/secret
         /// <param name="KeyValue2Type">MUST BE TRUE.  If set to false it will throw an error.</param>
         /// <param name="backendMount">The name/path to the backend that this policy applies to.  Note, all leading/trailing slashes are removed.</param>
         /// <param name="protectedPath">The path that this policy is applicable to.  If the path ends with a trailing slash or a trailing /* then it is considered
-        /// a SubFolderPolicyType (Meaning its permissions apply to subsecrets only). 
+        /// a SubFolderPolicyType (Meaning its permissions apply to subsecrets only). </param>
+        /// </summary>
         public VaultPolicyPathItem (bool KeyValue2Type, string backendMount, string protectedPath) {
             bool isKV2;
             bool isSubFolder = false;
@@ -407,6 +406,10 @@ namespace VaultAgent.Backends.System {
         }
 
 
+        //TODO Root seems to not be a possible setting anymore.  Remove?
+        /// <summary>
+        /// The Root Allowed Permission
+        /// </summary>
         public bool RootAllowed {
             get { return _rootAllowed; }
             set {
@@ -659,8 +662,6 @@ namespace VaultAgent.Backends.System {
         /// </summary>
         /// <param name="backend">The Backend Mount component of the object.</param>
         /// <param name="protectedPath">The path that the policy is protecting.</param>
-        /// <param name="isKV2">True if the path object represents a KeyValue version 2 ACL property.</param>
-        /// <param name="isSubFolder">True if the path object represents sub items of the current path.</param>
         /// <returns></returns>
         private static string CalculateKeyValue (string backend, string protectedPath) { return (backend + "/" + protectedPath); }
 

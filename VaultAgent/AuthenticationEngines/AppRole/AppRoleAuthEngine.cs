@@ -33,7 +33,7 @@ namespace VaultAgent.AuthenticationEngines {
         /// </summary>
         /// <param name="backendMountName"></param>
         /// <param name="backendMountPath"></param>
-        /// <param name="httpConnector"></param>
+        /// <param name="vault">A VaultAgentAPI object with connection info and a Token that can be used to perform AppRoleAuth Engine functions</param>
         public AppRoleAuthEngine (string backendMountName, string backendMountPath, VaultAgentAPI vault) : base (backendMountName, backendMountPath, vault) {
             Type = EnumBackendTypes.A_AppRole;
             MountPointPrefix = "/v1/auth/";
@@ -44,7 +44,6 @@ namespace VaultAgent.AuthenticationEngines {
         /// <summary>
         /// Constructor for the default AppRole authentication backend in Vault.
         /// </summary>
-        /// <param name="httpConnector"></param>
         public AppRoleAuthEngine (VaultAgentAPI vault) : base ("AppRole", "approle", vault) {
             Type = EnumBackendTypes.A_AppRole;
             MountPointPrefix = "/v1/auth/";
@@ -121,6 +120,8 @@ namespace VaultAgent.AuthenticationEngines {
         /// Reads the AppRole with the given name.  Returns an AppRole object or Null if the AppRole does not exist.
         /// </summary>
         /// <param name="appRoleName">String name of the app role to retrieve.</param>
+        /// <param name="readRoleID">If True, the method, will perform a second Read operation to get the Role ID.  By Default Vault does
+        /// not return the RoleID.  So, if you do not need the RoleID, then leaving this false is faster and more efficient</param>
         /// <returns>AppRole object.</returns>
         public async Task<AppRole> ReadRole (string appRoleName, bool readRoleID = false) {
             string path = MountPointPath + "role/" + appRoleName;
@@ -239,6 +240,7 @@ namespace VaultAgent.AuthenticationEngines {
         /// Generates a secret ID for a given Application Role.
         /// TODO - At this time this method does not support the cidr_list or token_bound_cidrs properties that restrict the IP addresses that can use a given token.
         /// </summary>
+        /// <param name="appRoleName">The name of the Application Role that you wish to generate a Secret ID For</param>
         /// <param name="returnFullSecret">Vault only returns an abbreviated secret object.  If you wish to have a fully populated one then set to true.  Default False.
         /// Note, that this in no way affects the secret itself.  By setting to true, we make an additional call to Vault to re-read the full secret object.  If you do not
         /// need the full secret information then leaving at false is faster.</param>

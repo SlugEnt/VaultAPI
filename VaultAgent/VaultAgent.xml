@@ -1017,6 +1017,13 @@
             reading from the Vault Instance.
             </summary>
         </member>
+        <member name="T:VaultAgent.Backends.System.VaultPolicyPathItemKV2">
+            <summary>
+            A Vault Policy Path Item object that represents Vault Permissions for a given path in a KV2 secret database.  See VaultPolicyPathItem class info for all
+            implementation details.
+            </summary>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:VaultAgent.Backends.System.VaultPolicyPathItemKV2.#ctor(System.String,System.String)" -->
         <member name="T:VaultAgent.Backends.System.VaultSysMountConfig">
             <summary>
             Represents the configuration settings for a given Vault Mount.  
@@ -1220,6 +1227,14 @@
             <param name="policyContainerItem">The VaultPolicyPathItem object that should be updated in Vault.</param>
             <returns>True if successful.  False otherwise.</returns>
         </member>
+        <member name="M:VaultAgent.VaultSystemBackend.SysPoliciesACLExists(System.String)">
+            <summary>
+            Returns true if a policy exists, false if it does not.  This is a much more efficient and faster operation than calling Read, if all you need to
+            know is if the Policy exists.  
+            </summary>
+            <param name="policyName"></param>
+            <returns></returns>
+        </member>
         <member name="M:VaultAgent.VaultSystemBackend.SysPoliciesACLRead(System.String)">
             <summary>
             Reads the Vault policy with the given name.
@@ -1375,7 +1390,7 @@
             identity associated with this token.  IE.  TokenPolicies + IdentityPolicies
             </summary>
         </member>
-        <member name="P:VaultAgent.Models.Token.IsRenewable">
+        <member name="P:VaultAgent.Models.Token.IsIsRenewable">
             <summary>
             Indicates if this token is renewable.
             </summary>
@@ -1515,7 +1530,7 @@
             the given period. Requires a root/sudo token to use
             </summary>
         </member>
-        <member name="P:VaultAgent.Models.TokenRole.IsRenewable">
+        <member name="P:VaultAgent.Models.TokenRole.IsIsRenewable">
             <summary>
             Set to false to disable the ability of the token to be renewed past its initial TTL. 
             Setting the value to true will allow the token to be renewable up to the system/mount maximum TTL
@@ -1717,7 +1732,7 @@
             When this particular secret version was deleted from the Vault data store.
             </summary>
         </member>
-        <member name="P:VaultAgent.SecretEngines.KeyValue2.KV2SecretBase`1.Destroyed">
+        <member name="P:VaultAgent.SecretEngines.KeyValue2.KV2SecretBase`1.IsDestroyed">
             <summary>
             Boolean - Whether this particular secret version is soft deleted or destroyed.  True means this secret data cannot be undeleted.
             </summary>
@@ -1948,160 +1963,216 @@
         </member>
         <member name="T:VaultAgent.SecretEngines.KV2SecretEngine">
             <summary>
-            This backend is for interfacing with the Vault secret Backend Version 2.0.  
-            One of the unique things is that there are different root mounts within the given backend depending on what you want to do.  So having
-            a std BackEnd path does not really work with this class.  It generally builds the unique path in each member method.
+                This backend is for interfacing with the Vault secret Backend Version 2.0.
+                One of the unique things is that there are different root mounts within the given backend depending on what you
+                want to do.  So having
+                a std BackEnd path does not really work with this class.  It generally builds the unique path in each member
+                method.
             </summary>
         </member>
         <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.#ctor(System.String,System.String,VaultAgent.VaultAgentAPI)">
             <summary>
-            Constructor.  Initializes the connection to Vault and stores the token.
+                Constructor.  Initializes the connection to Vault and stores the token.
             </summary>
             <param name="backendName">The name of the secret backend to mount.  This is purely cosmetic.</param>
-            <param name="backendMountPoint">The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/ and exclude trailing slash.</param>
-            <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
-        </member>
-        <!-- Badly formed XML comment ignored for member "M:VaultAgent.SecretEngines.KV2SecretEngine.SetBackendConfiguration(System.UInt16,System.Boolean)" -->
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.GetBackendConfiguration">
-            <summary>
-            Returns the configuration settings of the current KeyValue V2 secret store. 
-            </summary>
-            <returns>KV2BackendSettings object with the values of the current configuration.</returns>
-        </member>
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.SaveSecret(VaultAgent.SecretEngines.KeyValue2.IKV2Secret,VaultAgent.Backends.KV2EnumSecretSaveOptions,System.Int32)">
-            <summary>
-            Saves the provided IKV2Secret object.  You must specify a save option and optionally what the current version of the secret is.
-            If the CAS setting is set on the backend then the following errors may be returned:
-            <para></para>
-            <para>Commonly Throws the Following Errors:</para>
-            <para>  [VaultForbiddenException] - Errors with access.  The SpecifiedErrorCode field will be set to EnumVaultExceptionCodes.PermissionDenied if token does not have
-            appropriate permissions to access the path.</para>
-            <para>   [VaultInvalidDataException]</para>
-            <para>     [SpecificErrorCode] = EnumVaultExceptionCodes.CheckAndSetMissing - You specified an invalid casSaveOption (AlwaysAllow is not valid for backend with CAS Set)
-            		or the currentVersion parameter was invalid. </para>
-            <para>     [SpecificErrorCode] = EnumVaultExceptionCodes.CAS_SecretExistsAlready - You set the casSaveOption to only allow save to succeed if the secret does not yet exist.</para>
-            <para>     [SpecificErrorCode] = EnumVaultExceptionCodes.CAS_VersionMissing - The version you specified was invalid.  It must be equal to the current version number of the secret.</para>
-            
-            </summary>
-            <param name="secret">IKV2Secret object to be saved.  This must contain minimally the Name and the Path of the secret and one or more optional attributes.</param>
-            <param name="casSaveOption">This must be set to the CAS option you desired:
-              - OnlyIfKeyDoesNotExist = 0,
-              - OnlyOnExistingVersionMatch = 1,
-              - AlwaysAllow = 2  - Set to this value if the backend is not CAS enabled.  If CAS is enabled then this option will result in an error.
+            <param name="backendMountPoint">
+                The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/
+                and exclude trailing slash.
             </param>
-            <param name="currentVersion">What the current version of the secret is.  Required if the backend is in CAS mode (Default mode).</param>
-            <returns></returns>
-        </member>
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.ReadSecret``1(System.String,System.Int32)">
-            <summary>
-            Reads the secret from Vault.  It defaults to reading the most recent version.  Set secretVersion to non zero to retrieve a
-            specific version.
-            <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
-            <para>Returns the IKV2SecretWrapper if a secret was found at the location.</para>
-            <para>Returns Null if no secret found at location.</para>
-            </summary>
-            <param name="secretPath">The Name (path) to the secret you wish to read.</param>
-            <param name="secretVersion">The version of the secret to retrieve.  (Default) set to 0 to read most recent version. </param>
-            <returns>IKV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
-        </member>
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.TryReadSecret``1(System.String,System.Int32)">
-            <summary>
-            Attempts to read a secret if it exists.  Returns a tuple value (bool success, IKV2Secret secret) as follows:
-            <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
-            <para>If secret was found the first value is True and the 2nd value is the IKV2Secret that was read.</para>
-            <para>If not found, the first value is False and the second value is null.</para>
-            </summary>
-            <param name="secretPath">The path to the secret to check for existence and retrieve if it does exist.</param>
-            <param name="secretVersion">The secret version to be read.  0 for current.</param>
-            <returns></returns>
+            <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
         </member>
         <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.DeleteSecretVersion(System.String,System.Int32)">
             <summary>
-            Deletes the version of the secret requested - or the most recent version if version parameter is zero.
+                Deletes the version of the secret requested - or the most recent version if version parameter is zero.
             </summary>
             <param name="secretPath">The name of the secret to delete.</param>
             <param name="version">The version to delete.  Defaults to zero which is the most recent or current version of the key.</param>
             <returns>True if successful.  False otherwise.</returns>
         </member>
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.ListSecretsAtPath(System.String)">
-            <summary>
-            Returns a list of secrets at a given path
-            </summary>
-            <param name="secretPath">The path "folder" to retrieve secrets for.  This may be the entire path including the name (if the secret has subfolders) or just a partial path. </param>
-            <returns>List of strings which contain secret names.</returns>
-        </member>
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.UpdateSecretSettings(System.String,System.UInt16,System.Boolean)">
-            <summary>
-            Allows one to change 2 metadata parameters of a secret - Max # of versions and the CAS setting.  Represents Vaults Update MetaData function for a secret.
-            </summary>
-            <param name="secretsecretNamePath">The secret to be saved.  Includes the entire secret Path plus the Name.</param>
-            <param name="maxVersions">The maximum number of versions of this key to keep.</param>
-            <param name="casRequired">Boolean determining if the CAS parameter needs to be set on save/update of a key.</param>
-            <returns></returns>
-        </member>
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.UndeleteSecretVersion(System.String,System.Int32)">
-            <summary>
-            Undeletes a given secret AND version.  
-            </summary>
-            <param name="secretsecretNamePath">The secret name and path to be undeleted.</param>
-            <param name="version">The specific version of the secret to be unnamed.</param>
-            <returns>True if successful.  False otherwise.</returns>
-        </member>
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.DestroySecretVersion(System.String,System.Int32)">
-            <summary>
-            Permanently deletes a given secret version.  This is unable to be undone.
-            </summary>
-            <param name="secretNamePath">The secret name to be undeleted.</param>
-            <param name="version">The specific version of the secret to be unnamed.</param>
-            <returns>True if successful.  False otherwise.</returns>
-        </member>
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.GetSecretMetaData(System.String)">
-            <summary>
-            Reads the Secret Metadata for the KeyValue V2 secret.  This includes version information, and critical timestamps such as destroy, delete, create etc.
-            </summary>
-            <param name="secretNamePath">The path to the secret to get metadata on.</param>
-            <returns>KV2SecretMetaDataInfo object</returns>
-        </member>
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.DestroySecretCompletely(System.String)">
-            <summary>
-            Permanently destroys a secret, including all versions and metadata.
-            </summary>
-            <param name="secretNamePath">The name of the secret to delete</param>
-            <returns>True if successful.</returns>
-        </member>
         <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.DeleteSecretVersion(VaultAgent.SecretEngines.KeyValue2.IKV2Secret,System.Int32)">
             <summary>
-            Deletes the version of the secret requested - or the most recent version if version parameter is zero.
-            <para> Set secretVersion parameter as follows:</para>
-            <para>  (Default) set to 0 to delete the most recent version.</para>
-            <para>  Set to -1 to use the version number specified in the secret object as the version to delete.</para>
-            <para>  Set to any positive number to delete that specific version from the Vault Instance Store.</para>
+                Deletes the version of the secret requested - or the most recent version if version parameter is zero.
+                <para> Set secretVersion parameter as follows:</para>
+                <para>  (Default) set to 0 to delete the most recent version.</para>
+                <para>  Set to -1 to use the version number specified in the secret object as the version to delete.</para>
+                <para>  Set to any positive number to delete that specific version from the Vault Instance Store.</para>
             </summary>
             <param name="secretPath">The name of the secret to delete.</param>
             <param name="version">The version of the secret to delete.</param>
             <returns>True if successful.  False otherwise.</returns>
         </member>
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.DestroySecretCompletely(System.String)">
+            <summary>
+                Permanently destroys a secret, including all versions and metadata.
+            </summary>
+            <param name="secretNamePath">The name of the secret to delete</param>
+            <returns>True if successful.</returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.DestroySecretVersion(System.String,System.Int32)">
+            <summary>
+                Permanently deletes a given secret version.  This is unable to be undone.
+            </summary>
+            <param name="secretNamePath">The secret name to be undeleted.</param>
+            <param name="version">The specific version of the secret to be unnamed.</param>
+            <returns>True if successful.  False otherwise.</returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.GetBackendConfiguration">
+            <summary>
+                Returns the configuration settings of the current KeyValue V2 secret store.
+            </summary>
+            <returns>KV2BackendSettings object with the values of the current configuration.</returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.GetSecretMetaData(System.String)">
+            <summary>
+                Reads the Secret Metadata for the KeyValue V2 secret.  This includes version information, and critical timestamps
+                such as destroy, delete, create etc.
+            </summary>
+            <param name="secretNamePath">The path to the secret to get metadata on.</param>
+            <returns>KV2SecretMetaDataInfo object</returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.GetSecretMetaData(VaultAgent.SecretEngines.KeyValue2.IKV2Secret)">
+            <summary>
+                Returns the Secret MetaData Object Information for the provided Secret Object
+            </summary>
+            <param name="secretObj"></param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.ListSecretsAtPath(System.String,System.Boolean,System.Boolean)">
+            <summary>
+                Returns a list of secrets at a given path.  If the parameter includeFolderSecrets is true (default) then it will
+                remove secret names with a trailing slash. This is generally what callers want.
+            </summary>
+            <param name="secretPath">
+                The path "folder" to retrieve secrets for.  This may be the entire path including the name (if
+                the secret has subfolders) or just a partial path.
+            </param>
+            <param name="includeFolderSecrets">
+                If false (default) it will remove secrets that contain a trailing slash which in
+                Vault indicates that this is a folder or parent to other secret objects
+            </param>
+            <returns>List of strings which contain secret names.</returns>
+            <remarks>https://github.com/SlugEnt/VaultAPI/issues/3</remarks>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.ListSecretsSorted(System.String,System.Boolean)">
+            <summary>
+                Returns a list of secrets at a given path.  If the parameter includeFolderSecrets is true (default) then it will
+                remove secret names with a trailing slash. This is generally what callers want.
+            </summary>
+            <param name="secretPath">
+                The path "folder" to retrieve secrets for.  This may be the entire path including the name (if
+                the secret has subfolders) or just a partial path.
+            </param>
+            <param name="includeFolderSecrets">
+                If false (default) it will remove secrets that contain a trailing slash which in
+                Vault indicates that this is a folder or parent to other secret objects
+            </param>
+            <returns>List of strings which contain secret names.</returns>
+            <remarks>https://github.com/SlugEnt/VaultAPI/issues/3</remarks>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.ReadSecret``1(System.String,System.Int32)">
+            <summary>
+                Reads the secret from Vault.  It defaults to reading the most recent version.  Set secretVersion to non zero to
+                retrieve a
+                specific version.
+                <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
+                <para>Returns the IKV2SecretWrapper if a secret was found at the location.</para>
+                <para>Returns Null if no secret found at location.</para>
+            </summary>
+            <param name="secretPath">The Name (path) to the secret you wish to read.</param>
+            <param name="secretVersion">The version of the secret to retrieve.  (Default) set to 0 to read most recent version. </param>
+            <returns>IKV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
+        </member>
         <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.ReadSecret``1(``0,System.Int32)">
             <summary>
-            Reads the specified secret from Vault.  It defaults to reading the most recent version of the secret.
-            <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
-            <para>Returns the IKV2Secret if a secret was found at the location.</para>
-            <para>Returns Null if no secret found at location.</para>
+                Reads the specified secret from Vault.  It defaults to reading the most recent version of the secret.
+                <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
+                <para>Returns the IKV2Secret if a secret was found at the location.</para>
+                <para>Returns Null if no secret found at location.</para>
             </summary>
-            <param name="secretObj">An existing IKV2Secret object that you wish to re-read.  The existing object will be deleted and replaced with the values for the new.</param>
-            <param name="secretVersion">Version of the secret to retrieve.
-            <para>  (Default) set to 0 to read most recent version.</para>
-            <para>  Set to -1 to use the version number specified in the secret object.</para>
-            <para>  Set to any positive number to read that specific version from the Vault Instance Store.</para>
+            <param name="secretObj">
+                An existing IKV2Secret object that you wish to re-read.  The existing object will be deleted
+                and replaced with the values for the new.
+            </param>
+            <param name="secretVersion">
+                Version of the secret to retrieve.
+                <para>  (Default) set to 0 to read most recent version.</para>
+                <para>  Set to -1 to use the version number specified in the secret object.</para>
+                <para>  Set to any positive number to read that specific version from the Vault Instance Store.</para>
             </param>
             <returns>IKV2Secret of the secret as read from Vault.  Returns null if there is no secret at that path.</returns>
         </member>
-        <!-- Badly formed XML comment ignored for member "M:VaultAgent.SecretEngines.KV2SecretEngine.TryReadSecret``1(``0,System.Int32)" -->
-        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.GetSecretMetaData(VaultAgent.SecretEngines.KeyValue2.IKV2Secret)">
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.SaveSecret(VaultAgent.SecretEngines.KeyValue2.IKV2Secret,VaultAgent.Backends.KV2EnumSecretSaveOptions,System.Int32)">
             <summary>
-            Returns the Secret MetaData Object Information for the provided Secret Object
+                Saves the provided IKV2Secret object.  You must specify a save option and optionally what the current version of
+                the secret is.
+                If the CAS setting is set on the backend then the following errors may be returned:
+                <para></para>
+                <para>Commonly Throws the Following Errors:</para>
+                <para>
+                    [VaultForbiddenException] - Errors with access.  The SpecifiedErrorCode field will be set to
+                    EnumVaultExceptionCodes.PermissionDenied if token does not have
+                    appropriate permissions to access the path.
+                </para>
+                <para>   [VaultInvalidDataException]</para>
+                <para>
+                    [SpecificErrorCode] = EnumVaultExceptionCodes.CheckAndSetMissing - You specified an invalid casSaveOption
+                    (AlwaysAllow is not valid for backend with CAS Set)
+                    or the currentVersion parameter was invalid.
+                </para>
+                <para>
+                    [SpecificErrorCode] = EnumVaultExceptionCodes.CAS_SecretExistsAlready - You set the casSaveOption to
+                    only allow save to succeed if the secret does not yet exist.
+                </para>
+                <para>
+                    [SpecificErrorCode] = EnumVaultExceptionCodes.CAS_VersionMissing - The version you specified was
+                    invalid.  It must be equal to the current version number of the secret.
+                </para>
             </summary>
-            <param name="secretObj"></param>
+            <param name="secret">
+                IKV2Secret object to be saved.  This must contain minimally the Name and the Path of the secret
+                and one or more optional attributes.
+            </param>
+            <param name="casSaveOption">
+                This must be set to the CAS option you desired:
+                - OnlyIfKeyDoesNotExist = 0,
+                - OnlyOnExistingVersionMatch = 1,
+                - AlwaysAllow = 2  - Set to this value if the backend is not CAS enabled.  If CAS is enabled then this option will
+                result in an error.
+            </param>
+            <param name="currentVersion">
+                What the current version of the secret is.  Required if the backend is in CAS mode
+                (Default mode).
+            </param>
+            <returns></returns>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:VaultAgent.SecretEngines.KV2SecretEngine.SetBackendConfiguration(System.UInt16,System.Boolean)" -->
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.TryReadSecret``1(System.String,System.Int32)">
+            <summary>
+                Attempts to read a secret if it exists.  Returns a tuple value (bool success, IKV2Secret secret) as follows:
+                <para>If secret was found the first value is True and the 2nd value is the IKV2Secret that was read.</para>
+                <para>If not found OR YOU do not have permission, the first value is False and the second value is null.</para>
+            </summary>
+            <param name="secretPath">The path to the secret to check for existence and retrieve if it does exist.</param>
+            <param name="secretVersion">The secret version to be read.  0 for current.</param>
+            <returns></returns>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:VaultAgent.SecretEngines.KV2SecretEngine.TryReadSecret``1(``0,System.Int32)" -->
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.UndeleteSecretVersion(System.String,System.Int32)">
+            <summary>
+                Undeletes a given secret AND version.
+            </summary>
+            <param name="secretsecretNamePath">The secret name and path to be undeleted.</param>
+            <param name="version">The specific version of the secret to be unnamed.</param>
+            <returns>True if successful.  False otherwise.</returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KV2SecretEngine.UpdateSecretSettings(System.String,System.UInt16,System.Boolean)">
+            <summary>
+                Allows one to change 2 metadata parameters of a secret - Max # of versions and the CAS setting.  Represents Vaults
+                Update MetaData function for a secret.
+            </summary>
+            <param name="secretsecretNamePath">The secret to be saved.  Includes the entire secret Path plus the Name.</param>
+            <param name="maxVersions">The maximum number of versions of this key to keep.</param>
+            <param name="casRequired">Boolean determining if the CAS parameter needs to be set on save/update of a key.</param>
             <returns></returns>
         </member>
         <member name="T:VaultAgent.SecretEngines.KeyValueSecret">

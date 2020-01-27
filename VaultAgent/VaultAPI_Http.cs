@@ -45,13 +45,28 @@ namespace VaultAgent {
 
 
 
-
+        /// <summary>
+        /// Post Method
+        /// </summary>
+        /// <param name="APIPath">The path in Vault</param>
+        /// <param name="callingRoutineName">Name of the calling routine</param>
+        /// <param name="inputParams">Dictionary of string, string input parameters</param>
+        /// <param name="expectReturnToHaveBody">Set to True if you expect the return object to have a body</param>
+        /// <returns></returns>
 	    public async Task<VaultDataResponseObjectB> PostAsync_B (string APIPath, string callingRoutineName, Dictionary<string, string> inputParams, bool expectReturnToHaveBody = true) {
 		    string paramJSON = JsonConvert.SerializeObject(inputParams, Formatting.None);
 		    return await PostAsync_B(APIPath, callingRoutineName, paramJSON);
 		}
 
 
+        /// <summary>
+        /// Post Method
+        /// </summary>
+        /// <param name="APIPath">The path in Vault</param>
+        /// <param name="callingRoutineName">Name of the calling routine</param>
+        /// <param name="inputParams">Dictionary of string,object input parameters</param>
+        /// <param name="expectReturnToHaveBody">Set to True if you expect the return object to have a body</param>
+        /// <returns></returns>
 	    public async Task<VaultDataResponseObjectB> PostAsync_B(string APIPath, string callingRoutineName, Dictionary<string, object> inputParams, bool expectReturnToHaveBody = true) {
 		    string paramJSON = JsonConvert.SerializeObject(inputParams, Formatting.None);
 		    return await PostAsync_B(APIPath, callingRoutineName, paramJSON);
@@ -65,14 +80,11 @@ namespace VaultAgent {
 		/// </summary>
 		/// <param name="APIPath">The path to call on the Vault server.</param>
 		/// <param name="callingRoutineName">String name of the routine that called this method.  Used for debugging and logging purposes only.</param>
-		/// <param name="inputParams">A Dictionary of key value pairs of parameters that should be sent in the body of the HTTP Call.  Should set to null if overriding 
-		/// with your own JSON string of parameters by setting the inputParamsJSON</param>
 		/// <param name="inputParamsJSON">JSON string of the parameters you want to put in the body of the HTTP call.  This is used to override the inputParams Dictionary.</param>
 		/// <param name="expectReturnToHaveBody">Set to true to optimize the call by not retrieving the body from the response because it is not needed or expected to be empty.</param>
 		/// <returns>VaultDataResponseObject with the results of the call.</returns>
 		public async Task<VaultDataResponseObjectB> PostAsync_B(string APIPath,
 																string callingRoutineName,
-																//Dictionary<string, object> inputParams = null,
 																string inputParamsJSON = "",
 																 bool expectReturnToHaveBody = true) {
 		    HttpContent contentBody = new StringContent(inputParamsJSON);

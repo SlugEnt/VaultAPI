@@ -614,6 +614,35 @@ namespace VaultAgentTests {
         }
 
 
+        [Test]
+        public async Task IfExists_ReturnsTrue_If_PolicyExists()
+        {
+            // Ensure there is at least one policy saved.
+            VaultPolicyContainer VP = new VaultPolicyContainer("IfExistsTrue");
+            VaultPolicyPathItem vpi = new VaultPolicyPathItem("secret/listpol2000A");
+            vpi.ListAllowed = true;
+            VP.AddPolicyPathObject(vpi);
+
+            Assert.True(await _vaultSystemBackend.SysPoliciesACLCreate(VP));
+
+            bool exists = await _vaultSystemBackend.SysPoliciesACLExists(VP.Name);
+            Assert.IsTrue(exists);
+        }
+
+
+
+        [Test]
+        public async Task IfExists_ReturnsFalse_If_PolicyDoesNotExist()
+        {
+            VaultPolicyContainer VP = new VaultPolicyContainer("IfExistsFalse");
+            VaultPolicyPathItem vpi = new VaultPolicyPathItem("secret/listpol2000A");
+            vpi.ListAllowed = true;
+            VP.AddPolicyPathObject(vpi);
+
+            // We never saved the policy - it does not exist.
+            bool exists = await _vaultSystemBackend.SysPoliciesACLExists(VP.Name);
+            Assert.IsFalse(exists);
+        }
 
         // Validates that Attempting to read a non-existent policy returns the expected VaultException and the SpecificErrorCode value is set to ObjectDoesNotExist.
         [Test]

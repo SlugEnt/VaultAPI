@@ -6,6 +6,9 @@ using Newtonsoft.Json.Converters;
 
 
 namespace VaultAgent.SecretEngines {
+    /// <summary>
+    /// Represents a Vault Alias to an Entity
+    /// </summary>
     public partial class EntityAlias {
         /// <summary>
         /// The Entity ID this Alias belongs to.  
@@ -50,18 +53,37 @@ namespace VaultAgent.SecretEngines {
         [JsonProperty ("merged_from_canonical_ids")]
         public List<string> MergedFromCanonicalIds { get; internal set; }
 
+        /// <summary>
+        /// Additional Information that is associated with this Entity
+        /// </summary>
         [JsonProperty ("metadata")]
         public Dictionary<string, string> Metadata { get; internal set; }
 
+
+        /// <summary>
+        /// The Accessor ID of the Mount to which the Alias belongs to
+        /// </summary>
         [JsonProperty ("mount_accessor")]
         public string MountAccessor { get; internal set; }
 
+
+        /// <summary>
+        /// The Mount Path
+        /// </summary>
         [JsonProperty ("mount_path")]
         public string MountPath { get; internal set; }
 
+
+        /// <summary>
+        /// The Type of Mount
+        /// </summary>
         [JsonProperty ("mount_type")]
         public string MountType { get; internal set; }
 
+
+        /// <summary>
+        /// Name of this Entity Alias
+        /// </summary>
         [JsonProperty ("name")]
         public string Name { get; internal set; }
     }

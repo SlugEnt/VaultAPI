@@ -198,6 +198,7 @@ namespace VaultAgent {
         /// <param name="secretBackendType">The type of backend you wish to connect to.</param>
         /// <param name="backendName">The name you wish to refer to this backend by.  This is NOT the Vault mount path.</param>
         /// <param name="backendMountPath">The path to the vault mount point that this backend is located at.</param>
+        /// <param name="description">Description for the backend</param>
         /// <param name="config">(Optional) A VaultSysMountConfig object that contains the connection configuration you wish to use to connect to the backend.  If not specified defaults will be used.</param>
         /// <returns>True if it was able to create the backend and connect to it.  False if it encountered an error.</returns>
         public async Task<VaultBackend> CreateSecretBackendMount (EnumSecretBackendTypes secretBackendType,

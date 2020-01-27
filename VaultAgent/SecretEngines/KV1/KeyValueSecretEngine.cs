@@ -9,6 +9,9 @@ using VaultAgent.Backends;
 
 
 namespace VaultAgent.SecretEngines {
+    /// <summary>
+    /// The Vault Key Value Version 1 Secret Backend.  Should prefer to use the KV2SecretEngine
+    /// </summary>
     public class KeyValueSecretEngine : VaultSecretBackend {
         // ==============================================================================================================================================
         /// <summary>
@@ -16,7 +19,7 @@ namespace VaultAgent.SecretEngines {
         /// </summary>
         /// <param name="backendName">The name of the secret backend to mount.  This is purely cosmetic.</param>
         /// <param name="backendMountPoint">The actual mount point that the secret is mounted to.  Exclude and prefix such as /v1/ and exclude trailing slash.</param>
-        /// <param name="_httpConnector">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
+        /// <param name="vaultAgentAPI">The VaultAPI_Http object that should be used to make all Vault API calls with.</param>
         public KeyValueSecretEngine (string backendName, string backendMountPoint, VaultAgentAPI vaultAgentAPI) : base (
             backendName, backendMountPoint, vaultAgentAPI) {
             Type = EnumBackendTypes.Secret;
