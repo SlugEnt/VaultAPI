@@ -42,7 +42,7 @@ namespace VaultAgent.SecretEngines
 		/// <param name="secretEngine">The KV2SecretEngine that this secret should operate with</param>
 		public VaultSecretEntryBase (KV2SecretEngine secretEngine) {
 			InitializeNew();
-			_kv2SecretEngine = secretEngine;
+            SecretEngine = secretEngine;
 		}
 
 
@@ -195,7 +195,14 @@ namespace VaultAgent.SecretEngines
 		/// </summary>
 		/// <returns></returns>
 		public async Task<bool> VSE_Read() {
-			if ( !IsEngineDefined ) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			KV2Secret newSecret = await _kv2SecretEngine.ReadSecret<KV2Secret>(FullPath, 0);
 			if (newSecret == null) return false;
 			_secret = newSecret;
@@ -209,7 +216,14 @@ namespace VaultAgent.SecretEngines
 		/// </summary>
 		/// <returns></returns>
 		public async Task<bool> VSE_ReadVersion(int versionNumber) {
-			if ( !IsEngineDefined ) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			KV2Secret newSecret = await _kv2SecretEngine.ReadSecret<KV2Secret>(FullPath, versionNumber);
 			if (newSecret == null) return false;
 			_secret = newSecret;
@@ -223,7 +237,14 @@ namespace VaultAgent.SecretEngines
 		/// <returns></returns>
 		protected async Task<bool> VSE_Save()
 		{
-			if (!IsEngineDefined) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			bool success = await _kv2SecretEngine.SaveSecret(_secret, KV2EnumSecretSaveOptions.AlwaysAllow);
 			return success;
 		}
@@ -235,7 +256,14 @@ namespace VaultAgent.SecretEngines
 		/// </summary>
 		/// <returns></returns>
 		protected async Task<bool> VSE_SaveNew () {
-			if (!IsEngineDefined) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			bool success = await _kv2SecretEngine.SaveSecret(_secret, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist);
 			return success;
 		}
@@ -250,7 +278,14 @@ namespace VaultAgent.SecretEngines
 		/// <returns></returns>
 		protected async Task<bool> VSE_SaveUpdate ()
 		{
-			if (!IsEngineDefined) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			bool success = await _kv2SecretEngine.SaveSecret(_secret, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch,this.Version);
 			return success;
 		}
@@ -262,7 +297,14 @@ namespace VaultAgent.SecretEngines
 		/// </summary>
 		/// <returns></returns>
 		public async Task<bool> VSE_Exists () {
-			if (!IsEngineDefined) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			KV2Secret newSecret = await _kv2SecretEngine.ReadSecret<KV2Secret>(FullPath, 0);
 			if (newSecret == null) return false;
 			return true;
@@ -274,7 +316,14 @@ namespace VaultAgent.SecretEngines
 		/// </summary>
 		/// <returns></returns>
 		public async Task<bool> VSE_Delete () {
-			if (!IsEngineDefined) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			bool success = await _kv2SecretEngine.DeleteSecretVersion(_secret);
 			return success;
 		}
@@ -286,7 +335,14 @@ namespace VaultAgent.SecretEngines
 		/// </summary>
 		/// <returns></returns>
 		public async Task<bool> VSE_Info () {
-			if (!IsEngineDefined) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			KV2SecretMetaDataInfo info = await _kv2SecretEngine.GetSecretMetaData(_secret);
 			if ( info == null ) return false;
 
@@ -302,7 +358,14 @@ namespace VaultAgent.SecretEngines
 		/// </summary>
 		/// <returns></returns>
 		public async Task<bool> VSE_DestroyAll () {
-			if (!IsEngineDefined) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			bool success = await _kv2SecretEngine.DestroySecretCompletely(_secret);
 			_secret.IsDestroyed = true;
 			return success;
@@ -316,7 +379,14 @@ namespace VaultAgent.SecretEngines
 		/// <returns></returns>
 		public async Task<bool> VSE_Destroy()
 		{
-			if (!IsEngineDefined) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			throw new NotImplementedException();
 			//	bool success = await _kv2SecretEngine.DestroySecretVersion(_secret);
 		}

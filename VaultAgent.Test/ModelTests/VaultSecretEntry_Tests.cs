@@ -242,6 +242,20 @@ namespace VaultAgentTests
 	        Assert.AreEqual(3, secretA.Info.CurrentVersion, "A60:  Current Version of Secret was incorrect.");
         }
 
+        #region "VSE Throw Error Tests"
+        // TODO test all the VSE Methods
+        [Test]
+        public async Task VSE_Read_ThrowsError_IfEngineNotDefined()
+        {
+            string secretName = _uniqueKey.GetKey("Des");
+            VaultSecretEntry secretA = new VaultSecretEntry();
+            secretA.Name = "test";
+            secretA.Attributes.Add("KeyA", "ValueA");
+            Assert.ThrowsAsync<ApplicationException>(() => secretA.VSE_Save());
+        }
+
+        #endregion
+
 
         #region "VaultSecretEntryCAS Tests"
         // We only need to test the SaveNew and SaveUpdate Methods, all the others are the same as VaultSecretEntry
