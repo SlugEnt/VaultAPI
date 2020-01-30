@@ -23,17 +23,18 @@ namespace VaultAgent.SecretEngines
 	/// </summary>
 	public abstract class VaultSecretEntryBase : IKV2Secret { //: KV2SecretBase<VaultSecretEntryNoCAS> {
 		private KV2SecretEngine _kv2SecretEngine = null;
+        // TODO change secret to private and use pass thru methods on this class to access required properties
 		protected KV2Secret _secret;
 		protected KV2SecretMetaDataInfo _info;
-
+        private string _basePath="";
+        
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		public VaultSecretEntryBase () { 
 			InitializeNew();
-
-		}
+        }
 
 
 		/// <summary>
@@ -55,9 +56,10 @@ namespace VaultAgent.SecretEngines
 		public VaultSecretEntryBase (KV2SecretEngine secretEngine ,string name, string path) {
 			InitializeNew();
 			SecretEngine = secretEngine;
-			
+
+            BasePath = path;
 			_secret.Name = name;
-			_secret.Path = path;
+			//_secret.Path = path;
 		}
 
 		
@@ -68,6 +70,34 @@ namespace VaultAgent.SecretEngines
 			_secret = new KV2Secret();
 			_info = null;
 		}
+
+
+        /// <summary>
+        /// This is the base path to the Secret.  Since it may be necessary for a derived class to "compute" its path based upon one ore more properties this serves as the base
+        /// Path Component
+        /// </summary>
+        protected string BasePath {
+            get { return _basePath;}
+            private set { _basePath = value; SetSecretPath();}
+        }
+
+
+
+        /// <summary>
+        /// Any derived class that needs to alter the underlying KV2Secret's path should call this method and then override the ComputeSecretPath method in the derived class.
+        /// The ComputeSecretPath method should then build what the path should be and then return it.
+        /// </summary>
+        protected void SetSecretPath () { _secret.Path = ComputeSecretPath();}
+
+
+        /// <summary>
+        /// This method computes the entire path for the internal secret object.  Entire Path means the entire secret path, except the secret name itself.  There should be
+        /// no trailing slash either.
+        /// <para>This method is overridable and should be overridden in derived classes that need to compute the actual secret path based upon properties of the derived class</para>
+        /// </summary>
+        /// <returns></returns>
+        protected virtual string ComputeSecretPath () { return BasePath;}
+
 
 
 		/// <summary>
@@ -113,11 +143,16 @@ namespace VaultAgent.SecretEngines
 
 
 		/// <summary>
-		/// The Parent path of this secret
+		/// The Parent path of this secret.  Note, When setting this Path, the BasePath property is set to the value the caller set, then the actual path is computed based upon the ComputePath method.
+		/// So, the value you set, could be different than the value you read back.
+		/// <para>It is preferred that you set the Path thru the BasePath property, to ensure everything seems logical, end result is the same.</para>
 		/// </summary>
 		public string Path {
 			get { return _secret.Path;}
-			set { _secret.Path = value; }
+            set {
+                BasePath = value;
+                SetSecretPath();
+            }
 		}
 
 
