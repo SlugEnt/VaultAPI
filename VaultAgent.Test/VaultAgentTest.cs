@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using VaultAgent.AuthenticationEngines;
 using VaultAgent.Backends;
 using SlugEnt;
+using VaultAgent.SecretEngines.KV2;
 
 
 namespace VaultAgentTests
@@ -112,14 +113,32 @@ namespace VaultAgentTests
 			Assert.AreNotEqual(oldHasParent, tokenInfo.HasParent,"M2: HasParent property should have changed values when the IsOrphan property was changed.");
 			Assert.AreNotEqual(tokenInfo.HasParent, tokenInfo.IsOrphan, "M3: IsOrphan and HasParent cannot both be the same value.");
 		}
-		#endregion
-
-	}
+        #endregion
 
 
-	// Simulates a backend for Abstract backend validation.
-/*	internal class BETest : VaultBackend {
-//		public BETest() : base("test", "testmount",) { }
-	}
-	*/
+        #region "Pathing Tests"
+
+        // Validates that we combine paths correctly.
+        [Test]
+        [TestCase("/root/", "/root/")]
+        [TestCase("/root", "/root")]
+        [TestCase("root", "root")]
+        [TestCase("/root/1/2/3", "/root", "1", "2", "3")]
+        [TestCase("/root/1/2/3/", "/root", "1", "2", "3/")]
+
+        public void PathCombine(string expected, params string[] paths)
+        {
+            string result = VaultAgentAPI.PathCombine(paths);
+            Assert.AreEqual(expected, result);
+        }
+
+        #endregion
+    }
+
+
+    // Simulates a backend for Abstract backend validation.
+    /*	internal class BETest : VaultBackend {
+    //		public BETest() : base("test", "testmount",) { }
+        }
+        */
 }

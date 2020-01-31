@@ -47,5 +47,9 @@ namespace VaultAgent.SecretEngines
 		/// </summary>
 		/// <returns></returns>
 		public new async Task<bool> VSE_Save () { return await base.VSE_Save(); }
-	}
+
+
+
+       // protected override string ComputeSecretPath () { return base.ComputeSecretPath(); }
+    }
 }

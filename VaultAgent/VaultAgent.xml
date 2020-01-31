@@ -4070,6 +4070,13 @@
             <param name="backendType"></param>
             <returns></returns>
         </member>
+        <member name="M:VaultAgent.VaultAgentAPI.PathCombine(System.String[])">
+            <summary>
+            Combines multiple string arguments into a single Vault Path
+            </summary>
+            <param name="paths">One or more string arguments that should be used to built the path</param>
+            <returns></returns>
+        </member>
         <member name="M:VaultAgent.VaultAgentAPI.RefreshActiveToken">
             <summary>
             Retrieves the latest information for the Token currently being used to access Vault with from the Vault Token Database.  While the entire token is refreshed, this practically means

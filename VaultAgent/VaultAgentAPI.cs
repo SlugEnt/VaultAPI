@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using VaultAgent.Backends.System;
 using VaultAgent.SecretEngines;
 using VaultAgent.Models;
@@ -268,6 +269,47 @@ namespace VaultAgent {
         }
 
 
+
+        #region "Pathing Functions"
+
+        /// <summary>
+        /// Combines multiple string arguments into a single Vault Path
+        /// </summary>
+        /// <param name="paths">One or more string arguments that should be used to built the path</param>
+        /// <returns></returns>
+        public static string PathCombine(params string[] paths)
+        {
+            if (paths == null)
+                throw new ArgumentNullException("paths");
+
+            // Compute how big a string builder cache to create.  For each found path we add path length + 1 for the new separator character
+            int finalSize = 0;
+            for (int i = 0; i < paths.Length; i++)
+            {
+                if (paths[i] == null) continue;
+                if (paths[i].Length == 0) continue;
+                finalSize += paths[i].Length + 1;
+            }
+
+
+            StringBuilder newPath = new StringBuilder(finalSize + 2);
+            for (int i = 0; i < paths.Length; i++)
+            {
+                // If Empty path, skip it
+                if ( paths [i] == null ) continue;
+                if (paths[i].Length == 0) continue;
+
+                // If there are already paths in the new path, then append the separator
+                if (newPath.Length > 0) newPath.Append("/");
+
+                newPath.Append(paths[i]);
+            }
+
+            return newPath.ToString();
+        }
+
+
+        #endregion
 
         #region "CurrentToken Methods"
 
