@@ -99,8 +99,15 @@ namespace VaultAgent.SecretEngines
         protected virtual string ComputeSecretPath () { return BasePath;}
 
 
+        /// <summary>
+        /// This should be overwritten by descendant objects.  It will be called any time the secret is read from the Vault.
+        /// <para>If you need to set any internal variables based upon the read, this is method you would use</para>
+        /// </summary>
+        protected virtual void OnVSE_Read () { }
 
-		/// <summary>
+
+
+        /// <summary>
 		/// The Secret Engine that this secret will read from and save to.
 		/// </summary>
 		public KV2SecretEngine SecretEngine {
@@ -227,6 +234,7 @@ namespace VaultAgent.SecretEngines
 		/// <summary>
 		/// Reads this VSE's Vault Secret data from the Vault.  Returns True on Success.  Note, this will overwrite any existing values that exist
 		/// in this VSE's secret object that have not been saved to the Vault.
+		/// <para>If the read is successful, then the onVSE_Read method is called, allowing descendants to further manipulate the data if necessary.</para>
 		/// </summary>
 		/// <returns></returns>
 		public async Task<bool> VSE_Read() {
@@ -241,6 +249,10 @@ namespace VaultAgent.SecretEngines
 			KV2Secret newSecret = await _kv2SecretEngine.ReadSecret<KV2Secret>(FullPath, 0);
 			if (newSecret == null) return false;
 			_secret = newSecret;
+            
+
+            // Call method that allows descendants to do additional processing after a read.
+            OnVSE_Read();
 			return true;
 		}
 

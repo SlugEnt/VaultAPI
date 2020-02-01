@@ -3742,6 +3742,12 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.OnVSE_Read">
+            <summary>
+            This should be overwritten by descendant objects.  It will be called any time the secret is read from the Vault.
+            <para>If you need to set any internal variables based upon the read, this is method you would use</para>
+            </summary>
+        </member>
         <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.SecretEngine">
             <summary>
             The Secret Engine that this secret will read from and save to.
@@ -3818,6 +3824,7 @@
             <summary>
             Reads this VSE's Vault Secret data from the Vault.  Returns True on Success.  Note, this will overwrite any existing values that exist
             in this VSE's secret object that have not been saved to the Vault.
+            <para>If the read is successful, then the onVSE_Read method is called, allowing descendants to further manipulate the data if necessary.</para>
             </summary>
             <returns></returns>
         </member>
