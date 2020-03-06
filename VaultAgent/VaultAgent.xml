@@ -3684,6 +3684,13 @@
             <param name="name">The Name of this secret</param>
             <param name="path">The Path of this secret</param>
         </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntry.#ctor(System.String,System.String)">
+            <summary>
+            Constructs a VaultSecretEntry object Without the Secret Engine specified.  Needs to be specified at a later time
+            </summary>
+            <param name="name">The Name of this secret</param>
+            <param name="path">The Path of this secret</param>
+        </member>
         <member name="M:VaultAgent.SecretEngines.VaultSecretEntry.VSE_Save">
             <summary>
             Saves the object to the Vault
@@ -3708,6 +3715,13 @@
             Constructor accepting the SecretEngine that this secret's Vault Operations (VSE) should be applied to.
             </summary>
             <param name="secretEngine">The KV2SecretEngine that this secret should operate with</param>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.#ctor(System.String,System.String)">
+            <summary>
+            Constructor accepting the Name and Path of Secret.  Caller will be responsible at a later time for specifying the SecretEngine that should be used to store this Secret In
+            </summary>
+            <param name="name">The Name of this secret</param>
+            <param name="path">The Path of this secret</param>
         </member>
         <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.#ctor(VaultAgent.SecretEngines.KV2SecretEngine,System.String,System.String)">
             <summary>
