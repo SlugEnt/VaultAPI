@@ -488,5 +488,23 @@ namespace VaultAgentTests
 
 
         #endregion
+
+        #region "Other Tests"
+
+
+        // Confirms that we can create a VSE Secret with just the name and path.
+        [Test]
+        public void CreateWithNoSecretEngine () {
+            string secretName = _uniqueKey.GetKey("CWNSE");
+            string path = "pathB";
+
+            VaultSecretEntry secretA = new VaultSecretEntry(secretName,path);
+            Assert.AreEqual(secretName,secretA.Name);
+            Assert.AreEqual(path,secretA.Path);
+            secretA.SecretEngine = _noCASMount;
+            Assert.AreEqual(_noCASMount.Name,secretA.SecretEngine.Name,"A30:  Secret Engine Mount is not same as SecretEngine");
+
+        }
+    #endregion
     }
 }

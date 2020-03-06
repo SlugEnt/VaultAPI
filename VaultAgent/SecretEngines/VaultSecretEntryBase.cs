@@ -47,6 +47,20 @@ namespace VaultAgent.SecretEngines
 		}
 
 
+
+        /// <summary>
+        /// Constructor accepting the Name and Path of Secret.  Caller will be responsible at a later time for specifying the SecretEngine that should be used to store this Secret In
+        /// </summary>
+        /// <param name="name">The Name of this secret</param>
+        /// <param name="path">The Path of this secret</param>
+        public VaultSecretEntryBase (string name, string path) {
+            InitializeNew();
+            BasePath = path;
+            _secret.Name = name;
+        }
+
+
+
 		/// <summary>
 		/// Constructor accepting the SecretEngine that this secret's Vault Operations (VSE) should be applied to.
 		/// </summary>
