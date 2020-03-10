@@ -648,6 +648,13 @@
             If False, then the caller must set this value.</param>
             <returns></returns>
         </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector.InternalConnection">
+            <summary>
+            Performs the actual Connection to the requested Authentication Engine.  Should return true if successful. false otherwise.
+            <para>Classes that override this should ensure they set LoginResponse and return true or false to indicate success or failure.</para>
+            </summary>
+            <returns></returns>
+        </member>
         <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector.AddLoginParameter(System.String,System.String)">
             <summary>
             Adds the Login Parameter to the parameter list that is provided during the call to the backend login method
@@ -658,19 +665,24 @@
         <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector.GetAuthenticationMountPath">
             <summary>
             Returns the full url path of the authentication backend
+            <para>Derived classes must implement.  This should return the entire Vault URL endpoint for performing a login to the requested backend</para>
             </summary>
             <returns></returns>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector.BuildLoginParameters">
+            <summary>
+            This method will be called by the Connect method to set any parameter arguments needed by the Vault endpoint for the backend
+            </summary>
         </member>
         <member name="P:VaultAgent.AuthenticationEngines.LoginConnectors.TokenLoginConnector.TokenId">
             <summary>
             The Token Id to be used to login with
             </summary>
         </member>
-        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.TokenLoginConnector.Connect(System.Boolean)">
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.TokenLoginConnector.InternalConnection">
             <summary>
             Establishes a connection with the specified token. 
             </summary>
-            <param name="setVaultToken"></param>
             <returns></returns>
         </member>
         <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.TokenLoginConnector.BuildLoginParameters">

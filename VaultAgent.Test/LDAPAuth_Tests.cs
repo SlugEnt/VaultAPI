@@ -59,6 +59,13 @@ namespace VaultAgentTests
         }
 
 
+        /// <summary>
+        /// We need to ensure we are using the normal Vault Token ID.  Some of the tests overwrite this
+        /// </summary>
+        [SetUp]
+        public void SetupEachTest () { _vault.TokenID = VaultServerRef.rootToken; }
+
+
         // Validate we can load the config from a JSON file.
         // Called as part of the Setup Process.
         public void SetLDAPConfig (string backend, LdapConfig config) {
@@ -263,8 +270,6 @@ namespace VaultAgentTests
             // Now test the Read Group
             List<string> groupPolicies = await _ldapAuthEngine.GetPoliciesAssignedToGroup (groupName);
             Assert.AreEqual (0, groupPolicies.Count, "A10:  Expected the list to be empty since no group to policy mapping objects were found.");
-
-
         }
 
 
@@ -291,6 +296,7 @@ namespace VaultAgentTests
             groupPolicyMap.Add ("polb");
             groupPolicyMap.Add ("polc");
 
+            
             Assert.IsTrue (await _ldapAuthEngine.CreateGroupToPolicyMapping (groupName, groupPolicyMap), "A10:  Saving of the group failed.");
             List<string> groupPolicies = await _ldapAuthEngine.GetPoliciesAssignedToGroup (groupName);
             CollectionAssert.AreEquivalent (groupPolicyMap, groupPolicies, "A20:  The policies do not seem to have been saved correctly.");
@@ -299,8 +305,6 @@ namespace VaultAgentTests
             _ldapLoginConnector.Password = _testData.Password;
             Assert.IsTrue(await _ldapLoginConnector.Connect());
             Assert.IsNotEmpty(_ldapLoginConnector.Response.ClientToken);
-
-            
         }
 
 
@@ -310,8 +314,8 @@ namespace VaultAgentTests
         // Validate the error if invalid user or password.
         [Test, Order (3000)]
         public async Task Login_Fails () {
-            Assert.ThrowsAsync<VaultInvalidDataException> (async () => await _ldapAuthEngine.Login (_testData.UserId, "invalid"));
-            Assert.ThrowsAsync<VaultInvalidDataException> (async () => await _ldapAuthEngine.Login ("notauser", "invalid"));
+            Assert.ThrowsAsync<VaultException> (async () => await _ldapAuthEngine.Login (_testData.UserId, "invalid"));
+            Assert.ThrowsAsync<VaultException> (async () => await _ldapAuthEngine.Login ("notauser", "invalid"));
         }
 #pragma warning restore CS1998
     }

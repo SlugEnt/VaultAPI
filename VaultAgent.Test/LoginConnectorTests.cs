@@ -27,6 +27,7 @@ namespace VaultAgentTests
         }
 
 
+        // Validates we can login with a token
         [Test]
         public async Task TokenLogin () {
             // Load engine and create a token

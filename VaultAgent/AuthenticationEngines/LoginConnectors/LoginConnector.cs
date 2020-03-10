@@ -13,6 +13,7 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors {
         private VaultAgentAPI _vaultAgent;
         protected JObject _loginParameters;
         private string _description;
+        private string _mountPath = "";
 
 
         /// <summary>
@@ -47,29 +48,48 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors {
         /// <param name="setVaultToken">If True, then the Vault Token used to perform Vault commands against is set to the Token returned by the login method.
         /// If False, then the caller must set this value.</param>
         /// <returns></returns>
-        public virtual async Task<bool> Connect (bool setVaultToken = true) {
+        public async Task<bool> Connect (bool setVaultToken = true) {
             _loginParameters = new JObject();
 
-            string mountPath = GetAuthenticationMountPath();
+            _mountPath = GetAuthenticationMountPath();
 
             BuildLoginParameters();
 
-            try {
-                VaultDataResponseObjectB vdro = await _vaultAgent._httpConnector.PostAsync_B(mountPath, _description, _loginParameters.ToString());
-                if ( vdro.Success ) {
+            bool success = await InternalConnection();
+            if ( !success ) return false;
+
+            if (setVaultToken) _vaultAgent.TokenID = Response.ClientToken;
+            return true;
+        }
+
+
+
+        /// <summary>
+        /// Performs the actual Connection to the requested Authentication Engine.  Should return true if successful. false otherwise.
+        /// <para>Classes that override this should ensure they set LoginResponse and return true or false to indicate success or failure.</para>
+        /// </summary>
+        /// <returns></returns>
+        protected virtual async Task<bool> InternalConnection () {
+            try
+            {
+                VaultDataResponseObjectB vdro = await _vaultAgent._httpConnector.PostAsync_B(_mountPath, _description, _loginParameters.ToString());
+                if (vdro.Success)
+                {
                     Response = await vdro.GetDotNetObject<LoginResponse>("auth");
-                    if ( setVaultToken ) _vaultAgent.TokenID = Response.ClientToken;
                     return true;
                 }
-                else {
+                else
+                {
                     Response = new LoginResponse();
                     return false;
                 }
             }
-            catch ( Exception e ) {
+            catch (Exception e)
+            {
                 ErrorHandler(e);
                 return false;
             }
+
         }
 
 
@@ -87,12 +107,17 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors {
 
         /// <summary>
         /// Returns the full url path of the authentication backend
+        /// <para>Derived classes must implement.  This should return the entire Vault URL endpoint for performing a login to the requested backend</para>
         /// </summary>
         /// <returns></returns>
         protected abstract string GetAuthenticationMountPath ();
 
 
+        /// <summary>
+        /// This method will be called by the Connect method to set any parameter arguments needed by the Vault endpoint for the backend
+        /// </summary>
         protected abstract void BuildLoginParameters ();
+
 
         protected virtual void ErrorHandler (Exception e) { throw e; }
     }

@@ -33,9 +33,8 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors
         /// <summary>
         /// Establishes a connection with the specified token. 
         /// </summary>
-        /// <param name="setVaultToken"></param>
         /// <returns></returns>
-        public override async Task<bool> Connect (bool setVaultToken = true) {
+        protected override async Task<bool> InternalConnection () {
             // In reality, we are not connecting anything.  Tokens are a unique case, in which you either know the token value or you do not.
             // If you know it, then we just validate it is a token and copy its information to the Response object.
             Token token = await _tokenAuthEngine.GetCurrentTokenInfo();
@@ -53,10 +52,10 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors
             Response.Renewable = token.IsRenewable;
             Response.EntityId = token.EntityId;
             Response.Metadata = token.Metadata;
-            
+
             // TODO - Adjust
             //Response.TokenType = token.TokenType;
-
+            
             return true;
         }
 
