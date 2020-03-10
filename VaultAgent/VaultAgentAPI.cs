@@ -93,10 +93,11 @@ namespace VaultAgent {
             }
             catch (Exception e)
             {
-                if (e.InnerException.Message.StartsWith("No connection"))
-                {
-                    throw new ApplicationException("Unable to establish connection to remote Vault Server.");
-                }
+                if (e.InnerException != null) 
+                    if (e.InnerException.Message.StartsWith("No connection"))
+                    {
+                        throw new ApplicationException("Unable to establish connection to remote Vault Server.");
+                    }
                 throw e;
             }
         }
@@ -140,8 +141,7 @@ namespace VaultAgent {
 
 
         // Used to get/set the TokenID that this object will use to communicate with Vault with.  If you change the token value it becomes effective 
-        // immediately.  This should rarely if ever need to be utilized in a production setting.  When set it will retrieve the latest version of the Token
-        // object from Vault and updates the Token object of this class.
+        // immediately.  When set it will retrieve the latest version of the Token object from Vault and updates the Token object of this class.
         internal string TokenID {
             get => _vaultAccessTokenID;
             set {

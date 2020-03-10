@@ -92,9 +92,6 @@ namespace VaultAgent.AuthenticationEngines {
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B(path, "GetToken", contentParams);
                 if ( vdro.Success ) {
 	                return await vdro.GetDotNetObject<Token>();
-                    //string js = vdro.GetDataPackageAsJSON();
-                    //Token token = VaultUtilityFX.ConvertJSON<Token> (js);
-                    //return token;
                 }
                 else { throw new VaultUnexpectedCodePathException(); }
             }
@@ -120,9 +117,6 @@ namespace VaultAgent.AuthenticationEngines {
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "GetCurrentTokenInfo");
                 if ( vdro.Success ) {
 	                return await vdro.GetDotNetObject<Token>();
-                    //string js = vdro.GetDataPackageAsJSON();
-                    //Token tokenInfo = VaultUtilityFX.ConvertJSON<Token> (js);
-                    //return tokenInfo;
                 }
                 else { throw new VaultUnexpectedCodePathException(); }
             }
@@ -195,11 +189,7 @@ namespace VaultAgent.AuthenticationEngines {
 
             Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"token", tokenID}};
 
-//			if (renewalTimeAmount != null) {
             contentParams.Add ("increment", renewalTimeAmount.Value);
-
-            //}
-
 
             VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "RenewToken", contentParams);
             if ( vdro.Success ) { return true; }

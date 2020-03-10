@@ -44,8 +44,10 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors {
         /// Performs the Login method to the authenticated backend.  Returns True if successfull, False if it failed.
         /// You can check the Response object afterward, to retrieve all the relevant information about the login.
         /// </summary>
+        /// <param name="setVaultToken">If True, then the Vault Token used to perform Vault commands against is set to the Token returned by the login method.
+        /// If False, then the caller must set this value.</param>
         /// <returns></returns>
-        public async Task<bool> Connect () {
+        public virtual async Task<bool> Connect (bool setVaultToken = true) {
             _loginParameters = new JObject();
 
             string mountPath = GetAuthenticationMountPath();
@@ -56,6 +58,7 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors {
                 VaultDataResponseObjectB vdro = await _vaultAgent._httpConnector.PostAsync_B(mountPath, _description, _loginParameters.ToString());
                 if ( vdro.Success ) {
                     Response = await vdro.GetDotNetObject<LoginResponse>("auth");
+                    if ( setVaultToken ) _vaultAgent.TokenID = Response.ClientToken;
                     return true;
                 }
                 else {

@@ -566,6 +566,29 @@
             <param name="dn"></param>
             <returns></returns>
         </member>
+        <member name="T:VaultAgent.AuthenticationEngines.LoginConnectors.LDAPLoginConnector">
+            <summary>
+            Provides the ability to login to Vault via LDAP
+            </summary>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LDAPLoginConnector.#ctor(VaultAgent.VaultAgentAPI,System.String,System.String,System.String,System.String)">
+            <summary>
+            Constructs an LDAP Login Connector object, that provides ability to login to Vault via LDAP Credentials
+            </summary>
+            <param name="vaultAgent">The Vault the LDAP Backend is in</param>
+            <param name="authenticatorMountPoint">The Vault Mount Point name for the LDAP Backend</param>
+            <param name="description">Human Readable description of the Vault</param>
+            <param name="ldapUserName">The LDAP UserId to login as</param>
+            <param name="password">The LDAP password for the UserID</param>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LDAPLoginConnector.#ctor(VaultAgent.VaultAgentAPI,System.String,System.String)">
+            <summary>
+            Constructs an LDAP Login Connector object, that provides ability to login to Vault via LDAP Credentials
+            </summary>
+            <param name="vaultAgent">The Vault the LDAP Backend is in</param>
+            <param name="authenticatorMountPoint">The Vault Mount Point name for the LDAP Backend</param>
+            <param name="description">Human Readable description of the Vault</param>
+        </member>
         <member name="P:VaultAgent.AuthenticationEngines.LoginConnectors.LDAPLoginConnector.UserName">
             <summary>
             The LDAP UserName
@@ -586,6 +609,12 @@
             <summary>
             Adds the Password attribute to the Login Parameters
             </summary>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LDAPLoginConnector.ErrorHandler(System.Exception)">
+            <summary>
+            Error Handling for LDAP Erros
+            </summary>
+            <param name="e"></param>
         </member>
         <member name="T:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector">
             <summary>
@@ -610,11 +639,13 @@
             The entire Response object returned by the called Authentication Engine login process
             </summary>
         </member>
-        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector.Connect">
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector.Connect(System.Boolean)">
             <summary>
             Performs the Login method to the authenticated backend.  Returns True if successfull, False if it failed.
             You can check the Response object afterward, to retrieve all the relevant information about the login.
             </summary>
+            <param name="setVaultToken">If True, then the Vault Token used to perform Vault commands against is set to the Token returned by the login method.
+            If False, then the caller must set this value.</param>
             <returns></returns>
         </member>
         <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector.AddLoginParameter(System.String,System.String)">
@@ -627,6 +658,29 @@
         <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector.GetAuthenticationMountPath">
             <summary>
             Returns the full url path of the authentication backend
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:VaultAgent.AuthenticationEngines.LoginConnectors.TokenLoginConnector.TokenId">
+            <summary>
+            The Token Id to be used to login with
+            </summary>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.TokenLoginConnector.Connect(System.Boolean)">
+            <summary>
+            Establishes a connection with the specified token. 
+            </summary>
+            <param name="setVaultToken"></param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.TokenLoginConnector.BuildLoginParameters">
+            <summary>
+            There are no parameters for tokens
+            </summary>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.TokenLoginConnector.GetAuthenticationMountPath">
+            <summary>
+            There is no need for this in this connector
             </summary>
             <returns></returns>
         </member>
