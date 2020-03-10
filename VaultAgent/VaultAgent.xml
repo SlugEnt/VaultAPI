@@ -566,6 +566,70 @@
             <param name="dn"></param>
             <returns></returns>
         </member>
+        <member name="P:VaultAgent.AuthenticationEngines.LoginConnectors.LDAPLoginConnector.UserName">
+            <summary>
+            The LDAP UserName
+            </summary>
+        </member>
+        <member name="P:VaultAgent.AuthenticationEngines.LoginConnectors.LDAPLoginConnector.Password">
+            <summary>
+            The LDAP User's password
+            </summary>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LDAPLoginConnector.GetAuthenticationMountPath">
+            <summary>
+            Returns the Full Mount point to login with the specified LDAP Backend
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LDAPLoginConnector.BuildLoginParameters">
+            <summary>
+            Adds the Password attribute to the Login Parameters
+            </summary>
+        </member>
+        <member name="T:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector">
+            <summary>
+            LoginConnector abstract class that defines core properties and methods for an object that provides the requisite properties for a given type of Authenticated Login
+            </summary>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector.#ctor(VaultAgent.VaultAgentAPI,System.String,System.String)">
+            <summary>
+            Constructs a LoginConnector object.
+            </summary>
+            <param name="vaultAgent">The Vault that contains the authentication backend we wish to login with</param>
+            <param name="authenticatorMountName">The name of the authentication mount point.</param>
+            <param name="description">A description of what this LoginConnector is for.  Example  ABC company Prod LDAP</param>
+        </member>
+        <member name="P:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector.AuthenticationMountName">
+            <summary>
+            The name of the Authentication mount point in the vault.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector.Response">
+            <summary>
+            The entire Response object returned by the called Authentication Engine login process
+            </summary>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector.Connect">
+            <summary>
+            Performs the Login method to the authenticated backend.  Returns True if successfull, False if it failed.
+            You can check the Response object afterward, to retrieve all the relevant information about the login.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector.AddLoginParameter(System.String,System.String)">
+            <summary>
+            Adds the Login Parameter to the parameter list that is provided during the call to the backend login method
+            </summary>
+            <param name="paramName">The name of the parameter that the authentication method is expecting</param>
+            <param name="paramValue">The string value for that parameter</param>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector.GetAuthenticationMountPath">
+            <summary>
+            Returns the full url path of the authentication backend
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:VaultAgent.AuthenticationEngines.TokenAuthEngine">
             <summary>
             The TokenAuthEngine is what enables users to authenticate with a token and perform token related tasks.

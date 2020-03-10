@@ -41,11 +41,6 @@ namespace VaultAgent {
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "GetMyTokenInfo");
                 if ( vdro.Success ) {
                     return await vdro.GetDotNetObject<Token>();
-                    //TODO Clenaup
-
-                    //string js = vdro.GetDataPackageAsJSON();
-                    //Token tokenInfo = VaultUtilityFX.ConvertJSON<Token> (js);
-                    //return tokenInfo;
                 }
                 else { throw new VaultUnexpectedCodePathException(); }
             }
