@@ -621,6 +621,16 @@
             LoginConnector abstract class that defines core properties and methods for an object that provides the requisite properties for a given type of Authenticated Login
             </summary>
         </member>
+        <member name="F:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector._vaultAgent">
+            <summary>
+            The Vault Object to connect to
+            </summary>
+        </member>
+        <member name="F:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector._loginParameters">
+            <summary>
+            JSON JObject that contains the parameters that need to be passed  during the Connection Process
+            </summary>
+        </member>
         <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector.#ctor(VaultAgent.VaultAgentAPI,System.String,System.String)">
             <summary>
             Constructs a LoginConnector object.
@@ -675,6 +685,34 @@
             This method will be called by the Connect method to set any parameter arguments needed by the Vault endpoint for the backend
             </summary>
         </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector.ErrorHandler(System.Exception)">
+            <summary>
+            Derived classes that need to handle specific error situations should override this method.  It will be called if there is a problem during the Connect call.
+            </summary>
+            <param name="e"></param>
+        </member>
+        <member name="T:VaultAgent.AuthenticationEngines.LoginConnectors.TokenLoginConnector">
+            <summary>
+            Provides for the ability to use a Token to connect to a Vault Instance
+            </summary>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.TokenLoginConnector.#ctor(VaultAgent.VaultAgentAPI,System.String,System.String)">
+            <summary>
+            Creates a TokenLoginConnector object which enables logging in with a Vault Token
+            </summary>
+            <param name="vaultAgent">The Vault instance to connect to</param>
+            <param name="description">Descriptive name for this Token Connector</param>
+            <param name="authenticatorMountName">The actual name of the Vault Token Backend you wish to connect to</param>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.TokenLoginConnector.#ctor(VaultAgent.VaultAgentAPI,System.String,System.String,System.String)">
+            <summary>
+            Creates a TokenLoginConnector object which enables logging in with a Vault Token
+            </summary>
+            <param name="vaultAgent">The Vault instance to connect to</param>
+            <param name="description">Descriptive name for this Token Connector</param>
+            <param name="tokenId">The token ID you wish to use to connect with</param>
+            <param name="authenticatorMountName">The actual name of the Vault Token Backend you wish to connect to</param>
+        </member>
         <member name="P:VaultAgent.AuthenticationEngines.LoginConnectors.TokenLoginConnector.TokenId">
             <summary>
             The Token Id to be used to login with
@@ -700,6 +738,11 @@
         <member name="T:VaultAgent.AuthenticationEngines.TokenAuthEngine">
             <summary>
             The TokenAuthEngine is what enables users to authenticate with a token and perform token related tasks.
+            </summary>
+        </member>
+        <member name="F:VaultAgent.AuthenticationEngines.TokenAuthEngine.TOKEN_DEFAULT_MOUNT_NAME">
+            <summary>
+            The Default Mount Name for a Token backend in Vault
             </summary>
         </member>
         <member name="M:VaultAgent.AuthenticationEngines.TokenAuthEngine.#ctor(VaultAgent.VaultAgentAPI)">
@@ -4166,9 +4209,6 @@
             <param name="name">The name this Vault Instance should be known by.  This is purely cosmetic and serves no functional purpose other than being able to uniquely identify this Vault Instance from another.</param>
             <param name="port">The network port the Vault instance is listening on.</param>
             <param name="vaultIP">The IP address of the Vault instance you want to connect to.</param>
-            <param name="tokenID">The token to be used to perform actions against the Vault instance with.  If not supplied now, it will need to be supplied before any actions (other
-            than an authentication backend login method will work.</param>
-            <param name="connectSystemBackend">Set to true to connect the system backend. The supplied token must have permission to connect to the system backend or else this will fail.</param>
         </member>
         <member name="P:VaultAgent.VaultAgentAPI.Name">
             <summary>
@@ -4190,6 +4230,12 @@
             The Security Token used to perform actions in the Vault Instance.
             Note:  This token's information (TTL, ExpireTime and NumberOfUses) will get stale over time.
             You should call RefreshActiveToken if you need to see its Current TTL, ExpireTime or NumberOfUses left values.
+            </summary>
+        </member>
+        <member name="P:VaultAgent.VaultAgentAPI.TokenID">
+            <summary>
+             Used to get/set the TokenID that this object will use to communicate with Vault with.  If you change the token value it becomes effective 
+            immediately.When set it will retrieve the latest version of the Token object from Vault and updates the Token object of this class.
             </summary>
         </member>
         <member name="M:VaultAgent.VaultAgentAPI.ConnectToSecretBackend(VaultAgent.Backends.System.EnumSecretBackendTypes,System.String,System.String)">
