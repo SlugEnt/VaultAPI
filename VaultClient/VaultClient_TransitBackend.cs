@@ -4,6 +4,8 @@ using System.Text;
 using VaultAgent.Backends;
 using System.Threading.Tasks;
 using VaultAgent;
+using VaultAgent.AuthenticationEngines;
+using VaultAgent.AuthenticationEngines.LoginConnectors;
 using VaultAgent.Models;
 using VaultAgent.Backends.Transit.Models;
 using VaultAgent.SecretEngines;
@@ -17,16 +19,22 @@ namespace VaultClient
 		VaultAgentAPI _vault;
 
 		public VaultClient_TransitBackend (string token, string ip, int port, string db) {
-			_vault = new VaultAgentAPI("TransitVault", ip, port, token);
+            _vault = new VaultAgentAPI("VaultClientTra", ip, port);
+            //_vault = new VaultAgentAPI("TransitVault", ip, port, token);
 
-			TB = (TransitSecretEngine)_vault.ConnectToSecretBackend(VaultAgent.Backends.System.EnumSecretBackendTypes.Transit, "transit", "transit");
+			
 
 			//TB = new TransitSecretEngine(ip, port, token,db);
 
 		}
 
 		public async Task Run(bool runRotateTest = false, bool runRekeyTest = true) {
-			try {
+            TokenLoginConnector loginConnector = new TokenLoginConnector(_vault, "ClientSysBE", TokenAuthEngine.TOKEN_DEFAULT_MOUNT_NAME);
+            bool success = await loginConnector.Connect();
+
+            TB = (TransitSecretEngine)_vault.ConnectToSecretBackend(VaultAgent.Backends.System.EnumSecretBackendTypes.Transit, "transit", "transit");
+
+            try {
 				Console.WriteLine("Running thru Vault TransitSecretEngine exercises.");
 
 				string eKey = Guid.NewGuid().ToString();

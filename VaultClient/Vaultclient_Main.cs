@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using VaultAgent;
 using VaultAgent.AuthenticationEngines;
+using VaultAgent.AuthenticationEngines.LoginConnectors;
 using VaultAgent.Backends;
 using VaultAgent.Models;
 
@@ -25,8 +26,13 @@ namespace VaultClient
 			port = 16100;
 
 			// Connect to Vault, add an authentication backend of AppRole.
-			VaultAgentAPI vaultAgent = new VaultAgentAPI("Vault", ip, port, rootToken, true);
-			
+            VaultAgentAPI vaultAgent = new VaultAgentAPI("VaultClient",ip,port);
+            TokenLoginConnector loginConnector = new TokenLoginConnector(vaultAgent,"Client",rootToken,TokenAuthEngine.TOKEN_DEFAULT_MOUNT_NAME);
+            bool success = await loginConnector.Connect();
+
+			//VaultAgentAPI vaultAgent = await VaultServerRef.ConnectVault("AppRoleVault");
+            //new VaultAgentAPI("Vault", ip, port, rootToken, true);
+
 
             InitiateVault initiateVault = new InitiateVault(vaultAgent);
             await initiateVault.WipeVault();

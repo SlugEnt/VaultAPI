@@ -10,11 +10,14 @@ namespace VaultAgent.AuthenticationEngines {
     /// The TokenAuthEngine is what enables users to authenticate with a token and perform token related tasks.
     /// </summary>
     public class TokenAuthEngine : VaultAuthenticationBackend {
+        public const string TOKEN_DEFAULT_MOUNT_NAME = "token";
+
+
         /// <summary>
         /// Constructor for the TokenAuthEngine
         /// </summary>
         /// <param name="vaultAgentAPI">Vault object with connectivity and Token information to be used to connect to the Token Engine.</param>
-        public TokenAuthEngine (VaultAgentAPI vaultAgentAPI) : base ("Token", "token", vaultAgentAPI) {
+        public TokenAuthEngine (VaultAgentAPI vaultAgentAPI) : base ("Token", TOKEN_DEFAULT_MOUNT_NAME, vaultAgentAPI) {
             Type = Backends.EnumBackendTypes.A_Token;
             MountPointPrefix = "/v1/auth/";
         }

@@ -10,7 +10,7 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors {
     /// LoginConnector abstract class that defines core properties and methods for an object that provides the requisite properties for a given type of Authenticated Login
     /// </summary>
     public abstract class LoginConnector {
-        private VaultAgentAPI _vaultAgent;
+        protected VaultAgentAPI _vaultAgent;
         protected JObject _loginParameters;
         private string _description;
         private string _mountPath = "";
@@ -47,6 +47,7 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors {
         /// </summary>
         /// <param name="setVaultToken">If True, then the Vault Token used to perform Vault commands against is set to the Token returned by the login method.
         /// If False, then the caller must set this value.</param>
+        /// <para>TokenLoginConnector ignores this parameter and ALWAYS replaces the Vault token with the token ID passed in.</para>
         /// <returns></returns>
         public async Task<bool> Connect (bool setVaultToken = true) {
             _loginParameters = new JObject();

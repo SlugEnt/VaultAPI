@@ -23,14 +23,15 @@ namespace VaultAgentTests
 
 
 		[OneTimeSetUp]
-		public void TokenEngineSetup() {
+		public async Task TokenEngineSetup() {
 			// Build Connection to Vault.
-			vault = new VaultAgentAPI("TokenEngineVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
+			vault = await VaultServerRef.ConnectVault("TokenEng");
+            //new VaultAgentAPI("TokenEngineVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
 
-			// How to turn on logging.
-			//vault.System.AuditEnableFileDevice("VaultLog", "C:/temp/vault.log");
+            // How to turn on logging.
+            //vault.System.AuditEnableFileDevice("VaultLog", "C:/temp/vault.log");
 
-			_tokenAuthEngine = (TokenAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_Token);
+            _tokenAuthEngine = (TokenAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_Token);
 		}
 
 
@@ -331,8 +332,9 @@ namespace VaultAgentTests
 		// Validates that a token can revoke itself.
 		[Test]
 		public async Task RevokeSelfTokenSucceeds() {
-            VaultAgentAPI v1 = new VaultAgentAPI("TempVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
-		    string tokenName = UK.GetKey ("tmpTok");
+            VaultAgentAPI v1 = await VaultServerRef.ConnectVault("TempVault");
+            //new VaultAgentAPI("TempVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+            string tokenName = UK.GetKey ("tmpTok");
 
             // Create a new token.
 		    TokenNewSettings tokenNewSettings = new TokenNewSettings()
@@ -409,8 +411,9 @@ namespace VaultAgentTests
 	            Token parent = await _tokenAuthEngine.CreateToken (tokenNewSettings);
 	            Assert.NotNull (parent, "A1:  Error creating the parent token - expected to receive the new token back, instead we received a null value.");
 
-	            VaultAgentAPI v1 = new VaultAgentAPI ("TempVault2", VaultServerRef.ipAddress, VaultServerRef.ipPort, parent.ID);
-	            TokenAuthEngine TAE = (TokenAuthEngine) v1.ConnectAuthenticationBackend (EnumBackendTypes.A_Token);
+	            VaultAgentAPI v1 = await VaultServerRef.ConnectVault("TokenAuth2");
+            //new VaultAgentAPI ("TempVault2", VaultServerRef.ipAddress, VaultServerRef.ipPort, parent.ID);
+            TokenAuthEngine TAE = (TokenAuthEngine) v1.ConnectAuthenticationBackend (EnumBackendTypes.A_Token);
 
 
 	            // Now create 3 child tokens.
@@ -461,8 +464,9 @@ namespace VaultAgentTests
 		    Token parent = await _tokenAuthEngine.CreateToken(tokenNewSettings);
 		    Assert.NotNull(parent, "A1:  Error creating the parent token - expected to receive the new token back, instead we received a null value.");
 
-		    VaultAgentAPI v1 = new VaultAgentAPI("TempVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, parent.ID);
-		    TokenAuthEngine TAE = (TokenAuthEngine)v1.ConnectAuthenticationBackend (EnumBackendTypes.A_Token);
+		    VaultAgentAPI v1 = await VaultServerRef.ConnectVault("TokenAuth");
+            //new VaultAgentAPI("TempVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, parent.ID);
+            TokenAuthEngine TAE = (TokenAuthEngine)v1.ConnectAuthenticationBackend (EnumBackendTypes.A_Token);
 
 
 

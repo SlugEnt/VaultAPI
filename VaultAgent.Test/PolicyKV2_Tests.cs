@@ -54,11 +54,12 @@ namespace VaultAgentTests
 				return;
 			}
 
-			// Build Connection to Vault.
-			_vaultAgentAPI = new VaultAgentAPI("PolicyBE", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
+            // Build Connection to Vault.
+            _vaultAgentAPI = await VaultServerRef.ConnectVault("PolicyBE");
+            //_vaultAgentAPI = new VaultAgentAPI("PolicyBE", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
 
-			// Create a new system Backend Mount for this series of tests.
-			_vaultSystemBackend = _vaultAgentAPI.System;
+            // Create a new system Backend Mount for this series of tests.
+            _vaultSystemBackend = _vaultAgentAPI.System;
 
 
 			// Create the backend.
@@ -68,8 +69,9 @@ namespace VaultAgentTests
 				"A10:  Enabling backend " + _beName + " failed.");
 
 			// Create the Root Engine that we will use 
-			_vaultRootAgentAPI = new VaultAgentAPI("Root", _vaultAgentAPI.IP, _vaultAgentAPI.Port, _vaultAgentAPI.Token.ID);
-			_rootEng = (KV2SecretEngine)_vaultRootAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, _beName, _beName);
+			//_vaultRootAgentAPI = new VaultAgentAPI("Root", _vaultAgentAPI.IP, _vaultAgentAPI.Port, _vaultAgentAPI.Token.ID);
+            _vaultRootAgentAPI = await VaultServerRef.ConnectVault("PolicyBE_Alt");
+            _rootEng = (KV2SecretEngine)_vaultRootAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, _beName, _beName);
 
 			_vaultAgents = new List<VaultAgentAPI>();
 		}
@@ -124,10 +126,12 @@ namespace VaultAgentTests
 			Token tokenFAIL = await tokenEng.CreateToken(tokenBSettings);
 
 
-			// AC - Create 2 Vault Instances that will use each Token.
-			VaultAgentAPI vaultOK = new VaultAgentAPI("OKToken", _vaultAgentAPI.IP, _vaultAgentAPI.Port, tokenOK.ID);
-			VaultAgentAPI vaultFail = new VaultAgentAPI("FAILToken", _vaultAgentAPI.IP, _vaultAgentAPI.Port, tokenFAIL.ID);
-			_vaultAgents.Add(vaultOK);
+            // AC - Create 2 Vault Instances that will use each Token.
+            VaultAgentAPI vaultOK = await VaultServerRef.ConnectVault("OKVault",tokenOK.ID);
+            VaultAgentAPI vaultFail = await VaultServerRef.ConnectVault("FailVault", tokenFAIL.ID);
+            //VaultAgentAPI vaultOK = new VaultAgentAPI("OKToken", _vaultAgentAPI.IP, _vaultAgentAPI.Port, tokenOK.ID);
+            //VaultAgentAPI vaultFail = new VaultAgentAPI("FAILToken", _vaultAgentAPI.IP, _vaultAgentAPI.Port, tokenFAIL.ID);
+            _vaultAgents.Add(vaultOK);
 			_vaultAgents.Add(vaultFail);
 
 
@@ -498,8 +502,9 @@ namespace VaultAgentTests
 
 			
 			// Now we 
-			VaultAgentAPI vault = new VaultAgentAPI("capability", _vaultAgentAPI.IP, _vaultAgentAPI.Port,_vaultAgentAPI.TokenID);
-		    AppRoleAuthEngine authEngine = (AppRoleAuthEngine) vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, appBE, appBE);
+			VaultAgentAPI vault = await VaultServerRef.ConnectVault("PolicyBeCapa2");
+            //new VaultAgentAPI("capability", _vaultAgentAPI.IP, _vaultAgentAPI.Port,_vaultAgentAPI.TokenID);
+            AppRoleAuthEngine authEngine = (AppRoleAuthEngine) vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, appBE, appBE);
 		    KV2SecretEngine secretEngine =
 			    (KV2SecretEngine) vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "KV2 Secrets", kv2BE);
 
@@ -587,8 +592,9 @@ namespace VaultAgentTests
 
 
 			// 1B. Now we can connect to the backends.
-			VaultAgentAPI vault = new VaultAgentAPI("capability", _vaultAgentAPI.IP, _vaultAgentAPI.Port, _vaultAgentAPI.TokenID);
-			AppRoleAuthEngine authEngine = (AppRoleAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, appBE, appBE);
+			VaultAgentAPI vault = await VaultServerRef.ConnectVault("PolicyBECapa");
+            //new VaultAgentAPI("capability", _vaultAgentAPI.IP, _vaultAgentAPI.Port, _vaultAgentAPI.TokenID);
+            AppRoleAuthEngine authEngine = (AppRoleAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, appBE, appBE);
 			KV2SecretEngine secretEngine =
 				(KV2SecretEngine)vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "KV2 Secrets", kv2BE);
 			IdentitySecretEngine idEngine = (IdentitySecretEngine)_vaultAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.Identity);

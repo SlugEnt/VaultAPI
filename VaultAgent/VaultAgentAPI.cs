@@ -60,11 +60,11 @@ namespace VaultAgent {
         /// <param name="tokenID">The token to be used to perform actions against the Vault instance with.  If not supplied now, it will need to be supplied before any actions (other
         /// than an authentication backend login method will work.</param>
         /// <param name="connectSystemBackend">Set to true to connect the system backend. The supplied token must have permission to connect to the system backend or else this will fail.</param>
-        public VaultAgentAPI (string name, string vaultIP, int port, string tokenID = "", bool connectSystemBackend = false) {
+        public VaultAgentAPI (string name, string vaultIP, int port) {          //, string tokenID = "", bool connectSystemBackend = false) {
             Name = name;
             IP = vaultIP;
             Port = port;
-
+            _vaultAccessTokenID = string.Empty;
 
             // Create the Secret Backend list.
             _secretBackends = new Dictionary<string, VaultSecretBackend>();
@@ -77,19 +77,22 @@ namespace VaultAgent {
                 // Create HTTP Connector object
                 _httpConnector = new VaultAPI_Http(IP, port);
 
+
+                // Establish a connection to the token backend.
+                _tokenEngine = (TokenAuthEngine)ConnectAuthenticationBackend(EnumBackendTypes.A_Token);
+
+                /*
                 // Establish a connection to the backend
                 if (connectSystemBackend)
                 {
                     _vault = new VaultSystemBackend(tokenID, this);
                 }
 
-                // Establish a connection to the token backend.
-                _tokenEngine = (TokenAuthEngine) ConnectAuthenticationBackend(EnumBackendTypes.A_Token);
-
                 if (tokenID != "")
                 {
                     TokenID = tokenID;
                 }
+                */
             }
             catch (Exception e)
             {
@@ -146,13 +149,13 @@ namespace VaultAgent {
             get => _vaultAccessTokenID;
             set {
                 _vaultAccessTokenID = value;
-                _httpConnector.SetTokenHeader (_vaultAccessTokenID);
+                _httpConnector.SetTokenHeader(_vaultAccessTokenID);
 
                 //  Now retrieve token details from Vault.
-                Task<Token> task = Task.Run<Token> (async () => await this.RefreshActiveToken());
+                Task<Token> task = Task.Run<Token>(async () => await this.RefreshActiveToken());
                 _vaultAccessToken = task.Result;
             }
-        }
+        } 
 
 
 
@@ -163,6 +166,7 @@ namespace VaultAgent {
 
 
 
+
         /// <summary>
         /// Establishes a connection to the desired Vault Secret backend at the specified vault MountPath.  The backend mount must already exist.
         /// </summary>
@@ -170,21 +174,23 @@ namespace VaultAgent {
         /// <param name="backendName">The name you wish to refer to this backend by.  This is NOT the Vault mount path.</param>
         /// <param name="backendMountPath">The path to the vault mount point that this backend is located at.</param>
         /// <returns>True if it was able to successfully connect to the backend.  False if it encountered an error.</returns>
-        public VaultBackend ConnectToSecretBackend (EnumSecretBackendTypes secretBackendType, string backendName = "", string backendMountPath = "") {
-            switch ( secretBackendType ) {
+        public VaultBackend ConnectToSecretBackend(EnumSecretBackendTypes secretBackendType, string backendName = "", string backendMountPath = "")
+        {
+            switch (secretBackendType)
+            {
                 case EnumSecretBackendTypes.KeyValueV2:
-                    KV2SecretEngine kv2Backend = new KV2SecretEngine (backendName, backendMountPath, this);
+                    KV2SecretEngine kv2Backend = new KV2SecretEngine(backendName, backendMountPath, this);
                     return kv2Backend;
                 case EnumSecretBackendTypes.Secret:
-                    KeyValueSecretEngine secretBackend = new KeyValueSecretEngine (backendName, backendMountPath, this);
+                    KeyValueSecretEngine secretBackend = new KeyValueSecretEngine(backendName, backendMountPath, this);
                     return secretBackend;
                 case EnumSecretBackendTypes.Transit:
-                    TransitSecretEngine transitSecretEngine = new TransitSecretEngine (backendName, backendMountPath, this);
+                    TransitSecretEngine transitSecretEngine = new TransitSecretEngine(backendName, backendMountPath, this);
                     return transitSecretEngine;
                 case EnumSecretBackendTypes.Identity:
 
                     // There is only 1 backend of this type, so no need for backend mount path or name.
-                    IdentitySecretEngine identitySecretEngine = new IdentitySecretEngine (this);
+                    IdentitySecretEngine identitySecretEngine = new IdentitySecretEngine(this);
                     return identitySecretEngine;
             }
 
@@ -192,38 +198,6 @@ namespace VaultAgent {
         }
 
 
-
-        /// <summary>
-        /// Creates a secret backend of the specified type at the specified mount path.  Upon completion it establishes a connection to the backend.
-        /// </summary>
-        /// <param name="secretBackendType">The type of backend you wish to connect to.</param>
-        /// <param name="backendName">The name you wish to refer to this backend by.  This is NOT the Vault mount path.</param>
-        /// <param name="backendMountPath">The path to the vault mount point that this backend is located at.</param>
-        /// <param name="description">Description for the backend</param>
-        /// <param name="config">(Optional) A VaultSysMountConfig object that contains the connection configuration you wish to use to connect to the backend.  If not specified defaults will be used.</param>
-        /// <returns>True if it was able to create the backend and connect to it.  False if it encountered an error.</returns>
-        public async Task<VaultBackend> CreateSecretBackendMount (EnumSecretBackendTypes secretBackendType,
-                                                                  string backendName,
-                                                                  string backendMountPath,
-                                                                  string description,
-                                                                  VaultSysMountConfig config = null) {
-            VaultSysMountConfig backendConfig;
-
-            if ( config == null ) {
-                backendConfig = new VaultSysMountConfig
-                {
-                    DefaultLeaseTTL = "30m",
-                    MaxLeaseTTL = "90m",
-                    VisibilitySetting = "hidden"
-                };
-            }
-            else { backendConfig = config; }
-
-            bool rc = await _vault.SysMountCreate (backendMountPath, description, secretBackendType, backendConfig);
-            if ( rc == true ) { return ConnectToSecretBackend (secretBackendType, backendName, backendMountPath); }
-
-            return null;
-        }
 
 
 

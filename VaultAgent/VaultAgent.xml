@@ -646,6 +646,7 @@
             </summary>
             <param name="setVaultToken">If True, then the Vault Token used to perform Vault commands against is set to the Token returned by the login method.
             If False, then the caller must set this value.</param>
+            <para>TokenLoginConnector ignores this parameter and ALWAYS replaces the Vault token with the token ID passed in.</para>
             <returns></returns>
         </member>
         <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LoginConnector.InternalConnection">
@@ -1861,6 +1862,17 @@
             <param name="tokenID">The Token to evaluate</param>
             <param name="paths">A list of paths to check the token against</param>
             <returns></returns>
+        </member>
+        <member name="M:VaultAgent.VaultSystemBackend.CreateSecretBackendMount(VaultAgent.Backends.System.EnumSecretBackendTypes,System.String,System.String,System.String,VaultAgent.Backends.System.VaultSysMountConfig)">
+            <summary>
+            Creates a secret backend of the specified type at the specified mount path.  Upon completion it establishes a connection to the backend.
+            </summary>
+            <param name="secretBackendType">The type of backend you wish to connect to.</param>
+            <param name="backendName">The name you wish to refer to this backend by.  This is NOT the Vault mount path.</param>
+            <param name="backendMountPath">The path to the vault mount point that this backend is located at.</param>
+            <param name="description">Description for the backend</param>
+            <param name="config">(Optional) A VaultSysMountConfig object that contains the connection configuration you wish to use to connect to the backend.  If not specified defaults will be used.</param>
+            <returns>True if it was able to create the backend and connect to it.  False if it encountered an error.</returns>
         </member>
         <member name="M:VaultAgent.VaultSystemBackend.SysMountCreate(System.String,System.String,VaultAgent.Backends.System.EnumSecretBackendTypes,VaultAgent.Backends.System.VaultSysMountConfig)">
             <summary>
@@ -4145,7 +4157,7 @@
              authorization or secret backends which it then uses to communicate to the Vault Store with.
              </summary>
         </member>
-        <member name="M:VaultAgent.VaultAgentAPI.#ctor(System.String,System.String,System.Int32,System.String,System.Boolean)">
+        <member name="M:VaultAgent.VaultAgentAPI.#ctor(System.String,System.String,System.Int32)">
             <summary>
             Constructor to create a new VaultAgentAPI object which is used to connect to a single Vault Instance.  Automatically connects to the Token Backend and will optionally connect
             to system backend if requested.
@@ -4193,17 +4205,6 @@
             <param name="backendName">The name you wish to refer to this backend by.  This is NOT the Vault mount path.</param>
             <param name="backendMountPath">The path to the vault mount point that this backend is located at.</param>
             <returns>True if it was able to successfully connect to the backend.  False if it encountered an error.</returns>
-        </member>
-        <member name="M:VaultAgent.VaultAgentAPI.CreateSecretBackendMount(VaultAgent.Backends.System.EnumSecretBackendTypes,System.String,System.String,System.String,VaultAgent.Backends.System.VaultSysMountConfig)">
-            <summary>
-            Creates a secret backend of the specified type at the specified mount path.  Upon completion it establishes a connection to the backend.
-            </summary>
-            <param name="secretBackendType">The type of backend you wish to connect to.</param>
-            <param name="backendName">The name you wish to refer to this backend by.  This is NOT the Vault mount path.</param>
-            <param name="backendMountPath">The path to the vault mount point that this backend is located at.</param>
-            <param name="description">Description for the backend</param>
-            <param name="config">(Optional) A VaultSysMountConfig object that contains the connection configuration you wish to use to connect to the backend.  If not specified defaults will be used.</param>
-            <returns>True if it was able to create the backend and connect to it.  False if it encountered an error.</returns>
         </member>
         <member name="M:VaultAgent.VaultAgentAPI.ConnectAuthenticationBackend(VaultAgent.Backends.EnumBackendTypes,System.String,System.String)">
             <summary>

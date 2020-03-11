@@ -23,7 +23,10 @@ namespace VaultAgentTests
 
         [OneTimeSetUp]
         public void Setup () {
-            _vault = new VaultAgentAPI("TokenEngineVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
+
+            _vault = new VaultAgentAPI("LoginConnVault", VaultServerRef.ipAddress,VaultServerRef.ipPort);
+
+//            _vault = new VaultAgentAPI("LoginConnVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
         }
 
 

@@ -26,11 +26,12 @@ namespace VaultAgentTests {
 
 
         [OneTimeSetUp]
-        public void Backend_Init () {
+        public async Task Backend_Init () {
             if ( _vaultSystemBackend != null ) { return; }
 
             // Build Connection to Vault.
-            _vaultAgentAPI = new VaultAgentAPI ("PolicyBE", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
+            _vaultAgentAPI = await VaultServerRef.ConnectVault("PolicyBE");
+            //new VaultAgentAPI ("PolicyBE", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
 
             // Create a new system Backend Mount for this series of tests.
             _vaultSystemBackend = _vaultAgentAPI.System;
@@ -1033,7 +1034,8 @@ namespace VaultAgentTests {
             Token tokenA = await tokenEng.CreateToken (tokenASettings);
 
             // Now we will use that token to try and test the secret out.  We need to create a new instance of Vault to test the token out.
-            VaultAgentAPI vaultAgent2 = new VaultAgentAPI ("TestComplexPolicies", _vaultAgentAPI.IP, _vaultAgentAPI.Port, _vaultAgentAPI.Token.ID);
+            VaultAgentAPI vaultAgent2 = await VaultServerRef.ConnectVault("ComplexPol");
+            //new VaultAgentAPI ("TestComplexPolicies", _vaultAgentAPI.IP, _vaultAgentAPI.Port, _vaultAgentAPI.Token.ID);
             KV2SecretEngine secEng = (KV2SecretEngine) vaultAgent2.ConnectToSecretBackend (EnumSecretBackendTypes.KeyValueV2, beName, beName);
             Thread.Sleep (500);
 

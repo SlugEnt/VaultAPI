@@ -24,12 +24,13 @@ namespace VaultAgentTests
 		/// </summary>
 		/// <returns></returns>
 		[OneTimeSetUp]
-		public void VaultAgentTest_OneTimeSetup() {
+		public async Task VaultAgentTest_OneTimeSetup() {
 			_uk = new UniqueKeys();
 			name = _uk.GetKey("vlt");
-			vault = new VaultAgentAPI(name, VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
-			
-		}
+			vault = await VaultServerRef.ConnectVault(name);
+            //new VaultAgentAPI(name, VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+
+        }
 
 
 		/// <summary>
@@ -51,8 +52,9 @@ namespace VaultAgentTests
 
         // Validate that the token ID and Token properties are set when a valid token is passed.
 	    [Test]
-	    public void TokenPropertiesSet_WhenPassedValidToken() {
-            VaultAgentAPI v1 = new VaultAgentAPI(name, VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+	    public async Task TokenPropertiesSet_WhenPassedValidToken() {
+            VaultAgentAPI v1 = await VaultServerRef.ConnectVault(name);
+            //new VaultAgentAPI(name, VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
 
             // Vault instance was created in one time setup.
             Assert.AreEqual(VaultServerRef.rootToken, v1.Token.ID);

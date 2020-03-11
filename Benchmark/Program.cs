@@ -9,6 +9,7 @@ using VaultAgent.Backends;
 using VaultAgent.Backends.System;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using VaultAgent.AuthenticationEngines.LoginConnectors;
 using VaultAgent.SecretEngines;
 
 
@@ -45,7 +46,9 @@ namespace MyBenchmarks
 			int port = 47002;
 
 			// Connect to Vault, add an authentication backend of AppRole.
-			_vaultAgent = new VaultAgentAPI("Vault", ip, port, rootToken, true);
+			_vaultAgent = new VaultAgentAPI("Vault", ip, port);    //, rootToken, true);
+
+            TokenLoginConnector loginConnector = new TokenLoginConnector(_vaultAgent,"Token Authenticator",rootToken);
 
 			await CreateBackendMounts();
 			_appRoleAuthEngine = (AppRoleAuthEngine)_vaultAgent.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _beAuthName, _beAuthName);

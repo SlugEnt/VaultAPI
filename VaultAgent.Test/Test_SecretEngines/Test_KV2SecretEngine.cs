@@ -17,6 +17,7 @@ namespace VaultAgentTests {
     [TestFixture, Order (1)]
     [Parallelizable]
     public class Test_KV2SecretEngine {
+        private VaultSystemBackend _systemBackend;
         private KV2SecretEngine _casMount;
         private KV2SecretEngine _noCasMount;
         private KV2SecretEngine _defaultMount;
@@ -35,7 +36,8 @@ namespace VaultAgentTests {
             if ( _vaultAgentAPI != null ) { return; }
 
             // Build Connection to Vault.
-            _vaultAgentAPI = new VaultAgentAPI ("testa", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
+            _vaultAgentAPI = await VaultServerRef.ConnectVault("KV2SecretEng");
+            //new VaultAgentAPI ("testa", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
 
 
             // We will create 3 KV2 mounts in the Vault instance.  One for testing with CAS on, one with CAS off, and then a generic default (CAS off).	
@@ -52,12 +54,31 @@ namespace VaultAgentTests {
                 VisibilitySetting = "hidden"
             };
 
-            _noCasMount = (KV2SecretEngine) await _vaultAgentAPI.CreateSecretBackendMount (EnumSecretBackendTypes.KeyValueV2, noCasMountName, noCasMountName,
-                                                                                           "No CAS Mount Test", config);
-            _casMount = (KV2SecretEngine) await _vaultAgentAPI.CreateSecretBackendMount (EnumSecretBackendTypes.KeyValueV2, casMountName, casMountName,
-                                                                                         "CAS Mount Test", config);
-            _defaultMount = (KV2SecretEngine) await _vaultAgentAPI.CreateSecretBackendMount (EnumSecretBackendTypes.KeyValueV2, defaultMountName,
-                                                                                             defaultMountName, "Default Mount Test", config);
+
+            // Get Connection to Vault System backend
+            _systemBackend = new VaultSystemBackend(_vaultAgentAPI.TokenID, _vaultAgentAPI);
+            Assert.IsTrue(await _systemBackend.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, noCasMountName, noCasMountName,
+                                                                        "No CAS Mount Test", config),"A10:  Failed to create the NoCas Secret Backend");
+            _noCasMount = (KV2SecretEngine) _vaultAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, noCasMountName, noCasMountName);
+
+
+            Assert.IsTrue(await _systemBackend.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, casMountName, casMountName,
+                                                                        "CAS Mount Test", config), "A20:  Failed to create the CAS Secret Backend");
+            _casMount = (KV2SecretEngine)_vaultAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, casMountName, casMountName);
+
+
+
+            Assert.IsTrue(await _systemBackend.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, defaultMountName,
+                                                                        defaultMountName, "Default Mount Test", config), "A30:  Failed to create the Default Secret Backend");
+            _defaultMount = (KV2SecretEngine)_vaultAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, defaultMountName);
+
+
+            //_noCasMount = (KV2SecretEngine) await _vaultAgentAPI.CreateSecretBackendMount (EnumSecretBackendTypes.KeyValueV2, noCasMountName, noCasMountName,
+//            "No CAS Mount Test", config);
+            //_casMount = (KV2SecretEngine) await _vaultAgentAPI.CreateSecretBackendMount (EnumSecretBackendTypes.KeyValueV2, casMountName, casMountName,
+  //                                                                                       "CAS Mount Test", config);
+    //        _defaultMount = (KV2SecretEngine) await _vaultAgentAPI.CreateSecretBackendMount (EnumSecretBackendTypes.KeyValueV2, defaultMountName,
+      //                                                                                       defaultMountName, "Default Mount Test", config);
 
 
             Assert.NotNull (_noCasMount);

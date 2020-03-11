@@ -32,8 +32,10 @@ namespace VaultAgentTests
         [OneTimeSetUp]
         public async Task Setup () {
             // Build Connection to Vault.
-            _vault = new VaultAgentAPI ("AppRoleVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
-            _vaultSystemBackend = _vault.System;
+            _vault = await VaultServerRef.ConnectVault("AppRoleVault");
+            //_vault = new VaultAgentAPI ("AppRoleVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
+            _vaultSystemBackend = new VaultSystemBackend(_vault.TokenID, _vault);
+            
             _ldapMountName = _uniqueKeys.GetKey ("LDAP");
 
             // Define the engine.

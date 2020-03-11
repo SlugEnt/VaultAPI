@@ -30,8 +30,10 @@ namespace VaultAgentTests
 		[OneTimeSetUp]
 		public async Task AppRoleAuthEngineSetup () {
 			// Build Connection to Vault.
-			_vault = new VaultAgentAPI("AppRoleVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken,true);
-			_vaultSystemBackend = _vault.System;
+            _vault = await VaultServerRef.ConnectVault("AppRoleVault");
+			//_vault = new VaultAgentAPI("AppRoleVault", VaultServerRef.ipAddress, VaultServerRef.ipPort);  //, VaultServerRef.rootToken,true);
+            _vaultSystemBackend = new VaultSystemBackend(_vault.TokenID, _vault);
+            
 
 			string approleMountName = _uniqueKeys.GetKey("AppAuth");
 

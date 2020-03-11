@@ -42,12 +42,13 @@ namespace VaultAgentTests
 		/// </summary>
 		/// <returns></returns>
 		[OneTimeSetUp]
-		public void Identity_Init() {
+		public async Task Identity_Init() {
 			if ( _vaultAgentAPI != null ) { return; }
 
 			// Build Connection to Vault.
-			_vaultAgentAPI = new VaultAgentAPI("IdentityTest", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
-			_idEngine = (IdentitySecretEngine) _vaultAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.Identity);
+			_vaultAgentAPI = await VaultServerRef.ConnectVault("IdTest");
+            //new VaultAgentAPI("IdentityTest", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
+            _idEngine = (IdentitySecretEngine) _vaultAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.Identity);
 
 			}
 

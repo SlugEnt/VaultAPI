@@ -10,13 +10,13 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors
         private TokenAuthEngine _tokenAuthEngine;
 
 
-        public TokenLoginConnector (VaultAgentAPI vaultAgent, string authenticatorMountName, string description) : base(
+        public TokenLoginConnector (VaultAgentAPI vaultAgent, string description, string authenticatorMountName = TokenAuthEngine.TOKEN_DEFAULT_MOUNT_NAME) : base(
             vaultAgent, authenticatorMountName, description) {
             _tokenAuthEngine = new TokenAuthEngine(vaultAgent);
         }
 
 
-        public TokenLoginConnector (VaultAgentAPI vaultAgent, string authenticatorMountName, string description, string tokenId) : base(
+        public TokenLoginConnector (VaultAgentAPI vaultAgent, string description, string tokenId, string authenticatorMountName = TokenAuthEngine.TOKEN_DEFAULT_MOUNT_NAME) : base(
             vaultAgent, authenticatorMountName, description) {
             _tokenAuthEngine = new TokenAuthEngine(vaultAgent);
             TokenId = tokenId;
@@ -35,28 +35,32 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors
         /// </summary>
         /// <returns></returns>
         protected override async Task<bool> InternalConnection () {
-            // In reality, we are not connecting anything.  Tokens are a unique case, in which you either know the token value or you do not.
-            // If you know it, then we just validate it is a token and copy its information to the Response object.
-            Token token = await _tokenAuthEngine.GetCurrentTokenInfo();
+            try {
+                // We must replace the Vault Token if the value is currently empty, We need something to connect to Vault with.  
+                if ( _vaultAgent.TokenID == string.Empty ) _vaultAgent._vaultAccessTokenID = TokenId;
 
-            Response = new LoginResponse();
-            if ( token == null ) {
-                return false;
+                // In reality, we are not connecting anything.  Tokens are a unique case, in which you either know the token value or you do not.
+                // If you know it, then we just validate it is a token and copy its information to the Response object.
+                Token token = await _tokenAuthEngine.GetCurrentTokenInfo();
+
+                Response = new LoginResponse();
+                if ( token == null ) { return false; }
+
+                // We need to move some of the values from the Token to the response object
+                Response.ClientToken = token.ID;
+                Response.Policies = token.Policies;
+                Response.IdentityPolicies = token.IdentityPolicies;
+                Response.Accessor = token.AccessorTokenID;
+                Response.Renewable = token.IsRenewable;
+                Response.EntityId = token.EntityId;
+                Response.Metadata = token.Metadata;
+
+                // TODO - Adjust
+                //Response.TokenType = token.TokenType;
+
+                return true;
             }
-
-            // We need to move some of the values from the Token to the response object
-            Response.ClientToken = token.ID;
-            Response.Policies = token.Policies;
-            Response.IdentityPolicies = token.IdentityPolicies;
-            Response.Accessor = token.AccessorTokenID;
-            Response.Renewable = token.IsRenewable;
-            Response.EntityId = token.EntityId;
-            Response.Metadata = token.Metadata;
-
-            // TODO - Adjust
-            //Response.TokenType = token.TokenType;
-            
-            return true;
+            catch ( Exception e ) { throw e; }
         }
 
 
