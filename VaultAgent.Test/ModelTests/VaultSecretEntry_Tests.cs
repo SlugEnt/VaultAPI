@@ -16,6 +16,7 @@ namespace VaultAgentTests
 	[TestFixture]
 	[Parallelizable]
 	public class VaultSecretEntry_Tests {
+        private VaultSystemBackend _systemBackend;
 		private KV2SecretEngine _noCASMount = null;
 		private KV2SecretEngine _casMount;
 		private VaultAgentAPI _vaultAgentAPI;
@@ -32,7 +33,8 @@ namespace VaultAgentTests
             if (_vaultAgentAPI != null) { return; }
 
             // Build Connection to Vault.
-            _vaultAgentAPI = new VaultAgentAPI("testa", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
+            _vaultAgentAPI = await VaultServerRef.ConnectVault("VaultSecretEntry");
+            //_vaultAgentAPI = new VaultAgentAPI("testa", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
 
 
             // We will create 3 KV2 mounts in the Vault instance.  One for testing with CAS on, one with CAS off, and then a generic default (CAS off).	
@@ -48,10 +50,16 @@ namespace VaultAgentTests
                 VisibilitySetting = "hidden"
             };
 
-            _noCASMount = (KV2SecretEngine)await _vaultAgentAPI.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, noCasMountName, noCasMountName,
-                                                                                           "No CAS Mount Test", config);
-            _casMount = (KV2SecretEngine)await _vaultAgentAPI.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, casMountName, casMountName,
-                                                                                       "CAS Mount Test", config);
+            // Get Connection to Vault System backend
+            _systemBackend = new VaultSystemBackend(_vaultAgentAPI.TokenID,_vaultAgentAPI);
+            Assert.IsTrue(await _systemBackend.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, noCasMountName, noCasMountName,
+                                                                                            "No CAS Mount Test", config),"Failed to Create the NOCas KV2 secret backend");
+             _noCASMount = (KV2SecretEngine)  _vaultAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, noCasMountName, noCasMountName);
+
+             Assert.IsTrue(await _systemBackend.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, casMountName, casMountName,
+                                                                         "CAS Mount Test", config),"Failed to create the CAS Mount KV2 Secret Backend");
+             _casMount = (KV2SecretEngine) _vaultAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, casMountName, casMountName);
+
 
             Assert.NotNull(_noCASMount);
             Assert.NotNull(_casMount);

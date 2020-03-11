@@ -9,6 +9,7 @@ using VaultAgent.Backends;
 using VaultAgent.Backends.System;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using VaultAgent.AuthenticationEngines.LoginConnectors;
 using VaultAgent.SecretEngines;
 
 
@@ -45,7 +46,9 @@ namespace MyBenchmarks
 			int port = 47002;
 
 			// Connect to Vault, add an authentication backend of AppRole.
-			_vaultAgent = new VaultAgentAPI("Vault", ip, port, rootToken, true);
+			_vaultAgent = new VaultAgentAPI("Vault", ip, port);    //, rootToken, true);
+
+            TokenLoginConnector loginConnector = new TokenLoginConnector(_vaultAgent,"Token Authenticator",rootToken);
 
 			await CreateBackendMounts();
 			_appRoleAuthEngine = (AppRoleAuthEngine)_vaultAgent.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _beAuthName, _beAuthName);
@@ -85,11 +88,14 @@ namespace MyBenchmarks
 		/// </summary>
 		/// <returns></returns>
 		private async Task CreateBackendMounts() {
-			// 1.  Create an App Role Authentication backend. 
-			try {
+
+            VaultSystemBackend vaultSystemBackend = new VaultSystemBackend(_vaultAgent.TokenID, _vaultAgent);
+
+            // 1.  Create an App Role Authentication backend. 
+            try {
 				// Create an Authentication method of App Role.	- This only needs to be done when the Auth method is created.  
 				AuthMethod am = new AuthMethod(_beAuthName, EnumAuthMethods.AppRole);
-				await _vaultAgent.System.AuthEnable(am);
+				await vaultSystemBackend.AuthEnable(am);
 			}
 			// Ignore mount at same location errors.  This can happen if we are not restarting Vault Instance each time we run.  Nothing to worry about.
 			catch (VaultException e) {
@@ -100,7 +106,7 @@ namespace MyBenchmarks
 
 			// Create a KV2 Secret Mount if it does not exist.           
 			try {
-				await _vaultAgent.System.SysMountCreate(_beKV2Name, "BenchMark KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
+				await vaultSystemBackend.SysMountCreate(_beKV2Name, "BenchMark KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
 			}
 			catch (VaultInvalidDataException e) {
 				if (e.SpecificErrorCode == EnumVaultExceptionCodes.BackendMountAlreadyExists) {

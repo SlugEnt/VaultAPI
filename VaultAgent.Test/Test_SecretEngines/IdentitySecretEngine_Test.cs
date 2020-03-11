@@ -42,12 +42,13 @@ namespace VaultAgentTests
 		/// </summary>
 		/// <returns></returns>
 		[OneTimeSetUp]
-		public void Identity_Init() {
+		public async Task Identity_Init() {
 			if ( _vaultAgentAPI != null ) { return; }
 
 			// Build Connection to Vault.
-			_vaultAgentAPI = new VaultAgentAPI("IdentityTest", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
-			_idEngine = (IdentitySecretEngine) _vaultAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.Identity);
+			_vaultAgentAPI = await VaultServerRef.ConnectVault("IdTest");
+            //new VaultAgentAPI("IdentityTest", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
+            _idEngine = (IdentitySecretEngine) _vaultAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.Identity);
 
 			}
 
@@ -76,7 +77,8 @@ namespace VaultAgentTests
 
 				AuthMethod authMethod = null;
 				while ( authMethod == null ) {
-					Dictionary<string, AuthMethod> authMethods = await _vaultAgentAPI.System.AuthListAll();
+                    VaultSystemBackend vaultSystemBackend = new VaultSystemBackend(_vaultAgentAPI.TokenID, _vaultAgentAPI);
+                    Dictionary<string, AuthMethod> authMethods = await vaultSystemBackend.AuthListAll();
 
 					// See if the AppRole Backend exists.  We need to add a trailing slash because vault returns the key with a trailing slash.  Swallow exception not found.
 					try { authMethod = authMethods[AppRoleEngine + "/"]; }
@@ -84,7 +86,7 @@ namespace VaultAgentTests
 
 					if ( authMethod == null ) {
 						AuthMethod am = new AuthMethod(AppRoleEngine, EnumAuthMethods.AppRole);
-						bool rc = await _vaultAgentAPI.System.AuthEnable(am);
+                        bool rc = await vaultSystemBackend.AuthEnable(am);
 						Thread.Sleep(60);
 					}
 				}

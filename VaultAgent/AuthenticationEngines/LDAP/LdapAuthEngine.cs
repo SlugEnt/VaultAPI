@@ -233,11 +233,6 @@ namespace VaultAgent.AuthenticationEngines
                 if (vdro.Success)
                 {
                     return await vdro.GetDotNetObject<LoginResponse>("auth");
-                    //TODO Cleanup
-                    /*
-                    LoginResponse lr = vdro.GetVaultTypedObjectFromResponseField<LoginResponse> ("auth");
-                    return lr;
-                    */
                 }
                 else
                 {

@@ -17,17 +17,18 @@ namespace VaultAgentTests
 
 
 		[OneTimeSetUp]
-		public void Backend_Init() {
+		public async Task Backend_Init() {
 			if (_vaultSystemBackend != null) {
 				return;
 			}
 
 		    // Build Connection to Vault.
-		    _vaultAgentAPI = new VaultAgentAPI("transitVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
+		    _vaultAgentAPI = await VaultServerRef.ConnectVault("TransitVault");
+            //new VaultAgentAPI("transitVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
 
             // Create a new system Backend Mount for this series of tests.
-		    _vaultSystemBackend = _vaultAgentAPI.System;
-		}
+            _vaultSystemBackend = new VaultSystemBackend(_vaultAgentAPI.TokenID, _vaultAgentAPI);
+        }
 
 
 

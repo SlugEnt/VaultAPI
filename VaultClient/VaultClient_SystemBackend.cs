@@ -3,27 +3,36 @@ using VaultAgent.Backends.System;
 using System.Collections.Generic;
 using System;
 using VaultAgent;
+using VaultAgent.AuthenticationEngines;
+using VaultAgent.AuthenticationEngines.LoginConnectors;
 
 namespace VaultClient
 {
     public class VaultClient_SystemBackend
     {
         private VaultAgentAPI _vault;
-        private readonly VaultSystemBackend _vaultSystemBackend;
+        private VaultSystemBackend _vaultSystemBackend;
 
 		private string _token;
 
 		public VaultClient_SystemBackend(string token, string ip, int port) {
-            _vault = new VaultAgentAPI("VaultSys",ip,port,token);
+            _vault  = new VaultAgentAPI("VaultClient", ip, port);
+
+            //_vault = new VaultAgentAPI("VaultSys",ip,port,token);
 			_token = token;
-		    _vaultSystemBackend = _vault.System;
+		    //_vaultSystemBackend = _vault.System;
 
         }
 
 
 
         public async Task Run() {
-			await PolicyCreateExamples();
+            TokenLoginConnector loginConnector = new TokenLoginConnector(_vault, "ClientSysBE", _token, TokenAuthEngine.TOKEN_DEFAULT_MOUNT_NAME);
+            bool success = await loginConnector.Connect();
+
+            _vaultSystemBackend = new VaultSystemBackend(_vault.TokenID, _vault);
+
+            await PolicyCreateExamples();
 			await PolicyReadExamples();
 			await PolicyListExamples();
 			await PolicyDeleteExamples();

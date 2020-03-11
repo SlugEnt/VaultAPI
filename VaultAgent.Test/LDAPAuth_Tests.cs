@@ -9,6 +9,7 @@ using VaultAgent;
 using VaultAgent.AuthenticationEngines;
 using SlugEnt;
 using VaultAgent.AuthenticationEngines.LDAP;
+using VaultAgent.AuthenticationEngines.LoginConnectors;
 using VaultAgent.Models;
 
 
@@ -26,12 +27,15 @@ namespace VaultAgentTests
         private LdapConfig _origConfig;
         private LDAPTestObj _testData;
 
+        private LDAPLoginConnector _ldapLoginConnector;
 
         [OneTimeSetUp]
         public async Task Setup () {
             // Build Connection to Vault.
-            _vault = new VaultAgentAPI ("AppRoleVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
-            _vaultSystemBackend = _vault.System;
+            _vault = await VaultServerRef.ConnectVault("AppRoleVault");
+            //_vault = new VaultAgentAPI ("AppRoleVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
+            _vaultSystemBackend = new VaultSystemBackend(_vault.TokenID, _vault);
+            
             _ldapMountName = _uniqueKeys.GetKey ("LDAP");
 
             // Define the engine.
@@ -43,16 +47,25 @@ namespace VaultAgentTests
             Assert.True (await _vaultSystemBackend.AuthEnable (authMethod), "A10:  Expected the LDAP Backend to have been enabled.");
 
             // Now build the LDAP Backend.
-            _origConfig = new LdapConfig();
+            _origConfig = _ldapAuthEngine.GetLDAPConfigFromFile(@"C:\a_Dev\Configs\LDAP_Test.json");
             SetLDAPConfig (_ldapMountName, _origConfig);
 
             // Save the Config.  We do this here so the SetLDAPConfig can be used for multiple engines.
             Assert.True (await _ldapAuthEngine.ConfigureLDAPBackend (_origConfig), "A100:  Expected the LDAP Configuration method to return True");
 
+            // Initialize the LDAP Login Connector.
+            _ldapLoginConnector = new LDAPLoginConnector(_vault,_ldapAuthEngine.MountPoint,"Test LDAP Backend");
+
             // Load the Test Data Object
-            // TODO Uncomment
             LoadTestData();
         }
+
+
+        /// <summary>
+        /// We need to ensure we are using the normal Vault Token ID.  Some of the tests overwrite this
+        /// </summary>
+        [SetUp]
+        public void SetupEachTest () { _vault.TokenID = VaultServerRef.rootToken; }
 
 
         // Validate we can load the config from a JSON file.
@@ -62,9 +75,11 @@ namespace VaultAgentTests
 
 
             config.SetActiveDirectoryDefaults();
-            config.UserDN = "oldUserDN";
-            config.GroupDN = "oldgroupDN";
+            //config.UserDN = "oldUserDN";
+            //config.GroupDN = "oldgroupDN";
 
+
+            
 
             // Store off some of the values:
             string exGroupFilter = config.GroupFilter;
@@ -101,7 +116,7 @@ namespace VaultAgentTests
         internal void LoadTestData () {
             // Read a JSON Config file containing LDAP Credentials from a JSON file into the class.       
             JsonSerializer jsonSerializer = new JsonSerializer();
-            string json = File.ReadAllText (@"C:\A_Dev\Configs\Vault_LDAPTests.json");
+            string json = File.ReadAllText (@"C:\A_Dev\Configs\ClientLoginCredentials.json");
 
             _testData = VaultSerializationHelper.FromJson<LDAPTestObj> (json);
         }
@@ -257,8 +272,6 @@ namespace VaultAgentTests
             // Now test the Read Group
             List<string> groupPolicies = await _ldapAuthEngine.GetPoliciesAssignedToGroup (groupName);
             Assert.AreEqual (0, groupPolicies.Count, "A10:  Expected the list to be empty since no group to policy mapping objects were found.");
-
-
         }
 
 
@@ -285,12 +298,15 @@ namespace VaultAgentTests
             groupPolicyMap.Add ("polb");
             groupPolicyMap.Add ("polc");
 
+            
             Assert.IsTrue (await _ldapAuthEngine.CreateGroupToPolicyMapping (groupName, groupPolicyMap), "A10:  Saving of the group failed.");
             List<string> groupPolicies = await _ldapAuthEngine.GetPoliciesAssignedToGroup (groupName);
             CollectionAssert.AreEquivalent (groupPolicyMap, groupPolicies, "A20:  The policies do not seem to have been saved correctly.");
 
-            LoginResponse lr = await _ldapAuthEngine.Login (_testData.LoginUser1, _testData.LoginPass1);
-            Assert.IsNotNull (lr, "A30:  LoginResponse was null.  Should have been a valid response.");
+            _ldapLoginConnector.UserName = _testData.UserId;
+            _ldapLoginConnector.Password = _testData.Password;
+            Assert.IsTrue(await _ldapLoginConnector.Connect());
+            Assert.IsNotEmpty(_ldapLoginConnector.Response.ClientToken);
         }
 
 
@@ -300,8 +316,8 @@ namespace VaultAgentTests
         // Validate the error if invalid user or password.
         [Test, Order (3000)]
         public async Task Login_Fails () {
-            Assert.ThrowsAsync<VaultInvalidDataException> (async () => await _ldapAuthEngine.Login (_testData.LoginUser1, "invalid"));
-            Assert.ThrowsAsync<VaultInvalidDataException> (async () => await _ldapAuthEngine.Login ("notauser", "invalid"));
+            Assert.ThrowsAsync<VaultException> (async () => await _ldapAuthEngine.Login (_testData.UserId, "invalid"));
+            Assert.ThrowsAsync<VaultException> (async () => await _ldapAuthEngine.Login ("notauser", "invalid"));
         }
 #pragma warning restore CS1998
     }
@@ -315,8 +331,8 @@ namespace VaultAgentTests
         internal class LDAPTestObj {
 		public LDAPTestObj () { }
 
-		public string LoginUser1 { get; set; }
-		public string LoginPass1 { get; set; }
+		public string UserId { get; set; }
+		public string Password { get; set; }
 
 		// A group that the user1 is a direct member of
 		public string User1Group { get; set; }

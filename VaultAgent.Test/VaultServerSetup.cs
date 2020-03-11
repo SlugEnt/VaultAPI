@@ -9,6 +9,9 @@ using NUnit.Framework;
 using System.Reflection;
 using VaultAgent;
 using System.Threading;
+using System.Threading.Tasks;
+using VaultAgent.AuthenticationEngines;
+using VaultAgent.AuthenticationEngines.LoginConnectors;
 
 
 
@@ -35,6 +38,28 @@ namespace VaultAgentTests
 		public static string vaultFolder;
 		public static string unSealKey;
 		public static int ipPort;
+
+
+        /// <summary>
+        /// Creates a Vault instance and connects it with either the default testing token or the specified token
+        /// </summary>
+        /// <param name="name">Name to be given to this Vault object</param>
+        /// <param name="overrideToken">The TokenId to use if you do not wish to use the default testing token</param>
+        /// <returns></returns>
+        public static async Task<VaultAgentAPI> ConnectVault (string name, string overrideToken = "") {
+            VaultAgentAPI vault = new VaultAgentAPI(name,ipAddress,ipPort);
+
+            string thisToken;
+            if ( overrideToken != string.Empty )
+                thisToken = overrideToken;
+            else
+                thisToken = rootToken;
+
+            TokenLoginConnector loginConnector = new TokenLoginConnector(vault,"Testing",thisToken,TokenAuthEngine.TOKEN_DEFAULT_MOUNT_NAME);
+            bool success = await loginConnector.Connect();
+            if ( !success) throw new ApplicationException("Error connecting to the Vault Instance using Token " + thisToken);
+            return vault;
+        }
 	}
 
 
