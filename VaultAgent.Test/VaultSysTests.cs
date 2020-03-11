@@ -32,10 +32,10 @@ namespace VaultAgentTests
             // Build Connection to Vault.
             _vaultAgentAPI = await VaultServerRef.ConnectVault("VaultSysTe");
 
-                //new VaultAgentAPI("transitVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
+            //new VaultAgentAPI("transitVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
 
             // Create a new system Backend Mount for this series of tests.
-            _vaultSystemBackend = _vaultAgentAPI.System;
+            _vaultSystemBackend = new VaultSystemBackend(_vaultAgentAPI.TokenID, _vaultAgentAPI);
         }
 
 

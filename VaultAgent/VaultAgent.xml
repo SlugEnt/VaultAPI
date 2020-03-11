@@ -4192,11 +4192,6 @@
             You should call RefreshActiveToken if you need to see its Current TTL, ExpireTime or NumberOfUses left values.
             </summary>
         </member>
-        <member name="P:VaultAgent.VaultAgentAPI.System">
-            <summary>
-            Provides access to the Vault Core System Backend which provides access to mount new engines/backends and manipulate the main Vault Store.
-            </summary>
-        </member>
         <member name="M:VaultAgent.VaultAgentAPI.ConnectToSecretBackend(VaultAgent.Backends.System.EnumSecretBackendTypes,System.String,System.String)">
             <summary>
             Establishes a connection to the desired Vault Secret backend at the specified vault MountPath.  The backend mount must already exist.

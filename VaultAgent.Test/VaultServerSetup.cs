@@ -72,7 +72,7 @@ namespace VaultAgentTests
 		// Set this flag to false if you do not want a new Vault instance started during each test run.  
 		// This can be useful if you want to be able to connect PostMan to the vault server to query for data to get a better handle on what is going on.
 		// Also, you can see the log files, etc.
-		private readonly bool UseNewVaultServerEachRun = false;
+		private readonly bool UseNewVaultServerEachRun = true;
 
 		// The new Vault instance object if we needed to create it.
 		private VaultServerInstance VSI;

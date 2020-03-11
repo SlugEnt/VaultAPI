@@ -10,6 +10,9 @@ namespace VaultAgent.AuthenticationEngines {
     /// The TokenAuthEngine is what enables users to authenticate with a token and perform token related tasks.
     /// </summary>
     public class TokenAuthEngine : VaultAuthenticationBackend {
+        /// <summary>
+        /// The Default Mount Name for a Token backend in Vault
+        /// </summary>
         public const string TOKEN_DEFAULT_MOUNT_NAME = "token";
 
 
@@ -336,9 +339,6 @@ namespace VaultAgent.AuthenticationEngines {
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "GetTokenRole");
                 if ( vdro.Success ) {
 	                return await vdro.GetDotNetObject<TokenRole>();
-                    //string js = vdro.GetDataPackageAsJSON();
-                    //TokenRole tokenRole = VaultUtilityFX.ConvertJSON<TokenRole> (js);
-                    //return tokenRole;
                 }
                 else { throw new VaultUnexpectedCodePathException(); }
             }
@@ -358,9 +358,6 @@ namespace VaultAgent.AuthenticationEngines {
             VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListTokenRoles");
             if ( vdro.Success ) {
 	            return await vdro.GetDotNetObject<List<string>>("data.keys");
-                //string js = vdro.GetDataPackageFieldAsJSON ("keys");
-                //List<string> tokenRoles = VaultUtilityFX.ConvertJSON<List<string>> (js);
-                //return tokenRoles;
             }
 
             return null;
