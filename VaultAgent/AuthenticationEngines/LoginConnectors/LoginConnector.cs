@@ -10,8 +10,16 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors {
     /// LoginConnector abstract class that defines core properties and methods for an object that provides the requisite properties for a given type of Authenticated Login
     /// </summary>
     public abstract class LoginConnector {
+        /// <summary>
+        /// The Vault Object to connect to
+        /// </summary>
         protected VaultAgentAPI _vaultAgent;
+
+        /// <summary>
+        /// JSON JObject that contains the parameters that need to be passed  during the Connection Process
+        /// </summary>
         protected JObject _loginParameters;
+
         private string _description;
         private string _mountPath = "";
 
@@ -120,6 +128,10 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors {
         protected abstract void BuildLoginParameters ();
 
 
+        /// <summary>
+        /// Derived classes that need to handle specific error situations should override this method.  It will be called if there is a problem during the Connect call.
+        /// </summary>
+        /// <param name="e"></param>
         protected virtual void ErrorHandler (Exception e) { throw e; }
     }
 }

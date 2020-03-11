@@ -411,9 +411,8 @@ namespace VaultAgentTests
 	            Token parent = await _tokenAuthEngine.CreateToken (tokenNewSettings);
 	            Assert.NotNull (parent, "A1:  Error creating the parent token - expected to receive the new token back, instead we received a null value.");
 
-	            VaultAgentAPI v1 = await VaultServerRef.ConnectVault("TokenAuth2");
-            //new VaultAgentAPI ("TempVault2", VaultServerRef.ipAddress, VaultServerRef.ipPort, parent.ID);
-            TokenAuthEngine TAE = (TokenAuthEngine) v1.ConnectAuthenticationBackend (EnumBackendTypes.A_Token);
+	            VaultAgentAPI v1 = await VaultServerRef.ConnectVault("TokenAuth2",parent.ID);
+                TokenAuthEngine TAE = (TokenAuthEngine) v1.ConnectAuthenticationBackend (EnumBackendTypes.A_Token);
 
 
 	            // Now create 3 child tokens.
@@ -464,7 +463,7 @@ namespace VaultAgentTests
 		    Token parent = await _tokenAuthEngine.CreateToken(tokenNewSettings);
 		    Assert.NotNull(parent, "A1:  Error creating the parent token - expected to receive the new token back, instead we received a null value.");
 
-		    VaultAgentAPI v1 = await VaultServerRef.ConnectVault("TokenAuth");
+		    VaultAgentAPI v1 = await VaultServerRef.ConnectVault("TokenAuth",parent.ID);
             //new VaultAgentAPI("TempVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, parent.ID);
             TokenAuthEngine TAE = (TokenAuthEngine)v1.ConnectAuthenticationBackend (EnumBackendTypes.A_Token);
 

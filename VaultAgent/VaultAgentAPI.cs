@@ -57,10 +57,7 @@ namespace VaultAgent {
         /// <param name="name">The name this Vault Instance should be known by.  This is purely cosmetic and serves no functional purpose other than being able to uniquely identify this Vault Instance from another.</param>
         /// <param name="port">The network port the Vault instance is listening on.</param>
         /// <param name="vaultIP">The IP address of the Vault instance you want to connect to.</param>
-        /// <param name="tokenID">The token to be used to perform actions against the Vault instance with.  If not supplied now, it will need to be supplied before any actions (other
-        /// than an authentication backend login method will work.</param>
-        /// <param name="connectSystemBackend">Set to true to connect the system backend. The supplied token must have permission to connect to the system backend or else this will fail.</param>
-        public VaultAgentAPI (string name, string vaultIP, int port) {          //, string tokenID = "", bool connectSystemBackend = false) {
+        public VaultAgentAPI (string name, string vaultIP, int port) {
             Name = name;
             IP = vaultIP;
             Port = port;
@@ -80,19 +77,6 @@ namespace VaultAgent {
 
                 // Establish a connection to the token backend.
                 _tokenEngine = (TokenAuthEngine)ConnectAuthenticationBackend(EnumBackendTypes.A_Token);
-
-                /*
-                // Establish a connection to the backend
-                if (connectSystemBackend)
-                {
-                    _vault = new VaultSystemBackend(tokenID, this);
-                }
-
-                if (tokenID != "")
-                {
-                    TokenID = tokenID;
-                }
-                */
             }
             catch (Exception e)
             {
@@ -143,11 +127,13 @@ namespace VaultAgent {
         }
 
 
-        // Used to get/set the TokenID that this object will use to communicate with Vault with.  If you change the token value it becomes effective 
-        // immediately.  When set it will retrieve the latest version of the Token object from Vault and updates the Token object of this class.
-        internal string TokenID {
+        /// <summary>
+        ///  Used to get/set the TokenID that this object will use to communicate with Vault with.  If you change the token value it becomes effective 
+        /// immediately.When set it will retrieve the latest version of the Token object from Vault and updates the Token object of this class.
+        /// </summary>
+        public string TokenID {
             get => _vaultAccessTokenID;
-            set {
+            internal set {
                 _vaultAccessTokenID = value;
                 _httpConnector.SetTokenHeader(_vaultAccessTokenID);
 
@@ -156,14 +142,6 @@ namespace VaultAgent {
                 _vaultAccessToken = task.Result;
             }
         } 
-
-
-
-        /// <summary>
-        /// Provides access to the Vault Core System Backend which provides access to mount new engines/backends and manipulate the main Vault Store.
-        /// </summary>
-        public VaultSystemBackend System => _vault;
-
 
 
 

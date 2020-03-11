@@ -30,7 +30,7 @@ namespace VaultClient
             TokenLoginConnector loginConnector = new TokenLoginConnector(_vault, "ClientSysBE", _token, TokenAuthEngine.TOKEN_DEFAULT_MOUNT_NAME);
             bool success = await loginConnector.Connect();
 
-            _vaultSystemBackend = _vault.System;
+            _vaultSystemBackend = new VaultSystemBackend(_vault.TokenID, _vault);
 
             await PolicyCreateExamples();
 			await PolicyReadExamples();

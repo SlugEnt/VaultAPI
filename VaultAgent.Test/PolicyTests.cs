@@ -34,7 +34,7 @@ namespace VaultAgentTests {
             //new VaultAgentAPI ("PolicyBE", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
 
             // Create a new system Backend Mount for this series of tests.
-            _vaultSystemBackend = _vaultAgentAPI.System;
+            _vaultSystemBackend = new VaultSystemBackend(_vaultAgentAPI.TokenID, _vaultAgentAPI);
         }
 
 

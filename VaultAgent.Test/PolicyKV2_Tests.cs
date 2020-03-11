@@ -59,7 +59,8 @@ namespace VaultAgentTests
             //_vaultAgentAPI = new VaultAgentAPI("PolicyBE", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
 
             // Create a new system Backend Mount for this series of tests.
-            _vaultSystemBackend = _vaultAgentAPI.System;
+            _vaultSystemBackend = new VaultSystemBackend(_vaultAgentAPI.TokenID, _vaultAgentAPI);
+            
 
 
 			// Create the backend.
@@ -495,10 +496,10 @@ namespace VaultAgentTests
 		    // We need to setup a KV2 Secrets engine and also an AppRole Backend.
 			// Create an Authentication method of App Role.	- This only needs to be done when the Auth method is created.  
 			AuthMethod am = new AuthMethod(appBE, EnumAuthMethods.AppRole);
-		    await _vaultAgentAPI.System.AuthEnable(am);
+		    await _vaultSystemBackend.AuthEnable(am);
 
 		    // Create a KV2 Secret Mount if it does not exist.           
-		    await _vaultAgentAPI.System.SysMountCreate(kv2BE, "ClientTest KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
+		    await _vaultSystemBackend.SysMountCreate(kv2BE, "ClientTest KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
 
 			
 			// Now we 
@@ -527,7 +528,7 @@ namespace VaultAgentTests
 		    policyContainer.AddPolicyPathObject(vppi3);
 		    policyContainer.AddPolicyPathObject(vppi4);
 
-		    await _vaultAgentAPI.System.SysPoliciesACLCreate(policyContainer);
+		    await _vaultSystemBackend.SysPoliciesACLCreate(policyContainer);
 
 
 			// 3. Now create an App Role & Secret ID
@@ -558,7 +559,7 @@ namespace VaultAgentTests
 
 
 			Dictionary<string, List<string>> permissions;
-		    permissions = await _vaultAgentAPI.System.GetTokenCapabilityOnPaths(token.ID, paths);
+		    permissions = await _vaultSystemBackend.GetTokenCapabilityOnPaths(token.ID, paths);
 
 			// 6. Validate the results.
 			Assert.AreEqual(4,permissions.Count, "A10:  Expected to receive 4 permission objects back.");
@@ -583,10 +584,11 @@ namespace VaultAgentTests
 			// We need to setup a KV2 Secrets engine and also an AppRole Backend.
 			// Create an Authentication method of App Role.	- This only needs to be done when the Auth method is created.  
 			AuthMethod am = new AuthMethod(appBE, EnumAuthMethods.AppRole);
-			await _vaultAgentAPI.System.AuthEnable(am);
+			await _vaultSystemBackend.AuthEnable(am);
 
-			// Create a KV2 Secret Mount if it does not exist.           
-			await _vaultAgentAPI.System.SysMountCreate(kv2BE, "ClientTest KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
+            // Create a KV2 Secret Mount if it does not exist.           
+            VaultSystemBackend vaultSystemBackend = new VaultSystemBackend(_vaultAgentAPI.TokenID, _vaultAgentAPI);
+            await vaultSystemBackend.SysMountCreate(kv2BE, "ClientTest KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
 
 
 
@@ -617,9 +619,9 @@ namespace VaultAgentTests
 
 
 
-			// 4.  Create an Entity and Entity Alias.
-			// 4A.  Get Authentication backend accessor.
-			Dictionary<string, AuthMethod> authMethods = await _vaultAgentAPI.System.AuthListAll();
+            // 4.  Create an Entity and Entity Alias.
+            // 4A.  Get Authentication backend accessor.
+            Dictionary<string, AuthMethod> authMethods = await vaultSystemBackend.AuthListAll();
 			AuthMethod authMethod = authMethods[authEngine.Name + "/"];
 			Assert.IsNotNull(authMethod,"B10:  Expected to find the authentication backend.  But did not.");
 			string mountAccessor = authMethod.Accessor;
@@ -668,7 +670,7 @@ namespace VaultAgentTests
 			policyContainer.AddPolicyPathObject(vppi3);
 			policyContainer.AddPolicyPathObject(vppi4);
 
-			await _vaultAgentAPI.System.SysPoliciesACLCreate(policyContainer);
+			await _vaultSystemBackend.SysPoliciesACLCreate(policyContainer);
 
 
 			// 7.  Now we can login to get a token..  Validate the entity policy has been set on token.
@@ -691,7 +693,7 @@ namespace VaultAgentTests
 
 
 			Dictionary<string, List<string>> permissions;
-			permissions = await _vaultAgentAPI.System.GetTokenCapabilityOnPaths(token.ID, paths);
+			permissions = await _vaultSystemBackend.GetTokenCapabilityOnPaths(token.ID, paths);
 
 
 			// 9. Validate the permission results.

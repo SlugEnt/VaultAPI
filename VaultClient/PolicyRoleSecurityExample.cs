@@ -88,6 +88,8 @@ namespace VaultClient
         private AppRoleAuthEngine _appRoleAuthEngine;
         private KV2SecretEngine _secretEngine;
         private VaultAgentAPI _masterVaultAgent;
+        private readonly VaultSystemBackend _vaultSystemBackend;
+
         private readonly IdentitySecretEngine _idEngine;
 
         private readonly string _AppBEName;
@@ -128,7 +130,7 @@ namespace VaultClient
             // We will create a unique App Role Authentication Engine with the given name.
             _AppBEName = "BEAppRole";
             _masterVaultAgent = masterVaultAgent;
-
+            _vaultSystemBackend = new VaultSystemBackend(masterVaultAgent.TokenID, masterVaultAgent);
             _appRoleAuthEngine =
                 (AppRoleAuthEngine) masterVaultAgent.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName,
                     _AppBEName);
@@ -351,7 +353,7 @@ namespace VaultClient
             {
                 // Create an Authentication method of App Role.	- This only needs to be done when the Auth method is created.  
                 AuthMethod am = new AuthMethod(_beAuthName, EnumAuthMethods.AppRole);
-                await _masterVaultAgent.System.AuthEnable(am);
+                await _vaultSystemBackend.AuthEnable(am);
             }
             // Ignore mount at same location errors.  This can happen if we are not restarting Vault Instance each time we run.  Nothing to worry about.
             catch (VaultException e)
@@ -364,7 +366,7 @@ namespace VaultClient
             // 2.  Create a KV2 Secret Mount if it does not exist.           
             try
             {
-                await _masterVaultAgent.System.SysMountCreate(_beKV2Name, "ClientTest KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
+                await _vaultSystemBackend.SysMountCreate(_beKV2Name, "ClientTest KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
             }
             catch (VaultInvalidDataException e)
             {
@@ -393,7 +395,7 @@ namespace VaultClient
 
             try
             {
-                polContainer = await _masterVaultAgent.System.SysPoliciesACLRead(policyName);
+                polContainer = await _vaultSystemBackend.SysPoliciesACLRead(policyName);
                 polContainer.PolicyPaths.Clear();
                 return polContainer;
             }
@@ -439,7 +441,7 @@ namespace VaultClient
             policy = _policyHouse_Full;
             policy.AddPolicyPathObject(policyItem);
             policy.AddPolicyPathObject(policyItemBase);
-            if (!(await _masterVaultAgent.System.SysPoliciesACLCreate(policy))) { Console.WriteLine("Unable to save the policies for the Policy {0}", policy.Name); }
+            if (!(await _vaultSystemBackend.SysPoliciesACLCreate(policy))) { Console.WriteLine("Unable to save the policies for the Policy {0}", policy.Name); }
 
 
             // House Read of just the House Secret
@@ -447,7 +449,7 @@ namespace VaultClient
             policyItem.ReadAllowed = true;
             policy = _policyHouseOnly_Read;
             policy.AddPolicyPathObject(policyItem);
-            if (!(await _masterVaultAgent.System.SysPoliciesACLCreate(policy))) { Console.WriteLine("Unable to save the policies for the Policy {0}", policy.Name); }
+            if (!(await _vaultSystemBackend.SysPoliciesACLCreate(policy))) { Console.WriteLine("Unable to save the policies for the Policy {0}", policy.Name); }
 
 
             // # Kitchen Child Secrets Read
@@ -458,7 +460,7 @@ namespace VaultClient
             policy = _policyKitchen_Read;
             policy.AddPolicyPathObject(policyItem);
             policy.AddPolicyPathObject(policyItemBase);
-            if (!(await _masterVaultAgent.System.SysPoliciesACLCreate(policy))) { Console.WriteLine("Unable to save the policies for the Policy {0}", policy.Name); }
+            if (!(await _vaultSystemBackend.SysPoliciesACLCreate(policy))) { Console.WriteLine("Unable to save the policies for the Policy {0}", policy.Name); }
 
             // # Kitchen Child Secrets Write
             policyItem = new VaultPolicyPathItemKV2(_beKV2Name,  HOUSE.KITCHEN );
@@ -466,7 +468,7 @@ namespace VaultClient
             policyItem.ReadAllowed = true;
             policy = _policyKitchen_Write;
             policy.AddPolicyPathObject(policyItem);
-            if (!(await _masterVaultAgent.System.SysPoliciesACLCreate(policy))) { Console.WriteLine("Unable to save the policies for the Policy {0}", policy.Name); }
+            if (!(await _vaultSystemBackend.SysPoliciesACLCreate(policy))) { Console.WriteLine("Unable to save the policies for the Policy {0}", policy.Name); }
 
             // # Kitchen Refrigerator (No children Secrets) Write
             policyItem = new VaultPolicyPathItemKV2(_beKV2Name, HOUSE.REFRIGERATOR );
@@ -474,14 +476,14 @@ namespace VaultClient
             policyItem.UpdateAllowed = true;
             policy = _policyKitchenRefrigerator_Write;
             policy.AddPolicyPathObject(policyItem);
-            if (!(await _masterVaultAgent.System.SysPoliciesACLCreate(policy))) { Console.WriteLine("Unable to save the policies for the Policy {0}", policy.Name); }
+            if (!(await _vaultSystemBackend.SysPoliciesACLCreate(policy))) { Console.WriteLine("Unable to save the policies for the Policy {0}", policy.Name); }
 
             // # Garage (No Children) Read
             policyItem = new VaultPolicyPathItemKV2(_beKV2Name, HOUSE.GARAGE);
             policyItem.ReadAllowed = true;
             policy = _policyGarage_Read;
             policy.AddPolicyPathObject(policyItem);
-            if (!(await _masterVaultAgent.System.SysPoliciesACLCreate(policy))) { Console.WriteLine("Unable to save the policies for the Policy {0}", policy.Name); }
+            if (!(await _vaultSystemBackend.SysPoliciesACLCreate(policy))) { Console.WriteLine("Unable to save the policies for the Policy {0}", policy.Name); }
 
             // # Teenager Full - both root and child
             policyItem = new VaultPolicyPathItemKV2(_beKV2Name, HOUSE.TEEN_BEDROOM + "/*");
@@ -491,7 +493,7 @@ namespace VaultClient
             policy = _policyTeenagerBedroom_Full;
             policy.AddPolicyPathObject(policyItem);
             policy.AddPolicyPathObject(policyItemBase);
-            if (!(await _masterVaultAgent.System.SysPoliciesACLCreate(policy))) { Console.WriteLine("Unable to save the policies for the Policy {0}", policy.Name); }
+            if (!(await _vaultSystemBackend.SysPoliciesACLCreate(policy))) { Console.WriteLine("Unable to save the policies for the Policy {0}", policy.Name); }
 
             // # Toddler Full
             policyItem = new VaultPolicyPathItemKV2(_beKV2Name, HOUSE.TODDLER_BEDROOM + "/*");
@@ -500,7 +502,7 @@ namespace VaultClient
             policy = _policyToddlerBedroom_Full;
             policy.AddPolicyPathObject(policyItem);
             policy.AddPolicyPathObject(policyItemBase);
-            if (!(await _masterVaultAgent.System.SysPoliciesACLCreate(policy))) { Console.WriteLine("Unable to save the policies for the Policy {0}", policy.Name); }
+            if (!(await _vaultSystemBackend.SysPoliciesACLCreate(policy))) { Console.WriteLine("Unable to save the policies for the Policy {0}", policy.Name); }
         }
 
 

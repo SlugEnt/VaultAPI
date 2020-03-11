@@ -6,16 +6,33 @@ using VaultAgent.Models;
 
 namespace VaultAgent.AuthenticationEngines.LoginConnectors
 {
+    /// <summary>
+    /// Provides for the ability to use a Token to connect to a Vault Instance
+    /// </summary>
     public class TokenLoginConnector : LoginConnector {
         private TokenAuthEngine _tokenAuthEngine;
 
 
+        /// <summary>
+        /// Creates a TokenLoginConnector object which enables logging in with a Vault Token
+        /// </summary>
+        /// <param name="vaultAgent">The Vault instance to connect to</param>
+        /// <param name="description">Descriptive name for this Token Connector</param>
+        /// <param name="authenticatorMountName">The actual name of the Vault Token Backend you wish to connect to</param>
         public TokenLoginConnector (VaultAgentAPI vaultAgent, string description, string authenticatorMountName = TokenAuthEngine.TOKEN_DEFAULT_MOUNT_NAME) : base(
             vaultAgent, authenticatorMountName, description) {
             _tokenAuthEngine = new TokenAuthEngine(vaultAgent);
         }
 
 
+
+        /// <summary>
+        /// Creates a TokenLoginConnector object which enables logging in with a Vault Token
+        /// </summary>
+        /// <param name="vaultAgent">The Vault instance to connect to</param>
+        /// <param name="description">Descriptive name for this Token Connector</param>
+        /// <param name="tokenId">The token ID you wish to use to connect with</param>
+        /// <param name="authenticatorMountName">The actual name of the Vault Token Backend you wish to connect to</param>
         public TokenLoginConnector (VaultAgentAPI vaultAgent, string description, string tokenId, string authenticatorMountName = TokenAuthEngine.TOKEN_DEFAULT_MOUNT_NAME) : base(
             vaultAgent, authenticatorMountName, description) {
             _tokenAuthEngine = new TokenAuthEngine(vaultAgent);
@@ -37,7 +54,7 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors
         protected override async Task<bool> InternalConnection () {
             try {
                 // We must replace the Vault Token if the value is currently empty, We need something to connect to Vault with.  
-                if ( _vaultAgent.TokenID == string.Empty ) _vaultAgent._vaultAccessTokenID = TokenId;
+                if ( _vaultAgent.TokenID == string.Empty ) _vaultAgent.TokenID = TokenId; //_vaultAgent._vaultAccessTokenID = TokenId;
 
                 // In reality, we are not connecting anything.  Tokens are a unique case, in which you either know the token value or you do not.
                 // If you know it, then we just validate it is a token and copy its information to the Response object.

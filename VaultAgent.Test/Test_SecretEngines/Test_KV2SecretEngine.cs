@@ -57,6 +57,7 @@ namespace VaultAgentTests {
 
             // Get Connection to Vault System backend
             _systemBackend = new VaultSystemBackend(_vaultAgentAPI.TokenID, _vaultAgentAPI);
+            
             Assert.IsTrue(await _systemBackend.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, noCasMountName, noCasMountName,
                                                                         "No CAS Mount Test", config),"A10:  Failed to create the NoCas Secret Backend");
             _noCasMount = (KV2SecretEngine) _vaultAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, noCasMountName, noCasMountName);
@@ -70,7 +71,7 @@ namespace VaultAgentTests {
 
             Assert.IsTrue(await _systemBackend.CreateSecretBackendMount(EnumSecretBackendTypes.KeyValueV2, defaultMountName,
                                                                         defaultMountName, "Default Mount Test", config), "A30:  Failed to create the Default Secret Backend");
-            _defaultMount = (KV2SecretEngine)_vaultAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, defaultMountName);
+            _defaultMount = (KV2SecretEngine)_vaultAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, defaultMountName, defaultMountName);
 
 
             //_noCasMount = (KV2SecretEngine) await _vaultAgentAPI.CreateSecretBackendMount (EnumSecretBackendTypes.KeyValueV2, noCasMountName, noCasMountName,
