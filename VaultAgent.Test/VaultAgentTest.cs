@@ -42,10 +42,9 @@ namespace VaultAgentTests
 
 		[Test]
 		public void ValidateVaultInstanceBaseSettings () {
-			//VaultAgentAPI a = new VaultAgentAPI(name,IP,port);
+			VaultAgentAPI a = new VaultAgentAPI(name,VaultServerRef.vaultURI);
 			Assert.AreEqual(name, vault.Name);
-			Assert.AreEqual(VaultServerRef.ipAddress, vault.IP);
-			Assert.AreEqual(VaultServerRef.ipPort, vault.Port);			
+			Assert.AreEqual(VaultServerRef.vaultURI, vault.Uri);			
 		}
 
 

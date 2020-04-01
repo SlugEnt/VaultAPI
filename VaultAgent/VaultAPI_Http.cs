@@ -19,6 +19,7 @@ namespace VaultAgent {
         private readonly HttpClient _httpClt;
 
 
+
         /// <summary>
         /// Constructor.
         /// </summary>
@@ -29,6 +30,15 @@ namespace VaultAgent {
             _httpClt = new HttpClient (new HttpClientHandler {MaxConnectionsPerServer = 500}) {BaseAddress = _vaultIPAddress};
         }
 
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="vaultConnectionUri">Full URI Connection string (http(s)://url:port)</param>
+        public VaultAPI_Http (Uri vaultConnectionUri) {
+            _vaultIPAddress = vaultConnectionUri;
+            _httpClt = new HttpClient(new HttpClientHandler {MaxConnectionsPerServer = 500}) {BaseAddress = _vaultIPAddress};
+        }
 
 
         /// <summary>

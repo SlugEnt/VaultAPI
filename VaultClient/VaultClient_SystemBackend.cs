@@ -16,7 +16,8 @@ namespace VaultClient
 		private string _token;
 
 		public VaultClient_SystemBackend(string token, string ip, int port) {
-            _vault  = new VaultAgentAPI("VaultClient", ip, port);
+            Uri vaultURI = new Uri("http://" + ip + ":" + port);
+            _vault  = new VaultAgentAPI("VaultClient", vaultURI);
 
             //_vault = new VaultAgentAPI("VaultSys",ip,port,token);
 			_token = token;

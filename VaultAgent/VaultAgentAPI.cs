@@ -57,10 +57,10 @@ namespace VaultAgent {
         /// <param name="name">The name this Vault Instance should be known by.  This is purely cosmetic and serves no functional purpose other than being able to uniquely identify this Vault Instance from another.</param>
         /// <param name="port">The network port the Vault instance is listening on.</param>
         /// <param name="vaultIP">The IP address of the Vault instance you want to connect to.</param>
-        public VaultAgentAPI (string name, string vaultIP, int port) {
+        public VaultAgentAPI (string name, Uri vaultUri) {
             Name = name;
-            IP = vaultIP;
-            Port = port;
+            Uri = vaultUri;
+
             _vaultAccessTokenID = string.Empty;
 
             // Create the Secret Backend list.
@@ -72,7 +72,7 @@ namespace VaultAgent {
             try
             {
                 // Create HTTP Connector object
-                _httpConnector = new VaultAPI_Http(IP, port);
+                _httpConnector = new VaultAPI_Http(vaultUri);
 
 
                 // Establish a connection to the token backend.
@@ -91,25 +91,32 @@ namespace VaultAgent {
 
 
 
+
+
         /// <summary>
         /// The name this Vault Instance is known by.  This is purely cosmetic and serves no functional purpose other than being able to uniquely identify this Vault Instance from another.
         /// </summary>
         public string Name { get; private set; }
 
 
-
+        /*
         /// <summary>
         /// The IP Address of the vault instance.  
         /// </summary>
-        public string IP { get; private set; }
+//        public string IP { get; private set; }
 
 
 
         /// <summary>
         /// The IP port the Vault instance is listening on.
         /// </summary>
-        public int Port { get; private set; }
+//        public int Port { get; private set; }
+*/
 
+        /// <summary>
+        /// The Vault Uri connection string to the Vault server
+        /// </summary>
+        public Uri Uri { get; private set; }
 
 
         /// <summary>

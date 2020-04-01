@@ -47,7 +47,8 @@ namespace VaultAgentTests
         /// <param name="overrideToken">The TokenId to use if you do not wish to use the default testing token</param>
         /// <returns></returns>
         public static async Task<VaultAgentAPI> ConnectVault (string name, string overrideToken = "") {
-            VaultAgentAPI vault = new VaultAgentAPI(name,ipAddress,ipPort);
+            vaultURI = new Uri("http://"+ ipAddress + ":" + ipPort);
+            VaultAgentAPI vault = new VaultAgentAPI(name,vaultURI);
 
             string thisToken;
             if ( overrideToken != string.Empty )

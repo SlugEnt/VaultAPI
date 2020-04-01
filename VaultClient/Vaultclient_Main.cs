@@ -26,7 +26,8 @@ namespace VaultClient
 			port = 16100;
 
 			// Connect to Vault, add an authentication backend of AppRole.
-            VaultAgentAPI vaultAgent = new VaultAgentAPI("VaultClient",ip,port);
+            Uri vaultURI = new Uri("http://" + ip + ":" + port);
+            VaultAgentAPI vaultAgent = new VaultAgentAPI("VaultClient",vaultURI);
             TokenLoginConnector loginConnector = new TokenLoginConnector(vaultAgent,"Client",rootToken,TokenAuthEngine.TOKEN_DEFAULT_MOUNT_NAME);
             bool success = await loginConnector.Connect();
 

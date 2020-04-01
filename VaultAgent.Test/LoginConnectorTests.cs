@@ -24,14 +24,26 @@ namespace VaultAgentTests
         [OneTimeSetUp]
         public void Setup () {
 
-            _vault = new VaultAgentAPI("LoginConnVault", VaultServerRef.ipAddress,VaultServerRef.ipPort);
+            _vault = new VaultAgentAPI("LoginConnVault", VaultServerRef.vaultURI);
 
 //            _vault = new VaultAgentAPI("LoginConnVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
         }
 
 
+        [Test]
+        [Order(10)]
+        public async Task TokenLogin_ValidToken () {
+            TokenLoginConnector tlc = new TokenLoginConnector(_vault, "Token Connector Good");
+            tlc.TokenId = VaultServerRef.rootToken;
+            bool success = await tlc.Connect();
+            Assert.IsTrue(success);
+        }
+
+
+
         // Validates we can login with a token
         [Test]
+        [Order(20)]
         public async Task TokenLogin_InvalidToken () {
 
             // Load engine and create a token

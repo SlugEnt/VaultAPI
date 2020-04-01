@@ -486,7 +486,7 @@ namespace VaultAgentTests
 
 
 			// Now attempt to login - We need to create a new vault object or else we will screw with the other tests, since a successful login changes the token.
-            VaultAgentAPI v = new VaultAgentAPI("logintest",VaultServerRef.ipAddress,VaultServerRef.ipPort);
+            VaultAgentAPI v = new VaultAgentAPI("logintest",VaultServerRef.vaultURI);
 	        AppRoleAuthEngine eng1 =  (AppRoleAuthEngine) v.ConnectAuthenticationBackend (EnumBackendTypes.A_AppRole, "Test", _appRoleAuthEngine.MountPoint);
 
 	        Token token = await eng1.Login (roleID, secret_A.ID);

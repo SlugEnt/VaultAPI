@@ -19,7 +19,9 @@ namespace VaultClient
 		VaultAgentAPI _vault;
 
 		public VaultClient_TransitBackend (string token, string ip, int port, string db) {
-            _vault = new VaultAgentAPI("VaultClientTra", ip, port);
+            Uri vaultURI = new Uri("http://" + ip + ":" + port);
+            _vault = new VaultAgentAPI("VaultClient", vaultURI);
+            //_vault = new VaultAgentAPI("VaultClientTra", ip, port);
             //_vault = new VaultAgentAPI("TransitVault", ip, port, token);
 
 			

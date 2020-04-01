@@ -192,7 +192,7 @@ namespace VaultClient
             // We cannot use the Vault Agent _masterVaultAgent, since it has the Master Token tied to it.  We will create a new VaultAgent and SecretEngine for use during this Task, which will have our
             // Mother role token AND not the master Token.  
             // So, we wire up a new Vault, AppRole and Secret Engines AND use them throughout this routine.
-            VaultAgentAPI vault = new VaultAgentAPI("MotherConnector", _masterVaultAgent.IP, _masterVaultAgent.Port);
+            VaultAgentAPI vault = new VaultAgentAPI("MotherConnector", _masterVaultAgent.Uri);
             AppRoleAuthEngine authEngine = (AppRoleAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
             KV2SecretEngine secretEngine =
                 (KV2SecretEngine)vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, _beKV2Name, _beKV2Name);
@@ -255,7 +255,7 @@ namespace VaultClient
             // We cannot use the Vault Agent _masterVaultAgent, since it has the Master Token tied to it.  We will create a new VaultAgent and SecretEngine for use during this Task, which will have our
             // Mother role token AND not the master Token.  
             // So, we wire up a new Vault, AppRole and Secret Engines AND use them throughout this routine.
-            VaultAgentAPI vault = new VaultAgentAPI("TeenConnector", _masterVaultAgent.IP, _masterVaultAgent.Port);
+            VaultAgentAPI vault = new VaultAgentAPI("TeenConnector", _masterVaultAgent.Uri);
             AppRoleAuthEngine authEngine = (AppRoleAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
             KV2SecretEngine secretEngine =
                 (KV2SecretEngine)vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, _beKV2Name, _beKV2Name);

@@ -45,8 +45,9 @@ namespace MyBenchmarks
 			string ip = "127.0.0.1";
 			int port = 47002;
 
+            Uri vaultURI = new Uri("http://" + ip + ":" + port);
 			// Connect to Vault, add an authentication backend of AppRole.
-			_vaultAgent = new VaultAgentAPI("Vault", ip, port);    //, rootToken, true);
+			_vaultAgent = new VaultAgentAPI("Vault", vaultURI);    
 
             TokenLoginConnector loginConnector = new TokenLoginConnector(_vaultAgent,"Token Authenticator",rootToken);
 

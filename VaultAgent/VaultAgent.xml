@@ -4225,7 +4225,7 @@
              authorization or secret backends which it then uses to communicate to the Vault Store with.
              </summary>
         </member>
-        <member name="M:VaultAgent.VaultAgentAPI.#ctor(System.String,System.String,System.Int32)">
+        <member name="M:VaultAgent.VaultAgentAPI.#ctor(System.String,System.Uri)">
             <summary>
             Constructor to create a new VaultAgentAPI object which is used to connect to a single Vault Instance.  Automatically connects to the Token Backend and will optionally connect
             to system backend if requested.
@@ -4240,14 +4240,9 @@
             The name this Vault Instance is known by.  This is purely cosmetic and serves no functional purpose other than being able to uniquely identify this Vault Instance from another.
             </summary>
         </member>
-        <member name="P:VaultAgent.VaultAgentAPI.IP">
+        <member name="P:VaultAgent.VaultAgentAPI.Uri">
             <summary>
-            The IP Address of the vault instance.  
-            </summary>
-        </member>
-        <member name="P:VaultAgent.VaultAgentAPI.Port">
-            <summary>
-            The IP port the Vault instance is listening on.
+            The Vault Uri connection string to the Vault server
             </summary>
         </member>
         <member name="P:VaultAgent.VaultAgentAPI.Token">
@@ -4325,6 +4320,12 @@
             </summary>
             <param name="vaultIP">IP Address of the Vault server</param>
             <param name="port">The network Port the Vault server is listening on</param>
+        </member>
+        <member name="M:VaultAgent.VaultAPI_Http.#ctor(System.Uri)">
+            <summary>
+            Constructor
+            </summary>
+            <param name="vaultConnectionUri">Full URI Connection string (http(s)://url:port)</param>
         </member>
         <member name="M:VaultAgent.VaultAPI_Http.SetTokenHeader(System.String)">
             <summary>

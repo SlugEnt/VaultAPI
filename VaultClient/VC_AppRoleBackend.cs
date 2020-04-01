@@ -409,7 +409,7 @@ namespace VaultClient
 
 	    public async Task PerformRoleATasks() {
 		    // We need to simulate a session as this Role1 User:
-		    VaultAgentAPI vault = new VaultAgentAPI("Role2", _vaultAgent.IP, _vaultAgent.Port);
+		    VaultAgentAPI vault = new VaultAgentAPI("Role2", _vaultAgent.Uri);
 		    AppRoleAuthEngine authEngine = (AppRoleAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
 		    KV2SecretEngine secretEngine =
 			    (KV2SecretEngine)vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "KV2 Secrets", _beKV2Name);
@@ -462,8 +462,8 @@ namespace VaultClient
 
 
 	    public async Task PerformRoleBTasks() {
-		    // We need to simulate a session as this Role1 User:
-		    VaultAgentAPI vault = new VaultAgentAPI("Role2", _vaultAgent.IP, _vaultAgent.Port);
+            // We need to simulate a session as this Role1 User:
+            VaultAgentAPI vault = new VaultAgentAPI("Role2", _vaultAgent.Uri);
 		    AppRoleAuthEngine authEngine = (AppRoleAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
 		    KV2SecretEngine secretEngine =
 			    (KV2SecretEngine)vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "KV2 Secrets", _beKV2Name);
@@ -548,9 +548,9 @@ namespace VaultClient
 				KV2Secret appDataAppB = new KV2Secret(Constants.appName_B, Constants.appData);
 				KV2Secret appData = new KV2Secret(Constants.appData);
 
-				// We need to simulate a session as this Role1 User:
-				VaultAgentAPI vault = new VaultAgentAPI("Role1", _vaultAgent.IP, _vaultAgent.Port);
-				AppRoleAuthEngine authEngine = (AppRoleAuthEngine) vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
+                // We need to simulate a session as this Role1 User:
+                VaultAgentAPI vault = new VaultAgentAPI("Role1", _vaultAgent.Uri);
+                AppRoleAuthEngine authEngine = (AppRoleAuthEngine) vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
 				KV2SecretEngine secretEngine =
 					(KV2SecretEngine) vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "Sheakley KV2 Secrets", _beKV2Name);
 
@@ -594,7 +594,7 @@ namespace VaultClient
 				// We just try and read secrets off path1/ folders.
 
 				// We need to simulate a session as this Role1 User:
-				VaultAgentAPI vault = new VaultAgentAPI("Role2", _vaultAgent.IP, _vaultAgent.Port);
+				VaultAgentAPI vault = new VaultAgentAPI("Role2", _vaultAgent.Uri);
 				AppRoleAuthEngine authEngine = (AppRoleAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
 				KV2SecretEngine secretEngine =
 					(KV2SecretEngine)vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "Sheakley KV2 Secrets", _beKV2Name);
