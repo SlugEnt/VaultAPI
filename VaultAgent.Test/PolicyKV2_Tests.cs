@@ -235,7 +235,7 @@ namespace VaultAgentTests
 
 
 
-		// Validates that the initial test scenario is correct.  Both tokens should have no access.
+		// Can update the secret
 		[Test]
 		public async Task SettingUpdatellowed_ProvidesAbilityToUpdateSecret() {
 			// Setup basics.
@@ -281,7 +281,7 @@ namespace VaultAgentTests
 
 
 
-		// Validates that the initial test scenario is correct.  Both tokens should have no access.
+		// Can Delete the secret
 		[Test]
 		public async Task SettingDeleteAllowed_ProvidesAbilityToDeleteSecret() {
 			// Setup basics.
@@ -325,7 +325,7 @@ namespace VaultAgentTests
 
 
 
-		// Validates that the initial test scenario is correct.  Both tokens should have no access.
+		// Undelete secret is allowed
 		[Test]
 		public async Task SettingUndeleteAllowed_ProvidesAbilityToUndeleteSecret() {
 			// Setup basics.
@@ -380,7 +380,7 @@ namespace VaultAgentTests
 
 
 
-
+        // Destroy secret is allowed.
 		[Test]
 		public async Task SettingDestroyAllowed_ProvidesAbilityToDestroySecret() {
 			// Setup basics.
@@ -420,6 +420,8 @@ namespace VaultAgentTests
 		}
 
 
+
+        // Delete specific version of secret
 		[Test]
 		public async Task DeletionOfSpecificVersions_Success() {
 			// Setup basics.

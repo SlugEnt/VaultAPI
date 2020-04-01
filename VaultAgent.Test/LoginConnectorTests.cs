@@ -32,10 +32,17 @@ namespace VaultAgentTests
 
         // Validates we can login with a token
         [Test]
-        public async Task TokenLogin () {
+        public async Task TokenLogin_InvalidToken () {
+
             // Load engine and create a token
             // TODO this test is not valid.  We kind of already test it, because every Test requires a connection to Vault which we do in the VaultServerSetup Class.
+            TokenLoginConnector tlc = new TokenLoginConnector(_vault,"Token Connector");
+            tlc.TokenId = "b";
+            bool success = await tlc.Connect();
+            Assert.IsFalse(success);
             /*
+            
+
             TokenAuthEngine tokenAuthEngine = (TokenAuthEngine)_vault.ConnectAuthenticationBackend(EnumBackendTypes.A_Token);
 
             TokenNewSettings tokenSettings = new TokenNewSettings();

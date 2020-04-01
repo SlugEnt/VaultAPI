@@ -77,7 +77,16 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors
 
                 return true;
             }
-            catch ( Exception e ) { throw e; }
+
+            // Forbidden means token does not have permission
+            catch ( System.AggregateException e ) {
+                foreach ( Exception ex in e.InnerExceptions ) {
+                    if ( ex is VaultForbiddenException ) return false;
+                }
+
+                throw;
+            }
+            catch ( Exception e ) { throw; }
         }
 
 
