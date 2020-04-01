@@ -1062,6 +1062,31 @@
             <param name="authMethod">Vault proper string name for the authentication method.</param>
             <returns>EnumAuthMethod value for the given string name.</returns>
         </member>
+        <member name="T:VaultAgent.Backends.System.EnumKV2SubPaths">
+            <summary>
+            Represent the various subfolders that KeyValue V2 Backend secrets have that maintain various states of the secret.
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumKV2SubPaths.Metadata">
+            <summary>
+            The Metadata folder
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumKV2SubPaths.Delete">
+            <summary>
+            The Delete folder
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumKV2SubPaths.Destroy">
+            <summary>
+            The Destroy Folder
+            </summary>
+        </member>
+        <member name="F:VaultAgent.Backends.System.EnumKV2SubPaths.Undelete">
+            <summary>
+            The Undelete Folder
+            </summary>
+        </member>
         <member name="T:VaultAgent.Backends.System.EnumSecretBackendTypes">
             <summary>
             Enumeration that defines a numeric value for each Secret Backend Type
