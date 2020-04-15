@@ -57,8 +57,9 @@ namespace VaultAgent.SecretEngines.KeyValue2
             {
                 get => _name;
 
-                //TODO - Does this need to be an internal set?
-                set { _name = value; }
+                set { 
+                    _name = VaultUtilityFX.GetNameFromVaultPath(value);
+                }
             }
 
 
@@ -70,11 +71,10 @@ namespace VaultAgent.SecretEngines.KeyValue2
             {
                 get { return _path; }
 
-                //TODO - Does this need to be an internal set? 
                 set
                 {
-                    if (value == "/") { _path = ""; }
-                    else { _path = value.TrimEnd('/').TrimStart(('/')); }
+                if (value == "/") { _path = ""; }
+                     else { _path = value.TrimEnd('/').TrimStart(('/')); }
                 }
             }
 

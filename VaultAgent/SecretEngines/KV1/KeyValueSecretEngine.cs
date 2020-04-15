@@ -117,7 +117,7 @@ namespace VaultAgent.SecretEngines {
 
 
             // Build entire JSON Body:  Input Params + Bulk Items List.
-            string attrJSON = "";
+            string attrJSON;
             if ( secret.Attributes.Count > 0 ) {
 	            //attrJSON = VaultSerializationHelper.ToJson(secret.Attributes);
 	            attrJSON = JsonConvert.SerializeObject (secret.Attributes, Formatting.None);

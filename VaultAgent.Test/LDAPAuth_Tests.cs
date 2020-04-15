@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System;
+using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -206,7 +207,7 @@ namespace VaultAgentTests
         [Test, Order (2200)]
         public async Task Group_List_Success () {
             List<string> groups = await _ldapAuthEngine.ListGroups();
-
+            throw new NotImplementedException();
         }
 
 

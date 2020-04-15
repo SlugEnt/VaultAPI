@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using NUnit.Framework.Internal;
 using SlugEnt;
 using VaultAgent;
 using VaultAgent.Backends.System;
@@ -60,7 +61,33 @@ namespace VaultAgentTests
         }
 
 
-        // Can save a VSE Object to the vault
+		[Test]
+		[TestCase("A", "secret", null, "secret", "", "secret")]
+		[TestCase("B", "/secret", null, "secret", "", "secret")]
+		[TestCase("C", "secret/", null, "secret", "", "secret")]
+        [TestCase("D", "secret", "", "secret", "", "secret")]
+		[TestCase("E", "secret", "root", "secret", "root", "root/secret")]
+		[TestCase("F", "secret", "root/path1", "secret", "root/path1", "root/path1/secret")]
+		[TestCase("G", "secret", "/root/path1", "secret", "root/path1", "root/path1/secret")]
+		[TestCase("H", "/secret", "root/path1", "secret", "root/path1", "root/path1/secret")]
+		[TestCase("I", "/secret", null, "secret", "", "secret")]
+		[TestCase("J", "/secret/", null, "secret", "", "secret")]
+
+        public async Task ConstructorTests (string scenario, string name, string path, string expectedName, string expectedPath, string expectedFullPath) {
+			VaultSecretEntry vse = null;
+			if ( path == null ) {
+				vse = new VaultSecretEntry(_noCASMount, name);
+			}
+            else vse = new VaultSecretEntry(_noCASMount,name,path);
+
+            Assert.AreEqual(expectedName,vse.Name,"A10");
+            Assert.AreEqual(expectedPath,vse.Path, "A20");
+            Assert.AreEqual(expectedFullPath, vse.FullPath, "A30");
+		}
+
+
+
+		// Can save a VSE Object to the vault
         [Test]
 		public async Task Save_Success () {
 			string secretName = _uniqueKey.GetKey("SN");

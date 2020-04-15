@@ -83,7 +83,14 @@ namespace VaultAgentTests {
         // Ensure Backend is initialized during each test.
         protected void AppBackendTestInit () { }
 
+        #region "NamePathTests"
 
+
+        [Test]
+        public async Task SecretNamePath (string name, string path) {
+
+        }
+        #endregion
 
         // Confirms that when Reading or Saving a secret, the KV2VaultReadReturnObjData element is read correctly from Vault and updates the secrets properties
         [Test]

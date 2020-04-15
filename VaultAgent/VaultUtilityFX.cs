@@ -63,5 +63,45 @@ namespace VaultAgent {
         /// <param name="json">The JSON string that should be converted.</param>
         /// <returns>The C# class type to be returned filled with the JSON values.</returns>
         public static T ConvertJSON<T> (string json) { return JsonConvert.DeserializeObject<T> (json); }
+
+
+        /// <summary>
+        /// In a Vault url string the verty last part of a URL that is a path is the name
+        /// </summary>
+        /// <param name="path">The Path to Interrogate</param>
+        /// <returns></returns>
+        public static string GetNameFromVaultPath (string path) {
+	        string s = path.TrimStart('/').TrimEnd('/');
+            int length = s.Length;
+	        for ( int i = length; --i >= 0; ) {
+		        char ch = s [i];
+		        if ( ch == '/' ) return s.Substring(i + 1, length - i - 1);
+	        }
+
+	        return s;
+        }
+
+
+        /// <summary>
+        /// Returns the full path part of a Vault URL path.  Strips leading and trailing slashes.
+        /// </summary>
+        /// <param name="path">The Path to interrogate</param>
+        /// <returns></returns>
+        public static string GetPathFromVaultPath (string path) {
+	        string s = path.TrimStart('/').TrimEnd('/');
+	        int length = s.Length;
+	        for (int i = length; --i >= 0;)
+	        {
+		        char ch = s[i];
+                if (ch == '/')
+                    // If at start of string, then there is no path.
+//			        if ( i == 0 )
+//				        return string.Empty;
+					return s.Substring(0, i);
+	        }
+
+	        return string.Empty;
+
+        }
     }
 }

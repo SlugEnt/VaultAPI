@@ -31,10 +31,18 @@ namespace VaultAgent.SecretEngines
 		/// <summary>
 		/// Constructs a VaultSecretEntry object Without CAS functionality
 		/// </summary>
-		/// <param name="secretEngine"></param>
+		/// <param name="secretEngine">The Secret Engine this Entry should be saved/read to/from</param>
 		/// <param name="name">The Name of this secret</param>
 		/// <param name="path">The Path of this secret</param>
 		public VaultSecretEntry (KV2SecretEngine secretEngine, string name, string path) : base (secretEngine,name,path) { }
+
+
+		/// <summary>
+		/// Constructs a VaultSecretEntry object Without CAS functionality
+		/// </summary>
+		/// <param name="secretEngine">The Secret Engine this Entry should be saved/read to/from</param>
+		/// <param name="fullPathAndName">The full path and name to the secret</param>
+		public VaultSecretEntry (KV2SecretEngine secretEngine, string fullPathAndName) : base(secretEngine, fullPathAndName) { }
 
 
 		/// <summary>

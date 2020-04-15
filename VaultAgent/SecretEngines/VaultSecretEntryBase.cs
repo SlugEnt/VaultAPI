@@ -41,6 +41,22 @@ namespace VaultAgent.SecretEngines
 		}
 
 
+
+		/// <summary>
+		/// Constructor accepting the SecretEngine and Secret Name that this secret's Vault Operations (VSE) should be applied to.
+		/// </summary>
+		/// <param name="secretEngine">The KV2SecretEngine that this secret should operate with</param>
+		/// <param name="fullPathAndName">The Name of this secret, including any parent paths.  This will be separated out into Name and Path Properties</param>
+		public VaultSecretEntryBase (KV2SecretEngine secretEngine, string fullPathAndName) {
+		InitializeNew();
+			SecretEngine = secretEngine;
+
+			_secret.Name = VaultUtilityFX.GetNameFromVaultPath(fullPathAndName);
+			_secret.Path = VaultUtilityFX.GetPathFromVaultPath(fullPathAndName);
+		}
+
+
+
 		/// <summary>
 		/// Constructor accepting the SecretEngine that this secret's Vault Operations (VSE) should be applied to.
 		/// </summary>
@@ -99,7 +115,7 @@ namespace VaultAgent.SecretEngines
 
 
 		/// <summary>
-		/// The Name of this Secret
+		/// The Name of this Secret.  
 		/// </summary>
 		public string Name {
 			get { return _secret.Name; }
