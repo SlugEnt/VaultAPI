@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using VaultAgent.AuthenticationEngines;
 using VaultAgent.Backends;
 using SlugEnt;
+using VaultAgent.SecretEngines.KV2;
 
 
 namespace VaultAgentTests
@@ -23,12 +24,13 @@ namespace VaultAgentTests
 		/// </summary>
 		/// <returns></returns>
 		[OneTimeSetUp]
-		public void VaultAgentTest_OneTimeSetup() {
+		public async Task VaultAgentTest_OneTimeSetup() {
 			_uk = new UniqueKeys();
 			name = _uk.GetKey("vlt");
-			vault = new VaultAgentAPI(name, VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
-			
-		}
+			vault = await VaultServerRef.ConnectVault(name);
+            //new VaultAgentAPI(name, VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+
+        }
 
 
 		/// <summary>
@@ -40,18 +42,18 @@ namespace VaultAgentTests
 
 		[Test]
 		public void ValidateVaultInstanceBaseSettings () {
-			//VaultAgentAPI a = new VaultAgentAPI(name,IP,port);
+			VaultAgentAPI a = new VaultAgentAPI(name,VaultServerRef.vaultURI);
 			Assert.AreEqual(name, vault.Name);
-			Assert.AreEqual(VaultServerRef.ipAddress, vault.IP);
-			Assert.AreEqual(VaultServerRef.ipPort, vault.Port);			
+			Assert.AreEqual(VaultServerRef.vaultURI, vault.Uri);			
 		}
 
 
 
         // Validate that the token ID and Token properties are set when a valid token is passed.
 	    [Test]
-	    public void TokenPropertiesSet_WhenPassedValidToken() {
-            VaultAgentAPI v1 = new VaultAgentAPI(name, VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
+	    public async Task TokenPropertiesSet_WhenPassedValidToken() {
+            VaultAgentAPI v1 = await VaultServerRef.ConnectVault(name);
+            //new VaultAgentAPI(name, VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken);
 
             // Vault instance was created in one time setup.
             Assert.AreEqual(VaultServerRef.rootToken, v1.Token.ID);
@@ -112,14 +114,32 @@ namespace VaultAgentTests
 			Assert.AreNotEqual(oldHasParent, tokenInfo.HasParent,"M2: HasParent property should have changed values when the IsOrphan property was changed.");
 			Assert.AreNotEqual(tokenInfo.HasParent, tokenInfo.IsOrphan, "M3: IsOrphan and HasParent cannot both be the same value.");
 		}
-		#endregion
-
-	}
+        #endregion
 
 
-	// Simulates a backend for Abstract backend validation.
-/*	internal class BETest : VaultBackend {
-//		public BETest() : base("test", "testmount",) { }
-	}
-	*/
+        #region "Pathing Tests"
+
+        // Validates that we combine paths correctly.
+        [Test]
+        [TestCase("/root/", "/root/")]
+        [TestCase("/root", "/root")]
+        [TestCase("root", "root")]
+        [TestCase("/root/1/2/3", "/root", "1", "2", "3")]
+        [TestCase("/root/1/2/3/", "/root", "1", "2", "3/")]
+
+        public void PathCombine(string expected, params string[] paths)
+        {
+            string result = VaultAgentAPI.PathCombine(paths);
+            Assert.AreEqual(expected, result);
+        }
+
+        #endregion
+    }
+
+
+    // Simulates a backend for Abstract backend validation.
+    /*	internal class BETest : VaultBackend {
+    //		public BETest() : base("test", "testmount",) { }
+        }
+        */
 }

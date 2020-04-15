@@ -1,8 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using VaultAgent.Backends;
+
+// Allow Testing project to access KV2SecretWrapper to perform tests.
+[assembly: InternalsVisibleTo("VaultAgent.Test")]
+
 
 namespace VaultAgent.SecretEngines
 {
@@ -37,6 +38,21 @@ namespace VaultAgent.SecretEngines
 		public VaultSecretEntry (KV2SecretEngine secretEngine, string name, string path) : base (secretEngine,name,path) { }
 
 
+        /// <summary>
+        /// Constructs a VaultSecretEntry object Without the Secret Engine specified.  Needs to be specified at a later time
+        /// </summary>
+        /// <param name="name">The Name of this secret</param>
+        /// <param name="path">The Path of this secret</param>
+        public VaultSecretEntry (string name, string path) : base (name, path) { }
+
+
+        /// <summary>
+        /// Saves the object to the Vault
+        /// </summary>
+        /// <returns></returns>
+        public new async Task<bool> VSE_Save () { return await base.VSE_Save(); }
+
+    
 		/// <summary>
 		/// Constructs a VaultSecretEntry object Without CAS functionality
 		/// </summary>

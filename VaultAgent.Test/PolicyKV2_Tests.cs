@@ -54,11 +54,12 @@ namespace VaultAgentTests
 				return;
 			}
 
-			// Build Connection to Vault.
-			_vaultAgentAPI = new VaultAgentAPI("PolicyBE", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
+            // Build Connection to Vault.
+            _vaultAgentAPI = await VaultServerRef.ConnectVault("PolicyBE");
 
-			// Create a new system Backend Mount for this series of tests.
-			_vaultSystemBackend = _vaultAgentAPI.System;
+            // Create a new system Backend Mount for this series of tests.
+            _vaultSystemBackend = new VaultSystemBackend(_vaultAgentAPI.TokenID, _vaultAgentAPI);
+            
 
 
 			// Create the backend.
@@ -68,8 +69,9 @@ namespace VaultAgentTests
 				"A10:  Enabling backend " + _beName + " failed.");
 
 			// Create the Root Engine that we will use 
-			_vaultRootAgentAPI = new VaultAgentAPI("Root", _vaultAgentAPI.IP, _vaultAgentAPI.Port, _vaultAgentAPI.Token.ID);
-			_rootEng = (KV2SecretEngine)_vaultRootAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, _beName, _beName);
+			//_vaultRootAgentAPI = new VaultAgentAPI("Root", _vaultAgentAPI.IP, _vaultAgentAPI.Port, _vaultAgentAPI.Token.ID);
+            _vaultRootAgentAPI = await VaultServerRef.ConnectVault("PolicyBE_Alt");
+            _rootEng = (KV2SecretEngine)_vaultRootAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, _beName, _beName);
 
 			_vaultAgents = new List<VaultAgentAPI>();
 		}
@@ -124,10 +126,12 @@ namespace VaultAgentTests
 			Token tokenFAIL = await tokenEng.CreateToken(tokenBSettings);
 
 
-			// AC - Create 2 Vault Instances that will use each Token.
-			VaultAgentAPI vaultOK = new VaultAgentAPI("OKToken", _vaultAgentAPI.IP, _vaultAgentAPI.Port, tokenOK.ID);
-			VaultAgentAPI vaultFail = new VaultAgentAPI("FAILToken", _vaultAgentAPI.IP, _vaultAgentAPI.Port, tokenFAIL.ID);
-			_vaultAgents.Add(vaultOK);
+            // AC - Create 2 Vault Instances that will use each Token.
+            VaultAgentAPI vaultOK = await VaultServerRef.ConnectVault("OKVault",tokenOK.ID);
+            VaultAgentAPI vaultFail = await VaultServerRef.ConnectVault("FailVault", tokenFAIL.ID);
+            //VaultAgentAPI vaultOK = new VaultAgentAPI("OKToken", _vaultAgentAPI.IP, _vaultAgentAPI.Port, tokenOK.ID);
+            //VaultAgentAPI vaultFail = new VaultAgentAPI("FAILToken", _vaultAgentAPI.IP, _vaultAgentAPI.Port, tokenFAIL.ID);
+            _vaultAgents.Add(vaultOK);
 			_vaultAgents.Add(vaultFail);
 
 
@@ -231,7 +235,7 @@ namespace VaultAgentTests
 
 
 
-		// Validates that the initial test scenario is correct.  Both tokens should have no access.
+		// Can update the secret
 		[Test]
 		public async Task SettingUpdatellowed_ProvidesAbilityToUpdateSecret() {
 			// Setup basics.
@@ -277,7 +281,7 @@ namespace VaultAgentTests
 
 
 
-		// Validates that the initial test scenario is correct.  Both tokens should have no access.
+		// Can Delete the secret
 		[Test]
 		public async Task SettingDeleteAllowed_ProvidesAbilityToDeleteSecret() {
 			// Setup basics.
@@ -321,7 +325,7 @@ namespace VaultAgentTests
 
 
 
-		// Validates that the initial test scenario is correct.  Both tokens should have no access.
+		// Undelete secret is allowed
 		[Test]
 		public async Task SettingUndeleteAllowed_ProvidesAbilityToUndeleteSecret() {
 			// Setup basics.
@@ -376,7 +380,7 @@ namespace VaultAgentTests
 
 
 
-
+        // Destroy secret is allowed.
 		[Test]
 		public async Task SettingDestroyAllowed_ProvidesAbilityToDestroySecret() {
 			// Setup basics.
@@ -416,6 +420,8 @@ namespace VaultAgentTests
 		}
 
 
+
+        // Delete specific version of secret
 		[Test]
 		public async Task DeletionOfSpecificVersions_Success() {
 			// Setup basics.
@@ -491,15 +497,16 @@ namespace VaultAgentTests
 		    // We need to setup a KV2 Secrets engine and also an AppRole Backend.
 			// Create an Authentication method of App Role.	- This only needs to be done when the Auth method is created.  
 			AuthMethod am = new AuthMethod(appBE, EnumAuthMethods.AppRole);
-		    await _vaultAgentAPI.System.AuthEnable(am);
+		    await _vaultSystemBackend.AuthEnable(am);
 
 		    // Create a KV2 Secret Mount if it does not exist.           
-		    await _vaultAgentAPI.System.SysMountCreate(kv2BE, "ClientTest KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
+		    await _vaultSystemBackend.SysMountCreate(kv2BE, "ClientTest KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
 
 			
 			// Now we 
-			VaultAgentAPI vault = new VaultAgentAPI("capability", _vaultAgentAPI.IP, _vaultAgentAPI.Port,_vaultAgentAPI.TokenID);
-		    AppRoleAuthEngine authEngine = (AppRoleAuthEngine) vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, appBE, appBE);
+			VaultAgentAPI vault = await VaultServerRef.ConnectVault("PolicyBeCapa2");
+            //new VaultAgentAPI("capability", _vaultAgentAPI.IP, _vaultAgentAPI.Port,_vaultAgentAPI.TokenID);
+            AppRoleAuthEngine authEngine = (AppRoleAuthEngine) vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, appBE, appBE);
 		    KV2SecretEngine secretEngine =
 			    (KV2SecretEngine) vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "KV2 Secrets", kv2BE);
 
@@ -522,7 +529,7 @@ namespace VaultAgentTests
 		    policyContainer.AddPolicyPathObject(vppi3);
 		    policyContainer.AddPolicyPathObject(vppi4);
 
-		    await _vaultAgentAPI.System.SysPoliciesACLCreate(policyContainer);
+		    await _vaultSystemBackend.SysPoliciesACLCreate(policyContainer);
 
 
 			// 3. Now create an App Role & Secret ID
@@ -553,7 +560,7 @@ namespace VaultAgentTests
 
 
 			Dictionary<string, List<string>> permissions;
-		    permissions = await _vaultAgentAPI.System.GetTokenCapabilityOnPaths(token.ID, paths);
+		    permissions = await _vaultSystemBackend.GetTokenCapabilityOnPaths(token.ID, paths);
 
 			// 6. Validate the results.
 			Assert.AreEqual(4,permissions.Count, "A10:  Expected to receive 4 permission objects back.");
@@ -578,17 +585,19 @@ namespace VaultAgentTests
 			// We need to setup a KV2 Secrets engine and also an AppRole Backend.
 			// Create an Authentication method of App Role.	- This only needs to be done when the Auth method is created.  
 			AuthMethod am = new AuthMethod(appBE, EnumAuthMethods.AppRole);
-			await _vaultAgentAPI.System.AuthEnable(am);
+			await _vaultSystemBackend.AuthEnable(am);
 
-			// Create a KV2 Secret Mount if it does not exist.           
-			await _vaultAgentAPI.System.SysMountCreate(kv2BE, "ClientTest KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
+            // Create a KV2 Secret Mount if it does not exist.           
+            VaultSystemBackend vaultSystemBackend = new VaultSystemBackend(_vaultAgentAPI.TokenID, _vaultAgentAPI);
+            await vaultSystemBackend.SysMountCreate(kv2BE, "ClientTest KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
 
 
 
 
 			// 1B. Now we can connect to the backends.
-			VaultAgentAPI vault = new VaultAgentAPI("capability", _vaultAgentAPI.IP, _vaultAgentAPI.Port, _vaultAgentAPI.TokenID);
-			AppRoleAuthEngine authEngine = (AppRoleAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, appBE, appBE);
+			VaultAgentAPI vault = await VaultServerRef.ConnectVault("PolicyBECapa");
+            //new VaultAgentAPI("capability", _vaultAgentAPI.IP, _vaultAgentAPI.Port, _vaultAgentAPI.TokenID);
+            AppRoleAuthEngine authEngine = (AppRoleAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, appBE, appBE);
 			KV2SecretEngine secretEngine =
 				(KV2SecretEngine)vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "KV2 Secrets", kv2BE);
 			IdentitySecretEngine idEngine = (IdentitySecretEngine)_vaultAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.Identity);
@@ -611,9 +620,9 @@ namespace VaultAgentTests
 
 
 
-			// 4.  Create an Entity and Entity Alias.
-			// 4A.  Get Authentication backend accessor.
-			Dictionary<string, AuthMethod> authMethods = await _vaultAgentAPI.System.AuthListAll();
+            // 4.  Create an Entity and Entity Alias.
+            // 4A.  Get Authentication backend accessor.
+            Dictionary<string, AuthMethod> authMethods = await vaultSystemBackend.AuthListAll();
 			AuthMethod authMethod = authMethods[authEngine.Name + "/"];
 			Assert.IsNotNull(authMethod,"B10:  Expected to find the authentication backend.  But did not.");
 			string mountAccessor = authMethod.Accessor;
@@ -662,7 +671,7 @@ namespace VaultAgentTests
 			policyContainer.AddPolicyPathObject(vppi3);
 			policyContainer.AddPolicyPathObject(vppi4);
 
-			await _vaultAgentAPI.System.SysPoliciesACLCreate(policyContainer);
+			await _vaultSystemBackend.SysPoliciesACLCreate(policyContainer);
 
 
 			// 7.  Now we can login to get a token..  Validate the entity policy has been set on token.
@@ -685,7 +694,7 @@ namespace VaultAgentTests
 
 
 			Dictionary<string, List<string>> permissions;
-			permissions = await _vaultAgentAPI.System.GetTokenCapabilityOnPaths(token.ID, paths);
+			permissions = await _vaultSystemBackend.GetTokenCapabilityOnPaths(token.ID, paths);
 
 
 			// 9. Validate the permission results.

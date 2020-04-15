@@ -32,7 +32,7 @@ namespace VaultClient
         public InitiateVault(VaultAgentAPI vaultAgent)
         {
             _vault = vaultAgent;
-            _vaultSystemBackend = _vault.System;
+            _vaultSystemBackend = new VaultSystemBackend(_vault.TokenID, _vault);
 
             _ldapAuthEngine = (LdapAuthEngine)_vault.ConnectAuthenticationBackend(EnumBackendTypes.A_LDAP, LDAP_MOUNTNAME, LDAP_MOUNTNAME);
 

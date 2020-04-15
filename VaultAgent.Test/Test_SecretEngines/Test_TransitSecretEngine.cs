@@ -20,6 +20,8 @@ namespace VaultAgentTests {
 	public class TransitSecretEngine_Test {
 		private VaultAgentAPI _vaultAgentAPI;
 
+        private VaultSystemBackend _systemBackend;
+
 		// The Vault Transit Backend we will be using throughout our testing.
 		private TransitSecretEngine _transitSecretEngine;
 
@@ -41,15 +43,25 @@ namespace VaultAgentTests {
 
 
 			// Build Connection to Vault.
-			_vaultAgentAPI = new VaultAgentAPI("transitVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
+			_vaultAgentAPI = await VaultServerRef.ConnectVault("TransitSecEng");
+            //new VaultAgentAPI("transitVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
 
 
-			// Create unique name for the transit Backend we will use to test with.
-			string transitMountName = _uniqueKeys.GetKey("TRANsit");
+            // Create unique name for the transit Backend we will use to test with.
+            string transitMountName = _uniqueKeys.GetKey("TRANsit");
 
-			_transitSecretEngine =
-				(TransitSecretEngine) await _vaultAgentAPI.CreateSecretBackendMount(EnumSecretBackendTypes.Transit, transitMountName, transitMountName,
-				                                                                    "Transit Bckend Testing");
+
+            // Get Connection to Vault System backend
+            _systemBackend = new VaultSystemBackend(_vaultAgentAPI.TokenID, _vaultAgentAPI);
+            Assert.IsTrue(await _systemBackend.CreateSecretBackendMount(EnumSecretBackendTypes.Transit, transitMountName, transitMountName,
+                                                                        "Transit Bckend Testing"), "A10:  Failed to Create the Transit Backend");
+            _transitSecretEngine = (TransitSecretEngine) _vaultAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.Transit, transitMountName, transitMountName);
+
+
+
+//            _transitSecretEngine =
+	//			(TransitSecretEngine) await _vaultAgentAPI.CreateSecretBackendMount(EnumSecretBackendTypes.Transit, transitMountName, transitMountName,
+		//		                                                                    "Transit Bckend Testing");
 			Assert.NotNull(_transitSecretEngine, "Transit Backend was returned null upon creation.");
 		}
 

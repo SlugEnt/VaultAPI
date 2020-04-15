@@ -88,12 +88,12 @@ namespace VaultClient
 			_beAuthName = _uniqueKeys.GetKey("VCAR");
 			_beKV2Name = _uniqueKeys.GetKey("VCKV");
 
-
-			// 1.  Create an App Role Authentication backend. 
-			try {
+            VaultSystemBackend vaultSystemBackend = new VaultSystemBackend(_vault.TokenID, _vault);
+            // 1.  Create an App Role Authentication backend. 
+            try {
 				// Create an Authentication method of App Role.	- This only needs to be done when the Auth method is created.  
 				AuthMethod am = new AuthMethod(_beAuthName, EnumAuthMethods.AppRole);
-				await _vault.System.AuthEnable(am);
+				await vaultSystemBackend.AuthEnable(am);
 			}
 			// Ignore mount at same location errors.  This can happen if we are not restarting Vault Instance each time we run.  Nothing to worry about.
 			catch (VaultException e) {
@@ -104,7 +104,7 @@ namespace VaultClient
 
 			// Create a KV2 Secret Mount if it does not exist.           
 			try {
-				await _vault.System.SysMountCreate(_beKV2Name, "ClientTest KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
+				await vaultSystemBackend.SysMountCreate(_beKV2Name, "ClientTest KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
 			}
 			catch (VaultInvalidDataException e) {
 				if (e.SpecificErrorCode == EnumVaultExceptionCodes.BackendMountAlreadyExists) {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using VaultAgent.Backends;
@@ -7,6 +8,10 @@ using VaultAgent.SecretEngines;
 using VaultAgent.SecretEngines.KeyValue2;
 using VaultAgent.SecretEngines.KV2;
 using VaultAgent.SecretEngines.KV2.SecretMetaDataInfo;
+
+// Allow Testing project to access KV2SecretWrapper to perform tests.
+[assembly: InternalsVisibleTo("VaultAgent.Test")]
+
 
 namespace VaultAgent.SecretEngines
 {
@@ -18,17 +23,18 @@ namespace VaultAgent.SecretEngines
 	/// </summary>
 	public abstract class VaultSecretEntryBase : IKV2Secret { //: KV2SecretBase<VaultSecretEntryNoCAS> {
 		private KV2SecretEngine _kv2SecretEngine = null;
-		private KV2Secret _secret;
-		private KV2SecretMetaDataInfo _info;
-
+        // TODO change secret to private and use pass thru methods on this class to access required properties
+		protected KV2Secret _secret;
+		protected KV2SecretMetaDataInfo _info;
+        private string _basePath="";
+        
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		public VaultSecretEntryBase () { 
 			InitializeNew();
-
-		}
+        }
 
 
 		/// <summary>
@@ -37,8 +43,21 @@ namespace VaultAgent.SecretEngines
 		/// <param name="secretEngine">The KV2SecretEngine that this secret should operate with</param>
 		public VaultSecretEntryBase (KV2SecretEngine secretEngine) {
 			InitializeNew();
-			_kv2SecretEngine = secretEngine;
+            SecretEngine = secretEngine;
 		}
+
+
+
+        /// <summary>
+        /// Constructor accepting the Name and Path of Secret.  Caller will be responsible at a later time for specifying the SecretEngine that should be used to store this Secret In
+        /// </summary>
+        /// <param name="name">The Name of this secret</param>
+        /// <param name="path">The Path of this secret</param>
+        public VaultSecretEntryBase (string name, string path) {
+            InitializeNew();
+            BasePath = path;
+            _secret.Name = name;
+        }
 
 
 
@@ -66,9 +85,10 @@ namespace VaultAgent.SecretEngines
 		public VaultSecretEntryBase (KV2SecretEngine secretEngine ,string name, string path) {
 			InitializeNew();
 			SecretEngine = secretEngine;
-			
+
+            BasePath = path;
 			_secret.Name = name;
-			_secret.Path = path;
+			//_secret.Path = path;
 		}
 
 		
@@ -81,7 +101,42 @@ namespace VaultAgent.SecretEngines
 		}
 
 
-		/// <summary>
+        /// <summary>
+        /// This is the base path to the Secret.  Since it may be necessary for a derived class to "compute" its path based upon one ore more properties this serves as the base
+        /// Path Component
+        /// </summary>
+        protected string BasePath {
+            get { return _basePath;}
+            private set { _basePath = value; SetSecretPath();}
+        }
+
+
+
+        /// <summary>
+        /// Any derived class that needs to alter the underlying KV2Secret's path should call this method and then override the ComputeSecretPath method in the derived class.
+        /// The ComputeSecretPath method should then build what the path should be and then return it.
+        /// </summary>
+        protected void SetSecretPath () { _secret.Path = ComputeSecretPath();}
+
+
+        /// <summary>
+        /// This method computes the entire path for the internal secret object.  Entire Path means the entire secret path, except the secret name itself.  There should be
+        /// no trailing slash either.
+        /// <para>This method is overridable and should be overridden in derived classes that need to compute the actual secret path based upon properties of the derived class</para>
+        /// </summary>
+        /// <returns></returns>
+        protected virtual string ComputeSecretPath () { return BasePath;}
+
+
+        /// <summary>
+        /// This should be overwritten by descendant objects.  It will be called any time the secret is read from the Vault.
+        /// <para>If you need to set any internal variables based upon the read, this is method you would use</para>
+        /// </summary>
+        protected virtual void OnVSE_Read () { }
+
+
+
+        /// <summary>
 		/// The Secret Engine that this secret will read from and save to.
 		/// </summary>
 		public KV2SecretEngine SecretEngine {
@@ -124,11 +179,16 @@ namespace VaultAgent.SecretEngines
 
 
 		/// <summary>
-		/// The Parent path of this secret
+		/// The Parent path of this secret.  Note, When setting this Path, the BasePath property is set to the value the caller set, then the actual path is computed based upon the ComputePath method.
+		/// So, the value you set, could be different than the value you read back.
+		/// <para>It is preferred that you set the Path thru the BasePath property, to ensure everything seems logical, end result is the same.</para>
 		/// </summary>
 		public string Path {
 			get { return _secret.Path;}
-			set { _secret.Path = value; }
+            set {
+                BasePath = value;
+                SetSecretPath();
+            }
 		}
 
 
@@ -203,13 +263,25 @@ namespace VaultAgent.SecretEngines
 		/// <summary>
 		/// Reads this VSE's Vault Secret data from the Vault.  Returns True on Success.  Note, this will overwrite any existing values that exist
 		/// in this VSE's secret object that have not been saved to the Vault.
+		/// <para>If the read is successful, then the onVSE_Read method is called, allowing descendants to further manipulate the data if necessary.</para>
 		/// </summary>
 		/// <returns></returns>
 		public async Task<bool> VSE_Read() {
-			if ( !IsEngineDefined ) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			KV2Secret newSecret = await _kv2SecretEngine.ReadSecret<KV2Secret>(FullPath, 0);
 			if (newSecret == null) return false;
 			_secret = newSecret;
+            
+
+            // Call method that allows descendants to do additional processing after a read.
+            OnVSE_Read();
 			return true;
 		}
 
@@ -220,7 +292,14 @@ namespace VaultAgent.SecretEngines
 		/// </summary>
 		/// <returns></returns>
 		public async Task<bool> VSE_ReadVersion(int versionNumber) {
-			if ( !IsEngineDefined ) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			KV2Secret newSecret = await _kv2SecretEngine.ReadSecret<KV2Secret>(FullPath, versionNumber);
 			if (newSecret == null) return false;
 			_secret = newSecret;
@@ -234,7 +313,14 @@ namespace VaultAgent.SecretEngines
 		/// <returns></returns>
 		protected async Task<bool> VSE_Save()
 		{
-			if (!IsEngineDefined) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			bool success = await _kv2SecretEngine.SaveSecret(_secret, KV2EnumSecretSaveOptions.AlwaysAllow);
 			return success;
 		}
@@ -246,7 +332,14 @@ namespace VaultAgent.SecretEngines
 		/// </summary>
 		/// <returns></returns>
 		protected async Task<bool> VSE_SaveNew () {
-			if (!IsEngineDefined) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			bool success = await _kv2SecretEngine.SaveSecret(_secret, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist);
 			return success;
 		}
@@ -261,7 +354,14 @@ namespace VaultAgent.SecretEngines
 		/// <returns></returns>
 		protected async Task<bool> VSE_SaveUpdate ()
 		{
-			if (!IsEngineDefined) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			bool success = await _kv2SecretEngine.SaveSecret(_secret, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch,this.Version);
 			return success;
 		}
@@ -273,7 +373,14 @@ namespace VaultAgent.SecretEngines
 		/// </summary>
 		/// <returns></returns>
 		public async Task<bool> VSE_Exists () {
-			if (!IsEngineDefined) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			KV2Secret newSecret = await _kv2SecretEngine.ReadSecret<KV2Secret>(FullPath, 0);
 			if (newSecret == null) return false;
 			return true;
@@ -285,7 +392,14 @@ namespace VaultAgent.SecretEngines
 		/// </summary>
 		/// <returns></returns>
 		public async Task<bool> VSE_Delete () {
-			if (!IsEngineDefined) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			bool success = await _kv2SecretEngine.DeleteSecretVersion(_secret);
 			return success;
 		}
@@ -297,7 +411,14 @@ namespace VaultAgent.SecretEngines
 		/// </summary>
 		/// <returns></returns>
 		public async Task<bool> VSE_Info () {
-			if (!IsEngineDefined) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			KV2SecretMetaDataInfo info = await _kv2SecretEngine.GetSecretMetaData(_secret);
 			if ( info == null ) return false;
 
@@ -313,7 +434,14 @@ namespace VaultAgent.SecretEngines
 		/// </summary>
 		/// <returns></returns>
 		public async Task<bool> VSE_DestroyAll () {
-			if (!IsEngineDefined) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			bool success = await _kv2SecretEngine.DestroySecretCompletely(_secret);
 			_secret.IsDestroyed = true;
 			return success;
@@ -327,7 +455,14 @@ namespace VaultAgent.SecretEngines
 		/// <returns></returns>
 		public async Task<bool> VSE_Destroy()
 		{
-			if (!IsEngineDefined) return false;
+            if (!IsEngineDefined)
+            {
+                string msg =
+                    string.Format(
+                        "The KV2 Secret Engine has not been set on this VSE Object [{0}].  Unable to perform any Engine steps",
+                        FullPath);
+                throw new ApplicationException(msg);
+            }
 			throw new NotImplementedException();
 			//	bool success = await _kv2SecretEngine.DestroySecretVersion(_secret);
 		}
@@ -344,6 +479,159 @@ namespace VaultAgent.SecretEngines
 		public async Task<VaultSecretEntryBase> VSE_SaveAs (string name, string path, KV2SecretEngine secretEngine = null) {
 			throw new NotImplementedException();
 		}
-		#endregion
-	}
+        #endregion
+
+        #region "Attribute Accessor Methods"
+
+
+        /// <summary>
+        /// Retrieves the attributeName from the Attributes List.  If it does not exist of if the value is not a number (including empty string) then null is returned.  Otherwise the integer is returned
+        /// </summary>
+        /// <param name="attributeName">Name of the attribute to retrieve</param>
+        /// <returns></returns>
+        protected internal int? GetIntAttributeNullable(string attributeName)
+        {
+            // Try and Get the value.
+            bool result = _secret.Attributes.TryGetValue(attributeName, out string value);
+            if (result)
+            {
+                if (value == "") return null;
+
+                // Now try and convert to integer
+                result = int.TryParse(value, out int number);
+                if (result) return number;
+
+                string errMsg =
+                    string.Format(
+                        "VSE Secret [{0}] had an issue converting one of it's attribute values from a string to an integer.  Attribute Name [{1}].  The value was [{2}]",
+                        _secret.Name, attributeName, value);
+                throw new ArgumentOutOfRangeException(errMsg);
+            }
+
+            return null;
+        }
+
+
+        /// <summary>
+        /// Retrieves the attributeName from the Attributes List.  If it does not exist or if the value is not a number (including empty string) then 0 is returned.  Otherwise the integer is returned.
+        /// </summary>
+        /// <param name="attributeName">Name of the attribute to retrieve</param>
+        /// <returns></returns>
+        protected internal int GetIntAttributeDefault (string attributeName)
+        {
+            int defaultValue = 0;
+
+            // Try and Get the value.
+            bool result = _secret.Attributes.TryGetValue(attributeName, out string value);
+            if (result)
+            {
+                if (value == "") return defaultValue;
+
+                // Now try and convert to integer
+                result = int.TryParse(value, out int number);
+                if (result) return number;
+
+                string errMsg =
+                    string.Format(
+                        "VSE Secret [{0}] had an issue converting one of it's attribute values from a string to an integer.  Attribute Name [{1}].  The value was [{2}]",
+                        _secret.Name, attributeName, value);
+                throw new ArgumentOutOfRangeException(errMsg);
+            }
+
+            return defaultValue;
+        }
+
+
+
+        /// <summary>
+        /// Saves the given integer value into the Attributes List under the provided AttributeName
+        /// </summary>
+        /// <param name="attributeName">Name of the Attribute to save the value under</param>
+        /// <param name="value">The value to be stored</param>
+        protected internal void SetIntAttribute(string attributeName, int value)
+        {
+            _secret.Attributes[attributeName] = value.ToString();
+        }
+
+
+
+        /// <summary>
+        /// Saves the given DateTimeOffset value into the Attributes List under the provided AttributeName
+        /// </summary>
+        /// <param name="attributeName">Name of the Attribute to save the value under</param>
+        /// <param name="value">The value to be stored</param>
+        protected internal void SetDateTimeOffsetAttribute(string attributeName, DateTimeOffset value)
+        {
+            _secret.Attributes[attributeName] = value.ToUnixTimeSeconds().ToString();
+        }
+
+
+
+        /// <summary>
+        /// Retrieves the attributeName from the Attributes List.  If it does not exist or if the value is not a number (including empty string) then DateTimeOffset.MinValue is returned.  Otherwise the integer is returned.
+        /// </summary>
+        /// <param name="attributeName">Name of the attribute to retrieve</param>
+        /// <returns></returns>
+        protected internal DateTimeOffset GetDateTimeOffsetAttributeDefault(string attributeName)
+        {
+            DateTimeOffset defaultValue = DateTimeOffset.MinValue;
+
+            // Try and Get the value.
+            bool result = _secret.Attributes.TryGetValue(attributeName, out string value);
+            if (result)
+            {
+                if (value == "") return defaultValue;
+
+                // Now try and convert to long
+                result = long.TryParse(value, out long number);
+                if (!result)
+                {
+                    string errMsg =
+                        string.Format(
+                            "VSE Secret [{0}] had an issue converting one of it's attribute values from a string to a DateTimeOffset.  Attribute Name [{1}].  The value was [{2}]",
+                            _secret.Name, attributeName, value);
+                    throw new ArgumentOutOfRangeException(errMsg);
+                }
+                DateTimeOffset returnDate = DateTimeOffset.FromUnixTimeSeconds(number);
+                return returnDate;
+            }
+
+            return defaultValue;
+        }
+
+
+
+        /// <summary>
+        /// Retrieves the attributeName from the Attributes List.  If it does not exist or if the value is not a number (including empty string) then null is returned.  Otherwise the integer is returned.
+        /// </summary>
+        /// <param name="attributeName">Name of the attribute to retrieve</param>
+        /// <returns></returns>
+        protected internal DateTimeOffset? GetDateTimeOffsetAttributeNullable(string attributeName)
+        {
+            // Try and Get the value.
+            bool result = _secret.Attributes.TryGetValue(attributeName, out string value);
+            if (result)
+            {
+                if (value == "") return null;
+
+                // Now try and convert to long
+                result = long.TryParse(value, out long number);
+                if (!result)
+                {
+                    string errMsg =
+                        string.Format(
+                            "VSE Secret [{0}] had an issue converting one of it's attribute values from a string to a DateTimeOffset.  Attribute Name [{1}].  The value was [{2}]",
+                            _secret.Name, attributeName, value);
+                    throw new ArgumentOutOfRangeException(errMsg);
+                }
+                DateTimeOffset returnDate = DateTimeOffset.FromUnixTimeSeconds(number);
+                return returnDate;
+            }
+
+            return null;
+        }
+
+
+        #endregion
+    }
 }

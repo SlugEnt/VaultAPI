@@ -19,6 +19,7 @@ namespace VaultAgent {
         private readonly HttpClient _httpClt;
 
 
+
         /// <summary>
         /// Constructor.
         /// </summary>
@@ -26,10 +27,18 @@ namespace VaultAgent {
         /// <param name="port">The network Port the Vault server is listening on</param>
         public VaultAPI_Http (string vaultIP, int port) {
             _vaultIPAddress = new Uri ("http://" + vaultIP + ":" + port);
-
             _httpClt = new HttpClient (new HttpClientHandler {MaxConnectionsPerServer = 500}) {BaseAddress = _vaultIPAddress};
         }
 
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="vaultConnectionUri">Full URI Connection string (http(s)://url:port)</param>
+        public VaultAPI_Http (Uri vaultConnectionUri) {
+            _vaultIPAddress = vaultConnectionUri;
+            _httpClt = new HttpClient(new HttpClientHandler {MaxConnectionsPerServer = 500}) {BaseAddress = _vaultIPAddress};
+        }
 
 
         /// <summary>
@@ -217,9 +226,9 @@ namespace VaultAgent {
             List<string> errors = new List<string>();
 
             try { errors = ConvertJSONArrayToList (jsonResponse, "errors"); }
-            catch ( MissingFieldException ) {
-                //TODO - Not sure what to do with this.  Need to test some more.
-                // Swallow the error.  Latest updates to Vault V1.2.2 in KV2 do not necessarily populate the error object if object not foundf.
+            catch ( MissingFieldException e) {
+                // A few Vault Methods do not return the Errors Object, we swallow the error and move on.
+                // Swallow the error.  Latest updates to Vault V1.2.2 in KV2 do not necessarily populate the error object if object not found.
             }
 
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using System.Text;
 
 
 namespace VaultAgent.SecretEngines.KeyValue2
@@ -165,6 +166,7 @@ namespace VaultAgent.SecretEngines.KeyValue2
 
                 return value;
             }
+
 
             #region "EqualityComparers"
 

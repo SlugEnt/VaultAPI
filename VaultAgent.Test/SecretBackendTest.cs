@@ -17,6 +17,8 @@ namespace VaultAgentTests
 		private VaultAgentAPI _vaultAgentAPI;
 		private readonly UniqueKeys _uniqueKeys = new UniqueKeys("_");       // Unique Key generator
 
+        private VaultSystemBackend _systemBackend;
+
 		// The KeyValue Secret  Backend we will be using throughout our testing.
 		KeyValueSecretEngine _keyValueSecretEngine;
 
@@ -29,11 +31,16 @@ namespace VaultAgentTests
 			}
 
 			// Build Connection to Vault.
-			_vaultAgentAPI = new VaultAgentAPI("testa", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
-			string mountName = _uniqueKeys.GetKey("SEC");
+			_vaultAgentAPI = await VaultServerRef.ConnectVault("SecretBackEnd");
+            string mountName = _uniqueKeys.GetKey("SEC");
 
-			// Create a secret Backend Mount for this series of tests.
-			_keyValueSecretEngine = (KeyValueSecretEngine)await _vaultAgentAPI.CreateSecretBackendMount(EnumSecretBackendTypes.Secret, mountName, mountName, "Secret V1 Backend");
+            // Get Connection to Vault System backend
+            _systemBackend = new VaultSystemBackend(_vaultAgentAPI.TokenID, _vaultAgentAPI);
+            Assert.IsTrue(await _systemBackend.CreateSecretBackendMount(EnumSecretBackendTypes.Secret, mountName, mountName, "Secret V1 Backend"),"A10:  Failed to create Secret Backend");
+
+            _keyValueSecretEngine = (KeyValueSecretEngine) _vaultAgentAPI.ConnectToSecretBackend(EnumSecretBackendTypes.Secret, mountName, mountName);
+
+//            _keyValueSecretEngine = (KeyValueSecretEngine)await _vaultAgentAPI.CreateSecretBackendMount(EnumSecretBackendTypes.Secret, mountName, mountName, "Secret V1 Backend");
 
 			Assert.NotNull(_keyValueSecretEngine);
 			return;

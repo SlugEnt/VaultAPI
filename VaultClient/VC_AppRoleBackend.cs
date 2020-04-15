@@ -56,7 +56,8 @@ namespace VaultClient
 		private AppRoleAuthEngine _appRoleAuthEngine;
 		//private string _AppRoleName;
 	    private VaultAgentAPI _vaultAgent;
-	    
+        private VaultSystemBackend _vaultSystemBackend;
+
 	    private readonly string _AppBEName;
 	    private readonly IdentitySecretEngine _idEngine;
 
@@ -99,8 +100,8 @@ namespace VaultClient
 			// We will create a unique App Role Authentication Engine with the given name.
 			_AppBEName = "BEAppRole"; 
 			_vaultAgent = vaultAgent;
-
-			_appRoleAuthEngine = (AppRoleAuthEngine)vaultAgent.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
+            _vaultSystemBackend = new VaultSystemBackend(_vaultAgent.TokenID, _vaultAgent);
+            _appRoleAuthEngine = (AppRoleAuthEngine)vaultAgent.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
 	        _idEngine = (IdentitySecretEngine) vaultAgent.ConnectToSecretBackend(EnumSecretBackendTypes.Identity);
 
 
@@ -123,7 +124,7 @@ namespace VaultClient
             {
                 // Create an Authentication method of App Role.	- This only needs to be done when the Auth method is created.  
                 AuthMethod am = new AuthMethod(_beAuthName, EnumAuthMethods.AppRole);
-                await _vaultAgent.System.AuthEnable(am);
+                await _vaultSystemBackend.AuthEnable(am);
             }
             // Ignore mount at same location errors.  This can happen if we are not restarting Vault Instance each time we run.  Nothing to worry about.
             catch (VaultException e)
@@ -136,7 +137,7 @@ namespace VaultClient
             // Create a KV2 Secret Mount if it does not exist.           
             try
             {
-                await _vaultAgent.System.SysMountCreate(_beKV2Name, "ClientTest KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
+                await _vaultSystemBackend.SysMountCreate(_beKV2Name, "ClientTest KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
             }
             catch (VaultInvalidDataException e)
             {
@@ -180,7 +181,7 @@ namespace VaultClient
             VaultPolicyPathItem vpItem1 = new VaultPolicyPathItem(_beKV2Name + "/data/*");
             vpItem1.FullControl = true;
             _polRoleMaster.AddPolicyPathObject(vpItem1);
-            if (!( await _vaultAgent.System.SysPoliciesACLCreate(_polRoleMaster))) { Console.WriteLine("Unable to save the policies for the CreateRoles method"); }
+            if (!( await _vaultSystemBackend.SysPoliciesACLCreate(_polRoleMaster))) { Console.WriteLine("Unable to save the policies for the CreateRoles method"); }
 
             // Role1 Policy.  FC on path1 and AppData
 			VaultPolicyPathItem vppiR1P1 = new VaultPolicyPathItem(true, _beKV2Name,Constants.path1 + "/*");
@@ -190,50 +191,50 @@ namespace VaultClient
 
 	        _polRole1.AddPolicyPathObject(vppiR1P1);
 	        _polRole1.AddPolicyPathObject(vppiR1PAppData);
-	        if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRole1))) {
+	        if (!(await _vaultSystemBackend.SysPoliciesACLCreate(_polRole1))) {
 		        Console.WriteLine("Unable to save the policies for the Policy {0}", _polRole1.Name); 
 				throw new ApplicationException("Error saving Role1 Policies");
 	        }
 
 
-			if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRole1))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRole1.Name); }
+			if (!(await _vaultSystemBackend.SysPoliciesACLCreate(_polRole1))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRole1.Name); }
 
 
             // Role2 Policy.  RO on path1
             VaultPolicyPathItem vppiR2P1 = new VaultPolicyPathItem(true, _beKV2Name, Constants.path1 + "/*");
 	        vppiR2P1.ReadAllowed = true;
             _polRole2.AddPolicyPathObject(vppiR2P1);
-            if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRole2))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRole2.Name); }
+            if (!(await _vaultSystemBackend.SysPoliciesACLCreate(_polRole2))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRole2.Name); }
 
 			VaultPolicyPathItem vpitemVar = new VaultPolicyPathItem(true,_beKV2Name,"appData/{{identity.entity.name}}/*");
 	        vpitemVar.FullControl = true;
 	        _polCommon.AddPolicyPathObject(vpitemVar);
-	        if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polCommon))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polCommon.Name); }
+	        if (!(await _vaultSystemBackend.SysPoliciesACLCreate(_polCommon))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polCommon.Name); }
 			
 						// RoleAppA Policy.  FC on apps/AppA
 						VaultPolicyPathItem vpItemA1 = new VaultPolicyPathItem(true, _beKV2Name, "appData/appA/*");
 						vpItemA1.FullControl = true;
 						_polRoleAppA.AddPolicyPathObject(vpItemA1);
-						if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRoleAppA))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRoleAppA.Name); }
+						if (!(await _vaultSystemBackend.SysPoliciesACLCreate(_polRoleAppA))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRoleAppA.Name); }
 
 						// RoleAppB Policy.  FC on apps/AppB
 						VaultPolicyPathItem vpItemB1 = new VaultPolicyPathItem(true, _beKV2Name,"appData/appB/*");
 						vpItemB1.FullControl = true;
 						_polRoleAppB.AddPolicyPathObject(vpItemB1);
-						if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polRoleAppB))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRoleAppB.Name); }
+						if (!(await _vaultSystemBackend.SysPoliciesACLCreate(_polRoleAppB))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polRoleAppB.Name); }
 			
 			// Shared DB Policy
 			VaultPolicyPathItem vpITemDB = new VaultPolicyPathItem(true, _beKV2Name , "shared/dbConfig");
             _polSharedDB.AddPolicyPathObject(vpITemDB);
 	        vpITemDB.ReadAllowed = true;
-            if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polSharedDB))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polSharedDB.Name); }
+            if (!(await _vaultSystemBackend.SysPoliciesACLCreate(_polSharedDB))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polSharedDB.Name); }
 
 
             // Shared Email Policy
             VaultPolicyPathItem vpItemEmail = new VaultPolicyPathItem(true, _beKV2Name, "shared/Email");
 	        vpItemEmail.ReadAllowed = true;
             _polSharedEmail.AddPolicyPathObject(vpItemEmail);
-            if (!(await _vaultAgent.System.SysPoliciesACLCreate(_polSharedEmail))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polSharedEmail.Name); }
+            if (!(await _vaultSystemBackend.SysPoliciesACLCreate(_polSharedEmail))) { Console.WriteLine("Unable to save the policies for the Policy {0}", _polSharedEmail.Name); }
         }
 
 
@@ -248,7 +249,7 @@ namespace VaultClient
             VaultPolicyContainer polContainer;
 
             try {
-                polContainer = await _vaultAgent.System.SysPoliciesACLRead(policyName);
+                polContainer = await _vaultSystemBackend.SysPoliciesACLRead(policyName);
                 polContainer.PolicyPaths.Clear();
                 return polContainer;
             }
@@ -408,7 +409,7 @@ namespace VaultClient
 
 	    public async Task PerformRoleATasks() {
 		    // We need to simulate a session as this Role1 User:
-		    VaultAgentAPI vault = new VaultAgentAPI("Role2", _vaultAgent.IP, _vaultAgent.Port);
+		    VaultAgentAPI vault = new VaultAgentAPI("Role2", _vaultAgent.Uri);
 		    AppRoleAuthEngine authEngine = (AppRoleAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
 		    KV2SecretEngine secretEngine =
 			    (KV2SecretEngine)vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "KV2 Secrets", _beKV2Name);
@@ -461,8 +462,8 @@ namespace VaultClient
 
 
 	    public async Task PerformRoleBTasks() {
-		    // We need to simulate a session as this Role1 User:
-		    VaultAgentAPI vault = new VaultAgentAPI("Role2", _vaultAgent.IP, _vaultAgent.Port);
+            // We need to simulate a session as this Role1 User:
+            VaultAgentAPI vault = new VaultAgentAPI("Role2", _vaultAgent.Uri);
 		    AppRoleAuthEngine authEngine = (AppRoleAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
 		    KV2SecretEngine secretEngine =
 			    (KV2SecretEngine)vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "KV2 Secrets", _beKV2Name);
@@ -547,9 +548,9 @@ namespace VaultClient
 				KV2Secret appDataAppB = new KV2Secret(Constants.appName_B, Constants.appData);
 				KV2Secret appData = new KV2Secret(Constants.appData);
 
-				// We need to simulate a session as this Role1 User:
-				VaultAgentAPI vault = new VaultAgentAPI("Role1", _vaultAgent.IP, _vaultAgent.Port);
-				AppRoleAuthEngine authEngine = (AppRoleAuthEngine) vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
+                // We need to simulate a session as this Role1 User:
+                VaultAgentAPI vault = new VaultAgentAPI("Role1", _vaultAgent.Uri);
+                AppRoleAuthEngine authEngine = (AppRoleAuthEngine) vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
 				KV2SecretEngine secretEngine =
 					(KV2SecretEngine) vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "Sheakley KV2 Secrets", _beKV2Name);
 
@@ -593,7 +594,7 @@ namespace VaultClient
 				// We just try and read secrets off path1/ folders.
 
 				// We need to simulate a session as this Role1 User:
-				VaultAgentAPI vault = new VaultAgentAPI("Role2", _vaultAgent.IP, _vaultAgent.Port);
+				VaultAgentAPI vault = new VaultAgentAPI("Role2", _vaultAgent.Uri);
 				AppRoleAuthEngine authEngine = (AppRoleAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName, _AppBEName);
 				KV2SecretEngine secretEngine =
 					(KV2SecretEngine)vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "Sheakley KV2 Secrets", _beKV2Name);
