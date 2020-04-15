@@ -59,12 +59,5 @@ namespace VaultAgent.SecretEngines
 		/// <param name="secretEngine">The Secret Engine this Entry should be saved/read to/from</param>
 		/// <param name="fullPathAndName">The full path and name to the secret</param>
 		public VaultSecretEntry (KV2SecretEngine secretEngine, string fullPathAndName) : base(secretEngine, fullPathAndName) { }
-
-
-		/// <summary>
-		/// Saves the object to the Vault
-		/// </summary>
-		/// <returns></returns>
-		public new async Task<bool> VSE_Save () { return await base.VSE_Save(); }
 	}
 }
