@@ -29,9 +29,6 @@ namespace VaultAgent.SecretEngines
 		protected KV2Secret _secret;
 		protected KV2SecretMetaDataInfo _info;
         
-        private string _pathRoot = "";
-		//private string _path = "";
-
 
         /// <summary>
 		/// Constructor
@@ -57,10 +54,8 @@ namespace VaultAgent.SecretEngines
         /// </summary>
         /// <param name="name">The Name of this secret</param>
         /// <param name="path">The Path of this secret</param>
-        public VaultSecretEntryBase (string name, string pathRoot = "") {
-            InitializeNew(name,pathRoot);
-            //PathRoot = path;
-            //_secret.Name = name;
+        public VaultSecretEntryBase (string name, string path = "") {
+            InitializeNew(name,path);
         }
 
 
@@ -72,12 +67,10 @@ namespace VaultAgent.SecretEngines
 		/// <param name="fullPathAndName">The Name of this secret, including any parent paths.  This will be separated out into Name and Path Properties</param>
 		/// <para>Note, the FullPath and name parameter does not specify the basePath</para>
 		public VaultSecretEntryBase (KV2SecretEngine secretEngine, string fullPathAndName) {
-            InitializeNew();
+            InitializeNew(fullPathAndName);
             // TODO -Work in this method - the name and path should use the namepath UtilityFX Tuple method
 
             SecretEngine = secretEngine;
-            Name = VaultUtilityFX.GetNameFromVaultPath(fullPathAndName);
-			PathRoot = VaultUtilityFX.GetPathFromVaultPath(fullPathAndName);
         }
 
 
@@ -88,12 +81,9 @@ namespace VaultAgent.SecretEngines
 		/// <param name="secretEngine">The KV2SecretEngine that this secret should operate with</param>
 		/// <param name="name">The Name of this secret</param>
 		/// <param name="path">The Path of this secret</param>
-		public VaultSecretEntryBase (KV2SecretEngine secretEngine ,string name, string pathRoot = "") {
-			InitializeNew(name,pathRoot);
+		public VaultSecretEntryBase (KV2SecretEngine secretEngine ,string name, string path = "") {
+			InitializeNew(name,path);
 			SecretEngine = secretEngine;
-
-            PathRoot = pathRoot;
-            Name = name;
 		}
 
 		
@@ -101,62 +91,14 @@ namespace VaultAgent.SecretEngines
 		/// Initializes this class' variables to initial values
 		/// </summary>
 		private void InitializeNew (string name = "", string pathRoot = "") {
-
-			// Determine the components if necessary
-            //PathRoot = basePath;
-			// TODO this logic is wrong I think
-
-			// We let the KV2Secret Code determine its path and name based upon the provided values and then 
-			// we override the path by putting PathRoot into it....The reason being that KV2Secrets only have the 
-			// notion of a path and name, but VaultSecretEntry's have a path prefix - PathRoot
-			if (name != string.Empty)
-			    _secret = new KV2Secret(name,pathRoot);
-            else 
+            // We rely upon the KV2Secret constructor logic to interrogate and set the name and path properties.
+            if (name != string.Empty)
+                _secret = new KV2Secret(name, pathRoot);
+            else
                 _secret = new KV2Secret();
 
-            //_path = _secret.Path;
-			
-			// 
             _info = null;
 		}
-
-
-        /// <summary>
-        /// This is the base path to the Secret.  Since it may be necessary for a derived class to "compute" its path based upon one ore more properties this serves as the base
-        /// Path Component
-        /// </summary>
-        public string PathRoot {
-            get {
-                return _pathRoot; }
-            set { _pathRoot = value; SetSecretPath(); }
-        }
-
-
-        /// <summary>
-        /// This is the ending part(s) of the path that can be defined by inherited classes based upon properties of the object.
-        /// </summary>
-        protected string PathSuffix { get; set; } = "";
-
-
-        /// <summary>
-        /// Any derived class that needs to alter the underlying KV2Secret's path should first call the ComputePathSuffix method to
-        /// build the suffix part of the path and then call this method to ensure the complete path is built.
-        /// </summary>
-        protected void SetSecretPath () {
-            _secret.Path = VaultAgentAPI.PathCombine(PathRoot, PathSuffix);
-        }
-
-
-        /// <summary>
-        /// This method should be used by inherited classes to compute the PathSuffix  The routine must set the value of the Path
-        /// suffix.  There should be no leading or trailing slashes
-        /// <para>This method is overridable and should be overridden in derived classes that need to compute the actual secret path based upon properties of the derived class</para>
-        /// </summary>
-        /// <returns></returns>
-        protected virtual void ComputePathSuffix () { 
-            // set PathSuffix
-            PathSuffix = "";
-        }
 
 
         /// <summary>
@@ -217,8 +159,7 @@ namespace VaultAgent.SecretEngines
 		public string Path {
 			get { return _secret.Path;}
             set {
-                PathRoot = value;
-                SetSecretPath();
+                _secret.Path = value;
             }
 		}
 

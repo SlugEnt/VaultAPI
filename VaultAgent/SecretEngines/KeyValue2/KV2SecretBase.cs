@@ -29,22 +29,38 @@ namespace VaultAgent.SecretEngines.KeyValue2
             public KV2SecretBase() { Attributes = new Dictionary<string, string>(); }
 
 
+            /// <summary>
+            /// Creates a new secret with the name and path specified
+            /// </summary>
+            /// <param name="secretPathAndName">The Name and optionally the path for the secret.  If the argument contains
+            /// no path parts, then the path is set to empty and the entire argument is the name.</param>
+            public KV2SecretBase (string secretPathAndName) {
+                (_path, _name) = VaultUtilityFX.GetNameAndPathTuple(secretPathAndName);
+                Attributes = new Dictionary<string, string>();
+            }
+
+
 
             /// <summary>
             /// Creates a new secret with the specified Name (Path)
             /// </summary>
             /// <param name="secretName">The name of the secret.</param>
             /// <param name="path">The path to the secret to be stored.  apps/appA/config   apps/appA is the path.</param>
-            public KV2SecretBase(string secretName, string path = "")
-            {
-                Name = secretName;
-
+            public KV2SecretBase(string secretName, string path = "") {
                 if (path.StartsWith("/data/"))
                 {
                     throw new ArgumentException("KeyValue V2 secret paths do not need to specify the /data/ prefix as it is assumed.");
                 }
 
-                Path = path;
+                string tempName = secretName.TrimStart('/').TrimEnd('/');
+                if ( tempName.Contains("/") ) {
+                    if (path != string.Empty) throw new ArgumentException("The secretName must not contain any path arguments, if the path parameter has a value");
+                    (_path, _name) = VaultUtilityFX.GetNameAndPathTuple(secretName);
+                }
+                else {
+                    _name = tempName;
+                    _path = path.Trim('/');
+                }
                 Attributes = new Dictionary<string, string>();
             }
 
@@ -60,6 +76,8 @@ namespace VaultAgent.SecretEngines.KeyValue2
 
                 set { 
                     _name = VaultUtilityFX.GetNameFromVaultPath(value);
+                    string tempPath =
+                    _path = VaultUtilityFX.GetPathFromVaultPath(value);
                 }
             }
 

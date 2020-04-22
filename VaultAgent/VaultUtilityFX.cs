@@ -95,13 +95,69 @@ namespace VaultAgent {
 		        char ch = s[i];
                 if (ch == '/')
                     // If at start of string, then there is no path.
-//			        if ( i == 0 )
-//				        return string.Empty;
+
 					return s.Substring(0, i);
 	        }
 
 	        return string.Empty;
 
+        }
+
+
+        /// <summary>
+        /// Returns the Path and Name parts of  Vault Path
+        /// </summary>
+        /// <param name="value">The Vault string / path that you wish to separate into Name and Path parameters</param>
+        /// <returns></returns>
+        public static(string path, string name) GetNameAndPathTuple (string value) {
+            // 1st get the name
+            string nameElement = "";
+            int pathEnd = 0;
+            string s = value.TrimStart('/').TrimEnd('/');
+            int length = s.Length;
+            for ( int i = length; --i >= 0; ) {
+                char ch = s [i];
+                if ( ch == '/' ) {
+                    nameElement = s.Substring(i + 1, length - i - 1);
+                    pathEnd = i;
+                    break;
+                }
+            }
+
+            if ( nameElement == string.Empty ) nameElement = s;
+
+
+            // The rest is the path
+            string pathElement;
+            if ( pathEnd != 0 ) {
+                pathElement = s.Substring(0, pathEnd + 1).TrimEnd('/');
+            }
+            else
+                pathElement = "";
+
+            return (pathElement, nameElement);
+        }
+
+
+
+        /// <summary>
+        /// Returns the name and path parts of the provided 2 arguments.  IF the path is empty AND the name
+        /// is a path plus the name, then they are separated out, otherwise the parameters are returned, minus
+        /// leading and trailing slashes.
+        /// </summary>
+        /// <param name="name">The name parameter</param>
+        /// <param name="path">The path parameter</param>
+        /// <returns></returns>
+        public static(string path, string name) GetNameAndPathFromValuesTuple (string name, string path = "") {
+            string tempName = name.Trim('/');
+            if (tempName.Contains("/"))
+            {
+                if (path != string.Empty) throw new ArgumentException("The Name parameter must not contain any path arguments, if the path parameter has a value");
+                return VaultUtilityFX.GetNameAndPathTuple(name);
+            }
+            else {
+                return (path.Trim('/'), tempName);
+            }
         }
     }
 }

@@ -14,12 +14,11 @@ namespace VaultAgent.SecretEngines.KV2 {
     /// 
     /// Therefore it is best to read the secret, make changes to any existing attributes and then add any new ones, then save it.
     /// </summary>
-    public class KV2Secret : KV2SecretBase<KV2Secret>
-    {
+    public class KV2Secret : KV2SecretBase<KV2Secret> {
         /// <summary>
         /// Creates a new KV2Secret object
         /// </summary>
-        public KV2Secret() : base() { }
+        public KV2Secret () : base() { }
 
 
         /// <summary>
@@ -27,6 +26,14 @@ namespace VaultAgent.SecretEngines.KV2 {
         /// </summary>
         /// <param name="secretName"></param>
         /// <param name="path"></param>
-        public KV2Secret (string secretName, string path = "") : base (secretName, path) { }
+        public KV2Secret (string secretName, string path = "") : base(secretName, path) { }
+
+
+        /// <summary>
+        /// Creates a new KV2Secret object with the provided name / (path and name) argument
+        /// </summary>
+        /// <param name="secretPathAndName">The Name and optionally the path for the secret.  If the argument contains
+        /// no path parts, then the path is set to empty and the entire argument is the name.</param>
+        public KV2Secret (string secretPathAndName) : base(secretPathAndName) { }
     }
 }

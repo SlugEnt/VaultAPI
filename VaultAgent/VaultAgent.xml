@@ -2865,6 +2865,13 @@
             Creates a new empty secret
             </summary>
         </member>
+        <member name="M:VaultAgent.SecretEngines.KeyValue2.KV2SecretBase`1.#ctor(System.String)">
+            <summary>
+            Creates a new secret with the name and path specified
+            </summary>
+            <param name="secretPathAndName">The Name and optionally the path for the secret.  If the argument contains
+            no path parts, then the path is set to empty and the entire argument is the name.</param>
+        </member>
         <member name="M:VaultAgent.SecretEngines.KeyValue2.KV2SecretBase`1.#ctor(System.String,System.String)">
             <summary>
             Creates a new secret with the specified Name (Path)
@@ -3030,6 +3037,13 @@
             </summary>
             <param name="secretName"></param>
             <param name="path"></param>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.KV2.KV2Secret.#ctor(System.String)">
+            <summary>
+            Creates a new KV2Secret object with the provided name / (path and name) argument
+            </summary>
+            <param name="secretPathAndName">The Name and optionally the path for the secret.  If the argument contains
+            no path parts, then the path is set to empty and the entire argument is the name.</param>
         </member>
         <member name="T:VaultAgent.SecretEngines.KV2.KV2SecretEngineSettings">
             <summary>
@@ -3890,7 +3904,7 @@
             <summary>
             Constructs a VaultSecretEntry object Without CAS functionality
             </summary>
-            <param name="secretEngine"></param>
+            <param name="secretEngine">The Secret Engine this Entry should be saved/read to/from</param>
             <param name="name">The Name of this secret</param>
             <param name="path">The Path of this secret</param>
         </member>
@@ -3907,12 +3921,21 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntry.#ctor(VaultAgent.SecretEngines.KV2SecretEngine,System.String)">
+            <summary>
+            Constructs a VaultSecretEntry object Without CAS functionality
+            </summary>
+            <param name="secretEngine">The Secret Engine this Entry should be saved/read to/from</param>
+            <param name="fullPathAndName">The full path and name to the secret</param>
+        </member>
         <member name="T:VaultAgent.SecretEngines.VaultSecretEntryBase">
             <summary>
             Represents a "Smart" Vault Secret (KV2Secret).  While all of the functionality exposed by this class can be done with a combination of the
             KV2SecretEngine and the KV2SecretBase objects, it puts that functionality into a single class, that makes for much less lines of code and a
             much easier to work with functionality when it comes to moving a KV2Secret's information to and from the Vault.
             <para>The main add is a set of VSE_ methods that enable the reading, saving, deleting, getting info on the secret you are working with</para>
+            <para>There is also an adjustment to the path / name sequence for a secret.</para>
+            <para>There are now 3 components to the path.  A full path now has these 3 components that together form a full path in the format of base/path/name</para>
             </summary>
         </member>
         <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.#ctor">
@@ -3933,6 +3956,14 @@
             <param name="name">The Name of this secret</param>
             <param name="path">The Path of this secret</param>
         </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.#ctor(VaultAgent.SecretEngines.KV2SecretEngine,System.String)">
+            <summary>
+            Constructor accepting the SecretEngine and Secret Name that this secret's Vault Operations (VSE) should be applied to.
+            </summary>
+            <param name="secretEngine">The KV2SecretEngine that this secret should operate with</param>
+            <param name="fullPathAndName">The Name of this secret, including any parent paths.  This will be separated out into Name and Path Properties</param>
+            <para>Note, the FullPath and name parameter does not specify the basePath</para>
+        </member>
         <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.#ctor(VaultAgent.SecretEngines.KV2SecretEngine,System.String,System.String)">
             <summary>
             Constructor accepting the SecretEngine that this secret's Vault Operations (VSE) should be applied to.
@@ -3941,30 +3972,10 @@
             <param name="name">The Name of this secret</param>
             <param name="path">The Path of this secret</param>
         </member>
-        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.InitializeNew">
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.InitializeNew(System.String,System.String)">
             <summary>
             Initializes this class' variables to initial values
             </summary>
-        </member>
-        <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.BasePath">
-            <summary>
-            This is the base path to the Secret.  Since it may be necessary for a derived class to "compute" its path based upon one ore more properties this serves as the base
-            Path Component
-            </summary>
-        </member>
-        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.SetSecretPath">
-            <summary>
-            Any derived class that needs to alter the underlying KV2Secret's path should call this method and then override the ComputeSecretPath method in the derived class.
-            The ComputeSecretPath method should then build what the path should be and then return it.
-            </summary>
-        </member>
-        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.ComputeSecretPath">
-            <summary>
-            This method computes the entire path for the internal secret object.  Entire Path means the entire secret path, except the secret name itself.  There should be
-            no trailing slash either.
-            <para>This method is overridable and should be overridden in derived classes that need to compute the actual secret path based upon properties of the derived class</para>
-            </summary>
-            <returns></returns>
         </member>
         <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.OnVSE_Read">
             <summary>
@@ -3994,14 +4005,14 @@
         </member>
         <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.Name">
             <summary>
-            The Name of this Secret
+            The Name of this Secret.  
             </summary>
         </member>
         <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.Path">
             <summary>
-            The Parent path of this secret.  Note, When setting this Path, the BasePath property is set to the value the caller set, then the actual path is computed based upon the ComputePath method.
+            The Parent path of this secret.  Note, When setting this Path, the PathRoot property is set to the value the caller set, then the actual path is computed based upon the ComputePath method.
             So, the value you set, could be different than the value you read back.
-            <para>It is preferred that you set the Path thru the BasePath property, to ensure everything seems logical, end result is the same.</para>
+            <para>It is preferred that you set the Path thru the PathRoot property, to ensure everything seems logical, end result is the same.</para>
             </summary>
         </member>
         <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.FullPath">
@@ -4993,6 +5004,37 @@
             <typeparam name="T">The C# class type to convert the JSON into. </typeparam>
             <param name="json">The JSON string that should be converted.</param>
             <returns>The C# class type to be returned filled with the JSON values.</returns>
+        </member>
+        <member name="M:VaultAgent.VaultUtilityFX.GetNameFromVaultPath(System.String)">
+            <summary>
+            In a Vault url string the verty last part of a URL that is a path is the name
+            </summary>
+            <param name="path">The Path to Interrogate</param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.VaultUtilityFX.GetPathFromVaultPath(System.String)">
+            <summary>
+            Returns the full path part of a Vault URL path.  Strips leading and trailing slashes.
+            </summary>
+            <param name="path">The Path to interrogate</param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.VaultUtilityFX.GetNameAndPathTuple(System.String)">
+            <summary>
+            Returns the Path and Name parts of  Vault Path
+            </summary>
+            <param name="value">The Vault string / path that you wish to separate into Name and Path parameters</param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.VaultUtilityFX.GetNameAndPathFromValuesTuple(System.String,System.String)">
+            <summary>
+            Returns the name and path parts of the provided 2 arguments.  IF the path is empty AND the name
+            is a path plus the name, then they are separated out, otherwise the parameters are returned, minus
+            leading and trailing slashes.
+            </summary>
+            <param name="name">The name parameter</param>
+            <param name="path">The path parameter</param>
+            <returns></returns>
         </member>
     </members>
 </doc>

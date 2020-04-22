@@ -534,8 +534,8 @@ namespace VaultAgentTests
             string path = "pathB";
 
             VaultSecretEntry secretA = new VaultSecretEntry(secretName,path);
-            Assert.AreEqual(secretName,secretA.Name);
-            Assert.AreEqual(path,secretA.Path);
+            Assert.AreEqual(secretName,secretA.Name,"A10:  Secret Name incorrect");
+            Assert.AreEqual(path,secretA.Path, "A20: Secret Path incorrect ");
             secretA.SecretEngine = _noCASMount;
             Assert.AreEqual(_noCASMount.Name,secretA.SecretEngine.Name,"A30:  Secret Engine Mount is not same as SecretEngine");
 

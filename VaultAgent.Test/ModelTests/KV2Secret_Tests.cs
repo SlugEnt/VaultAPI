@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
+using VaultAgent.SecretEngines.KeyValue2;
 using VaultAgent.SecretEngines.KV2;
 
 namespace VaultAgent.Test.ModelTests
@@ -36,8 +37,8 @@ namespace VaultAgent.Test.ModelTests
         [Test]
         public void SecretsCompareTo()
         {
-            string nameA = "ABC/xyz";
-            string nameB = "BCD/r";
+            string nameA = "axyz";
+            string nameB = "r";
             string nameC = nameA;
 
             string path = "start";
@@ -45,10 +46,10 @@ namespace VaultAgent.Test.ModelTests
             KV2Secret b = new KV2Secret(nameB, path);
             KV2Secret c = new KV2Secret(nameC,path);
 
-            Assert.AreEqual(-1,a.CompareTo(b));
-            Assert.AreEqual(1,b.CompareTo(a));
-            Assert.AreEqual(0,a.CompareTo(c));
-            Assert.AreEqual(0, c.CompareTo(a));
+            Assert.AreEqual(-1,a.CompareTo(b), "A10:");
+            Assert.AreEqual(1,b.CompareTo(a), "A20");
+            Assert.AreEqual(0,a.CompareTo(c), "A30");
+            Assert.AreEqual(0, c.CompareTo(a), "A40:");
         }
 
 
@@ -211,12 +212,51 @@ namespace VaultAgent.Test.ModelTests
         {
             string initial = "root/first/second/third";
             KV2Secret secretA = new KV2Secret("a",initial);
-            Assert.AreEqual(initial,secretA.GetParentPath());
+            Assert.AreEqual(initial,secretA.GetParentPath(), "A10:");
 
             KV2Secret secretB = new KV2Secret(initial);
-            Assert.AreEqual("root/first/second", secretB.GetParentPath(),"A20");
+            Assert.AreEqual("root/first/second", secretB.GetParentPath(),"A20:");
         }
 
+
+        [TestCase("secA","","secA", "", "secA")]
+        [TestCase("/secA", "", "secA", "", "secA")]
+        [TestCase("/secA/", "", "secA", "", "secA")]
+        [TestCase("secA", "root", "secA", "root", "root/secA")]
+        [TestCase("/secA", "root", "secA", "root", "root/secA")]
+        [TestCase("/secA/", "root", "secA", "root", "root/secA")]
+        [TestCase("secA", "/root", "secA", "root", "root/secA")]
+        [TestCase("secA", "/root/", "secA", "root", "root/secA")]
+        [TestCase("/secA", "/root", "secA", "root", "root/secA")]
+        [TestCase("/secA/", "/root/", "secA", "root", "root/secA")]
+        [TestCase("secA", "root/partB", "secA", "root/partB", "root/partB/secA")]
+        [TestCase("secA", "root/partB/", "secA", "root/partB", "root/partB/secA")]
+        [Test]
+        public void Kv2Base_NamePathConstructor (string secretName, string secretPath, string expName, string expPath, string expFullName) {
+            KV2Secret secret = new KV2Secret(secretName,secretPath);
+            Assert.AreEqual(expName, secret.Name, "A10: Name incorrect");
+            Assert.AreEqual(expPath,secret.Path, "A20:  Path incorrect");
+            Assert.AreEqual(expFullName, secret.FullPath, "A30:  FullPath incorrect");
+        }
+
+
+        [TestCase("A", "/nameonly", "nameonly", "")]
+        [TestCase("B", "/nameonly/", "nameonly", "")]
+        [TestCase("C", "rootpath/namepart", "namepart", "rootpath")]
+        [TestCase("D", "rootpath/part2/namepart", "namepart", "rootpath/part2")]
+        [TestCase("E", "rootpath/namepart/", "namepart", "rootpath")]
+        [TestCase("F", "/a", "a", "")]
+        [TestCase("G", "/a/", "a", "")]
+        [TestCase("H", "a", "a", "")]
+        [TestCase("I", "a", "a", "")]
+        [Test]
+        public void KV2Constructor_NameOnlyArgument(string scenario, string value, string expName, string expPath)
+        {
+            KV2Secret secret = new KV2Secret(value);
+
+            Assert.AreEqual(expName, secret.Name, "A10:  Name is not correct value");
+            Assert.AreEqual(expPath, secret.Path, "A20:  Path is not expected value");
+        }
 
         #region "Equatable Methods"
 

@@ -160,12 +160,6 @@ namespace VaultAgent.AuthenticationEngines
                 VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "LdapAuthEngine:GetPoliciesAssignedToGroup");
                 if ( vdro.Success ) {
                     return await vdro.GetDotNetObject<List<string>> ("data.policies");
-                    //TODO Cleanup
-                    /*
-                    string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "policies");
-                    List<string> policies = VaultSerializationHelper.FromJson<List<string>> (js);
-                    return policies;
-                    */
                 }
 
                 throw new ApplicationException ("LdapAuthEngine:GetPoliciesAssignedToGroup -> Arrived at unexpected code block.");
