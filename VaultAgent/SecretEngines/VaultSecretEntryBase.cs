@@ -20,16 +20,20 @@ namespace VaultAgent.SecretEngines
 	/// KV2SecretEngine and the KV2SecretBase objects, it puts that functionality into a single class, that makes for much less lines of code and a
 	/// much easier to work with functionality when it comes to moving a KV2Secret's information to and from the Vault.
 	/// <para>The main add is a set of VSE_ methods that enable the reading, saving, deleting, getting info on the secret you are working with</para>
+	/// <para>There is also an adjustment to the path / name sequence for a secret.</para>
+	/// <para>There are now 3 components to the path.  A full path now has these 3 components that together form a full path in the format of base/path/name</para>
 	/// </summary>
 	public abstract class VaultSecretEntryBase : IKV2Secret { //: KV2SecretBase<VaultSecretEntryNoCAS> {
 		private KV2SecretEngine _kv2SecretEngine = null;
         // TODO change secret to private and use pass thru methods on this class to access required properties
 		protected KV2Secret _secret;
 		protected KV2SecretMetaDataInfo _info;
-        private string _basePath="";
         
+        private string _pathRoot = "";
+		//private string _path = "";
 
-		/// <summary>
+
+        /// <summary>
 		/// Constructor
 		/// </summary>
 		public VaultSecretEntryBase () { 
@@ -53,10 +57,10 @@ namespace VaultAgent.SecretEngines
         /// </summary>
         /// <param name="name">The Name of this secret</param>
         /// <param name="path">The Path of this secret</param>
-        public VaultSecretEntryBase (string name, string path) {
-            InitializeNew();
-            BasePath = path;
-            _secret.Name = name;
+        public VaultSecretEntryBase (string name, string pathRoot = "") {
+            InitializeNew(name,pathRoot);
+            //PathRoot = path;
+            //_secret.Name = name;
         }
 
 
@@ -66,38 +70,54 @@ namespace VaultAgent.SecretEngines
 		/// </summary>
 		/// <param name="secretEngine">The KV2SecretEngine that this secret should operate with</param>
 		/// <param name="fullPathAndName">The Name of this secret, including any parent paths.  This will be separated out into Name and Path Properties</param>
+		/// <para>Note, the FullPath and name parameter does not specify the basePath</para>
 		public VaultSecretEntryBase (KV2SecretEngine secretEngine, string fullPathAndName) {
-		InitializeNew();
-			SecretEngine = secretEngine;
+            InitializeNew();
+            // TODO -Work in this method - the name and path should use the namepath UtilityFX Tuple method
 
-			_secret.Name = VaultUtilityFX.GetNameFromVaultPath(fullPathAndName);
-			_secret.Path = VaultUtilityFX.GetPathFromVaultPath(fullPathAndName);
-		}
+            SecretEngine = secretEngine;
+            Name = VaultUtilityFX.GetNameFromVaultPath(fullPathAndName);
+			PathRoot = VaultUtilityFX.GetPathFromVaultPath(fullPathAndName);
+        }
 
 
-
+    
 		/// <summary>
 		/// Constructor accepting the SecretEngine that this secret's Vault Operations (VSE) should be applied to.
 		/// </summary>
 		/// <param name="secretEngine">The KV2SecretEngine that this secret should operate with</param>
 		/// <param name="name">The Name of this secret</param>
 		/// <param name="path">The Path of this secret</param>
-		public VaultSecretEntryBase (KV2SecretEngine secretEngine ,string name, string path) {
-			InitializeNew();
+		public VaultSecretEntryBase (KV2SecretEngine secretEngine ,string name, string pathRoot = "") {
+			InitializeNew(name,pathRoot);
 			SecretEngine = secretEngine;
 
-            BasePath = path;
-			_secret.Name = name;
-			//_secret.Path = path;
+            PathRoot = pathRoot;
+            Name = name;
 		}
 
 		
 		/// <summary>
 		/// Initializes this class' variables to initial values
 		/// </summary>
-		private void InitializeNew () {
-			_secret = new KV2Secret();
-			_info = null;
+		private void InitializeNew (string name = "", string pathRoot = "") {
+
+			// Determine the components if necessary
+            //PathRoot = basePath;
+			// TODO this logic is wrong I think
+
+			// We let the KV2Secret Code determine its path and name based upon the provided values and then 
+			// we override the path by putting PathRoot into it....The reason being that KV2Secrets only have the 
+			// notion of a path and name, but VaultSecretEntry's have a path prefix - PathRoot
+			if (name != string.Empty)
+			    _secret = new KV2Secret(name,pathRoot);
+            else 
+                _secret = new KV2Secret();
+
+            //_path = _secret.Path;
+			
+			// 
+            _info = null;
 		}
 
 
@@ -105,27 +125,38 @@ namespace VaultAgent.SecretEngines
         /// This is the base path to the Secret.  Since it may be necessary for a derived class to "compute" its path based upon one ore more properties this serves as the base
         /// Path Component
         /// </summary>
-        protected string BasePath {
-            get { return _basePath;}
-            private set { _basePath = value; SetSecretPath();}
+        public string PathRoot {
+            get {
+                return _pathRoot; }
+            set { _pathRoot = value; SetSecretPath(); }
         }
 
 
-
         /// <summary>
-        /// Any derived class that needs to alter the underlying KV2Secret's path should call this method and then override the ComputeSecretPath method in the derived class.
-        /// The ComputeSecretPath method should then build what the path should be and then return it.
+        /// This is the ending part(s) of the path that can be defined by inherited classes based upon properties of the object.
         /// </summary>
-        protected void SetSecretPath () { _secret.Path = ComputeSecretPath();}
+        protected string PathSuffix { get; set; } = "";
 
 
         /// <summary>
-        /// This method computes the entire path for the internal secret object.  Entire Path means the entire secret path, except the secret name itself.  There should be
-        /// no trailing slash either.
+        /// Any derived class that needs to alter the underlying KV2Secret's path should first call the ComputePathSuffix method to
+        /// build the suffix part of the path and then call this method to ensure the complete path is built.
+        /// </summary>
+        protected void SetSecretPath () {
+            _secret.Path = VaultAgentAPI.PathCombine(PathRoot, PathSuffix);
+        }
+
+
+        /// <summary>
+        /// This method should be used by inherited classes to compute the PathSuffix  The routine must set the value of the Path
+        /// suffix.  There should be no leading or trailing slashes
         /// <para>This method is overridable and should be overridden in derived classes that need to compute the actual secret path based upon properties of the derived class</para>
         /// </summary>
         /// <returns></returns>
-        protected virtual string ComputeSecretPath () { return BasePath;}
+        protected virtual void ComputePathSuffix () { 
+            // set PathSuffix
+            PathSuffix = "";
+        }
 
 
         /// <summary>
@@ -179,14 +210,14 @@ namespace VaultAgent.SecretEngines
 
 
 		/// <summary>
-		/// The Parent path of this secret.  Note, When setting this Path, the BasePath property is set to the value the caller set, then the actual path is computed based upon the ComputePath method.
+		/// The Parent path of this secret.  Note, When setting this Path, the PathRoot property is set to the value the caller set, then the actual path is computed based upon the ComputePath method.
 		/// So, the value you set, could be different than the value you read back.
-		/// <para>It is preferred that you set the Path thru the BasePath property, to ensure everything seems logical, end result is the same.</para>
+		/// <para>It is preferred that you set the Path thru the PathRoot property, to ensure everything seems logical, end result is the same.</para>
 		/// </summary>
 		public string Path {
 			get { return _secret.Path;}
             set {
-                BasePath = value;
+                PathRoot = value;
                 SetSecretPath();
             }
 		}
