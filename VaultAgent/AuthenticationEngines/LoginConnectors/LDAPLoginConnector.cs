@@ -66,7 +66,7 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors
 
 
         /// <summary>
-        /// Error Handling for LDAP Erros
+        /// Error Handling for LDAP Errors
         /// </summary>
         /// <param name="e"></param>
         protected override void ErrorHandler (Exception e) {

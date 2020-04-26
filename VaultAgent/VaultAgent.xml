@@ -566,6 +566,52 @@
             <param name="dn"></param>
             <returns></returns>
         </member>
+        <member name="T:VaultAgent.AuthenticationEngines.LoginConnectors.AppRoleLoginConnector">
+            <summary>
+            Provides a LoginConnector for Vault Application Roles
+            </summary>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.AppRoleLoginConnector.#ctor(VaultAgent.VaultAgentAPI,System.String,System.String,System.String,System.String)">
+            <summary>
+            Constructor
+            </summary>
+            <param name="vaultAgent">The Vault the LDAP Backend is in</param>
+            <param name="authenticatorMountPoint">The Vault Mount Point name for the LDAP Backend</param>
+            <param name="description">Human Readable description of the Vault</param>
+            <param name="roleID">The RoleID to login with</param>
+            <param name="secretID">The SecretID to login with</param>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.AppRoleLoginConnector.#ctor(VaultAgent.VaultAgentAPI,System.String,System.String)">
+            <summary>
+            Constructor
+            </summary>
+            <param name="vaultAgent">The Vault the LDAP Backend is in</param>
+            <param name="authenticatorMountPoint">The Vault Mount Point name for the LDAP Backend</param>
+            <param name="description">Human Readable description of the Vault</param>
+            <param name="roleID">The RoleID to login with</param>
+            <param name="secretID">The SecretID to login with</param>
+        </member>
+        <member name="P:VaultAgent.AuthenticationEngines.LoginConnectors.AppRoleLoginConnector.RoleID">
+            <summary>
+            The RoleID to login with
+            </summary>
+        </member>
+        <member name="P:VaultAgent.AuthenticationEngines.LoginConnectors.AppRoleLoginConnector.SecretID">
+            <summary>
+            The SecretID to login with
+            </summary>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.AppRoleLoginConnector.BuildLoginParameters">
+            <summary>
+            The parameters required for login
+            </summary>
+        </member>
+        <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.AppRoleLoginConnector.GetAuthenticationMountPath">
+            <summary>
+            Login Mount Point
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:VaultAgent.AuthenticationEngines.LoginConnectors.LDAPLoginConnector">
             <summary>
             Provides the ability to login to Vault via LDAP
@@ -612,7 +658,7 @@
         </member>
         <member name="M:VaultAgent.AuthenticationEngines.LoginConnectors.LDAPLoginConnector.ErrorHandler(System.Exception)">
             <summary>
-            Error Handling for LDAP Erros
+            Error Handling for LDAP Errors
             </summary>
             <param name="e"></param>
         </member>
