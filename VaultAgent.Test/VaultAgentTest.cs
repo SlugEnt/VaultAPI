@@ -126,6 +126,7 @@ namespace VaultAgentTests
         [TestCase("root", "root")]
         [TestCase("/root/1/2/3", "/root", "1", "2", "3")]
         [TestCase("/root/1/2/3/", "/root", "1", "2", "3/")]
+		[TestCase("/root/part2","/root","part2", "","")]
 
         public void PathCombine(string expected, params string[] paths)
         {

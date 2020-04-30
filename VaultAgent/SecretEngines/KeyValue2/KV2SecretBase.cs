@@ -139,18 +139,20 @@ namespace VaultAgent.SecretEngines.KeyValue2
 
 
 
-            // Extended Attributes
+        // Extended Attributes
 
 
-            /// <summary>
-            /// When the secret was actually saved to the Vault data store.  
-            /// </summary>
-            public DateTimeOffset CreatedTime { get; internal set; }
+        /// <summary>
+        /// When the secret was actually saved to the Vault data store.  
+        /// </summary>
+        [JsonIgnore]
+        public DateTimeOffset CreatedTime { get; internal set; }
 
 
             /// <summary>
             /// When this particular secret version was deleted from the Vault data store.
             /// </summary>
+            [JsonIgnore]
             public DateTimeOffset DeletionTime { get; internal set; }
 
 

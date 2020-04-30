@@ -153,6 +153,30 @@ namespace VaultAgentTests {
         }
 
 
+        // Tests that attributes marked with jsonignore are not sent to vault
+        [Test]
+        public async Task JsonIgnoreAttr () {
+            string secName = _uniqueKey.GetKey("JSONIGA");
+            KV2Secret secretV2 = new KV2Secret(secName, "/");
+
+            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("test54", "44");
+
+            secretV2.Attributes.Add(kv1.Key, kv1.Value);
+            DateTimeOffset d1 = secretV2.CreatedTime;
+            secretV2.DeletionTime = DateTimeOffset.MaxValue;
+
+            Assert.True(await _noCasMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.AlwaysAllow));
+
+
+            // Read the Secret back to confirm the save.
+            KV2Secret s2 = await _noCasMount.ReadSecret(secretV2);
+            Assert.True(secretV2.Path == s2.Path);
+            Assert.Contains(kv1, s2.Attributes);
+
+            Assert.AreNotEqual(d1,s2.CreatedTime);
+            Assert.AreNotEqual(DateTimeOffset.MaxValue,s2.DeletionTime);
+        }
+
 
         #region "CAS True Testing"
 
