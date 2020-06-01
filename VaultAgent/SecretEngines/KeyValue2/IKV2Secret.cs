@@ -67,5 +67,13 @@ namespace VaultAgent.SecretEngines.KeyValue2
         /// Version number of this iteration of the secret, if using versioning. You should NEVER SET this property.  It is settable because the engine needs to update it.
         /// </summary>
         int Version { get; }
+
+
+
+        /// <summary>
+        /// Returns the parent path of this object.
+        /// </summary>
+        /// <returns></returns>
+        string GetParentPath ();
     }
 }

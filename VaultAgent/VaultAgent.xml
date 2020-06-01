@@ -2901,6 +2901,12 @@
             Version number of this iteration of the secret, if using versioning. You should NEVER SET this property.  It is settable because the engine needs to update it.
             </summary>
         </member>
+        <member name="M:VaultAgent.SecretEngines.KeyValue2.IKV2Secret.GetParentPath">
+            <summary>
+            Returns the parent path of this object.
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:VaultAgent.SecretEngines.KeyValue2.KV2SecretBase`1">
             <summary>
             Abstract class for a KeyValue 2 Secret object. 
@@ -4029,6 +4035,16 @@
             <para>If you need to set any internal variables based upon the read, this is method you would use</para>
             </summary>
         </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.OnVSE_SaveBefore">
+            <summary>
+            This is the first method called when a VSE_Save is executed, gives the object time to manipulate the backing object before the actual save is done.  Should return true to continue with save
+            </summary>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.OnVSE_SaveAfter">
+            <summary>
+            Method called AFTER the VSE has been saved to the vault.  
+            </summary>
+        </member>
         <member name="P:VaultAgent.SecretEngines.VaultSecretEntryBase.SecretEngine">
             <summary>
             The Secret Engine that this secret will read from and save to.
@@ -4219,6 +4235,12 @@
             Retrieves the attributeName from the Attributes List.  If it does not exist or if the value is not a number (including empty string) then null is returned.  Otherwise the integer is returned.
             </summary>
             <param name="attributeName">Name of the attribute to retrieve</param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.GetParentPath">
+            <summary>
+            Returns the KV2Secret's ParentPath property.'
+            </summary>
             <returns></returns>
         </member>
         <member name="T:VaultAgent.SecretEngines.VaultSecretEntryCAS">

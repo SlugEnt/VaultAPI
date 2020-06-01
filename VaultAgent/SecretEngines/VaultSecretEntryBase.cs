@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using VaultAgent.Backends;
 using VaultAgent.SecretEngines;
 using VaultAgent.SecretEngines.KeyValue2;
@@ -108,6 +109,18 @@ namespace VaultAgent.SecretEngines
         protected virtual void OnVSE_Read () { }
 
 
+        /// <summary>
+        /// This is the first method called when a VSE_Save is executed, gives the object time to manipulate the backing object before the actual save is done.  Should return true to continue with save
+        /// </summary>
+        protected virtual bool OnVSE_SaveBefore () { return true; }
+
+
+		/// <summary>
+		/// Method called AFTER the VSE has been saved to the vault.  
+		/// </summary>
+		protected virtual void OnVSE_SaveAfter () { }
+
+
 
         /// <summary>
 		/// The Secret Engine that this secret will read from and save to.
@@ -164,6 +177,8 @@ namespace VaultAgent.SecretEngines
 		}
 
 
+
+
 		/// <summary>
 		/// The full path to this secret (path + name)
 		/// </summary>
@@ -180,12 +195,15 @@ namespace VaultAgent.SecretEngines
 		}
 
 
+
 		/// <summary>
 		/// The Dictionary of items that this secret is storing.
 		/// </summary>
+		[JsonProperty]
 		public Dictionary<string, string> Attributes {
-			get { return _secret.Attributes;} 
-		}
+			get { return _secret.Attributes;}
+            internal set { _secret.Attributes = value; }
+        }
 
 
 		/// <summary>
@@ -293,6 +311,7 @@ namespace VaultAgent.SecretEngines
                         FullPath);
                 throw new ApplicationException(msg);
             }
+			OnVSE_SaveBefore();
 			bool success = await _kv2SecretEngine.SaveSecret(_secret, KV2EnumSecretSaveOptions.AlwaysAllow);
 			return success;
 		}
@@ -312,7 +331,11 @@ namespace VaultAgent.SecretEngines
                         FullPath);
                 throw new ApplicationException(msg);
             }
+
+            if ( !OnVSE_SaveBefore() ) return false;
 			bool success = await _kv2SecretEngine.SaveSecret(_secret, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist);
+			OnVSE_SaveAfter();
+
 			return success;
 		}
 
@@ -604,6 +627,16 @@ namespace VaultAgent.SecretEngines
         }
 
 
-        #endregion
-    }
+		/// <summary>
+		/// Returns the KV2Secret's ParentPath property.'
+		/// </summary>
+		/// <returns></returns>
+		public string GetParentPath()
+		{
+			return ((IKV2Secret)_secret).GetParentPath();
+		}
+
+
+		#endregion
+	}
 }
