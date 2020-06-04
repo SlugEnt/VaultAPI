@@ -507,12 +507,53 @@ namespace VaultAgent.SecretEngines
         }
 
 
+
+		/// <summary>
+		/// Retrieves a Vault boolean value for the requested Secret Attribute.  String Representations are T for True, F for False.  If not found it false
+		/// </summary>
+		/// <param name="attributeName">Name of the attribute to get</param>
+		/// <returns></returns>
+        protected internal bool GetBoolAttributeDefault (string attributeName) {
+            // Try and Get the value.
+            bool result = _secret.Attributes.TryGetValue(attributeName, out string value);
+            if ( result ) {
+                if ( value == "T" )
+                    return true;
+                else if ( value == "F" )
+                    return false;
+                else {
+                    string msg = string.Format(
+                        "Secret [{0}] Attribute [{1}] has an invalid value stored in Vault.  Looking for a boolean string value of either T or F, but found [{2}]",
+                        FullPath, attributeName, value);
+                    throw new ArgumentException(msg);
+                }
+            }
+
+            return true;
+        }
+
+
+
+		/// <summary>
+		/// Stores a boolean value as a string with T for True and F for False
+		/// </summary>
+		/// <param name="attributeName">The name of the attribute to set</param>
+		/// <param name="value">The boolean value to set the attribute to</param>
+        protected internal void SetBoolAttribute (string attributeName, bool value) {
+            if ( value )
+                _secret.Attributes [attributeName] = "T";
+            else
+                _secret.Attributes [attributeName] = "F";
+        }
+
+
+
         /// <summary>
-        /// Retrieves the attributeName from the Attributes List.  If it does not exist or if the value is not a number (including empty string) then 0 is returned.  Otherwise the integer is returned.
-        /// </summary>
-        /// <param name="attributeName">Name of the attribute to retrieve</param>
-        /// <returns></returns>
-        protected internal int GetIntAttributeDefault (string attributeName)
+		/// Retrieves the attributeName from the Attributes List.  If it does not exist or if the value is not a number (including empty string) then 0 is returned.  Otherwise the integer is returned.
+		/// </summary>
+		/// <param name="attributeName">Name of the attribute to retrieve</param>
+		/// <returns></returns>
+		protected internal int GetIntAttributeDefault (string attributeName)
         {
             int defaultValue = 0;
 
@@ -635,6 +676,8 @@ namespace VaultAgent.SecretEngines
 		{
 			return ((IKV2Secret)_secret).GetParentPath();
 		}
+
+
 
 
 		#endregion

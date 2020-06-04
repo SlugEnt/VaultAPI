@@ -4202,6 +4202,20 @@
             <param name="attributeName">Name of the attribute to retrieve</param>
             <returns></returns>
         </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.GetBoolAttributeDefault(System.String)">
+            <summary>
+            Retrieves a Vault boolean value for the requested Secret Attribute.  String Representations are T for True, F for False.  If not found it false
+            </summary>
+            <param name="attributeName">Name of the attribute to get</param>
+            <returns></returns>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.SetBoolAttribute(System.String,System.Boolean)">
+            <summary>
+            Stores a boolean value as a string with T for True and F for False
+            </summary>
+            <param name="attributeName">The name of the attribute to set</param>
+            <param name="value">The boolean value to set the attribute to</param>
+        </member>
         <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.GetIntAttributeDefault(System.String)">
             <summary>
             Retrieves the attributeName from the Attributes List.  If it does not exist or if the value is not a number (including empty string) then 0 is returned.  Otherwise the integer is returned.
