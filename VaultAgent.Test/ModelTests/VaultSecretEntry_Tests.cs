@@ -334,6 +334,36 @@ namespace VaultAgentTests
 
         #region "Attribute Accessor Methods"
 
+
+        [Test]
+        [TestCase(true,"T")]
+        [TestCase(false,"F")]
+        public void BoolAttributeSet_Success (bool value, string expectedValue) {
+            
+            string attrName = "boolA";
+            VaultSecretEntry vseA = new VaultSecretEntry();
+
+            // Save Value
+            vseA.SetBoolAttribute(attrName,value);
+
+            Assert.AreEqual(expectedValue,vseA.Attributes[attrName]);
+        }
+
+
+
+        
+        [Test]
+        [TestCase("T", true)]
+        [TestCase("F",false)]
+        public void BoolAttributeGet_Success (string value, bool expectedValue) {
+            string attrName = "AttrB";
+            VaultSecretEntry vseA = new VaultSecretEntry();
+            vseA.Attributes [attrName] = value;
+            Assert.AreEqual(expectedValue,vseA.GetBoolAttributeDefault(attrName));
+        }
+
+
+
         [Test]
         [TestCase(0)]
         [TestCase(-990)]
@@ -349,6 +379,7 @@ namespace VaultAgentTests
             string lookupValue = vseA.Attributes[attrName];
             Assert.AreEqual(value.ToString(),lookupValue);
         }
+
 
 
 
