@@ -68,7 +68,7 @@ namespace VaultAgentTests
 				ID = tokenID,
 				Name = tokenName,
 				NumberOfUses = numUses,
-				NoParentToken = parent
+                NoParentToken = parent
 			};
 
 		    Token token = await _tokenAuthEngine.CreateToken (tokenNewSettings);

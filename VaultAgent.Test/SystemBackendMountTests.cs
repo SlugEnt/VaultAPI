@@ -126,17 +126,21 @@ namespace VaultAgentTests
 			string desc = "Test Mount DB: " + key + "KeyValue V2";
 
 			VaultSysMountConfig config1 = new VaultSysMountConfig { DefaultLeaseTTL = "6556"	};
-			Assert.True(await _vaultSystemBackend.SysMountCreate(key, desc, EnumSecretBackendTypes.KeyValueV2,config1));
+			Assert.True(await _vaultSystemBackend.SysMountCreate(key, desc, EnumSecretBackendTypes.KeyValueV2,config1),"A10:");
 
 			// Ensure it was created.
 			VaultSysMountConfig config2 = await _vaultSystemBackend.SysMountReadConfig(key);
-			Assert.AreEqual(config1.DefaultLeaseTTL, config2.DefaultLeaseTTL, "Default Lease TTL's are not the same.");
+			Assert.AreEqual(config1.DefaultLeaseTTL, config2.DefaultLeaseTTL, "A20: Default Lease TTL's are not the same.");
 
 			// Delete it.
-			Assert.True(await _vaultSystemBackend.SysMountDelete(key), "Deletion of mount did not complete Successfully.");
+			Assert.True(await _vaultSystemBackend.SysMountDelete(key), "A30:  Deletion of mount did not complete Successfully.");
 
 			// Make sure it is gone.
-		}
+			Assert.IsFalse(await _vaultSystemBackend.SysMountExists(key), "A40 - SysMount still exists");
+            VaultSysMountConfig config3 = await _vaultSystemBackend.SysMountReadConfig(key);
+			Assert.IsNull(config3, "A50:  SysMount Not Deleted");
+
+        }
 
 
 

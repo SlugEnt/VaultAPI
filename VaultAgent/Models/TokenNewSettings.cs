@@ -36,7 +36,7 @@ namespace VaultAgent.Models {
         /// True if the token has no parent.  
         /// </summary>
         [JsonProperty ("no_parent")]
-        public bool NoParentToken { get; internal set; }
+        public bool NoParentToken { get; set; }
 
 
         /// <summary>
