@@ -48,15 +48,21 @@ namespace VaultAgent.AuthenticationEngines {
         /// </summary>
         /// <param name="tokenSettings">A TokenNewSettings object with the options you would like the new token to have. </param>
         /// <returns>True if token was created successfully.</returns>
-        public async Task<bool> CreateOrphanToken (TokenNewSettings tokenSettings) {
+        public async Task<Token> CreateOrphanToken (TokenNewSettings tokenSettings) {
             string path = MountPointPath + "create-orphan";
 
             string json = JsonConvert.SerializeObject (tokenSettings, Formatting.None);
 
             VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "CreateOrphanToken", json);
-            if ( vdro.Success ) { return true; }
+            if ( vdro.Success )
+            {
+                LoginResponse loginResponse = await vdro.GetDotNetObject<LoginResponse>("auth");
 
-            throw new ApplicationException ("TokenAuthEngine:  CreateToken returned an unexpected error.");
+                // Now read the token.back.
+                return (await this.GetTokenWithID(loginResponse.ClientToken));
+            }
+
+            throw new ApplicationException ("TokenAuthEngine:  CreateOrphanToken returned an unexpected error.");
         }
 
 
@@ -328,7 +334,7 @@ namespace VaultAgent.AuthenticationEngines {
 
 
         /// <summary>
-        /// Retrieves a TokenRole object from Vault with the specified name.
+        /// Retrieves a TokenRole object from Vault with the specified name.  Returns Null if not found
         /// </summary>
         /// <param name="tokenRoleName">Name of the tokenRole to retrieve.</param>
         /// <returns>TokenRole object requested if valid name provided.</returns>

@@ -49,9 +49,13 @@ namespace VaultAgentTests
         public async Task TokenLogin_InvalidToken () {
 
             // Load engine and create a token
+
+            VaultAgentAPI vault = new VaultAgentAPI("LoginConnVault", VaultServerRef.vaultURI);
+            
+
             // TODO this test is not valid.  We kind of already test it, because every Test requires a connection to Vault which we do in the VaultServerSetup Class.
-            TokenLoginConnector tlc = new TokenLoginConnector(_vault,"Token Connector");
-            tlc.TokenId = "b";
+            TokenLoginConnector tlc = new TokenLoginConnector(vault,"Token Connector");
+            tlc.TokenId = "bbnbb";
             bool success = await tlc.Connect();
             Assert.IsFalse(success);
             /*

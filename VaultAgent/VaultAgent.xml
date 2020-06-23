@@ -897,7 +897,7 @@
         </member>
         <member name="M:VaultAgent.AuthenticationEngines.TokenAuthEngine.GetTokenRole(System.String)">
             <summary>
-            Retrieves a TokenRole object from Vault with the specified name.
+            Retrieves a TokenRole object from Vault with the specified name.  Returns Null if not found
             </summary>
             <param name="tokenRoleName">Name of the tokenRole to retrieve.</param>
             <returns>TokenRole object requested if valid name provided.</returns>

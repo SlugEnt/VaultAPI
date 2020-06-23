@@ -198,7 +198,8 @@ namespace VaultAgentTests
 				NumberOfUses = numUses
 			};
 
-			Assert.True(await _tokenAuthEngine.CreateOrphanToken(tokenNewSettings));
+
+			Assert.IsNotNull(await _tokenAuthEngine.CreateOrphanToken(tokenNewSettings));
 
 			// Read the token we just created.
 			Token token = await _tokenAuthEngine.GetTokenWithID(tokenID);
