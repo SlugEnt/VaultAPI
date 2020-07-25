@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <doc>
     <assembly>
-        <name>VaultAgent</name>
+        <name>SlugEnt.VaultAgent</name>
     </assembly>
     <members>
         <member name="T:VaultAgent.AuthenticationEngines.AppRole">
@@ -1441,7 +1441,8 @@
         </member>
         <member name="P:VaultAgent.Backends.System.VaultPolicyPathItem.FullControl">
             <summary>
-            A Shortcut method to setting full control for a given path.  This sets Create, Read, Update, Delete AND List to the value specified.  On a KV2 type policy
+            A Shortcut method to setting full control for a given path.
+            This sets Create, Read, Update, Delete, List and sudo to the value specified.  On a KV2 type policy
             object it will also set all the _extKV2 attributes to true as well.
             </summary>
         </member>
@@ -4202,6 +4203,13 @@
             <param name="attributeName">Name of the attribute to retrieve</param>
             <returns></returns>
         </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.GetShortAttributeNullable(System.String)">
+            <summary>
+            Retrieves the attributeName from the Attributes List.  If it does not exist of if the value is not a number (including empty string) then null is returned.  Otherwise the integer is returned
+            </summary>
+            <param name="attributeName">Name of the attribute to retrieve</param>
+            <returns></returns>
+        </member>
         <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.GetBoolAttributeDefault(System.String)">
             <summary>
             Retrieves a Vault boolean value for the requested Secret Attribute.  String Representations are T for True, F for False.  If not found it false
@@ -4223,9 +4231,23 @@
             <param name="attributeName">Name of the attribute to retrieve</param>
             <returns></returns>
         </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.GetShortAttributeDefault(System.String)">
+            <summary>
+            Retrieves the attributeName from the Attributes List.  If it does not exist or if the value is not a short (including empty string) then 0 is returned.  Otherwise the integer is returned.
+            </summary>
+            <param name="attributeName">Name of the attribute to retrieve</param>
+            <returns></returns>
+        </member>
         <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.SetIntAttribute(System.String,System.Int32)">
             <summary>
             Saves the given integer value into the Attributes List under the provided AttributeName
+            </summary>
+            <param name="attributeName">Name of the Attribute to save the value under</param>
+            <param name="value">The value to be stored</param>
+        </member>
+        <member name="M:VaultAgent.SecretEngines.VaultSecretEntryBase.SetShortAttribute(System.String,System.Int16)">
+            <summary>
+            Saves the given short value into the Attributes List under the provided AttributeName
             </summary>
             <param name="attributeName">Name of the Attribute to save the value under</param>
             <param name="value">The value to be stored</param>
@@ -4511,11 +4533,6 @@
             Represents the Abstract elements of a Vault Backend Object
             </summary>
         </member>
-        <member name="F:VaultAgent.VaultBackend._parent">
-            <summary>
-            The Vault Agent API object that this Backend will use to talk to Vault.  
-            </summary>
-        </member>
         <member name="M:VaultAgent.VaultBackend.#ctor(System.String,System.String,VaultAgent.VaultAgentAPI,System.String)">
             <summary>
             Constructor for the Backend.  
@@ -4525,6 +4542,11 @@
             <param name="vaultAgentAPI">This is the Vault Agent API object that contains Connection info to the Vault.
             It should also contain a Token that has the necessary permissions to do the Backend Tasks</param>
             <param name="mountPointPrefix">If the path is prefixed in vault with some value, specify it here.  It defaults to /v1/ which is typical Vault default value.</param>
+        </member>
+        <member name="P:VaultAgent.VaultBackend.ParentVault">
+            <summary>
+            The Vault Agent API object that this Backend will use to talk to Vault.  
+            </summary>
         </member>
         <member name="P:VaultAgent.VaultBackend.Name">
             <summary>

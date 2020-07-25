@@ -503,9 +503,8 @@ namespace VaultAgentTests
 		    await _vaultSystemBackend.SysMountCreate(kv2BE, "ClientTest KeyValue 2 Secrets", EnumSecretBackendTypes.KeyValueV2);
 
 			
-			// Now we 
+			// Now we create secret backend
 			VaultAgentAPI vault = await VaultServerRef.ConnectVault("PolicyBeCapa2");
-            //new VaultAgentAPI("capability", _vaultAgentAPI.IP, _vaultAgentAPI.Port,_vaultAgentAPI.TokenID);
             AppRoleAuthEngine authEngine = (AppRoleAuthEngine) vault.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, appBE, appBE);
 		    KV2SecretEngine secretEngine =
 			    (KV2SecretEngine) vault.ConnectToSecretBackend(EnumSecretBackendTypes.KeyValueV2, "KV2 Secrets", kv2BE);
@@ -564,7 +563,7 @@ namespace VaultAgentTests
 
 			// 6. Validate the results.
 			Assert.AreEqual(4,permissions.Count, "A10:  Expected to receive 4 permission objects back.");
-			Assert.AreEqual(5,permissions[path1].Count,"A20:  Expected the item: " + path1 + " to contain 5 permissions.");
+			Assert.AreEqual(6,permissions[path1].Count,"A20:  Expected the item: " + path1 + " to contain 6 permissions.");
 			Assert.AreEqual(1, permissions[path2].Count, "A30:  Expected the item: " + path2 + " to contain 1 deny permission.");
 			CollectionAssert.Contains(permissions[path2],"deny","A35:  Expected the permission to be deny for path: " + path2);
 			Assert.AreEqual(1, permissions[path3].Count, "A40:  Expected the item: " + path3 + " to contain 1 deny permission.");
@@ -699,8 +698,8 @@ namespace VaultAgentTests
 
 			// 9. Validate the permission results.
 			Assert.AreEqual(3, permissions.Count, "B130:  Expected to receive 3 permission objects back.");
-			Assert.AreEqual(5, permissions[path1].Count, "B140:  Expected the item: " + path1 + " to contain 5 permissions.");
-			Assert.AreEqual(5, permissions[path2].Count, "B150:  Expected the item: " + path2 + " to contain 5 permissions.");
+			Assert.AreEqual(6, permissions[path1].Count, "B140:  Expected the item: " + path1 + " to contain 6 permissions.");
+			Assert.AreEqual(6, permissions[path2].Count, "B150:  Expected the item: " + path2 + " to contain 6 permissions.");
 			Assert.AreEqual(4, permissions[path3].Count, "B160:  Expected the item: " + path3 + " to contain 3 permissions.");
 
 			CollectionAssert.Contains(permissions[path3], "create", "B170:  Expected the permission to be create for path: " + path3);

@@ -69,8 +69,6 @@ namespace VaultAgent.SecretEngines
 		/// <para>Note, the FullPath and name parameter does not specify the basePath</para>
 		public VaultSecretEntryBase (KV2SecretEngine secretEngine, string fullPathAndName) {
             InitializeNew(fullPathAndName);
-            // TODO -Work in this method - the name and path should use the namepath UtilityFX Tuple method
-
             SecretEngine = secretEngine;
         }
 
@@ -508,11 +506,41 @@ namespace VaultAgent.SecretEngines
 
 
 
-		/// <summary>
-		/// Retrieves a Vault boolean value for the requested Secret Attribute.  String Representations are T for True, F for False.  If not found it false
-		/// </summary>
-		/// <param name="attributeName">Name of the attribute to get</param>
-		/// <returns></returns>
+
+        /// <summary>
+        /// Retrieves the attributeName from the Attributes List.  If it does not exist of if the value is not a number (including empty string) then null is returned.  Otherwise the integer is returned
+        /// </summary>
+        /// <param name="attributeName">Name of the attribute to retrieve</param>
+        /// <returns></returns>
+        protected internal short? GetShortAttributeNullable(string attributeName)
+        {
+            // Try and Get the value.
+            bool result = _secret.Attributes.TryGetValue(attributeName, out string value);
+            if (result)
+            {
+                if (value == "") return null;
+
+                // Now try and convert to integer
+                result = short.TryParse(value, out short number);
+                if (result) return number;
+
+                string errMsg =
+                    string.Format(
+                        "VSE Secret [{0}] had an issue converting one of it's attribute values from a string to an short.  Attribute Name [{1}].  The value was [{2}]",
+                        _secret.Name, attributeName, value);
+                throw new ArgumentOutOfRangeException(errMsg);
+            }
+
+            return null;
+        }
+
+
+
+        /// <summary>
+        /// Retrieves a Vault boolean value for the requested Secret Attribute.  String Representations are T for True, F for False.  If not found it false
+        /// </summary>
+        /// <param name="attributeName">Name of the attribute to get</param>
+        /// <returns></returns>
         protected internal bool GetBoolAttributeDefault (string attributeName) {
             // Try and Get the value.
             bool result = _secret.Attributes.TryGetValue(attributeName, out string value);
@@ -578,6 +606,36 @@ namespace VaultAgent.SecretEngines
         }
 
 
+        /// <summary>
+        /// Retrieves the attributeName from the Attributes List.  If it does not exist or if the value is not a short (including empty string) then 0 is returned.  Otherwise the integer is returned.
+        /// </summary>
+        /// <param name="attributeName">Name of the attribute to retrieve</param>
+        /// <returns></returns>
+        protected internal short GetShortAttributeDefault(string attributeName)
+        {
+            short defaultValue = 0;
+
+            // Try and Get the value.
+            bool result = _secret.Attributes.TryGetValue(attributeName, out string value);
+            if (result)
+            {
+                if (value == "") return defaultValue;
+
+                // Now try and convert to integer
+                result = short.TryParse(value, out short number);
+                if (result) return number;
+
+                string errMsg =
+                    string.Format(
+                        "VSE Secret [{0}] had an issue converting one of it's attribute values from a string to a short.  Attribute Name [{1}].  The value was [{2}]",
+                        _secret.Name, attributeName, value);
+                throw new ArgumentOutOfRangeException(errMsg);
+            }
+
+            return defaultValue;
+        }
+
+
 
         /// <summary>
         /// Saves the given integer value into the Attributes List under the provided AttributeName
@@ -585,6 +643,18 @@ namespace VaultAgent.SecretEngines
         /// <param name="attributeName">Name of the Attribute to save the value under</param>
         /// <param name="value">The value to be stored</param>
         protected internal void SetIntAttribute(string attributeName, int value)
+        {
+            _secret.Attributes[attributeName] = value.ToString();
+        }
+
+
+
+        /// <summary>
+        /// Saves the given short value into the Attributes List under the provided AttributeName
+        /// </summary>
+        /// <param name="attributeName">Name of the Attribute to save the value under</param>
+        /// <param name="value">The value to be stored</param>
+        protected internal void SetShortAttribute(string attributeName, short value)
         {
             _secret.Attributes[attributeName] = value.ToString();
         }

@@ -52,7 +52,7 @@ namespace VaultAgent.SecretEngines {
 
             string json = JsonConvert.SerializeObject (entity);
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "IdentityEngine: SaveEntity", json);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "IdentityEngine: SaveEntity", json);
             if ( vdro.Success ) {
                 Guid guid;
 
@@ -85,7 +85,7 @@ namespace VaultAgent.SecretEngines {
         public async Task<Entity> ReadEntity (Guid id) {
             string path = MountPointPath + "entity/id/" + id;
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "IdentityEngine: ReadEntity", null);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "IdentityEngine: ReadEntity", null);
             if ( vdro.Success ) {
 	            return await vdro.GetDotNetObject<Entity>();
             }
@@ -104,7 +104,7 @@ namespace VaultAgent.SecretEngines {
         public async Task<Entity> ReadEntity (string entityName) {
             string path = MountPointPath + "entity/name/" + entityName;
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "IdentityEngine: ReadEntity (EntityName)", null);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "IdentityEngine: ReadEntity (EntityName)", null);
             if ( vdro.Success ) {
 	            return await vdro.GetDotNetObject<Entity>();
             }
@@ -123,7 +123,7 @@ namespace VaultAgent.SecretEngines {
         public async Task<bool> DeleteEntity (Guid id) {
             string path = MountPointPath + "entity/id/" + id;
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteEntity");
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.DeleteAsync (path, "DeleteEntity");
             return vdro.Success ? true : false;
         }
 
@@ -138,7 +138,7 @@ namespace VaultAgent.SecretEngines {
         public async Task<bool> DeleteEntity (string entityName) {
             string path = MountPointPath + "entity/name/" + entityName;
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteEntity (EntityName)");
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.DeleteAsync (path, "DeleteEntity (EntityName)");
             return vdro.Success ? true : false;
         }
 
@@ -156,7 +156,7 @@ namespace VaultAgent.SecretEngines {
                 Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"list", "true"}};
 
 
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListEntitesByName", contentParams);
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "ListEntitesByName", contentParams);
                 if ( vdro.Success ) {
 	                return await vdro.GetDotNetObject<List<string>>("data.keys");
                 }
@@ -183,7 +183,7 @@ namespace VaultAgent.SecretEngines {
                 Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"list", "true"}};
 
 
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListEntitesByID", contentParams);
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "ListEntitesByID", contentParams);
                 if ( vdro.Success ) {
 	                return await vdro.GetDotNetObject<List<Guid>>("data.keys");
                 }
@@ -227,7 +227,7 @@ namespace VaultAgent.SecretEngines {
             };
 
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "IdentityEngine: SaveAlias", contentParams);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "IdentityEngine: SaveAlias", contentParams);
             if ( vdro.Success ) {
 	            string id = await vdro.GetDotNetObject<string>("data.id");
                 Guid guid = new Guid (id);
@@ -247,7 +247,7 @@ namespace VaultAgent.SecretEngines {
         public async Task<EntityAlias> ReadAlias (Guid aliasID) {
             string path = MountPointPath + "entity-alias/id/" + aliasID;
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "IdentityEngine: ReadAlias (AliasID)", null);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "IdentityEngine: ReadAlias (AliasID)", null);
             if ( vdro.Success ) {
 	            return await vdro.GetDotNetObject<EntityAlias>();
             }
@@ -276,7 +276,7 @@ namespace VaultAgent.SecretEngines {
             };
 
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "IdentityEngine: UpdateAlias", contentParams);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "IdentityEngine: UpdateAlias", contentParams);
             if ( vdro.Success ) {
 	            string id = await vdro.GetDotNetObject<string>("data.id");  //vdro.GetDataPackageFieldAsJSON ("id");
                 Guid guid = new Guid (id);
@@ -295,7 +295,7 @@ namespace VaultAgent.SecretEngines {
         public async Task<bool> DeleteAlias (Guid id) {
             string path = MountPointPath + "entity-alias/id/" + id;
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteEntityAlias");
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.DeleteAsync (path, "DeleteEntityAlias");
             return vdro.Success ? true : false;
         }
 
@@ -313,7 +313,7 @@ namespace VaultAgent.SecretEngines {
                 Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"list", "true"}};
 
 
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListAliases", contentParams);
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "ListAliases", contentParams);
                 if ( vdro.Success ) {
 	                return await vdro.GetDotNetObject<List<Guid>>("data.keys");
                 }

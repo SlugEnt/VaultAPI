@@ -479,12 +479,13 @@ namespace VaultAgent.Backends.System {
 
 
         /// <summary>
-        /// A Shortcut method to setting full control for a given path.  This sets Create, Read, Update, Delete AND List to the value specified.  On a KV2 type policy
+        /// A Shortcut method to setting full control for a given path.
+        /// This sets Create, Read, Update, Delete, List and sudo to the value specified.  On a KV2 type policy
         /// object it will also set all the _extKV2 attributes to true as well.
         /// </summary>
         public bool FullControl {
             get {
-                if ( (_createAllowed) && (_readAllowed) && (_updateAllowed) && (_deleteAllowed) && (_listAllowed) ) {
+                if ( (_createAllowed) && (_readAllowed) && (_updateAllowed) && (_deleteAllowed) && (_listAllowed) && (_sudoAllowed)) {
                     if ( IsKV2Policy ) {
                         if ( (_extKV2_DeleteMetaData) &&
                              (_extKV2_DeleteAnyKeyVersion) &&
@@ -503,6 +504,7 @@ namespace VaultAgent.Backends.System {
             set {
                 CRUDAllowed = value;
                 ListAllowed = value;
+                SudoAllowed = value;
 
                 if ( IsKV2Policy ) {
                     _extKV2_DeleteMetaData = true;

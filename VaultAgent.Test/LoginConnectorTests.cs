@@ -109,5 +109,45 @@ namespace VaultAgentTests
             Assert.IsTrue(result,"A10:  Login Failed");
         }
 
+
+        [Test]
+        public async Task NormalLogin () {
+            // SETUP 
+
+            // We need our own vault since we will be manipulating the token value
+            VaultAgentAPI ourVault = await VaultServerRef.ConnectVault("TokenTest");
+            TokenAuthEngine ourTokenAuthEngine = (TokenAuthEngine)ourVault.ConnectAuthenticationBackend(EnumBackendTypes.A_Token);
+
+            // Need a Token Role so we can autogenerate a token
+            TokenRole tokenRole = new TokenRole();
+
+            UniqueKeys UK = new UniqueKeys("", "");       // Unique Key generator
+
+            tokenRole.Name = UK.GetKey();
+            await ourTokenAuthEngine.SaveTokenRole(tokenRole);
+
+            string tokenName = "Name" + tokenRole.Name;
+            TokenNewSettings tokenNewSettings = new TokenNewSettings()
+            {
+                Name = tokenName,
+                NumberOfUses = 6,
+                NoParentToken = true,
+                RoleName = tokenRole.Name
+            };
+
+            Token token = await ourTokenAuthEngine.CreateToken(tokenNewSettings);
+            Assert.NotNull(token, "A10:  Expected to receive the new token back, instead we received a null value.");
+
+            // Read the token we just created.
+            //Token token = await _tokenAuthEngine.GetTokenWithID(tokenID);
+            Assert.IsNotNull(token, "A20: No Token returned.  Was expecting one.");
+
+
+            VaultAgentAPI vault2 = await VaultServerRef.ConnectVault("TokenLoginTest");
+            TokenLoginConnector loginConnector = new TokenLoginConnector(vault2,"test");
+            loginConnector.TokenId = token.ID;
+            Assert.IsTrue( await loginConnector.Connect(),"A30:  Login Failed");
+
+        }
     }
 }

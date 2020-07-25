@@ -8,11 +8,6 @@ namespace VaultAgent {
     /// Represents the Abstract elements of a Vault Backend Object
     /// </summary>
     public abstract class VaultBackend {
-        /// <summary>
-        /// The Vault Agent API object that this Backend will use to talk to Vault.  
-        /// </summary>
-        protected VaultAgentAPI _parent;
-
         //protected  VaultAPI_Http _vaultHTTP;
         private string _mountPrefix;
 
@@ -30,11 +25,16 @@ namespace VaultAgent {
             MountPoint = mountPoint;
             MountPointPrefix = mountPointPrefix;
 
-            _parent = vaultAgentAPI;
+            ParentVault = vaultAgentAPI;
 
             Type = EnumBackendTypes.NotDefined;
         }
 
+
+        /// <summary>
+        /// The Vault Agent API object that this Backend will use to talk to Vault.  
+        /// </summary>
+        public VaultAgentAPI ParentVault { get; private set; }
 
         /// <summary>
         /// The cosmetic name to be used to identify the backend.  This is not used internally in Vault.
@@ -85,5 +85,6 @@ namespace VaultAgent {
         /// True if this backend is a Secret backend.
         /// </summary>
         public bool IsSecretBackend { get; protected set; }
+
     }
 }

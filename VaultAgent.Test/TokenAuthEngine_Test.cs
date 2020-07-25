@@ -26,11 +26,6 @@ namespace VaultAgentTests
 		public async Task TokenEngineSetup() {
 			// Build Connection to Vault.
 			vault = await VaultServerRef.ConnectVault("TokenEng");
-            //new VaultAgentAPI("TokenEngineVault", VaultServerRef.ipAddress, VaultServerRef.ipPort, VaultServerRef.rootToken, true);
-
-            // How to turn on logging.
-            //vault.System.AuditEnableFileDevice("VaultLog", "C:/temp/vault.log");
-
             _tokenAuthEngine = (TokenAuthEngine)vault.ConnectAuthenticationBackend(EnumBackendTypes.A_Token);
 		}
 
@@ -53,6 +48,44 @@ namespace VaultAgentTests
 			Token token = await _tokenAuthEngine.GetTokenWithID(tokenID);
 			Assert.IsNull(token, "M1: Tried to find an unknown token returned a token object.  This is incorrect.");
 		}
+
+
+
+        // Validates a token can be created with a settings object
+        [Test]
+
+		public async Task CreateToken()
+        {
+			// SETUP 
+
+			// We need our own vault since we will be manipulating the token value
+            VaultAgentAPI ourVault = await VaultServerRef.ConnectVault("TokenTest");
+            TokenAuthEngine ourTokenAuthEngine = (TokenAuthEngine)ourVault.ConnectAuthenticationBackend(EnumBackendTypes.A_Token);
+			
+			// Need a Token Role so we can autogenerate a token
+			TokenRole tokenRole = new TokenRole();
+            tokenRole.Name =  UK.GetKey();
+            await ourTokenAuthEngine.SaveTokenRole(tokenRole);
+
+            string tokenName = "Name" + tokenRole.Name;
+            TokenNewSettings tokenNewSettings = new TokenNewSettings()
+            {
+                Name = tokenName,
+                NumberOfUses = 6,
+                NoParentToken = true,
+				RoleName = tokenRole.Name
+            };
+
+            Token token = await ourTokenAuthEngine.CreateToken(tokenNewSettings);
+            Assert.NotNull(token, "A10:  Expected to receive the new token back, instead we received a null value.");
+            
+            // Read the token we just created.
+            //Token token = await _tokenAuthEngine.GetTokenWithID(tokenID);
+            Assert.IsNotNull(token, "A20: No Token returned.  Was expecting one.");
+
+            ourVault.TokenID = token.ID;
+			Assert.AreEqual(ourVault.TokenID,token.ID,"A30: Vault did not store token correctly");
+        }
 
 
 

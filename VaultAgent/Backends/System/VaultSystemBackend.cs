@@ -75,7 +75,7 @@ namespace VaultAgent {
 
 
             try {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "VaultSystemBackend:AuthEnable", json, false);
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "VaultSystemBackend:AuthEnable", json, false);
 	            return vdro.Success;
             }
             catch ( VaultInvalidDataException e ) {
@@ -100,7 +100,7 @@ namespace VaultAgent {
         public async Task<bool> AuthDisable (string authName) {
             string path = MountPointPath + "auth/" + authName;
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "AuthDisable");
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.DeleteAsync (path, "AuthDisable");
             if ( vdro.Success ) { return true; }
             else { return false; }
         }
@@ -125,7 +125,7 @@ namespace VaultAgent {
         public async Task<Dictionary<string, AuthMethod>> AuthListAll () {
             string path = MountPointPath + "auth";
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "AuthListAll");
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "AuthListAll");
             if ( vdro.Success ) {
 	            Dictionary<string, AuthMethod> methods = await vdro.GetDotNetObject<Dictionary<string, AuthMethod>>();
 
@@ -148,7 +148,7 @@ namespace VaultAgent {
         {
             string path = MountPointPath + "auth";
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "AuthExists");
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B(path, "AuthExists");
             if (vdro.Success)
             {
                 Dictionary<string, AuthMethod> methods = await vdro.GetDotNetObject<Dictionary<string, AuthMethod>>();
@@ -203,7 +203,7 @@ namespace VaultAgent {
             }
 
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.PutAsync (path, "SysAuditEnableFileDevice", null, bulkJSON);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PutAsync (path, "SysAuditEnableFileDevice", null, bulkJSON);
             return vdro.Success;
 
             //TODO Cleanup
@@ -221,7 +221,7 @@ namespace VaultAgent {
         public async Task<bool> AuditDisable (string auditDeviceName) {
             string path = MountPointPath + "audit/" + auditDeviceName;
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "SysAuditDisable");
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.DeleteAsync (path, "SysAuditDisable");
             if ( vdro.Success ) { return true; }
             else { return false; }
         }
@@ -253,7 +253,7 @@ namespace VaultAgent {
 
 
             try {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "GetTokenCapabilityOnPaths", contentParams);
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "GetTokenCapabilityOnPaths", contentParams);
                 if ( vdro.Success ) {
 	                Dictionary<string, List<string>> capabilities = await vdro.GetDotNetObject<Dictionary<string, List<string>>>();
                     return capabilities;
@@ -375,7 +375,7 @@ namespace VaultAgent {
             if ( config != null ) { createParams.Add ("config", config); }
 
             try {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "SysMountEnable", createParams,false);
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "SysMountEnable", createParams,false);
                 if ( vdro.HttpStatusCode == 204 ) { return true; }
                 else { return false; }
             }
@@ -408,7 +408,7 @@ namespace VaultAgent {
         public async Task<bool> SysMountDelete (string name) {
             string path = MountPointPath + pathMounts + name;
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "SysMountDelete");
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.DeleteAsync (path, "SysMountDelete");
             if ( vdro.Success ) { return true; }
 
             return false;
@@ -425,7 +425,7 @@ namespace VaultAgent {
             // Build Path
             string path = MountPointPath + pathMounts + mountPath + "/tune";
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "SysMountReadConfig",null);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "SysMountReadConfig",null);
             if ( vdro.Success ) {
 	            return await vdro.GetDotNetObject<VaultSysMountConfig>();
             }
@@ -448,7 +448,7 @@ namespace VaultAgent {
             try
             {
                 VaultDataResponseObjectB vdro =
-                    await _parent._httpConnector.GetAsync_B(path, "SysMountReadConfig", null);
+                    await ParentVault._httpConnector.GetAsync_B(path, "SysMountReadConfig", null);
                 if (vdro.Success) return true;
             }
             catch (VaultInvalidDataException ve)
@@ -484,7 +484,7 @@ namespace VaultAgent {
 
             if ( description != null ) { content.Add ("description", description); }
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "SysMountUpdateConfig", content,false);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "SysMountUpdateConfig", content,false);
 	        return vdro.Success;
         }
 
@@ -507,7 +507,7 @@ namespace VaultAgent {
             Dictionary<string, string> sendParams = new Dictionary<string, string>();
             sendParams.Add ("list", "true");
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "SysPoliciesACLList", sendParams);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "SysPoliciesACLList", sendParams);
 	        return  await vdro.GetDotNetObject<List<string>>("data.keys");
 			//TODO Cleanup
 			/*
@@ -532,7 +532,7 @@ namespace VaultAgent {
 
 
             try {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "SysPoliciesACLDelete");
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.DeleteAsync (path, "SysPoliciesACLDelete");
                 if ( vdro.Success ) { return true; }
                 else { return false; }
             }
@@ -579,7 +579,7 @@ namespace VaultAgent {
 
             string json = jsonBody.ToString();
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.PutAsync (path, "SysPoliciesACLCreate", null, json);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PutAsync (path, "SysPoliciesACLCreate", null, json);
             if ( vdro.Success ) { return true; }
             else { return false; }
         }
@@ -609,7 +609,7 @@ namespace VaultAgent {
 
             try
             {
-                vdro = await _parent._httpConnector.GetAsync_B(path, "SysPoliciesACLRead");
+                vdro = await ParentVault._httpConnector.GetAsync_B(path, "SysPoliciesACLRead");
                 return true;
             }
             catch (VaultInvalidPathException e)
@@ -634,7 +634,7 @@ namespace VaultAgent {
             VaultDataResponseObjectB vdro;
 
             try {
-                vdro = await _parent._httpConnector.GetAsync_B (path, "SysPoliciesACLRead");
+                vdro = await ParentVault._httpConnector.GetAsync_B (path, "SysPoliciesACLRead");
                 
             }
             catch ( VaultInvalidPathException e ) {

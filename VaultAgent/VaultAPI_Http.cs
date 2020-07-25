@@ -225,10 +225,14 @@ namespace VaultAgent {
             string jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait (false);
             List<string> errors = new List<string>();
 
-            try { errors = ConvertJSONArrayToList (jsonResponse, "errors"); }
-            catch ( MissingFieldException e) {
+            try { errors = ConvertJSONArrayToList(jsonResponse, "errors"); }
+            catch ( MissingFieldException ) {
                 // A few Vault Methods do not return the Errors Object, we swallow the error and move on.
                 // Swallow the error.  Latest updates to Vault V1.2.2 in KV2 do not necessarily populate the error object if object not found.
+            }
+            catch ( JsonReaderException j ) {
+                // There are a few weird cases that do not generate proper json.  We handle those here.
+                errors.Add("JSONReaderException for - " + jsonResponse);
             }
 
 
@@ -268,8 +272,19 @@ namespace VaultAgent {
         /// <param name="fieldName">The specific field or subfield you want JSON for in dot notation.  field.subfield.subsubfield....</param>
         /// <returns>JSON representation of the specified field.</returns>
         public List<string> ConvertJSONArrayToList (string json, string fieldName) {
-            JToken token = JObject.Parse (json);
+            JToken token = null;
+            List<string> data;
 
+            try {
+                token = JObject.Parse(json);
+            }
+            catch ( JsonReaderException j ) {
+                string msg = string.Format("Vault: Unable to parse JSON to determine if it has any fields - Original JSON Text follows: {0}", json);
+
+                throw new JsonReaderException(msg,j);
+            }
+
+            // Now parse fields
             try {
                 foreach ( string queryComponent in fieldName.Split ('.') ) { token = token [queryComponent]; }
 
@@ -279,12 +294,12 @@ namespace VaultAgent {
                 }
 
                 string js = token.ToString();
-                List<string> data = VaultUtilityFX.ConvertJSON<List<string>> (js);
+                data = VaultUtilityFX.ConvertJSON<List<string>> (js);
                 return data;
             }
 
 
-            catch ( Exception ) { throw new MissingFieldException ("GetJSONPropertyValue method unable to find the field: " + fieldName); }
+            catch ( Exception ) { throw new MissingFieldException ("ConvertJSONArrayToList method unable to find the field: " + fieldName); }
         }
     }
 }

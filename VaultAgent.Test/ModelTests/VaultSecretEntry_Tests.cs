@@ -436,6 +436,78 @@ namespace VaultAgentTests
         }
 
 
+        [Test]
+        [TestCase(0)]
+        [TestCase(-990)]
+        [TestCase(2050)]
+        public void ShortAttributeSet_Success(short value)
+        {
+            string attrName = "AttrA";
+            VaultSecretEntry vseA = new VaultSecretEntry();
+
+            // Save value
+            vseA.SetShortAttribute(attrName, value);
+
+            string lookupValue = vseA.Attributes[attrName];
+            Assert.AreEqual(value.ToString(), lookupValue);
+        }
+
+
+        // Validates that GetIntAttributeNullable Works
+        [Test]
+        [TestCase(0)]
+        [TestCase(-990)]
+        [TestCase(2050)]
+        public void ShortAttributeGetNullable_Success (short value)
+        {
+            string attrName = "AttrA";
+            VaultSecretEntry vseA = new VaultSecretEntry();
+
+            // Save value
+            vseA.SetIntAttribute(attrName, value);
+
+            // Get Value
+            int? answer = vseA.GetIntAttributeNullable(attrName);
+            Assert.NotNull(answer, "A10:  Expected a number, not a Null value");
+            Assert.AreEqual(value, answer);
+        }
+
+
+
+        // Validates that GetIntAttributeNullable returns null when empty string
+        [Test]
+        public void ShortAttributeGetNullable_ReturnsNullOnEmptyString_Success()
+        {
+            string attrName = "AttrA";
+            string value = "";
+
+            VaultSecretEntry vseA = new VaultSecretEntry();
+            vseA.Attributes[attrName] = value;
+
+
+            // Get Value
+            short? answer = vseA.GetShortAttributeNullable(attrName);
+            Assert.IsNull(answer, "A10:  Expected a null value when string is empty");
+        }
+
+
+        // Validates that GetIntAttributeNullable returns null when value does not exist
+        [Test]
+        public void ShortAttributeGetNullable_ReturnsNull()
+        {
+            string attrName = "AttrA";
+            VaultSecretEntry vseA = new VaultSecretEntry();
+
+            // We do not save anything in the Attributes, to force a null
+
+            // Get Value
+            short? answer = vseA.GetShortAttributeNullable(attrName);
+            Assert.IsNull(answer);
+        }
+
+
+
+
 
         [Test]
         public void DateTimeOffsetSet_Success()

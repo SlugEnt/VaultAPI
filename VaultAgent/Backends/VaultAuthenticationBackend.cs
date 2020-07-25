@@ -38,7 +38,7 @@ namespace VaultAgent {
             string path = "/v1/auth/token/lookup-self";
 
             try {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "GetMyTokenInfo");
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "GetMyTokenInfo");
                 if ( vdro.Success ) {
                     return await vdro.GetDotNetObject<Token>();
                 }

@@ -34,7 +34,7 @@ namespace VaultAgent.AuthenticationEngines {
         public async Task<List<string>> ListTokenAccessors () {
             string path = MountPointPath + "accessors?list=true";
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListTokenAccessors");
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "ListTokenAccessors");
             if ( vdro.Success ) {
 	            return await vdro.GetDotNetObject<List<string>>("data.keys");
             }
@@ -53,7 +53,7 @@ namespace VaultAgent.AuthenticationEngines {
 
             string json = JsonConvert.SerializeObject (tokenSettings, Formatting.None);
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "CreateOrphanToken", json);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "CreateOrphanToken", json);
             if ( vdro.Success )
             {
                 LoginResponse loginResponse = await vdro.GetDotNetObject<LoginResponse>("auth");
@@ -78,7 +78,7 @@ namespace VaultAgent.AuthenticationEngines {
 
             string json = JsonConvert.SerializeObject (tokenSettings, Formatting.None);
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "CreateToken", json);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "CreateToken", json);
             if ( vdro.Success ) {
                 LoginResponse loginResponse = await vdro.GetDotNetObject<LoginResponse>("auth");
 
@@ -101,7 +101,7 @@ namespace VaultAgent.AuthenticationEngines {
             Dictionary<string, object> contentParams = new Dictionary<string, object>() {{"token", tokenID}};
 
             try {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B(path, "GetToken", contentParams);
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B(path, "GetToken", contentParams);
                 if ( vdro.Success ) {
 	                return await vdro.GetDotNetObject<Token>();
                 }
@@ -126,7 +126,7 @@ namespace VaultAgent.AuthenticationEngines {
             string path = MountPointPath + "lookup-self";
 
             try {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "GetCurrentTokenInfo");
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "GetCurrentTokenInfo");
                 if ( vdro.Success ) {
 	                return await vdro.GetDotNetObject<Token>();
                 }
@@ -154,7 +154,7 @@ namespace VaultAgent.AuthenticationEngines {
             Dictionary<string, object> contentParams = new Dictionary<string, object>() {{"accessor", accessorID}};
 
             try {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "GetTokenViaAccessor", contentParams);
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "GetTokenViaAccessor", contentParams);
                 if ( vdro.Success ) {
 	                Token token = await vdro.GetDotNetObject<Token>();
                     token.TokenType = EnumTokenType.Accessor;
@@ -183,7 +183,7 @@ namespace VaultAgent.AuthenticationEngines {
             Dictionary<string, object> contentParams = new Dictionary<string, object>() {{"token", tokenID}};
 
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "RenewToken", contentParams);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "RenewToken", contentParams);
             if ( vdro.Success ) { return true; }
             else { throw new VaultUnexpectedCodePathException(); }
         }
@@ -203,7 +203,7 @@ namespace VaultAgent.AuthenticationEngines {
 
             contentParams.Add ("increment", renewalTimeAmount.Value);
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "RenewToken", contentParams);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "RenewToken", contentParams);
             if ( vdro.Success ) { return true; }
             else { throw new VaultUnexpectedCodePathException(); }
         }
@@ -217,7 +217,7 @@ namespace VaultAgent.AuthenticationEngines {
         public async Task<bool> RenewTokenSelf () {
             string path = MountPointPath + "renew-self";
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "RenewTokenSelf");
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "RenewTokenSelf");
             if ( vdro.Success ) { return true; }
             else { throw new VaultUnexpectedCodePathException(); }
         }
@@ -235,7 +235,7 @@ namespace VaultAgent.AuthenticationEngines {
             Dictionary<string, string> contentParams = new Dictionary<string, string>() {{"increment", renewalTimeAmount.Value}};
 
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "RenewTokenSelf", contentParams);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "RenewTokenSelf", contentParams);
             if ( vdro.Success ) { return true; }
             else { throw new VaultUnexpectedCodePathException(); }
         }
@@ -257,7 +257,7 @@ namespace VaultAgent.AuthenticationEngines {
 
 
             try {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "RevokeToken", contentParams);
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "RevokeToken", contentParams);
                 if ( vdro.Success ) { return true; }
                 else { throw new VaultUnexpectedCodePathException(); }
             }
@@ -278,7 +278,7 @@ namespace VaultAgent.AuthenticationEngines {
             string path = MountPointPath + "revoke-self";
 
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "RevokeTokenSelf");
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "RevokeTokenSelf");
             if ( vdro.Success ) { return true; }
             else { throw new VaultUnexpectedCodePathException(); }
         }
@@ -297,7 +297,7 @@ namespace VaultAgent.AuthenticationEngines {
             Dictionary<string, object> contentParams = new Dictionary<string, object>() {{"accessor", AccessorID}};
 
             try {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "RevokeTokenViaAccessor", contentParams);
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "RevokeTokenViaAccessor", contentParams);
                 if ( vdro.Success ) { return true; }
                 else { throw new VaultUnexpectedCodePathException(); }
             }
@@ -320,7 +320,7 @@ namespace VaultAgent.AuthenticationEngines {
             string json = JsonConvert.SerializeObject (tokenRole, Formatting.None);
 
             try {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "SaveTokenRole", json);
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "SaveTokenRole", json);
                 if ( vdro.Success ) { return true; }
                 else { throw new VaultUnexpectedCodePathException(); }
             }
@@ -342,7 +342,7 @@ namespace VaultAgent.AuthenticationEngines {
             string path = MountPointPath + "roles/" + tokenRoleName;
 
             try {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "GetTokenRole");
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "GetTokenRole");
                 if ( vdro.Success ) {
 	                return await vdro.GetDotNetObject<TokenRole>();
                 }
@@ -361,7 +361,7 @@ namespace VaultAgent.AuthenticationEngines {
         public async Task<List<string>> ListTokenRoles () {
             string path = MountPointPath + "roles?list=true";
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListTokenRoles");
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "ListTokenRoles");
             if ( vdro.Success ) {
 	            return await vdro.GetDotNetObject<List<string>>("data.keys");
             }
@@ -379,7 +379,7 @@ namespace VaultAgent.AuthenticationEngines {
         public async Task<bool> DeleteTokenRole (string tokenRoleName) {
             string path = MountPointPath + "roles/" + tokenRoleName;
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteTokenRole");
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.DeleteAsync (path, "DeleteTokenRole");
             if ( vdro.Success ) { return true; }
             else { return false; }
         }

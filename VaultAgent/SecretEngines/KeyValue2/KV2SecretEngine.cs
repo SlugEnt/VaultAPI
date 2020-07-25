@@ -86,7 +86,7 @@ namespace VaultAgent.SecretEngines
 
                     // Add the version parameter
                     string jsonParams = "{\"versions\": [" + version + "]}";
-                    vdro = await _parent._httpConnector.PostAsync_B(path, "DeleteSecretVersion", jsonParams);
+                    vdro = await ParentVault._httpConnector.PostAsync_B(path, "DeleteSecretVersion", jsonParams);
                     if (vdro.Success) return true;
                 }
                 else
@@ -94,7 +94,7 @@ namespace VaultAgent.SecretEngines
                     //TODO - Fix this once Deleted Returns VDROB
                     VaultDataResponseObjectB vdrb;
                     path = MountPointPath + "data/" + secretPath;
-                    vdrb = await _parent._httpConnector.DeleteAsync(path, "DeleteSecretVersion");
+                    vdrb = await ParentVault._httpConnector.DeleteAsync(path, "DeleteSecretVersion");
                     if (vdrb.Success) return true;
                 }
 
@@ -143,7 +143,7 @@ namespace VaultAgent.SecretEngines
                 string path = MountPointPath + "metadata/" + secretNamePath;
 
                 VaultDataResponseObjectB vdro =
-                    await _parent._httpConnector.DeleteAsync(path, "DestroySecretCompletely");
+                    await ParentVault._httpConnector.DeleteAsync(path, "DestroySecretCompletely");
                 if (vdro.Success) return true;
 
                 return false;
@@ -185,7 +185,7 @@ namespace VaultAgent.SecretEngines
                 contentParams.Add("versions", version.ToString());
 
                 VaultDataResponseObjectB vdro =
-                    await _parent._httpConnector.PostAsync_B(path, "DestroySecretVersion", contentParams);
+                    await ParentVault._httpConnector.PostAsync_B(path, "DestroySecretVersion", contentParams);
                 return vdro.Success;
             }
             catch (VaultForbiddenException e)
@@ -223,7 +223,7 @@ namespace VaultAgent.SecretEngines
                 string path = MountPointPath + "config";
 
                 VaultDataResponseObjectB
-                    vdro = await _parent._httpConnector.GetAsync_B(path, "GetBackendConfiguration");
+                    vdro = await ParentVault._httpConnector.GetAsync_B(path, "GetBackendConfiguration");
                 return await vdro.GetDotNetObject<KV2SecretEngineSettings>();
 
                 //IKV2SecretEngineSettings settings = vdro.GetVaultTypedObject<IKV2SecretEngineSettings>();
@@ -248,7 +248,7 @@ namespace VaultAgent.SecretEngines
             // we need to use the MetaData Path
             string path = MountPointPath + "metadata/" + secretNamePath;
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "GetSecretMetaData");
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B(path, "GetSecretMetaData");
             if (vdro.Success)
             {
                 KV2SecretMetaDataInfo kvData = await vdro.GetDotNetObject<KV2SecretMetaDataInfo>();
@@ -294,14 +294,14 @@ namespace VaultAgent.SecretEngines
 
             try
             {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "ListSecrets");
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B(path, "ListSecrets");
                 if (vdro.Success)
                 {
                     List<string> secrets = await vdro.GetDotNetObject<List<string>>("data.keys");
 
                     if (includeFolderSecrets) return secrets;
 
-                    // Caller only wants a secret listed once, remove any secrets with trailing slashes as these are the folder secrets.
+                    // Caller only wants a secret listed once, remove any secrets witParentVaulth trailing slashes as these are the folder secrets.
                     for (int i = secrets.Count - 1; i > -1; i--)
                         if (secrets[i].EndsWith("/"))
                             secrets.RemoveAt(i);
@@ -356,7 +356,7 @@ namespace VaultAgent.SecretEngines
 
             try
             {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "ListSecrets");
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B(path, "ListSecrets");
                 if (vdro.Success)
                 {
                     SortedList<string, string> secrets =
@@ -407,7 +407,7 @@ namespace VaultAgent.SecretEngines
                 if (secretVersion > 0) contentParams.Add("version", secretVersion.ToString());
 
                 VaultDataResponseObjectB vdro =
-                    await _parent._httpConnector.GetAsync_B(path, "ReadSecret", contentParams);
+                    await ParentVault._httpConnector.GetAsync_B(path, "ReadSecret", contentParams);
                 if (vdro.Success)
                 {
                     KV2SecretWrapper<T> secretReadReturnObj = await vdro.GetDotNetObject<KV2SecretWrapper<T>>("");
@@ -547,7 +547,7 @@ namespace VaultAgent.SecretEngines
             reqData.Add("data", secret);
 
             try {
-	            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B(path, "SaveSecret", reqData);
+	            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B(path, "SaveSecret", reqData);
 	            if ( vdro.Success ) {
 		            KV2VaultReadSaveReturnObj obj = await vdro.GetDotNetObject<KV2VaultReadSaveReturnObj>();
 		            if ( obj != null ) {
@@ -621,7 +621,7 @@ namespace VaultAgent.SecretEngines
             contentParams.Add("cas_required", casRequired.ToString());
 
             VaultDataResponseObjectB vdro =
-                await _parent._httpConnector.PostAsync_B(path, "ConfigureBackend", contentParams, false);
+                await ParentVault._httpConnector.PostAsync_B(path, "ConfigureBackend", contentParams, false);
             return vdro.Success;
         }
 
@@ -723,7 +723,7 @@ namespace VaultAgent.SecretEngines
                 contentParams.Add("versions", version.ToString());
 
                 VaultDataResponseObjectB vdro =
-                    await _parent._httpConnector.PostAsync_B(path, "UndeleteSecretVersion", contentParams);
+                    await ParentVault._httpConnector.PostAsync_B(path, "UndeleteSecretVersion", contentParams);
                 return vdro.Success;
             }
             catch (Exception e)
@@ -767,7 +767,7 @@ namespace VaultAgent.SecretEngines
                 contentParams.Add("cas_required", casRequired.ToString());
 
                 VaultDataResponseObjectB vdro =
-                    await _parent._httpConnector.PostAsync_B(path, "UpdateSecretSettings", contentParams);
+                    await ParentVault._httpConnector.PostAsync_B(path, "UpdateSecretSettings", contentParams);
                 if (vdro.Success) return true;
 
                 return false;

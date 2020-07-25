@@ -54,7 +54,7 @@ namespace VaultAgent.AuthenticationEngines
 		    string path = MountPointPath + "config";
 		    string json  = JsonConvert.SerializeObject(ldapConfig);
 
-		    VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B(path, "LdapAuthEngine: ConfigureLDAPBackend", json,false);
+		    VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B(path, "LdapAuthEngine: ConfigureLDAPBackend", json,false);
 		    return vdro.Success;
 		}
 
@@ -68,7 +68,7 @@ namespace VaultAgent.AuthenticationEngines
 		    string path = MountPointPath + "config";
 
 
-		    VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "ReadLDAPConfig");
+		    VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B(path, "ReadLDAPConfig");
 		    if (vdro.Success) {
                 return await vdro.GetDotNetObject<LdapConfig>();
 		    }
@@ -86,7 +86,7 @@ namespace VaultAgent.AuthenticationEngines
         {
             string path = MountPointPath + "config";
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "ReadLDAPConfigAsJSON");
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B(path, "ReadLDAPConfigAsJSON");
             if (vdro.Success)
             {
                 return await vdro.GetJSON();
@@ -110,7 +110,7 @@ namespace VaultAgent.AuthenticationEngines
 			    Dictionary<string, string> contentParams = new Dictionary<string, string>() { { "list", "true" } };
 
 
-			    VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "LdapAuthEngine:ListUsers", contentParams);
+			    VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B(path, "LdapAuthEngine:ListUsers", contentParams);
 			    if (vdro.Success) {
                     return await vdro.GetDotNetObject<List<string>> ("data.keys");
 			    }
@@ -141,7 +141,7 @@ namespace VaultAgent.AuthenticationEngines
             string policyValue =  String.Join (",", policies);          
             json.Add("policies", policyValue);
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B(path, "LdapAuthEngine: CreateGroupToPolicyMapping", json.ToString(),false);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B(path, "LdapAuthEngine: CreateGroupToPolicyMapping", json.ToString(),false);
             return vdro.Success;
 		}
 
@@ -157,7 +157,7 @@ namespace VaultAgent.AuthenticationEngines
             string path = MountPointPath + "groups/" + groupName;
 
             try {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "LdapAuthEngine:GetPoliciesAssignedToGroup");
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "LdapAuthEngine:GetPoliciesAssignedToGroup");
                 if ( vdro.Success ) {
                     return await vdro.GetDotNetObject<List<string>> ("data.policies");
                 }
@@ -185,7 +185,7 @@ namespace VaultAgent.AuthenticationEngines
 			    Dictionary<string, string> contentParams = new Dictionary<string, string>() { { "list", "true" } };
 
 
-			    VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B(path, "LdapAuthEngine:ListUsers", contentParams);
+			    VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B(path, "LdapAuthEngine:ListUsers", contentParams);
 			    if (vdro.Success) {
                     return await vdro.GetDotNetObject<List<string>> ("data.keys");
                     //TODO Cleanup
@@ -223,7 +223,7 @@ namespace VaultAgent.AuthenticationEngines
             try
             {
                 VaultDataResponseObjectB vdro =
-                    await _parent._httpConnector.PostAsync_B(path, "LdapAuthEngine:Login", json.ToString());
+                    await ParentVault._httpConnector.PostAsync_B(path, "LdapAuthEngine:Login", json.ToString());
                 if (vdro.Success)
                 {
                     return await vdro.GetDotNetObject<LoginResponse>("auth");

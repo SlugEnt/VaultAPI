@@ -128,7 +128,7 @@ namespace VaultAgent.SecretEngines {
             }
             else { attrJSON = contentParamsJSON; }
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.PostAsync_B (path, "CreateOrUpdateSecret", attrJSON);
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "CreateOrUpdateSecret", attrJSON);
 	        return vdro.Success;
         }
 
@@ -146,7 +146,7 @@ namespace VaultAgent.SecretEngines {
             string path = MountPointPath + secretPath;
 
             try {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ReadSecret");
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "ReadSecret");
                 if ( vdro.Success ) {
 	                KeyValueSecret secret = await vdro.GetDotNetObject<KeyValueSecret>("");
 					//KeyValueSecret secret = vdro.GetVaultTypedObjectFromResponse<KeyValueSecret>();
@@ -206,7 +206,7 @@ namespace VaultAgent.SecretEngines {
             string path = MountPointPath + secretPath + "?list=true";
 
             try {
-                VaultDataResponseObjectB vdro = await _parent._httpConnector.GetAsync_B (path, "ListSecrets");
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "ListSecrets");
                 if ( vdro.Success ) {
 	                return await vdro.GetDotNetObject<List<string>>("data.keys");
                 }
@@ -268,7 +268,7 @@ namespace VaultAgent.SecretEngines {
         public async Task<bool> DeleteSecret (string secretPath) {
             string path = MountPointPath + secretPath;
 
-            VaultDataResponseObjectB vdro = await _parent._httpConnector.DeleteAsync (path, "DeleteSecretVersion");
+            VaultDataResponseObjectB vdro = await ParentVault._httpConnector.DeleteAsync (path, "DeleteSecretVersion");
             if ( vdro.Success ) { return true; }
             else { return false; }
         }

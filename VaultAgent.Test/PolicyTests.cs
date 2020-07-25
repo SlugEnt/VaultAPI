@@ -320,6 +320,7 @@ namespace VaultAgentTests {
             Assert.False (vaultPolicyPathItem.UpdateAllowed);
             Assert.False (vaultPolicyPathItem.DeleteAllowed);
             Assert.False (vaultPolicyPathItem.ListAllowed);
+            Assert.False (vaultPolicyPathItem.SudoAllowed);
 
             // Now Set Full Control
             vaultPolicyPathItem.FullControl = true;
@@ -330,6 +331,7 @@ namespace VaultAgentTests {
             Assert.True (vaultPolicyPathItem.UpdateAllowed);
             Assert.True (vaultPolicyPathItem.DeleteAllowed);
             Assert.True (vaultPolicyPathItem.ListAllowed);
+            Assert.True (vaultPolicyPathItem.SudoAllowed);
 
             // Now Set FullControl to False.
             vaultPolicyPathItem.FullControl = false;
@@ -340,6 +342,7 @@ namespace VaultAgentTests {
             Assert.False (vaultPolicyPathItem.UpdateAllowed);
             Assert.False (vaultPolicyPathItem.DeleteAllowed);
             Assert.False (vaultPolicyPathItem.ListAllowed);
+            Assert.False(vaultPolicyPathItem.SudoAllowed);
         }
 
 
