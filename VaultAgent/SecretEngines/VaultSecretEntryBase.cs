@@ -31,7 +31,7 @@ namespace VaultAgent.SecretEngines
 		protected KV2SecretMetaDataInfo _info;
         
 
-        /// <summary>
+        /// <summary>   
 		/// Constructor
 		/// </summary>
 		public VaultSecretEntryBase () { 
@@ -533,6 +533,30 @@ namespace VaultAgent.SecretEngines
 
             return null;
         }
+
+
+
+
+        /// <summary>
+        /// Retrieves the attributeName from the Attributes List.  If it does not exist then string.empty is returned.
+        /// </summary>
+        /// <param name="attributeName">Name of the attribute to retrieve</param>
+        /// <returns></returns>
+        protected internal string GetStringAttributeDefault(string attributeName)
+        {
+            // Try and Get the value.
+            bool result = _secret.Attributes.TryGetValue(attributeName, out string value);
+            if (result)
+            {
+                if (value == "") return string.Empty;
+            }
+
+            return string.Empty;
+        }
+
+
+
+
 
 
 

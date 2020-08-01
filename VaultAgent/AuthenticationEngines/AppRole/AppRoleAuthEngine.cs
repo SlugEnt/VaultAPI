@@ -100,9 +100,6 @@ namespace VaultAgent.AuthenticationEngines {
                 VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "ListRoles", contentParams);
                 if ( vdro.Success ) {
                     List<string> keys = await vdro.GetDotNetObject<List<string>> ("data.keys");
-
-//                    string js = vdro.GetJSONPropertyValue (vdro.GetDataPackageAsJSON(), "keys");
-//                    List<string> keys = VaultUtilityFX.ConvertJSON<List<string>> (js);
                     return keys;
                 }
 

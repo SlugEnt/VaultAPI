@@ -50,6 +50,12 @@ namespace VaultAgent {
 
 
         /// <summary>
+        /// Constructor
+        /// </summary>
+        public VaultAgentAPI () { }
+
+
+        /// <summary>
         /// Constructor to create a new VaultAgentAPI object which is used to connect to a single Vault Instance.  Automatically connects to the Token Backend and will optionally connect
         /// to system backend if requested.
         /// <para>Will Throw ApplicationException if unable to establish a connection to the backend vault server.</para>
@@ -58,6 +64,17 @@ namespace VaultAgent {
         /// <param name="port">The network port the Vault instance is listening on.</param>
         /// <param name="vaultIP">The IP address of the Vault instance you want to connect to.</param>
         public VaultAgentAPI (string name, Uri vaultUri) {
+            Initialize(name,vaultUri);
+        }
+
+
+
+        /// <summary>
+        /// Sets up the vault
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="vaultUri"></param>
+        public void Initialize (string name, Uri vaultUri) {
             Name = name;
             Uri = vaultUri;
 
@@ -80,7 +97,7 @@ namespace VaultAgent {
             }
             catch (Exception e)
             {
-                if (e.InnerException != null) 
+                if (e.InnerException != null)
                     if (e.InnerException.Message.StartsWith("No connection"))
                     {
                         throw new ApplicationException("Unable to establish connection to remote Vault Server.");
@@ -91,12 +108,10 @@ namespace VaultAgent {
 
 
 
-
-
         /// <summary>
         /// The name this Vault Instance is known by.  This is purely cosmetic and serves no functional purpose other than being able to uniquely identify this Vault Instance from another.
         /// </summary>
-        public string Name { get; private set; }
+        public string Name { get;  set; }
 
 
         /*
@@ -116,7 +131,7 @@ namespace VaultAgent {
         /// <summary>
         /// The Vault Uri connection string to the Vault server
         /// </summary>
-        public Uri Uri { get; private set; }
+        public Uri Uri { get;  set; }
 
 
         /// <summary>
