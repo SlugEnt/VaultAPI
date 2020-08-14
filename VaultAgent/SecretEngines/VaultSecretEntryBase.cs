@@ -546,9 +546,11 @@ namespace VaultAgent.SecretEngines
         {
             // Try and Get the value.
             bool result = _secret.Attributes.TryGetValue(attributeName, out string value);
-            if (result)
-            {
-                if (value == "") return string.Empty;
+            if (result) {
+                if ( value == "" )
+                    return string.Empty;
+                else
+                    return value;
             }
 
             return string.Empty;

@@ -506,6 +506,35 @@ namespace VaultAgentTests
         }
 
 
+        // Validates that trying to retrieve a string entry that does not exist returns an Empty string
+        [Test]
+        public void StringAttributeGetNullable_ReturnsEmpty()
+        {
+            string attrName = "AttrA";
+            VaultSecretEntry vseA = new VaultSecretEntry();
+
+            // We do not save anything in the Attributes, to force a null
+
+            // Get Value
+            string answer = vseA.GetStringAttributeDefault(attrName);
+            Assert.IsEmpty(answer);
+        }
+
+
+        // Validates that we can get a String object that does exist
+        [Test]
+        public void StringAttributeGet_ReturnsValue()
+        {
+            string attrName = "AttrA";
+            string value = "abcXYZ";
+
+            VaultSecretEntry vseA = new VaultSecretEntry();
+            vseA.Attributes [attrName] = value;
+
+            // Get Value
+            string answer = vseA.GetStringAttributeDefault(attrName);
+            Assert.AreEqual(value,answer);
+        }
 
 
 
