@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyVersion>1.0.0.55</AssemblyVersion>
+    <AssemblyVersion>1.0.0.56</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
-    <Version>1.0.0-rc-191</Version>
+    <Version>1.0.0-rc-192</Version>
     <Title>VaultAgent</Title>
     <PackageId>SlugEnt.VaultAgent</PackageId>
     <Authors>Scott Herrmann</Authors>
