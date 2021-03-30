@@ -137,8 +137,9 @@ namespace VaultAgentTests
 
 			// Make sure it is gone.
 			Assert.IsFalse(await _vaultSystemBackend.SysMountExists(key), "A40 - SysMount still exists");
-            VaultSysMountConfig config3 = await _vaultSystemBackend.SysMountReadConfig(key);
-			Assert.IsNull(config3, "A50:  SysMount Not Deleted");
+			VaultInvalidDataException e = Assert.ThrowsAsync<VaultInvalidDataException>(async () => await _vaultSystemBackend.SysMountReadConfig(key), "A50: Error trying to retrieve Mount");
+            //VaultSysMountConfig config3 = await _vaultSystemBackend.SysMountReadConfig(key);
+			//Assert.IsNull(config3, "A50:  SysMount Not Deleted");
 
         }
 

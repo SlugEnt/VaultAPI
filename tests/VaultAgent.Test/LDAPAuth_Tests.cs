@@ -17,6 +17,7 @@ using VaultAgent.Models;
 
 namespace VaultAgentTests
 {
+    [Ignore("No LDAP Server to Test With")]
     [TestFixture]
     [Parallelizable]
     public class LDAPAuth_Tests {

@@ -148,6 +148,7 @@ namespace VaultAgentTests
 
         // Validates that trying to read a VSE that we do not have permission for, does XXXXXXX?
         [Test]
+        [Ignore("Not Implemented")]
         public async Task Read_NoPermission_Failure () { throw new NotImplementedException();}
 
 
