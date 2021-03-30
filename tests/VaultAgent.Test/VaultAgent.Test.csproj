@@ -5,7 +5,7 @@
 
     <IsPackable>false</IsPackable>
 
-    <AssemblyVersion>1.0.0.518</AssemblyVersion>
+    <AssemblyVersion>1.0.0.519</AssemblyVersion>
 
     <FileVersion>1.0.0.108</FileVersion>
 
@@ -29,12 +29,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\VaultAgent\VaultAgent.csproj" />
+    <Folder Include="TestFiles\" />
+    <Folder Include="SupportFX\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="TestFiles\" />
-    <Folder Include="SupportFX\" />
+    <ProjectReference Include="..\..\src\VaultAgent\VaultAgent.csproj" />
   </ItemGroup>
 
   <ItemGroup>
