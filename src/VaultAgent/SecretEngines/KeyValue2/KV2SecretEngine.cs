@@ -112,7 +112,7 @@ namespace VaultAgent.SecretEngines
 
 
         /// <summary>
-        ///     Deletes the version of the secret requested - or the most recent version if version parameter is zero.
+        ///     Deletes the version of the secret requested (Vault soft Delete) - or the most recent version if version parameter is zero.
         ///     <para> Set secretVersion parameter as follows:</para>
         ///     <para>  (Default) set to 0 to delete the most recent version.</para>
         ///     <para>  Set to -1 to use the version number specified in the secret object as the version to delete.</para>
@@ -273,7 +273,7 @@ namespace VaultAgent.SecretEngines
 
 
         /// <summary>
-        ///     Returns a list of secrets at a given path.  If the parameter includeFolderSecrets is true (default) then it will
+        ///     Returns a list of secrets at a given path.  If the parameter includeFolderSecrets is false (default) then it will
         ///     remove secret names with a trailing slash. This is generally what callers want.
         /// </summary>
         /// <param name="secretPath">
@@ -379,6 +379,66 @@ namespace VaultAgent.SecretEngines
             catch (VaultInvalidPathException)
             {
                 return new SortedList<string, string>();
+            }
+        }
+
+
+
+
+        /// <summary>
+        ///     Returns a list of secrets at a given path and all child secret folders
+        /// </summary>
+        /// <param name="secretPath">
+        ///     The path "folder" to retrieve secrets for.  This may be the entire path including the name (if
+        ///     the secret has subfolders) or just a partial path.
+        /// </param>
+        /// <returns>List of strings which contain secret names.</returns>
+        /// <remarks>https://github.com/SlugEnt/VaultAPI/issues/3</remarks>
+        public async Task<List<string>> ListSecretFolders(string secretPath)
+        {
+            string path = MountPointPath + "metadata/" + secretPath + "?list=true";
+
+            try
+            {
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B(path, "ListSecrets");
+                if (vdro.Success)
+                {
+                    List<string> secrets = await vdro.GetDotNetObject<List<string>>("data.keys");
+                    List<string> allSubSecrets = new List<string>();
+
+                    // Caller only wants a secret listed once, remove any secrets witParentVaulth trailing slashes as these are the folder secrets.
+                    for (int i = secrets.Count - 1; i > -1; i--)
+                        if (!secrets[i].EndsWith("/"))
+                            secrets.RemoveAt(i);
+                        else
+                            // Prefix the parent full path to this secret value which as returned from Vault is just the name
+                            secrets[i] = secretPath + "/" + secrets[i];
+
+                    // We need to append the parent secret full path to these 
+
+                    // Now we are left with secrets with children.
+                    // Traverse each of these and add to list.
+                    List<string> subSecrets;
+                    for (int i = secrets.Count - 1; i > -1; i--)
+                    {
+                        subSecrets = await ListSecretFolders(secrets[i]);
+                        allSubSecrets.AddRange(subSecrets);
+                    }
+
+               
+
+                    secrets.AddRange(allSubSecrets);    
+
+                    return secrets;
+                }
+
+                throw new ApplicationException("IKV2SecretEngine:ListSecretsAtPath  Arrived at unexpected code block.");
+            }
+
+            // 404 Errors mean there were no sub paths.  We just return an empty list.
+            catch (VaultInvalidPathException)
+            {
+                return new List<string>();
             }
         }
 

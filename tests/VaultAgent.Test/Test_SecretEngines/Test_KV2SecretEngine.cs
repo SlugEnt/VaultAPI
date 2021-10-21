@@ -699,6 +699,39 @@ namespace VaultAgentTests {
 
 
         /// <summary>
+        /// Tests the ListSecretFolders method, which returns all children of a given path that are "folder" children and not attributes.  Is recursive.
+        /// </summary>
+        /// <returns></returns>
+        [Test]
+        public async Task ListSecretsAndAllFolders()
+        {
+            int numberOfChildren = 5;
+            int numberOfSubChildren = 3;
+
+            // Root secret
+            KV2Secret secretA = await GenerateASecret();
+
+            List<string> childSecrets = new List<string>(30);
+
+            // Now generate children secrets.  Each with 2 grand children
+            for (int i = 0; i < numberOfChildren; i++)
+            {
+                KV2Secret childSecret = await GenerateASecret(secretA.FullPath);
+                KV2Secret grandchildSecret = await GenerateASecret(childSecret.FullPath);
+                KV2Secret grandchildSecret2 = await GenerateASecret(grandchildSecret.FullPath);
+                KV2Secret grandchildSecret3 = await GenerateASecret(grandchildSecret2.FullPath);
+            }
+
+
+            // Now get list of secrets at root secret
+            List<string> secrets = await (_defaultMount.ListSecretFolders(secretA.FullPath));
+            Assert.AreEqual(numberOfChildren * numberOfSubChildren, secrets.Count, "A10:  List secrets did not return the expected number of secret names.");
+
+        }
+
+
+
+        /// <summary>
         /// List secrets at path with no secrets returns empty list.
         /// </summary>
         /// <returns></returns>
@@ -827,6 +860,83 @@ namespace VaultAgentTests {
 
             Assert.IsNull (s5, "A9: Expected ReadSecret to return null object.  Instead it returned an object.  Seems deletion did not work.");
         }
+
+
+
+        /// <summary>
+        /// Confirms that a secret with multiple levels of sub-secrets (Folders) can be deleted.
+        /// </summary>
+        /// <returns></returns>
+        [Test]
+        public async Task DeleteSecretWithSubKeys_Succeeds()
+        {
+            KV2SecretEngineSettings s = await _defaultMount.GetBackendConfiguration();
+            Assert.False(s.CASRequired, "A10: Backend settings are not what was expected.");
+
+            //  SECRET A
+            // Generate a secret and key.
+            string secretName_A = _uniqueKey.GetKey();
+            KV2Secret secretA = await CreateTestSecret(secretName_A, "/");
+
+            // Secret B's
+            // A/B/B1
+            // A/B/B2
+            // A/B/B2/B21
+            // A/B/B2/B21/B211
+            string secretName_B = "B_" + _uniqueKey.GetKey();
+            KV2Secret secretB = await CreateTestSecret(secretName_B,secretA.FullPath);
+            string secretName_B1 = "B1_" + _uniqueKey.GetKey();
+            KV2Secret secretB1 = await CreateTestSecret(secretName_B1, secretB.FullPath);
+            string secretName_B2 = "B2_" + _uniqueKey.GetKey();
+            KV2Secret secretB2 = await CreateTestSecret(secretName_B2, secretB.FullPath);
+            string secretName_B21 = "B21_" + _uniqueKey.GetKey();
+            KV2Secret secretB21 = await CreateTestSecret(secretName_B21, secretB2.FullPath);
+            string secretName_B211 = "B211_" + _uniqueKey.GetKey();
+            KV2Secret secretB211 = await CreateTestSecret(secretName_B21, secretB21.FullPath);
+
+            // Now delete it.
+            Assert.True(await _defaultMount.DeleteSecretVersion(secretA), "A20: Deletion of secret failed.");
+
+
+            // Try to read it to confirm it is gone.
+            Thread.Sleep(200);
+            await VerifySecretDoesNotExist(secretA);
+
+            // Attempt to read SubKeys
+            await VerifySecretDoesNotExist(secretB);
+            await VerifySecretDoesNotExist(secretB1);
+            await VerifySecretDoesNotExist(secretB2);
+            await VerifySecretDoesNotExist(secretB21);
+            await VerifySecretDoesNotExist(secretB211);
+        }
+
+
+        public async Task VerifySecretDoesNotExist (KV2Secret secret)
+        {
+            KV2Secret subkey = await _defaultMount.ReadSecret(secret);
+            string msg = "";
+            if (subkey != null) msg = subkey.FullPath;
+            Assert.IsNull(subkey, "A40: Expected ReadSecret to return null object.  Instead it returned an object - " + msg + " .  Seems deletion did not work.");
+
+        }
+
+
+        public async Task<KV2Secret> CreateTestSecret (string name, string parent)
+        {
+            KV2Secret secret = new KV2Secret(name);
+            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
+            secret.Attributes.Add(kv1.Key, kv1.Value);
+
+            // Save Secret
+            Assert.True(await _defaultMount.SaveSecret(secret, KV2EnumSecretSaveOptions.AlwaysAllow), "A200: SaveSecret failed to return True.");
+
+            // Confirm it exists:
+            KV2Secret s2 = await _defaultMount.ReadSecret(secret);
+            Assert.True(secret.Path == s2.Path, "A210: Secret saved and secret read were not the same.");
+
+            return secret;
+        }
+
 
 
         /// <summary>

@@ -188,16 +188,26 @@ namespace VaultAgent.SecretEngines.KeyValue2
             }
 
 
-            #region "EqualityComparers"
+        /// <summary>
+        /// Print the Full path of the secret
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            return FullPath;
+        }
 
 
-            /// <summary>
-            /// Determines if 2 KV2Secrets are the same.  Same is defined as: same name, path, number of attributes, and same attribute names and values.
-            /// Does not evaluate any metadata or Version attributes.
-            /// </summary>
-            /// <param name="s"></param>
-            /// <returns></returns>
-            public override bool Equals(Object s)
+        #region "EqualityComparers"
+
+
+        /// <summary>
+        /// Determines if 2 KV2Secrets are the same.  Same is defined as: same name, path, number of attributes, and same attribute names and values.
+        /// Does not evaluate any metadata or Version attributes.
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public override bool Equals(Object s)
             {
                 // If S is null then !=
                 if (ReferenceEquals(s, null)) { return false; }
