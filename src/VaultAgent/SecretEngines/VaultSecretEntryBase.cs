@@ -26,8 +26,16 @@ namespace VaultAgent.SecretEngines
 	/// </summary>
 	public abstract class VaultSecretEntryBase : IKV2Secret { //: KV2SecretBase<VaultSecretEntryNoCAS> {
 		private KV2SecretEngine _kv2SecretEngine = null;
+        
         // TODO change secret to private and use pass thru methods on this class to access required properties
+        /// <summary>
+        /// The Secret
+        /// </summary>
 		protected KV2Secret _secret;
+
+        /// <summary>
+        /// Metadata info about the secret
+        /// </summary>
 		protected KV2SecretMetaDataInfo _info;
         
 
@@ -456,8 +464,9 @@ namespace VaultAgent.SecretEngines
                         FullPath);
                 throw new ApplicationException(msg);
             }
-			throw new NotImplementedException();
-			//	bool success = await _kv2SecretEngine.DestroySecretVersion(_secret);
+			//throw new NotImplementedException();
+			bool success = await _kv2SecretEngine.DestroySecretVersion(_secret,Version);
+            return success;
 		}
 
 

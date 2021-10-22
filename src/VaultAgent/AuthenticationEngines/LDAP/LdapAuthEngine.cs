@@ -107,7 +107,7 @@ namespace VaultAgent.AuthenticationEngines
 
 		    try {
 			    // Setup List Parameter
-			    Dictionary<string, string> contentParams = new Dictionary<string, string>() { { "list", "true" } };
+			    Dictionary<string, string> contentParams = new() { { "list", "true" } };
 
 
 			    VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B(path, "LdapAuthEngine:ListUsers", contentParams);
@@ -137,7 +137,7 @@ namespace VaultAgent.AuthenticationEngines
 		    string path = MountPointPath + "groups/" + groupName;
 
             // Build JSON object parameter containing policies
-            JObject json = new JObject();
+            JObject json = new ();
             string policyValue =  String.Join (",", policies);          
             json.Add("policies", policyValue);
 
@@ -182,7 +182,7 @@ namespace VaultAgent.AuthenticationEngines
 
 		    try {
 			    // Setup List Parameter
-			    Dictionary<string, string> contentParams = new Dictionary<string, string>() { { "list", "true" } };
+			    Dictionary<string, string> contentParams = new () { { "list", "true" } };
 
 
 			    VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B(path, "LdapAuthEngine:ListUsers", contentParams);
@@ -218,8 +218,8 @@ namespace VaultAgent.AuthenticationEngines
 		/// <returns></returns>
 	    public async Task<LoginResponse> Login (string userName, string password) {
 		    string path = MountPointPath + "login/" + userName;
-			JObject json = new JObject();
-			json.Add("password",password);
+            JObject json = new () { { "password", password }, };
+
             try
             {
                 VaultDataResponseObjectB vdro =
@@ -237,17 +237,17 @@ namespace VaultAgent.AuthenticationEngines
             {
                 if (e.Message.Contains("LDAP Result Code 200"))
                 {
-                    VaultException ve = new VaultException("Problems Connecting to the LDAP Server", e);
+                    VaultException ve = new ("Problems Connecting to the LDAP Server", e);
                     ve.SpecificErrorCode = EnumVaultExceptionCodes.LDAPLoginServerConnectionIssue;
                     throw ve;
                 }
                 else if (e.Message.Contains("ldap operation failed"))
                 {
-                    VaultException ve = new VaultException("Invalid username or password", e);
+                    VaultException ve = new ("Invalid username or password", e);
                     ve.SpecificErrorCode = EnumVaultExceptionCodes.LDAPLoginCredentialsFailure;
                     throw ve;
                 }
-                else throw e;
+                else throw;
             }
         }
 
@@ -261,11 +261,11 @@ namespace VaultAgent.AuthenticationEngines
         public LdapConfig GetLDAPConfigFromFile(string filename)
         {
             // Read a JSON Config file containing LDAP Credentials from a JSON file into the class.       
-            JsonSerializer jsonSerializer = new JsonSerializer();
+            JsonSerializer jsonSerializer = new ();
             string json = File.ReadAllText(filename);
 
             // Append JSON to existing objects values.
-            LdapConfig ldapConfig = new LdapConfig();
+            LdapConfig ldapConfig = new ();
             jsonSerializer.Populate(new StringReader(json), ldapConfig);
             return ldapConfig;
         }

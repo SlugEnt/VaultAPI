@@ -53,7 +53,7 @@ namespace VaultAgent.SecretEngines.KeyValue2
                 }
 
                 string tempName = secretName.TrimStart('/').TrimEnd('/');
-                if ( tempName.Contains("/") ) {
+                if ( tempName.Contains('/') ) {
                     if (path != string.Empty) throw new ArgumentException("The secretName must not contain any path arguments, if the path parameter has a value");
                     (_path, _name) = VaultUtilityFX.GetNameAndPathTuple(secretName);
                 }
@@ -76,7 +76,6 @@ namespace VaultAgent.SecretEngines.KeyValue2
 
                 set { 
                     _name = VaultUtilityFX.GetNameFromVaultPath(value);
-                    string tempPath =
                     _path = VaultUtilityFX.GetPathFromVaultPath(value);
                 }
             }
@@ -118,7 +117,7 @@ namespace VaultAgent.SecretEngines.KeyValue2
             /// </summary>
             public bool WasReadFromVault
             {
-                get { return Version > 0 ? true : false; }
+                get { return Version > 0; }
             }
 
 
@@ -210,7 +209,7 @@ namespace VaultAgent.SecretEngines.KeyValue2
         public override bool Equals(Object s)
             {
                 // If S is null then !=
-                if (ReferenceEquals(s, null)) { return false; }
+                if (s is null) { return false; }
 
                 // Optimization for common success case where references are same.
                 if (ReferenceEquals(this, s)) { return true; }
@@ -230,8 +229,8 @@ namespace VaultAgent.SecretEngines.KeyValue2
                 // Now validate the Attributes are exactly the same.
                 foreach (KeyValuePair<string, string> a in this.Attributes)
                 {
-                    string val;
-                    if (ss.Attributes.TryGetValue(a.Key, out val))
+                    
+                    if (ss.Attributes.TryGetValue(a.Key, out string val))
                     {
                         if (a.Value != val) { return false; }
                     }
@@ -250,9 +249,10 @@ namespace VaultAgent.SecretEngines.KeyValue2
             /// <returns></returns>
             public static bool operator ==(KV2SecretBase<T> left, KV2SecretBase<T> right)
             {
-                if (ReferenceEquals(left, null))
+                if (left is null) 
                 {
-                    if (ReferenceEquals(right, null)) { return true; }
+                    if (right is null) return true;
+                    //if (ReferenceEquals(right, null)) { return true; }
 
                     return false;
                 }
@@ -264,11 +264,11 @@ namespace VaultAgent.SecretEngines.KeyValue2
             /// <summary>
             /// Compares 2 objects to see if equal.
             /// </summary>
-            /// <typeparam name="T"></typeparam>
+            /// <typeparam name="C"></typeparam>
             /// <param name="a"></param>
             /// <param name="b"></param>
             /// <returns></returns>
-            public bool Compare<T>(T a, T b) where T : class, IKV2Secret
+            public bool Compare<C>(C a, C b) where C : class, IKV2Secret
             {
                 return a == b;
             }
