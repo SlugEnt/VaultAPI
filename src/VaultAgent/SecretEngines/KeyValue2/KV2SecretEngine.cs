@@ -55,7 +55,6 @@ namespace VaultAgent.SecretEngines
         ///     and exclude trailing slash.
         /// </param>
         /// <param name="vaultAgentAPI">The Vault API Agent Object that contains connectivity information for authenticating and connecting to the Vault</param>
-        
         public KV2SecretEngine(string backendName, string backendMountPoint, VaultAgentAPI vaultAgentAPI) : base(
             backendName, backendMountPoint,
             vaultAgentAPI)
@@ -72,11 +71,40 @@ namespace VaultAgent.SecretEngines
         /// <param name="secretPath">The name of the secret to delete.</param>
         /// <param name="version">The version to delete.  Defaults to zero which is the most recent or current version of the key.</param>
         /// <returns>True if successful.  False otherwise.</returns>
-        public async Task<bool> DeleteSecretVersion(string secretPath, int version = 0)
+        public async Task<bool> DeleteSecretVersion(string secretPath, int version = 0, bool isRecursiveDelete = true)
         {
             string path;
             VaultDataResponseObjectB vdro;
 
+            // If recursive is true, then we need to navigate to deepest children and delete them and move up the chain.
+            if (isRecursiveDelete)
+            {
+                // TODO fix
+                // Get a list of children and then call DeleteSecret on each of them.
+                KV2ListSecretSettings listSettings = new KV2ListSecretSettings()
+                {
+                    ShouldRecurseFolders = isRecursiveDelete,
+                };
+                
+                List<string> children2 = await ListSecrets(secretPath,listSettings);
+                //List<string> children = await ListSecretFolders(secretPath, false);
+
+                for (int i = children2.Count -1; i > -1; i--)
+                //foreach (string child in children2)
+                {
+                    //if (child.EndsWith("/"))
+                        await DeleteSecretVersion(children2[i], 0, false);
+                }
+/*                foreach (string child in children2)
+                {
+                    if (!child.EndsWith("/"))
+                        await DeleteSecretVersion(child, 0, true);
+                }
+*/
+            }
+
+
+            // Now delete the requested secret.
             try
             {
                 // Paths are different if specifying versions or version = 0 (current)
@@ -120,12 +148,13 @@ namespace VaultAgent.SecretEngines
         /// </summary>
         /// <param name="secretObj">The KV2Secret object to be deleted from the Vault</param>
         /// <param name="secretVersion">The version of the secret to delete.</param>
+        /// <param name="isRecursiveDelete">If true will delete all children secrets that are "folders"</param>
         /// <returns>True if successful.  False otherwise.</returns>
-        public async Task<bool> DeleteSecretVersion(IKV2Secret secretObj, int secretVersion = 0)
+        public async Task<bool> DeleteSecretVersion(IKV2Secret secretObj, int secretVersion = 0, bool isRecursiveDelete = true)
         {
             if (secretVersion == -1) secretVersion = secretObj.Version;
 
-            return await DeleteSecretVersion(secretObj.FullPath, secretVersion);
+            return await DeleteSecretVersion(secretObj.FullPath, secretVersion, isRecursiveDelete);
         }
 
 
@@ -273,6 +302,88 @@ namespace VaultAgent.SecretEngines
 
 
         /// <summary>
+        /// Lists the secrets that are located at the given SecretPath.  Exactly what is returned is determined by the ListSettings parameter - it is optional
+        /// </summary>
+        /// <param name="secretPath">The path that you wish to list the secrets from</param>
+        /// <param name="listSettings">Contains options that determine exactly which secrets the method will return as well as in what format.</param>
+        /// <returns></returns>
+        public async Task<List<string>> ListSecrets(string secretPath, KV2ListSecretSettings listSettings = null) { 
+            if (listSettings == null)  listSettings = new KV2ListSecretSettings();
+
+            // If recurse is set then ListAsFullPaths must be set.
+            if (listSettings.ShouldRecurseFolders) listSettings.ListAsFullPaths = true;
+
+            string path = MountPointPath + "metadata/" + secretPath + "?list=true";
+
+            try
+            {
+                VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B(path, "ListSecrets");
+                if (vdro.Success)
+                {
+                    List<string> secrets = await vdro.GetDotNetObject<List<string>>("data.keys");
+
+
+                    // Remove secrets that are not parents (folders) if requested to do so
+                    if (listSettings.ParentSecretsOnly)
+                    {
+                        for (int i = secrets.Count - 1; i > -1; i--)
+                            if (!secrets[i].EndsWith("/"))
+                                secrets.RemoveAt(i);
+                    }
+
+
+                    if (listSettings.FinalSecretsOnly)
+                    {
+                        for (int i = secrets.Count - 1; i > -1; i--)
+                            if (secrets[i].EndsWith("/"))
+                                secrets.RemoveAt(i);
+                    }
+
+
+                    // Add parent path to secret path if FullPath Secrets have been requested
+                    if (listSettings.ListAsFullPaths)
+                        for (int i = secrets.Count - 1; i > -1; i--)
+                            if (secretPath.EndsWith("/"))
+                                secrets[i] = secretPath  + secrets[i];
+                            else
+                                secrets[i] = secretPath + "/" + secrets[i];
+
+
+                    // Do we need to recurse
+                    if (listSettings.ShouldRecurseFolders && !listSettings.FinalSecretsOnly) {
+                        List<string> subSecrets;
+                        List<string> allSubSecrets = new List<string>();
+                        for (int i = secrets.Count - 1; i > -1; i--)
+                        {
+                            if (secrets[i].EndsWith("/"))
+                            {
+                                subSecrets = await ListSecrets(secrets[i], listSettings);
+                                allSubSecrets.AddRange(subSecrets);
+                            }
+                        }
+
+                        secrets.AddRange(allSubSecrets);
+                    }
+                    return secrets;
+                }
+
+                throw new ApplicationException("IKV2SecretEngine:ListSecrets Failed for unknown reason.");
+            }
+
+            // 404 Errors mean there were no sub paths.  We just return an empty list.
+            catch (VaultInvalidPathException)
+            {
+                return new List<string>();
+            }
+            catch (Exception e)
+            {
+                return new List<string>();
+            }
+        }
+
+
+
+        /// <summary>
         ///     Returns a list of secrets at a given path.  If the parameter includeFolderSecrets is false (default) then it will
         ///     remove secret names with a trailing slash. This is generally what callers want.
         /// </summary>
@@ -287,6 +398,7 @@ namespace VaultAgent.SecretEngines
         /// <param name="sorted">Whether the secrets should be sorted in alphabetical order</param>
         /// <returns>List of strings which contain secret names.</returns>
         /// <remarks>https://github.com/SlugEnt/VaultAPI/issues/3</remarks>
+        [Obsolete("Use ListSecrets instead")]
         public async Task<List<string>> ListSecretsAtPath(string secretPath, bool includeFolderSecrets = false,
             bool sorted = false)
         {
@@ -328,6 +440,7 @@ namespace VaultAgent.SecretEngines
         /// </summary>
         /// <param name="secretObj">The secret object that you wish to get a list of children of</param>
         /// <returns></returns>
+        [Obsolete("Use ListSecrets instead")]
         public async Task<List<string>> ListSecretsAtPath(IKV2Secret secretObj)
         {
             return await ListSecretsAtPath(secretObj.FullPath);
@@ -349,6 +462,7 @@ namespace VaultAgent.SecretEngines
         /// </param>
         /// <returns>List of strings which contain secret names.</returns>
         /// <remarks>https://github.com/SlugEnt/VaultAPI/issues/3</remarks>
+        [Obsolete("There is no compatible replacement, you must implement sorting yourself")]
         public async Task<SortedList<string, string>> ListSecretsSorted(string secretPath,
             bool includeFolderSecrets = false)
         {
@@ -392,9 +506,11 @@ namespace VaultAgent.SecretEngines
         ///     The path "folder" to retrieve secrets for.  This may be the entire path including the name (if
         ///     the secret has subfolders) or just a partial path.
         /// </param>
+        /// <param name="recursiveList">If true then it will return a list of all children and there children and there children...</param>
         /// <returns>List of strings which contain secret names.</returns>
         /// <remarks>https://github.com/SlugEnt/VaultAPI/issues/3</remarks>
-        public async Task<List<string>> ListSecretFolders(string secretPath)
+        [Obsolete("Use ListSecrets instead")]
+        public async Task<List<string>> ListSecretFolders(string secretPath, bool recursiveList = false)
         {
             string path = MountPointPath + "metadata/" + secretPath + "?list=true";
 
@@ -414,20 +530,20 @@ namespace VaultAgent.SecretEngines
                             // Prefix the parent full path to this secret value which as returned from Vault is just the name
                             secrets[i] = secretPath + "/" + secrets[i];
 
-                    // We need to append the parent secret full path to these 
 
-                    // Now we are left with secrets with children.
-                    // Traverse each of these and add to list.
-                    List<string> subSecrets;
-                    for (int i = secrets.Count - 1; i > -1; i--)
+                    if (recursiveList)
                     {
-                        subSecrets = await ListSecretFolders(secrets[i]);
-                        allSubSecrets.AddRange(subSecrets);
+                        // Now we are left with secrets with children.
+                        // Traverse each of these and add to list.
+                        List<string> subSecrets;
+                        for (int i = secrets.Count - 1; i > -1; i--)
+                        {
+                            subSecrets = await ListSecretFolders(secrets[i]);
+                            allSubSecrets.AddRange(subSecrets);
+                        }
+
+                        secrets.AddRange(allSubSecrets);
                     }
-
-               
-
-                    secrets.AddRange(allSubSecrets);    
 
                     return secrets;
                 }

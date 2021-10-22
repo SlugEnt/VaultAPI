@@ -2,14 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyVersion>1.0.0.56</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
-    <Version>1.0.0-rc-192</Version>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+    <FileVersion>1.2.0.0</FileVersion>
+    <Version>1.2.0-rc-192</Version>
     <Title>VaultAgent</Title>
     <PackageId>SlugEnt.VaultAgent</PackageId>
     <Authors>Scott Herrmann</Authors>
     <Company>Slug Enterprises</Company>
-    <Description>A C# library for interacting with HashiCorp's Vault.</Description>
+    <Description>A C# library for interacting with HashiCorp's Vault.
+Supports Vault 1.8.4</Description>
     <Copyright>Scott Herrmann 2018</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -20,6 +21,7 @@
     <PackageReleaseNotes>Supports Token, LDAP, AppRole, System, Transit, Identity, Keyvalue1 and KeyValue2 backends.</PackageReleaseNotes>
     <LangVersion>latest</LangVersion>
     <AssemblyName>SlugEnt.VaultAgent</AssemblyName>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -62,6 +64,13 @@
 
   <ItemGroup>
     <Folder Include="Documentation\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

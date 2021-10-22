@@ -1,4 +1,4 @@
-﻿using System;
+﻿    using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
@@ -11,7 +11,7 @@ using VaultAgent.SecretEngines.KV2.SecretMetaDataInfo;
 using VaultAgent;
 using VaultAgent.SecretEngines.KV2;
 using SlugEnt;
-
+using VaultAgent.SecretEngines.KeyValue2;
 
 namespace VaultAgentTests {
     [TestFixture, Order (1)]
@@ -658,6 +658,231 @@ namespace VaultAgentTests {
         }
 
 
+        [Test]
+        public async Task ListSecretsParentsOnly ()
+        {
+            // Setup
+            // Create the Root Secret
+            KV2Secret rootSecret = await CreateTestSecret("LSPO_", "/", true);
+
+            // Create children secrets that are folders / parents
+            KV2Secret childSecretParentA = await CreateTestSecret("LSPO_A_", rootSecret.FullPath, true,true);
+            KV2Secret childSecretParentB = await CreateTestSecret("LSPO_B_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentC = await CreateTestSecret("LSPO_C_", rootSecret.FullPath, true, true);
+
+            // Create child secrets that are final secrets (Non Parents / FolderS)
+            KV2Secret finalSecretA = await CreateTestSecret("LSPO_FA", rootSecret.FullPath,true);
+            KV2Secret finalSecretB = await CreateTestSecret("LSPO_FB", rootSecret.FullPath, true);
+            KV2Secret finalSecretC = await CreateTestSecret("LSPO_FC", rootSecret.FullPath, true);
+            KV2Secret finalSecretD = await CreateTestSecret("LSPO_FD", rootSecret.FullPath, true);
+
+            KV2ListSecretSettings listSettings = new KV2ListSecretSettings()
+            {
+                ParentSecretsOnly = true,
+            };
+
+
+            // Test
+            List<string> secrets = await (_defaultMount.ListSecrets(rootSecret.FullPath,listSettings));
+            Assert.AreEqual(3, secrets.Count, "A10:  List secrets did not return the expected number of secret names.");
+            Assert.Contains(childSecretParentA.Name + "/", secrets, "A20: Incorrect Child Secret");
+            Assert.Contains(childSecretParentB.Name + "/", secrets, "A30: Incorrect Child Secret");
+            Assert.Contains(childSecretParentC.Name + "/", secrets, "A40: Incorrect Child Secret");
+        }
+
+
+
+        /// <summary>
+        /// Validates that List Secrets works by not Returning Secrets that have sub folders.  
+        /// VERY IMPORTANT:  Every Parent Secret (Folder) has a non folder version and a folder version.  The only difference is the trailing slash on the Folder Version
+        /// Thus:  EVERY Parent Folder will have its non-trailing slash version listed here.  This is correct.
+        /// </summary>
+        /// <returns></returns>
+        [Test]
+        public async Task ListSecretsNoParentsOnly()
+        {
+            // Setup
+            // Create the Root Secret
+            KV2Secret rootSecret = await CreateTestSecret("LSNPO_", "/", true);
+
+            // Create children secrets that are folders / parents
+            KV2Secret childSecretParentA = await CreateTestSecret("LSNPO_A_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentB = await CreateTestSecret("LSNPO_B_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentC = await CreateTestSecret("LSNPO_C_", rootSecret.FullPath, true, true);
+
+            // Create child secrets that are final secrets (Non Parents / FolderS)
+            KV2Secret finalSecretA = await CreateTestSecret("LSNPO_FA", rootSecret.FullPath, true);
+            KV2Secret finalSecretB = await CreateTestSecret("LSNPO_FB", rootSecret.FullPath, true);
+            KV2Secret finalSecretC = await CreateTestSecret("LSNPO_FC", rootSecret.FullPath, true);
+            KV2Secret finalSecretD = await CreateTestSecret("LSNPO_FD", rootSecret.FullPath, true);
+
+            KV2ListSecretSettings listSettings = new KV2ListSecretSettings()
+            {
+                FinalSecretsOnly = true,
+            };
+
+
+            // Test
+            List<string> secrets = await (_defaultMount.ListSecrets(rootSecret.FullPath, listSettings));
+            Assert.AreEqual(7, secrets.Count, "A10:  List secrets did not return the expected number of Final Secrets only secrets.");
+            Assert.Contains(childSecretParentA.Name, secrets, "A20: Incorrect Child Secret");
+            Assert.Contains(childSecretParentB.Name, secrets, "A30: Incorrect Child Secret");
+            Assert.Contains(childSecretParentC.Name, secrets, "A40: Incorrect Child Secret");
+
+            Assert.Contains(finalSecretA.Name, secrets, "A60: Final Secret non folder Secret");
+            Assert.Contains(finalSecretB.Name, secrets, "A70: Final Secret non folder Secret");
+            Assert.Contains(finalSecretC.Name, secrets, "A80: Final Secret non folder Secret");
+            Assert.Contains(finalSecretC.Name, secrets, "A90: Final Secret non folder Secret");
+        }
+
+
+
+
+
+
+        /// <summary>
+        /// Validates that List Secrets works by not Returning Secrets that have sub folders.  
+        /// VERY IMPORTANT:  Every Parent Secret (Folder) has a non folder version and a folder version.  The only difference is the trailing slash on the Folder Version
+        /// Thus:  Every parent folder will be listed twice, once as a folder and once as just a secret.  This is CORRECT!
+        /// </summary>
+        /// <returns></returns>
+        [Test]
+        public async Task ListSecretsAll()
+        {
+            // Setup
+            // Create the Root Secret
+            KV2Secret rootSecret = await CreateTestSecret("LSA_", "/", true);
+
+            // Create children secrets that are folders / parents
+            KV2Secret childSecretParentA = await CreateTestSecret("LSA_A_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentB = await CreateTestSecret("LSA_B_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentC = await CreateTestSecret("LSA_C_", rootSecret.FullPath, true, true);
+
+            // Create child secrets that are final secrets (Non Parents / FolderS)
+            KV2Secret finalSecretA = await CreateTestSecret("LSA_FA", rootSecret.FullPath, true);
+            KV2Secret finalSecretB = await CreateTestSecret("LSA_FB", rootSecret.FullPath, true);
+            KV2Secret finalSecretC = await CreateTestSecret("LSA_FC", rootSecret.FullPath, true);
+            KV2Secret finalSecretD = await CreateTestSecret("LSA_FD", rootSecret.FullPath, true);
+
+            KV2ListSecretSettings listSettings = new KV2ListSecretSettings()
+            {
+                
+            };
+
+
+            // Test
+            List<string> secrets = await (_defaultMount.ListSecrets(rootSecret.FullPath, listSettings));
+            Assert.AreEqual(10, secrets.Count, "A10:  List secrets did not return the expected number of Final Secrets only secrets.");
+            Assert.Contains(childSecretParentA.Name, secrets, "A20: Incorrect Child Secret");
+            Assert.Contains(childSecretParentB.Name, secrets, "A30: Incorrect Child Secret");
+            Assert.Contains(childSecretParentC.Name, secrets, "A40: Incorrect Child Secret");
+
+            Assert.Contains(finalSecretA.Name, secrets, "A60: Final Secret non folder Secret");
+            Assert.Contains(finalSecretB.Name, secrets, "A70: Final Secret non folder Secret");
+            Assert.Contains(finalSecretC.Name, secrets, "A80: Final Secret non folder Secret");
+            Assert.Contains(finalSecretC.Name, secrets, "A90: Final Secret non folder Secret");
+
+            // Folder Versions of child Secrets
+            Assert.Contains(childSecretParentA.Name + "/", secrets, "A20: Incorrect Child Secret");
+            Assert.Contains(childSecretParentB.Name + "/", secrets, "A30: Incorrect Child Secret");
+            Assert.Contains(childSecretParentC.Name + "/", secrets, "A40: Incorrect Child Secret");
+        }
+
+
+        /// <summary>
+        /// Validates the ListAsFullPaths List Settings value
+        /// </summary>
+        /// <returns></returns>
+        [Test]
+        public async Task ListSecretsFullPathsReturned()
+        {
+            // Setup
+            // Create the Root Secret
+            KV2Secret rootSecret = await CreateTestSecret("LSFPR_", "/", true);
+
+            // Create children secrets that are folders / parents
+            KV2Secret childSecretParentA = await CreateTestSecret("LSFPR_A_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentB = await CreateTestSecret("LSFPR_B_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentC = await CreateTestSecret("LSFPR_C_", rootSecret.FullPath, true, true);
+
+            // Create child secrets that are final secrets (Non Parents / FolderS)
+            KV2Secret finalSecretA = await CreateTestSecret("LSFPR_FA", rootSecret.FullPath, true);
+
+            KV2ListSecretSettings listSettings = new KV2ListSecretSettings()
+            {
+                ListAsFullPaths = true,
+            };
+
+
+            // Test
+            List<string> secrets = await (_defaultMount.ListSecrets(rootSecret.FullPath, listSettings));
+            Assert.AreEqual(7, secrets.Count, "A10:  List secrets did not return the expected number of Final Secrets only secrets.");
+            Assert.Contains(childSecretParentA.FullPath, secrets, "A20: Incorrect Child Secret");
+            Assert.Contains(childSecretParentB.FullPath, secrets, "A30: Incorrect Child Secret");
+            Assert.Contains(childSecretParentC.FullPath, secrets, "A40: Incorrect Child Secret");
+            Assert.Contains(finalSecretA.FullPath, secrets, "A50: Incorrect Final Secret");
+
+            Assert.Contains(childSecretParentA.FullPath + "/", secrets, "A70: Incorrect Child Secret");
+            Assert.Contains(childSecretParentB.FullPath + "/", secrets, "A80: Incorrect Child Secret");
+            Assert.Contains(childSecretParentC.FullPath + "/", secrets, "A90: Incorrect Child Secret");
+        }
+
+
+        [Test]
+        public async Task ListSecretsRecursive()
+        {
+            // Setup
+            // Create the Root Secret
+            KV2Secret rootSecret = await CreateTestSecret("LSFPR_", "/", true);
+
+            // Create children secrets that are folders / parents
+            KV2Secret childSecretParentA = await CreateTestSecret("LSFPR_A_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentB = await CreateTestSecret("LSFPR_B_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentC = await CreateTestSecret("LSFPR_C_", rootSecret.FullPath, true, true);
+
+            // Create child secrets that are final secrets (Non Parents / FolderS)
+            KV2Secret finalSecretA = await CreateTestSecret("LSFPR_FA", rootSecret.FullPath, true);
+
+            KV2ListSecretSettings listSettings = new KV2ListSecretSettings()
+            {
+                ShouldRecurseFolders = true,
+            };
+
+
+            // Test
+            List<string> secrets = await (_defaultMount.ListSecrets(rootSecret.FullPath, listSettings));
+            //  10 = 3 direct children;  +3: each child folder is a parent;  +3: Each with one child;  +1 final secret
+            Assert.AreEqual(10, secrets.Count, "A10:  List secrets did not return the expected number of Final Secrets only secrets.");
+
+            Assert.Contains(childSecretParentA.FullPath, secrets, "A20: Incorrect Child Secret");
+            Assert.Contains(childSecretParentB.FullPath, secrets, "A30: Incorrect Child Secret");
+            Assert.Contains(childSecretParentC.FullPath, secrets, "A40: Incorrect Child Secret");
+            Assert.Contains(finalSecretA.FullPath, secrets, "A50: Incorrect Final Secret");
+
+            Assert.Contains(childSecretParentA.FullPath + "/", secrets, "A70: Incorrect Child Secret");
+            Assert.Contains(childSecretParentB.FullPath + "/", secrets, "A80: Incorrect Child Secret");
+            Assert.Contains(childSecretParentC.FullPath + "/", secrets, "A90: Incorrect Child Secret");
+
+            // Child of each Parent folder.
+            Assert.Contains(childSecretParentA.FullPath + "/child", secrets, "A110: Incorrect Final Secret");
+            Assert.Contains(childSecretParentB.FullPath + "/child", secrets, "A120: Incorrect Final Secret");
+            Assert.Contains(childSecretParentC.FullPath + "/child", secrets, "A130: Incorrect Final Secret");
+        }
+
+
+        [Test]
+        public async Task ListSecretsEmptyList ()
+        {
+            // Setup
+            // Create the Root Secret
+            KV2Secret rootSecret = await CreateTestSecret("LSFPR_", "/", true);
+
+            List<string> secrets = await (_defaultMount.ListSecrets(rootSecret.FullPath));
+            Assert.AreEqual(0, secrets.Count, "A10:  List secrets did not return the expected number of Final Secrets only secrets.");
+
+        }
+
+
         /// <summary>
         /// Can List secrets at a given path.
         /// </summary>
@@ -667,7 +892,7 @@ namespace VaultAgentTests {
         [TestCase(1,true,2, Description = "One root secret off root, but because it has children it will be listed twice")]
         [TestCase(4,false,4, Description = "Two children secrets")]
         [TestCase(4,true,8, Description = "Two children secrets, but because they have children they are listed twice")]
-        public async Task ListSecrets (int rootSecretCount, bool ListFolderSecrets, int expectedCount) {
+        public async Task ListSecretsOldMethod (int rootSecretCount, bool ListFolderSecrets, int expectedCount) {
             // Root secret
             KV2Secret secretA = await GenerateASecret();
 
@@ -698,36 +923,6 @@ namespace VaultAgentTests {
 
 
 
-        /// <summary>
-        /// Tests the ListSecretFolders method, which returns all children of a given path that are "folder" children and not attributes.  Is recursive.
-        /// </summary>
-        /// <returns></returns>
-        [Test]
-        public async Task ListSecretsAndAllFolders()
-        {
-            int numberOfChildren = 5;
-            int numberOfSubChildren = 3;
-
-            // Root secret
-            KV2Secret secretA = await GenerateASecret();
-
-            List<string> childSecrets = new List<string>(30);
-
-            // Now generate children secrets.  Each with 2 grand children
-            for (int i = 0; i < numberOfChildren; i++)
-            {
-                KV2Secret childSecret = await GenerateASecret(secretA.FullPath);
-                KV2Secret grandchildSecret = await GenerateASecret(childSecret.FullPath);
-                KV2Secret grandchildSecret2 = await GenerateASecret(grandchildSecret.FullPath);
-                KV2Secret grandchildSecret3 = await GenerateASecret(grandchildSecret2.FullPath);
-            }
-
-
-            // Now get list of secrets at root secret
-            List<string> secrets = await (_defaultMount.ListSecretFolders(secretA.FullPath));
-            Assert.AreEqual(numberOfChildren * numberOfSubChildren, secrets.Count, "A10:  List secrets did not return the expected number of secret names.");
-
-        }
 
 
 
@@ -892,10 +1087,10 @@ namespace VaultAgentTests {
             string secretName_B21 = "B21_" + _uniqueKey.GetKey();
             KV2Secret secretB21 = await CreateTestSecret(secretName_B21, secretB2.FullPath);
             string secretName_B211 = "B211_" + _uniqueKey.GetKey();
-            KV2Secret secretB211 = await CreateTestSecret(secretName_B21, secretB21.FullPath);
+            KV2Secret secretB211 = await CreateTestSecret(secretName_B211, secretB21.FullPath);
 
             // Now delete it.
-            Assert.True(await _defaultMount.DeleteSecretVersion(secretA), "A20: Deletion of secret failed.");
+            Assert.True(await _defaultMount.DeleteSecretVersion(secretA,0,true), "A20: Deletion of secret failed.");
 
 
             // Try to read it to confirm it is gone.
@@ -921,9 +1116,25 @@ namespace VaultAgentTests {
         }
 
 
-        public async Task<KV2Secret> CreateTestSecret (string name, string parent)
+        /// <summary>
+        /// Creates a secret.
+        /// </summary>
+        /// <param name="name">The name of the secret.  If GenerateName is true, then this will be the prefix part of the new name</param>
+        /// <param name="parent">Path of parent secret</param>
+        /// <param name="generateName">If true, then a name will be generated.  If name parameter is not empty, then this will be appended to the name.</param>
+        /// <param name="isParentSecret">If True, it will create a child secret automatically.  Only do this if you do not want explicit control of the child secrets</param>
+        /// <returns></returns>
+        public async Task<KV2Secret> CreateTestSecret (string name, string parentPath, bool generateName = false, bool isParentSecret = false)
         {
-            KV2Secret secret = new KV2Secret(name);
+            if (generateName)
+            {
+                if (name == string.Empty)
+                    name = _uniqueKey.GetKey();
+                else 
+                    name = name + _uniqueKey.GetKey();
+            }
+
+            KV2Secret secret = new KV2Secret(name,parentPath);
             KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
             secret.Attributes.Add(kv1.Key, kv1.Value);
 
@@ -933,6 +1144,11 @@ namespace VaultAgentTests {
             // Confirm it exists:
             KV2Secret s2 = await _defaultMount.ReadSecret(secret);
             Assert.True(secret.Path == s2.Path, "A210: Secret saved and secret read were not the same.");
+
+
+            // Create a child if this is a parent.
+            if (isParentSecret)
+                CreateTestSecret("child", secret.FullPath);
 
             return secret;
         }

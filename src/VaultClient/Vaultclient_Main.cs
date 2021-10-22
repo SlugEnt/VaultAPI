@@ -11,6 +11,12 @@ using VaultAgent.Models;
 
 namespace VaultClient
 {
+
+	/// <summary>
+	/// !!!!!!!!!!!!!!!!
+	/// !!!!!!!!!!!!!!!
+	/// !!!  Important this scenario no longer works without the specific Active Directory connector.
+	/// </summary>
 	class Program
 	{
 		public static async Task Main(string[] args) {
@@ -40,8 +46,8 @@ namespace VaultClient
             await initiateVault.InitialSetup();
 
             // This Client Requires AD Credentials
-            string config = await initiateVault.GetConfig();
-            await initiateVault.Login();
+ //           string config = await initiateVault.GetConfig();
+            //await initiateVault.Login();
 
 
 
@@ -56,7 +62,7 @@ namespace VaultClient
 			// 3 = System Backend Scenario
 			// 4 = Transit Scenario
 
-			int runSampleScenario = 4;
+			int runSampleScenario = 2;
 
             // Perform optimize tests
             switch ( runSampleScenario ) {
