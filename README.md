@@ -4,14 +4,11 @@ VaultAgent is a C# library that provides an opinionated access to the HashiCorp 
 API methods and backends as well as robust error handling and plenty of documentation.  C# classes that map to JSON objects are always used to return information
 to the caller.  
 
-## Beta Product
-This is still very much a beta product and only implements a subset of the full Vault backend functionality, but probably the backends that most users would
-initially be looking for.  
 
-It has been Unit tested against Vault version 1.3.1 (Latest as of January 2020).
+It has been Unit tested against Vault version 1.8.4 (Latest as of October 2021).
 
 ## Implemented Functionality
-This library is very much a Work In Process.  The core modules that we needed to use have been implemented.  Following is the status of the backends
+This library implements several key parts of vault
 
 * System Backend
   - Mounts - Fully Implemented
@@ -21,11 +18,13 @@ This library is very much a Work In Process.  The core modules that we needed to
   - Policy / Policies - Fully Implemented
 
 * App Role Backend (95% implemented, just a couple of the accessor and other minor functions not implemented.)
-* LDAP Auth Backend (75%) 
+
+* LDAP Auth Backend (85%) 
   - Login - Implemented
   - Group To Policy Mapping - Implemented
   - Save / Read LDAP Engine Config - Implemented
-  Mainly missing the User methods and delete group method
+  - Some user methods implemented
+  Mainly missing delete group method
 
 * Token Auth Backend (95%)
   - All important methods and most informational methods implemented.
