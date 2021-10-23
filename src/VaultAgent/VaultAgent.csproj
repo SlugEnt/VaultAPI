@@ -22,12 +22,13 @@ Supports Vault 1.8.4</Description>
     <LangVersion>latest</LangVersion>
     <AssemblyName>SlugEnt.VaultAgent</AssemblyName>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <LangVersion>latest</LangVersion>
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DocumentationFile>C:\A_Dev\OpenSrc\VaultAPI\VaultAgent\VaultAgent.xml</DocumentationFile>
+    <DocumentationFile></DocumentationFile>
     <ShouldCreateLogs>True</ShouldCreateLogs>
     <AdvancedSettingsExpanded>False</AdvancedSettingsExpanded>
     <UpdateAssemblyVersion>False</UpdateAssemblyVersion>
@@ -49,7 +50,7 @@ Supports Vault 1.8.4</Description>
     <PackageVersionSettings>AssemblyVersion.NoneWithAutoReset.None</PackageVersionSettings>
     <AssemblyInfoVersionType>SettingsVersion</AssemblyInfoVersionType>
     <InheritWinAppVersionFrom>None</InheritWinAppVersionFrom>
-    <DocumentationFile>C:\A_Dev\OpenSrc\VaultAPI\VaultAgent\VaultAgent.xml</DocumentationFile>
+    <DocumentationFile></DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
