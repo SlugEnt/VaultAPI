@@ -7,6 +7,13 @@ to the caller.
 
 It has been Unit tested against Vault version 1.8.4 (Latest as of October 2021).
 
+# Release Notes
+## Version 1.2
+   - ListSecrets methods replaced with a single method --> ListSecrets
+   - ListSecrets functionality is now controled by a KV2ListSecretSettings object
+   - ListSecrets has ability to return an entire tree hierarchy of secrets, full path names, Just parent secrets or just child secrets and more
+   - DeleteSecrets now will fully traverse the requested secrets tree and delete all child secrets.  This is the only way in vault to ensure a secret with children is deleted.
+
 ## Implemented Functionality
 This library implements several key parts of vault
 

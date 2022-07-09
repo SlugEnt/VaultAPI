@@ -683,8 +683,9 @@ namespace VaultAgent.SecretEngines {
 
             contentParams.Add ("format", encodeFormat);
             contentParams.Add ("algorithm", hashStr);
-
+            
             string inputBase64 = VaultUtilityFX.Base64EncodeAscii (input);
+            contentParams.Add("input", inputBase64);
 
             VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "ComputeHash", contentParams);
 	        if ( vdro.Success ) {

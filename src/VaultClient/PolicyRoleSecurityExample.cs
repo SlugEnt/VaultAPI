@@ -275,7 +275,7 @@ namespace VaultClient
 
 
             // Should NOT be able to read anything in the Toddler's Bedroom
-            ( bool _, KV2Secret b) = await ReadSecret(secretEngine, HOUSE.TODDLER_BEDROOM);
+            ( bool _, KV2Secret _) = await ReadSecret(secretEngine, HOUSE.TODDLER_BEDROOM);
             
             // Should be able to read and update the Kitchen secret
             (bool _, KV2Secret k) = await ReadSecret(secretEngine, HOUSE.KITCHEN);

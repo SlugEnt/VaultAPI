@@ -419,7 +419,7 @@ namespace VaultAgentTests
 
 
 
-		// Validates that trying to revoke a token with an invalid accessor ID (ID does not exist) returns false.
+		// Validates that trying to revoke a token with an invalid accessor ID (ID does not exist) returns True as of Vault 1.10.
 		[Test]
 		public async Task RevokeTokenViaAccessor_WithBadAccessor_Succeeds() {
 			string tokenID = UK.GetKey("RevNotExists");
@@ -427,7 +427,7 @@ namespace VaultAgentTests
 
 
 			// Revoke and validate it is gone.
-			Assert.False(await _tokenAuthEngine.RevokeTokenViaAccessor(tokenID), "M1:  Revocation of token via invalid accessor failed.");
+			Assert.True(await _tokenAuthEngine.RevokeTokenViaAccessor(tokenID), "M1:  Revocation of token via invalid accessor failed.");
 		}
 
 		

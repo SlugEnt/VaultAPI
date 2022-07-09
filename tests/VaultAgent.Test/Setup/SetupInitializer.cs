@@ -62,7 +62,8 @@ namespace VaultAgentTests
 			{
 				VaultAgentAPI vault = await VaultServerRef.ConnectVault("AppRoleVault");
 			}
-			catch (ApplicationException) {
+			catch (Exception e)
+			{
 				// Now startup the Vault instance if we need to.
 				if (UseNewVaultServerEachRun)
 				{

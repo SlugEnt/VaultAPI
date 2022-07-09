@@ -80,7 +80,6 @@ namespace VaultAgent.SecretEngines
             // If recursive is true, then we need to navigate to deepest children and delete them and move up the chain.
             if (isRecursiveDelete)
             {
-                // TODO fix
                 // Get a list of children and then call DeleteSecret on each of them.
                 KV2ListSecretSettings listSettings = new ()
                 {
@@ -88,20 +87,12 @@ namespace VaultAgent.SecretEngines
                 };
                 
                 List<string> children2 = await ListSecrets(secretPath,listSettings);
-                //List<string> children = await ListSecretFolders(secretPath, false);
 
                 for (int i = children2.Count -1; i > -1; i--)
-                //foreach (string child in children2)
                 {
-                    //if (child.EndsWith("/"))
                         await DeleteSecretVersion(children2[i], 0, false);
                 }
-/*                foreach (string child in children2)
-                {
-                    if (!child.EndsWith("/"))
-                        await DeleteSecretVersion(child, 0, true);
-                }
-*/
+
             }
 
 
@@ -120,7 +111,6 @@ namespace VaultAgent.SecretEngines
                 }
                 else
                 {
-                    //TODO - Fix this once Deleted Returns VDROB
                     VaultDataResponseObjectB vdrb;
                     path = MountPointPath + "data/" + secretPath;
                     vdrb = await ParentVault._httpConnector.DeleteAsync(path, "DeleteSecretVersion");
@@ -563,8 +553,7 @@ namespace VaultAgent.SecretEngines
 
         /// <summary>
         ///     Reads the secret from Vault.  It defaults to reading the most recent version.  Set secretVersion to non zero to
-        ///     retrieve a
-        ///     specific version.
+        ///     retrieve a specific version.
         ///     <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
         ///     <para>Returns the IKV2SecretWrapper if a secret was found at the location.</para>
         ///     <para>Returns Null if no secret found at location.</para>

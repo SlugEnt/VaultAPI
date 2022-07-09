@@ -100,9 +100,9 @@ namespace VaultAgentTests
 			}
             else vse = new (_noCASMount,name,path);
 
-            Assert.AreEqual(expectedName,vse.Name,"A10");
-            Assert.AreEqual(expectedPath,vse.Path, "A20");
-            Assert.AreEqual(expectedFullPath, vse.FullPath, "A30");
+            Assert.AreEqual(expectedName, vse.Name, "A10: " + scenario);
+            Assert.AreEqual(expectedPath,vse.Path, "A20: " + scenario);
+            Assert.AreEqual(expectedFullPath, vse.FullPath, "A30: " + scenario);
 		}
 
 
