@@ -1,35 +1,41 @@
 {
+  "ConfigStructureVersion": "0.33.0",
   "UseCodeCoverage": true,
   "CodeCoverageThreshold": 30,
   "DeployProdRoot": "c:\temp",
-  "DeployTestRoot": "C:\temp",
+  "DeployAlphaRoot": "_",
+  "DeployBetaRoot": "_",
+  "DeployDevRoot": "_",
   "DeployToVersionedFolder": true,
   "DeployFolderUsesSemVer": true,
   "DeployToAssemblyFolders": false,
+  "GitRemote": null,
+  "AngularDeployRootName": null,
   "Projects": [
     {
       "Name": "VaultAgent.Test",
       "Deploy": "None",
-      "Framework": "netcoreapp3.0",
+      "HasTypeWriterScripts": false,
       "IsTestProject": true
     },
     {
       "Name": "VaultClient",
       "Deploy": "Copy",
-      "Framework": "netcoreapp3.1",
+      "HasTypeWriterScripts": false,
       "IsTestProject": false
     },
     {
       "Name": "VaultAgent",
       "Deploy": "Nuget",
-      "Framework": "netstandard2.0",
+      "HasTypeWriterScripts": false,
       "IsTestProject": false
     },
     {
       "Name": "Benchmark",
       "Deploy": "Copy",
-      "Framework": "netcoreapp2.1",
+      "HasTypeWriterScripts": false,
       "IsTestProject": false
     }
-  ]
+  ],
+  "AngularProjects": []
 }

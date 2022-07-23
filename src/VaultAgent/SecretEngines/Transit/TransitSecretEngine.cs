@@ -57,7 +57,7 @@ namespace VaultAgent.SecretEngines {
                                                      bool enableKeyDerivation = false,
                                                      bool enableConvergentEncryption = false) {
             // The keyname forms the last part of the path
-            string path = MountPointPath + PathKeys + keyName;
+            //string path = MountPointPath + PathKeys + keyName;
             string keyTypeV;
 
             switch ( keyType ) {
@@ -84,7 +84,7 @@ namespace VaultAgent.SecretEngines {
                     break;
             }
 
-            Dictionary<string, string> createParams = new Dictionary<string, string>();
+            Dictionary<string, string> createParams = new ();
             createParams.Add ("exportable", canBeExported ? "true" : "false");
             createParams.Add ("allow_plaintext_backup", allowPlainTextBackup ? "true" : "false");
             createParams.Add ("type", keyTypeV);
@@ -98,7 +98,7 @@ namespace VaultAgent.SecretEngines {
             // Validate:
             if ( enableKeyDerivation ) {
                 if ( (keyType == TransitEnumKeyType.rsa2048) || (keyType == TransitEnumKeyType.rsa4096) || (keyType == TransitEnumKeyType.ecdsa) ) {
-                    throw new ArgumentOutOfRangeException ("keyType", ("Specified keyType: " + keyTypeV + " does not support contextual encryption."));
+                    throw new ArgumentOutOfRangeException (nameof(keyType), ("Specified keyType: " + keyTypeV + " does not support contextual encryption."));
                 }
             }
 
@@ -167,8 +167,8 @@ namespace VaultAgent.SecretEngines {
             string path = MountPointPath + PathKeys;
 
             // Setup List Parameter
-            Dictionary<string, string> sendParams = new Dictionary<string, string>();
-            sendParams.Add ("list", "true");
+            Dictionary<string, string> sendParams = new() { { "list", "true" }, };
+            //sendParams.Add ("list", "true");
 
             VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "ListEncryptionKeys", sendParams);
 
@@ -210,7 +210,7 @@ namespace VaultAgent.SecretEngines {
         /// <returns></returns>
         public async Task<TransitEncryptedItem> Encrypt (string keyName, string rawStringData, string keyDerivationContext = "", int keyVersion = 0) {
             // Setup Post Parameters in body.
-            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+            Dictionary<string, string> contentParams = new ();
 
             // Base64 Encode Data
             contentParams.Add ("plaintext", VaultUtilityFX.Base64EncodeAscii (rawStringData));
@@ -242,7 +242,7 @@ namespace VaultAgent.SecretEngines {
 
             // Build the Posting Parameters as JSON.  We need to manually create in here as we also need to custom append the 
             // keys to be encrypted into the body.
-            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+            Dictionary<string, string> contentParams = new ();
             if ( keyVersion > 0 ) { contentParams.Add ("key_version", keyVersion.ToString()); }
 
             //if (keyDerivationContext != "") { contentParams.Add("context", VaultUtilityFX.Base64EncodeAscii(keyDerivationContext)); }
@@ -256,7 +256,8 @@ namespace VaultAgent.SecretEngines {
 
             // Combine the 2 JSON's
             if ( contentParams.Count > 0 ) {
-                string newVarsJSON = inputVarsJSON.Substring (1, inputVarsJSON.Length - 2) + ",";
+                //string newVarsJSON = inputVarsJSON.Substring (1, inputVarsJSON.Length - 2) + ",";
+                string newVarsJSON = inputVarsJSON[1..^1] + ",";
                 bulkJSON = bulkJSON.Insert (1, newVarsJSON);
             }
 
@@ -285,7 +286,7 @@ namespace VaultAgent.SecretEngines {
 
 
             // Setup Post Parameters in body.
-            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+            Dictionary<string, string> contentParams = new ();
 
             // Build the parameter list.
             contentParams.Add ("ciphertext", encryptedData);
@@ -322,7 +323,7 @@ namespace VaultAgent.SecretEngines {
 
             // Build the Posting Parameters as JSON.  We need to manually create in here as we also need to custom append the 
             // keys to be encrypted into the body.
-            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+            Dictionary<string, string> contentParams = new ();
             if ( keyVersion > 0 ) { contentParams.Add ("key_version", keyVersion.ToString()); }
 
             string inputVarsJSON = JsonConvert.SerializeObject (contentParams, Formatting.None);
@@ -334,7 +335,8 @@ namespace VaultAgent.SecretEngines {
 
             // Combine the 2 JSON's
             if ( contentParams.Count > 0 ) {
-                string newVarsJSON = inputVarsJSON.Substring (1, inputVarsJSON.Length - 2) + ",";
+                //string newVarsJSON = inputVarsJSON.Substring (1, inputVarsJSON.Length - 2) + ",";
+                string newVarsJSON = inputVarsJSON[1..^1] + ",";
                 bulkJSON = bulkJSON.Insert (1, newVarsJSON);
             }
 
@@ -385,7 +387,7 @@ namespace VaultAgent.SecretEngines {
 
 
             // Setup Post Parameters in body.
-            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+            Dictionary<string, string> contentParams = new ();
 
             // Build the parameter list.
             contentParams.Add ("ciphertext", encryptedData);
@@ -420,7 +422,7 @@ namespace VaultAgent.SecretEngines {
 
             // Build the Posting Parameters as JSON.  We need to manually create in here as we also need to custom append the 
             // keys to be encrypted into the body.
-            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+            Dictionary<string, string> contentParams = new ();
             if ( keyVersion > 0 ) { contentParams.Add ("key_version", keyVersion.ToString()); }
 
             string inputVarsJSON = JsonConvert.SerializeObject (contentParams, Formatting.None);
@@ -432,7 +434,8 @@ namespace VaultAgent.SecretEngines {
 
             // Combine the 2 JSON's
             if ( contentParams.Count > 0 ) {
-                string newVarsJSON = inputVarsJSON.Substring (1, inputVarsJSON.Length - 2) + ",";
+                //string newVarsJSON = inputVarsJSON.Substring (1, inputVarsJSON.Length - 2) + ",";
+                string newVarsJSON = inputVarsJSON[1..^1] + ",";
                 bulkJSON = bulkJSON.Insert (1, newVarsJSON);
             }
 
@@ -457,7 +460,7 @@ namespace VaultAgent.SecretEngines {
         public async Task<TransitKeyInfo> UpdateKey (string keyName, Dictionary<string, string> inputParams) {
             string path = MountPointPath + "keys/" + keyName + "/config";
 
-            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+            Dictionary<string, string> contentParams = new ();
             foreach ( KeyValuePair<string, string> item in inputParams ) {
                 if ( item.Key.ToLower() == "min_decryption_version" ) { contentParams.Add (item.Key, item.Value); }
                 else if ( item.Key.ToLower() == "min_encryption_version" ) { contentParams.Add (item.Key, item.Value); }
@@ -504,9 +507,9 @@ namespace VaultAgent.SecretEngines {
                 if ( e.Message.Contains ("deletion is not allowed for this policy") ) { return false; }
 
                 // not sure - rethrow error.
-                throw e;
+                throw;
             }
-            catch ( Exception e ) { throw e; }
+            catch ( Exception) { throw; }
         }
 
 
@@ -527,17 +530,17 @@ namespace VaultAgent.SecretEngines {
         /// <param name="bits">128, 256 or 512.  Number of bits the key should have.</param>
         /// <returns></returns>
         public async Task<TransitDataKey> GenerateDataKey (string keyName, bool returnCipherAndPlainText = false, string context = "", int bits = 256) {
-            string sType = "";
+            string sType;
             if ( returnCipherAndPlainText ) { sType = "plaintext"; }
             else { sType = "wrapped"; }
 
             if ( (bits != 128) && (bits != 256) && (bits != 512) ) {
-                throw new ArgumentOutOfRangeException ("bits", "Bits value can only be 128, 256 or 512.");
+                throw new ArgumentOutOfRangeException (nameof(bits), "Bits value can only be 128, 256 or 512.");
             }
 
 
             // Build parameters 
-            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+            Dictionary<string, string> contentParams = new ();
             contentParams.Add ("bits", bits.ToString());
             if ( context != "" ) { contentParams.Add ("context", VaultUtilityFX.Base64EncodeAscii (context)); }
 
@@ -582,7 +585,7 @@ namespace VaultAgent.SecretEngines {
                 }
                 else { throw e; }
 
-                TransitBackupRestoreItem tbri = new TransitBackupRestoreItem()
+                TransitBackupRestoreItem tbri = new ()
                 {
                     Success = false,
                     ErrorMsg = errMsg
@@ -604,7 +607,7 @@ namespace VaultAgent.SecretEngines {
             string path = MountPointPath + "restore/" + keyName;
 
             // Setup Post Parameters in body.
-            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+            Dictionary<string, string> contentParams = new ();
 
             try {
                 // Build the parameter list.
@@ -614,7 +617,7 @@ namespace VaultAgent.SecretEngines {
             }
             catch ( VaultInternalErrorException e ) {
                 if ( e.Message.Contains ("already exists") ) { return false; }
-                else { throw e; }
+                else { throw; }
             }
         }
 
@@ -631,7 +634,7 @@ namespace VaultAgent.SecretEngines {
             string path = MountPointPath + "random/" + numBytes.ToString();
 
             // Setup Post Parameters in body.
-            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+            Dictionary<string, string> contentParams = new ();
             string encodeFormat = "base64";
             if ( hexOutputFormat ) { encodeFormat = "hex"; }
 
@@ -674,14 +677,15 @@ namespace VaultAgent.SecretEngines {
             }
 
             // Setup Post Parameters in body.
-            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+            Dictionary<string, string> contentParams = new ();
             string encodeFormat = "base64";
             if ( hexOutputFormat ) { encodeFormat = "hex"; }
 
             contentParams.Add ("format", encodeFormat);
             contentParams.Add ("algorithm", hashStr);
-
+            
             string inputBase64 = VaultUtilityFX.Base64EncodeAscii (input);
+            contentParams.Add("input", inputBase64);
 
             VaultDataResponseObjectB vdro = await ParentVault._httpConnector.PostAsync_B (path, "ComputeHash", contentParams);
 	        if ( vdro.Success ) {

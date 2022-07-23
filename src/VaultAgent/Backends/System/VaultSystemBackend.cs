@@ -14,7 +14,7 @@ namespace VaultAgent {
     /// SecretEngines and AuthenticationEngines, policies, etc.
     /// </summary>
     public class VaultSystemBackend : VaultBackend {
-        Token sysToken;
+        readonly Token sysToken;
 
         const string pathMounts = "mounts/";
 
@@ -46,7 +46,7 @@ namespace VaultAgent {
         public async Task<bool> AuthEnable (AuthMethod am) {
             string path = MountPointPath + "auth/" + am.Name;
 
-            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+            Dictionary<string, string> contentParams = new ();
             contentParams.Add ("path", am.Path);
             contentParams.Add ("description", am.Description);
             contentParams.Add ("type", am.TypeAsString);
@@ -55,19 +55,19 @@ namespace VaultAgent {
 
 
             StringBuilder jsonConfig;
-            string json = "";
+            string json;
             if ( am.Config != null ) {
                 jsonConfig = new StringBuilder (JsonConvert.SerializeObject (am.Config));
                 jsonConfig.Insert (0, "\"config\":");
 
                 // Combine the 2 JSON's, by stripping trailing closing brace from the content param JSON string.
-                StringBuilder jsonParams = new StringBuilder (contentJSON, (contentJSON.Length + jsonConfig.Length + 20));
+                StringBuilder jsonParams = new (contentJSON, (contentJSON.Length + jsonConfig.Length + 20));
                 jsonParams.Remove (jsonParams.Length - 1, 1);
-                jsonParams.Append (",");
+                jsonParams.Append (',');
 
                 // Remove the opening brace.
                 jsonParams.Append (jsonConfig);
-                jsonParams.Append ("}");
+                jsonParams.Append ('}');
 
                 json = jsonParams.ToString();
             }
@@ -81,7 +81,7 @@ namespace VaultAgent {
             catch ( VaultInvalidDataException e ) {
                 if ( e.Message.Contains ("path is already in use") ) {
                     VaultException ex =
-                        new VaultException ("The authentication backend mount point already exists.  Cannot enable another mount point at that location.");
+                        new ("The authentication backend mount point already exists.  Cannot enable another mount point at that location.");
                     ex.SpecificErrorCode = EnumVaultExceptionCodes.BackendMountAlreadyExists;
                     throw ex;
                 }
@@ -178,7 +178,7 @@ namespace VaultAgent {
         public async Task<bool> AuditEnableFileDevice (string auditorName, string filePath, string description = "Audit to file") {
             string path = MountPointPath + "audit/" + auditorName;
 
-            Dictionary<string, string> contentParams = new Dictionary<string, string>()
+            Dictionary<string, string> contentParams = new ()
             {
                 {"description", description},
                 {"type", "file"}
@@ -186,7 +186,7 @@ namespace VaultAgent {
 
 
 	        string inputVarsJSON = VaultSerializationHelper.ToJson(contentParams); //JsonConvert.SerializeObject (contentParams, Formatting.None);
-            Dictionary<string, string> optionsList = new Dictionary<string, string>()
+            Dictionary<string, string> optionsList = new ()
             {
                 //{ "path",@"c:\temp\avault.log" }
                 {"path", filePath}
@@ -198,7 +198,8 @@ namespace VaultAgent {
 
             // Combine the 2 JSON's
             if ( contentParams.Count > 0 ) {
-                string newVarsJSON = inputVarsJSON.Substring (1, inputVarsJSON.Length - 2) + ",";
+                string newVarsJSON = inputVarsJSON[1..^1] + ",";
+                //string newVarsJSON = inputVarsJSON.Substring(1, inputVarsJSON.Length - 2) + ",";
                 bulkJSON = bulkJSON.Insert (1, newVarsJSON);
             }
 
@@ -245,7 +246,7 @@ namespace VaultAgent {
             string path = MountPointPath + "capabilities";
 
             // Add the token and paths parameters
-            Dictionary<string, object> contentParams = new Dictionary<string, object>()
+            Dictionary<string, object> contentParams = new ()
             {
                 {"token", tokenID},
                 {"paths", paths}
@@ -331,10 +332,10 @@ namespace VaultAgent {
 
 
             // Build out the parameters dictionary.
-            Dictionary<string, object> createParams = new Dictionary<string, object>();
+            Dictionary<string, object> createParams = new ();
 
             // Build Options Dictionary
-            Dictionary<string, string> options = new Dictionary<string, string>();
+            Dictionary<string, string> options = new ();
 
             string typeName = "";
 
@@ -346,19 +347,19 @@ namespace VaultAgent {
                     typeName = "kv";
                     break;
                 case EnumSecretBackendTypes.AWS:
-                    typeName = "aws";
+                    //typeName = "aws";
                     throw new NotImplementedException();
                 case EnumSecretBackendTypes.CubbyHole:
-                    typeName = "cubbyhole";
+                    //typeName = "cubbyhole";
                     throw new NotImplementedException();
                 case EnumSecretBackendTypes.Generic:
-                    typeName = "generic";
+                    //typeName = "generic";
                     throw new NotImplementedException();
                 case EnumSecretBackendTypes.PKI:
-                    typeName = "pki";
+                    //typeName = "pki";
                     throw new NotImplementedException();
                 case EnumSecretBackendTypes.SSH:
-                    typeName = "ssh";
+                    //typeName = "ssh";
                     throw new NotImplementedException();
                 case EnumSecretBackendTypes.KeyValueV2:
 
@@ -393,7 +394,7 @@ namespace VaultAgent {
         /// <returns></returns>
         public List<string> SysMountListSecretEngines () {
             // Build Path
-            string path = MountPointPath + pathMounts;
+            //string path = MountPointPath + pathMounts;
 
             throw new NotImplementedException ("SysMountListSecretEngines Not implemented Yet");
         }
@@ -471,7 +472,7 @@ namespace VaultAgent {
         public async Task<bool> SysMountUpdateConfig (string Name, VaultSysMountConfig config, string description = null) {
             string path = MountPointPath + pathMounts + Name + "/tune";
 
-            Dictionary<string, string> content = new Dictionary<string, string>
+            Dictionary<string, string> content = new ()
             {
                 {"default_lease_ttl", config.DefaultLeaseTTL},
                 {"max_lease_ttl", config.MaxLeaseTTL},
@@ -504,7 +505,7 @@ namespace VaultAgent {
             string path = MountPointPath + "policies/acl";
 
             // Setup List Parameters
-            Dictionary<string, string> sendParams = new Dictionary<string, string>();
+            Dictionary<string, string> sendParams = new ();
             sendParams.Add ("list", "true");
 
             VaultDataResponseObjectB vdro = await ParentVault._httpConnector.GetAsync_B (path, "SysPoliciesACLList", sendParams);
@@ -559,7 +560,7 @@ namespace VaultAgent {
 
             // Build the JSON - Lots of string escaping, etc.  fun!
 
-            StringBuilder jsonBody = new StringBuilder();
+            StringBuilder jsonBody = new ();
 
             // Build the body of the JSON policy out.  We add the prefix part only if there is a body.
             foreach ( VaultPolicyPathItem item in policyContainerItem.PolicyPaths.Values ) { jsonBody.Append (item.ToVaultHCLPolicyFormat()); }
@@ -612,7 +613,7 @@ namespace VaultAgent {
                 vdro = await ParentVault._httpConnector.GetAsync_B(path, "SysPoliciesACLRead");
                 return true;
             }
-            catch (VaultInvalidPathException e)
+            catch (VaultInvalidPathException)
             {
                 return false;
             }
@@ -645,7 +646,7 @@ namespace VaultAgent {
 
             // Now we need to cleanup the returned data and then parse it.
             // Strings we need to replace in the received text.  Must be replaced in this order!
-            Dictionary<string, string> replaceStrings = new Dictionary<string, string>()
+            Dictionary<string, string> replaceStrings = new ()
             {
                 {"\r\n", ""},
                 {"\\", ""},
@@ -661,12 +662,12 @@ namespace VaultAgent {
 			//string val = vdro.GetDataPackageFieldAsJSON ("policy");
 
 
-            StringBuilder sb = new StringBuilder (val, val.Length * 2);
+            StringBuilder sb = new  (val, val.Length * 2);
             foreach ( string k in replaceStrings.Keys ) { sb.Replace (k, replaceStrings [k]); }
 
 
             // Create a policy object and load the paths
-            VaultPolicyContainer vp = new VaultPolicyContainer (policyName);
+            VaultPolicyContainer vp = new (policyName);
 
 
             // Now we need to parse the Paths.  
@@ -699,7 +700,7 @@ namespace VaultAgent {
             const short iPATHOPTIONS = 2;
             const short iCAP = 200;
 
-            List<string> keyWords = new List<string>()
+            List<string> keyWords = new ()
             {
                 sPATH,
                 sCAPA,
@@ -711,7 +712,7 @@ namespace VaultAgent {
 
 
             // We need to create a default object or else it will not compile.  
-            VaultPolicyPathItem newPathObj = new VaultPolicyPathItem ("dummy/dummy2");
+            VaultPolicyPathItem newPathObj = new ("dummy/dummy2");
 
             // Used so we can determine what type of path the permission is being applied to.  Complicated.  
             string KV2Path = "";
@@ -735,7 +736,7 @@ namespace VaultAgent {
                                 throw new FormatException ("Found path keyword, but no value supplied for path NAME");
                             }
                             else {
-                                VaultPolicyPathItem tempItem = new VaultPolicyPathItem (pathObjects [i]);
+                                VaultPolicyPathItem tempItem = new  (pathObjects [i]);
                                 KV2Path = tempItem.KV2_PathID;
 
                                 // If there is not a Policy permission object for this path in the Policy Container then use the new one.  Otherwise use existing.

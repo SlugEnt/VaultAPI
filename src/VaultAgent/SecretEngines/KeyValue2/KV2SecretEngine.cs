@@ -70,6 +70,7 @@ namespace VaultAgent.SecretEngines
         /// </summary>
         /// <param name="secretPath">The name of the secret to delete.</param>
         /// <param name="version">The version to delete.  Defaults to zero which is the most recent or current version of the key.</param>
+        /// <param name="isRecursiveDelete">If true, then a recursive delete is performed, ie, all subfolders / secrets are also deleted.</param>
         /// <returns>True if successful.  False otherwise.</returns>
         public async Task<bool> DeleteSecretVersion(string secretPath, int version = 0, bool isRecursiveDelete = true)
         {
@@ -79,28 +80,19 @@ namespace VaultAgent.SecretEngines
             // If recursive is true, then we need to navigate to deepest children and delete them and move up the chain.
             if (isRecursiveDelete)
             {
-                // TODO fix
                 // Get a list of children and then call DeleteSecret on each of them.
-                KV2ListSecretSettings listSettings = new KV2ListSecretSettings()
+                KV2ListSecretSettings listSettings = new ()
                 {
                     ShouldRecurseFolders = isRecursiveDelete,
                 };
                 
                 List<string> children2 = await ListSecrets(secretPath,listSettings);
-                //List<string> children = await ListSecretFolders(secretPath, false);
 
                 for (int i = children2.Count -1; i > -1; i--)
-                //foreach (string child in children2)
                 {
-                    //if (child.EndsWith("/"))
                         await DeleteSecretVersion(children2[i], 0, false);
                 }
-/*                foreach (string child in children2)
-                {
-                    if (!child.EndsWith("/"))
-                        await DeleteSecretVersion(child, 0, true);
-                }
-*/
+
             }
 
 
@@ -119,7 +111,6 @@ namespace VaultAgent.SecretEngines
                 }
                 else
                 {
-                    //TODO - Fix this once Deleted Returns VDROB
                     VaultDataResponseObjectB vdrb;
                     path = MountPointPath + "data/" + secretPath;
                     vdrb = await ParentVault._httpConnector.DeleteAsync(path, "DeleteSecretVersion");
@@ -177,9 +168,9 @@ namespace VaultAgent.SecretEngines
 
                 return false;
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw e;
+                throw;
             }
         }
 
@@ -210,7 +201,7 @@ namespace VaultAgent.SecretEngines
                 string path = MountPointPath + "destroy/" + secretNamePath;
 
                 // Build the content parameters, which will contain the maxVersions and casRequired settings.
-                Dictionary<string, string> contentParams = new Dictionary<string, string>();
+                Dictionary<string, string> contentParams = new ();
                 contentParams.Add("versions", version.ToString());
 
                 VaultDataResponseObjectB vdro =
@@ -258,9 +249,9 @@ namespace VaultAgent.SecretEngines
                 //IKV2SecretEngineSettings settings = vdro.GetVaultTypedObject<IKV2SecretEngineSettings>();
                 //return settings;
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw e;
+                throw;
             }
         }
 
@@ -352,7 +343,7 @@ namespace VaultAgent.SecretEngines
                     // Do we need to recurse
                     if (listSettings.ShouldRecurseFolders && !listSettings.FinalSecretsOnly) {
                         List<string> subSecrets;
-                        List<string> allSubSecrets = new List<string>();
+                        List<string> allSubSecrets = new ();
                         for (int i = secrets.Count - 1; i > -1; i--)
                         {
                             if (secrets[i].EndsWith("/"))
@@ -375,7 +366,7 @@ namespace VaultAgent.SecretEngines
             {
                 return new List<string>();
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return new List<string>();
             }
@@ -520,7 +511,7 @@ namespace VaultAgent.SecretEngines
                 if (vdro.Success)
                 {
                     List<string> secrets = await vdro.GetDotNetObject<List<string>>("data.keys");
-                    List<string> allSubSecrets = new List<string>();
+                    List<string> allSubSecrets = new ();
 
                     // Caller only wants a secret listed once, remove any secrets witParentVaulth trailing slashes as these are the folder secrets.
                     for (int i = secrets.Count - 1; i > -1; i--)
@@ -562,8 +553,7 @@ namespace VaultAgent.SecretEngines
 
         /// <summary>
         ///     Reads the secret from Vault.  It defaults to reading the most recent version.  Set secretVersion to non zero to
-        ///     retrieve a
-        ///     specific version.
+        ///     retrieve a specific version.
         ///     <para>Returns [VaultForbiddenException] if you do not have permission to read from the path.</para>
         ///     <para>Returns the IKV2SecretWrapper if a secret was found at the location.</para>
         ///     <para>Returns Null if no secret found at location.</para>
@@ -574,7 +564,7 @@ namespace VaultAgent.SecretEngines
         public async Task<T> ReadSecret<T>(string secretPath, int secretVersion = 0) where T : KV2SecretBase<T>
         {
             string path = MountPointPath + "data/" + secretPath;
-            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+            Dictionary<string, string> contentParams = new ();
 
             // TODO - Read secret will return an object for a version that has been destroyed or deleted.  We need to interrogate that
             // and try and find the next non deleted version.
@@ -698,8 +688,8 @@ namespace VaultAgent.SecretEngines
             string path = MountPointPath + "data/" + secret.FullPath;
 
 
-            Dictionary<string, object> reqData = new Dictionary<string, object>();
-            Dictionary<string, string> options = new Dictionary<string, string>();
+            Dictionary<string, object> reqData = new ();
+            Dictionary<string, string> options = new ();
 
             // Set CAS depending on option coming from caller.
             switch (casSaveOption)
@@ -740,7 +730,7 @@ namespace VaultAgent.SecretEngines
             }
             catch ( VaultInvalidDataException e ) {
 	            if ( e.Message.Contains("check-and-set parameter required for this call") ) {
-		            VaultInvalidDataException eNew = new VaultInvalidDataException(Constants.Error_CAS_Set + " | Original Error message was: " + e.Message);
+		            VaultInvalidDataException eNew = new (Constants.Error_CAS_Set + " | Original Error message was: " + e.Message);
 		            eNew.SpecificErrorCode = EnumVaultExceptionCodes.CheckAndSetMissing;
 		            throw eNew;
 	            }
@@ -750,7 +740,7 @@ namespace VaultAgent.SecretEngines
 	            if ( e.Message.Contains("did not match the current version") ) {
 		            // If user requested that the save happen only if the key does not already exist then return customized error message.
 		            if ( casSaveOption == KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist ) {
-			            VaultInvalidDataException eNew = new VaultInvalidDataException(
+			            VaultInvalidDataException eNew = new (
 				            Constants.Error_CAS_SecretAlreadyExists + " | Original Error message was: " + e.Message);
 			            eNew.SpecificErrorCode = EnumVaultExceptionCodes.CAS_SecretExistsAlready;
 			            throw eNew;
@@ -758,7 +748,7 @@ namespace VaultAgent.SecretEngines
 
 		            // Customize the version discrepancy message
 		            else {
-			            VaultInvalidDataException eNew = new VaultInvalidDataException(
+			            VaultInvalidDataException eNew = new (
 				            Constants.Error_CAS_InvalidVersion + " Version specified was: " + currentVersion + " | Original Error message was: " + e.Message);
 			            eNew.SpecificErrorCode = EnumVaultExceptionCodes.CAS_VersionMissing;
 			            throw eNew;
@@ -770,9 +760,9 @@ namespace VaultAgent.SecretEngines
             catch ( VaultForbiddenException e ) {
 	            if ( e.Message.Contains("* permission denied") ) e.SpecificErrorCode = EnumVaultExceptionCodes.PermissionDenied;
 
-	            throw e;
+	            throw;
             }
-            catch ( Exception e ) { throw e; }
+            catch ( Exception ) { throw; }
         }
 
 
@@ -792,7 +782,7 @@ namespace VaultAgent.SecretEngines
             string path = MountPointPath + "config";
 
             // Build the content parameters, which will contain the maxVersions and casRequired settings.
-            Dictionary<string, string> contentParams = new Dictionary<string, string>();
+            Dictionary<string, string> contentParams = new ();
             contentParams.Add("max_versions", maxVersions.ToString());
             contentParams.Add("cas_required", casRequired.ToString());
 
@@ -822,7 +812,7 @@ namespace VaultAgent.SecretEngines
                     return (false, null);
                 return (true, secret);
             }
-            catch (VaultForbiddenException e)
+            catch (VaultForbiddenException)
             {
                 return (false, null);
             }
@@ -873,7 +863,7 @@ namespace VaultAgent.SecretEngines
                     return (false, null);
                 return (true, secret);
             }
-            catch (VaultForbiddenException e)
+            catch (VaultForbiddenException)
             {
                 return (false, null);
             }
@@ -895,16 +885,16 @@ namespace VaultAgent.SecretEngines
                 string path = MountPointPath + "undelete/" + secretsecretNamePath;
 
                 // Build the content parameters, which will contain the maxVersions and casRequired settings.
-                Dictionary<string, string> contentParams = new Dictionary<string, string>();
+                Dictionary<string, string> contentParams = new();
                 contentParams.Add("versions", version.ToString());
 
                 VaultDataResponseObjectB vdro =
                     await ParentVault._httpConnector.PostAsync_B(path, "UndeleteSecretVersion", contentParams);
                 return vdro.Success;
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw e;
+                throw;
             }
         }
 
@@ -938,9 +928,13 @@ namespace VaultAgent.SecretEngines
                 string path = MountPointPath + "metadata/" + secretsecretNamePath;
 
                 // Build the content parameters, which will contain the maxVersions and casRequired settings.
-                Dictionary<string, string> contentParams = new Dictionary<string, string>();
-                contentParams.Add("max_versions", maxVersions.ToString());
-                contentParams.Add("cas_required", casRequired.ToString());
+                Dictionary<string, string> contentParams = new() { 
+                    { "max_versions", maxVersions.ToString() },
+                    { "cas_required", casRequired.ToString() },
+                };
+                
+                //contentParams.Add("max_versions", maxVersions.ToString());
+                //contentParams.Add("cas_required", casRequired.ToString());
 
                 VaultDataResponseObjectB vdro =
                     await ParentVault._httpConnector.PostAsync_B(path, "UpdateSecretSettings", contentParams);
@@ -948,9 +942,9 @@ namespace VaultAgent.SecretEngines
 
                 return false;
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw e;
+                throw;
             }
         }
 

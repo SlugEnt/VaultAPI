@@ -81,16 +81,16 @@ namespace VaultClient
     /// </summary>
     class PolicyRoleSecurityExample
     {
-        private string _beAuthName = "RoleAuth";
-        private string _beKV2Name = "HouseholdSecrets";
+        private readonly string _beAuthName = "RoleAuth";
+        private readonly string _beKV2Name = "HouseholdSecrets";
 
 
         private AppRoleAuthEngine _appRoleAuthEngine;
         private KV2SecretEngine _secretEngine;
-        private VaultAgentAPI _masterVaultAgent;
+        private readonly VaultAgentAPI _masterVaultAgent;
         private readonly VaultSystemBackend _vaultSystemBackend;
 
-        private readonly IdentitySecretEngine _idEngine;
+        //private readonly IdentitySecretEngine _idEngine;
 
         private readonly string _AppBEName;
 
@@ -134,7 +134,7 @@ namespace VaultClient
             _appRoleAuthEngine =
                 (AppRoleAuthEngine) masterVaultAgent.ConnectAuthenticationBackend(EnumBackendTypes.A_AppRole, _AppBEName,
                     _AppBEName);
-            _idEngine = (IdentitySecretEngine) masterVaultAgent.ConnectToSecretBackend(EnumSecretBackendTypes.Identity);
+            masterVaultAgent.ConnectToSecretBackend(EnumSecretBackendTypes.Identity);
         }
 
 
@@ -269,31 +269,32 @@ namespace VaultClient
             // Should be able to load the House Secret.  But not updated it.
             KV2Secret a = await secretEngine.ReadSecret<KV2Secret>(HOUSE.HOUSE_PATH);
             a.Attributes["Electric"] = "No";
+            
             // Should Fail
-            bool rc = await SaveSecret(secretEngine, a);
+            await SaveSecret(secretEngine, a);
 
 
             // Should NOT be able to read anything in the Toddler's Bedroom
-            ( bool rcB, KV2Secret b) = await ReadSecret(secretEngine, HOUSE.TODDLER_BEDROOM);
+            ( bool _, KV2Secret _) = await ReadSecret(secretEngine, HOUSE.TODDLER_BEDROOM);
             
             // Should be able to read and update the Kitchen secret
-            (bool rcK, KV2Secret k) = await ReadSecret(secretEngine, HOUSE.KITCHEN);
+            (bool _, KV2Secret k) = await ReadSecret(secretEngine, HOUSE.KITCHEN);
             k.Attributes["Carrots"] = "Need";
-            rcK = await SaveSecret(secretEngine, k);
+            await SaveSecret(secretEngine, k);
 
             // Should be able to read and update the Fridge
-            (bool rcR, KV2Secret r) = await ReadSecret(secretEngine, HOUSE.REFRIGERATOR);
+            (bool _, KV2Secret r) = await ReadSecret(secretEngine, HOUSE.REFRIGERATOR);
             k.Attributes["Cold"] = "True";
-            rcR = await SaveSecret(secretEngine, r);
+            await SaveSecret(secretEngine, r);
 
             // Should have no writes to the Dishwasher
-            (bool rcD, KV2Secret d) = await ReadSecret(secretEngine, HOUSE.DISHWASHER);
+            (bool _, KV2Secret _) = await ReadSecret(secretEngine, HOUSE.DISHWASHER);
         }
 
         private async Task Perform_FatherTasks()
         {
             // Now login.            
-            Token token = await _appRoleAuthEngine.Login(roleFather.RoleID, _sidFather.ID);
+            await _appRoleAuthEngine.Login(roleFather.RoleID, _sidFather.ID);
 
 
 
@@ -312,7 +313,7 @@ namespace VaultClient
             {
                 return await engine.SaveSecret(secret, KV2EnumSecretSaveOptions.AlwaysAllow);
             }
-            catch (VaultForbiddenException e)
+            catch (VaultForbiddenException)
             {
                 return false;
             }
@@ -332,7 +333,7 @@ namespace VaultClient
                 KV2Secret secret = await engine.ReadSecret<KV2Secret>(secretPath);
                 return (true, secret);
             }
-            catch (VaultForbiddenException e)
+            catch (VaultForbiddenException)
             {
                 return (false, null);
             }

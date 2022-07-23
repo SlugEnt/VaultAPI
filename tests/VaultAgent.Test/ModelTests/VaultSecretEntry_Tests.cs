@@ -21,12 +21,12 @@ namespace VaultAgentTests
 		private KV2SecretEngine _noCASMount = null;
 		private KV2SecretEngine _casMount;
 		private VaultAgentAPI _vaultAgentAPI;
-		private SlugEnt.UniqueKeys _uniqueKey = new UniqueKeys();
+		private readonly SlugEnt.UniqueKeys _uniqueKey = new ();
 
 
         // 1/27/2020 1:50:35 PM GMT
-        private long _unixEpochTime = 1580133035;
-        private DateTimeOffset _theDate = new DateTimeOffset();
+        private readonly long _unixEpochTime = 1580133035;
+        private DateTimeOffset _theDate = new ();
 
 
         [OneTimeSetUp]
@@ -44,7 +44,7 @@ namespace VaultAgentTests
 
 
             // Config settings for all the mounts.
-            VaultSysMountConfig config = new VaultSysMountConfig
+            VaultSysMountConfig config = new ()
             {
                 DefaultLeaseTTL = "30m",
                 MaxLeaseTTL = "90m",
@@ -93,16 +93,16 @@ namespace VaultAgentTests
 		[TestCase("I", "/secret", null, "secret", "", "secret")]
 		[TestCase("J", "/secret/", null, "secret", "", "secret")]
 
-        public async Task ConstructorTests (string scenario, string name, string path, string expectedName, string expectedPath, string expectedFullPath) {
-			VaultSecretEntry vse = null;
+        public void ConstructorTests (string scenario, string name, string path, string expectedName, string expectedPath, string expectedFullPath) {
+			VaultSecretEntry vse;
 			if ( path == null ) {
-				vse = new VaultSecretEntry(_noCASMount, name);
+				vse = new (_noCASMount, name);
 			}
-            else vse = new VaultSecretEntry(_noCASMount,name,path);
+            else vse = new (_noCASMount,name,path);
 
-            Assert.AreEqual(expectedName,vse.Name,"A10");
-            Assert.AreEqual(expectedPath,vse.Path, "A20");
-            Assert.AreEqual(expectedFullPath, vse.FullPath, "A30");
+            Assert.AreEqual(expectedName, vse.Name, "A10: " + scenario);
+            Assert.AreEqual(expectedPath,vse.Path, "A20: " + scenario);
+            Assert.AreEqual(expectedFullPath, vse.FullPath, "A30: " + scenario);
 		}
 
 
@@ -111,7 +111,7 @@ namespace VaultAgentTests
         [Test]
 		public async Task Save_Success () {
 			string secretName = _uniqueKey.GetKey("SN");
-            VaultSecretEntry secretA = new VaultSecretEntry(_noCASMount,secretName,"");
+            VaultSecretEntry secretA = new (_noCASMount,secretName,"");
             bool success = await secretA.VSE_Save();
             Assert.IsTrue(success);
 		}
@@ -121,13 +121,13 @@ namespace VaultAgentTests
 		[Test]
 		public async Task Read_Success () {
 			string secretName = _uniqueKey.GetKey("SNRead");
-			VaultSecretEntry secretA = new VaultSecretEntry(_noCASMount, secretName, "");
+			VaultSecretEntry secretA = new (_noCASMount, secretName, "");
             secretA.Attributes.Add("KeyA","ValueA");
 			bool success = await secretA.VSE_Save();
 			Assert.IsTrue(success);
 
             // Now create a new VSE with same name and path.  We should be able to read it from Vault and get the same secret as the one we just saved
-            VaultSecretEntry secretB = new VaultSecretEntry(_noCASMount,secretName,"");
+            VaultSecretEntry secretB = new (_noCASMount,secretName,"");
             success = await secretB.VSE_Read();
             Assert.IsTrue(success,"A20:Failed to successfull read the secret back");
             Assert.AreEqual(secretA.Attributes.Count,secretB.Attributes.Count);
@@ -140,7 +140,7 @@ namespace VaultAgentTests
 			string secretName = _uniqueKey.GetKey("SNRead");
 
 			// Now create a new VSE with same name and path.  We should be able to read it from Vault and get the same secret as the one we just saved
-			VaultSecretEntry secretB = new VaultSecretEntry(_noCASMount, secretName, "");
+			VaultSecretEntry secretB = new (_noCASMount, secretName, "");
 			bool success = await secretB.VSE_Read();
 			Assert.IsFalse(success, "A10:Failed to successfull read the secret back");
         }
@@ -156,7 +156,7 @@ namespace VaultAgentTests
         [Test]
         public async Task Exists_ReturnsTrue_IfSecretExists () {
 	        string secretName = _uniqueKey.GetKey("SNExistsT");
-	        VaultSecretEntry secretA = new VaultSecretEntry(_noCASMount, secretName, "");
+	        VaultSecretEntry secretA = new (_noCASMount, secretName, "");
 	        secretA.Attributes.Add("KeyA", "ValueA");
 	        bool success = await secretA.VSE_Save();
 	        Assert.IsTrue(success);
@@ -171,7 +171,7 @@ namespace VaultAgentTests
         public async Task Exists_ReturnsFalse_IfSecretDoesNotExist()
         {
 	        string secretName = _uniqueKey.GetKey("SNExistsF");
-	        VaultSecretEntry secretA = new VaultSecretEntry(_noCASMount, secretName, "");
+	        VaultSecretEntry secretA = new (_noCASMount, secretName, "");
 
 	        // Now see if it exists in the Vault.
 	        Assert.IsFalse(await secretA.VSE_Exists());
@@ -182,7 +182,7 @@ namespace VaultAgentTests
         [Test]
         public async Task DeleteSuccess () {
 	        string secretName = _uniqueKey.GetKey("Del");
-	        VaultSecretEntry secretA = new VaultSecretEntry(_noCASMount, secretName, "");
+	        VaultSecretEntry secretA = new (_noCASMount, secretName, "");
 	        secretA.Attributes.Add("KeyA", "ValueA");
 	        bool success = await secretA.VSE_Save();
 	        Assert.IsTrue(success);
@@ -200,7 +200,7 @@ namespace VaultAgentTests
         public async Task DestroyAllSuccess()
         {
 	        string secretName = _uniqueKey.GetKey("Des");
-	        VaultSecretEntry secretA = new VaultSecretEntry(_noCASMount, secretName, "");
+	        VaultSecretEntry secretA = new (_noCASMount, secretName, "");
 	        secretA.Attributes.Add("KeyA", "ValueA");
 	        bool success = await secretA.VSE_Save();
 	        Assert.IsTrue(success);
@@ -217,7 +217,7 @@ namespace VaultAgentTests
         [Test]
         public async Task SecretInfo_Success () {
 	        string secretName = _uniqueKey.GetKey("SIS");
-	        VaultSecretEntry secretA = new VaultSecretEntry(_noCASMount, secretName, "");
+	        VaultSecretEntry secretA = new (_noCASMount, secretName, "");
 	        secretA.Attributes.Add("KeyA", "ValueA");
 	        bool success = await secretA.VSE_Save();
 	        Assert.IsTrue(success);
@@ -247,7 +247,7 @@ namespace VaultAgentTests
         public async Task VSE_ReadVersion_Success()
         {
 	        string secretName = _uniqueKey.GetKey("RV");
-	        VaultSecretEntry secretA = new VaultSecretEntry(_noCASMount, secretName, "");
+	        VaultSecretEntry secretA = new (_noCASMount, secretName, "");
 	        secretA.Attributes.Add("KeyA", "ValueA");
 	        bool success = await secretA.VSE_Save();
 	        Assert.IsTrue(success);
@@ -284,10 +284,10 @@ namespace VaultAgentTests
         public async Task VSE_Read_ThrowsError_IfEngineNotDefined()
         {
             string secretName = _uniqueKey.GetKey("Des");
-            VaultSecretEntry secretA = new VaultSecretEntry();
+            VaultSecretEntry secretA = new ();
             secretA.Name = "test";
             secretA.Attributes.Add("KeyA", "ValueA");
-            Assert.ThrowsAsync<ApplicationException>(() => secretA.VSE_Save());
+            Assert.ThrowsAsync<ApplicationException>(async() => await secretA.VSE_Save());
         }
 
         #endregion
@@ -300,7 +300,7 @@ namespace VaultAgentTests
         public async Task CAS_SaveNew_Success()
         {
 	        string secretName = _uniqueKey.GetKey("CASNEW");
-	        VaultSecretEntryCAS secretA = new VaultSecretEntryCAS(_casMount, secretName, "");
+	        VaultSecretEntryCAS secretA = new (_casMount, secretName, "");
 	        secretA.Attributes.Add("KeyA", "ValueA");
 	        bool success = await secretA.VSE_SaveNew();
 	        Assert.IsTrue(success);
@@ -312,7 +312,7 @@ namespace VaultAgentTests
         public async Task CAS_SaveUpdate_Success()
         {
 	        string secretName = _uniqueKey.GetKey("CASNEW");
-	        VaultSecretEntryCAS secretA = new VaultSecretEntryCAS(_casMount, secretName, "");
+	        VaultSecretEntryCAS secretA = new (_casMount, secretName, "");
 	        secretA.Attributes.Add("KeyA", "ValueA");
 	        bool success = await secretA.VSE_SaveNew();
 	        Assert.IsTrue(success);
@@ -342,7 +342,7 @@ namespace VaultAgentTests
         public void BoolAttributeSet_Success (bool value, string expectedValue) {
             
             string attrName = "boolA";
-            VaultSecretEntry vseA = new VaultSecretEntry();
+            VaultSecretEntry vseA = new ();
 
             // Save Value
             vseA.SetBoolAttribute(attrName,value);
@@ -358,7 +358,7 @@ namespace VaultAgentTests
         [TestCase("F",false)]
         public void BoolAttributeGet_Success (string value, bool expectedValue) {
             string attrName = "AttrB";
-            VaultSecretEntry vseA = new VaultSecretEntry();
+            VaultSecretEntry vseA = new ();
             vseA.Attributes [attrName] = value;
             Assert.AreEqual(expectedValue,vseA.GetBoolAttributeDefault(attrName));
         }
@@ -372,7 +372,7 @@ namespace VaultAgentTests
         public void IntAttributeSet_Success (int value)
         {
             string attrName = "AttrA";
-            VaultSecretEntry vseA = new VaultSecretEntry();
+            VaultSecretEntry vseA = new ();
 
             // Save value
             vseA.SetIntAttribute(attrName, value);
@@ -392,7 +392,7 @@ namespace VaultAgentTests
         public void IntAttributeGetNullable_Success (int value)
         {
             string attrName = "AttrA";
-            VaultSecretEntry vseA = new VaultSecretEntry();
+            VaultSecretEntry vseA = new ();
 
             // Save value
             vseA.SetIntAttribute(attrName, value);
@@ -410,7 +410,7 @@ namespace VaultAgentTests
         public void IntAttributeGetNullable_ReturnsNull()
         {
             string attrName = "AttrA";
-            VaultSecretEntry vseA = new VaultSecretEntry();
+            VaultSecretEntry vseA = new ();
 
             // We do not save anything in the Attributes, to force a null
             
@@ -427,7 +427,7 @@ namespace VaultAgentTests
             string attrName = "AttrA";
             string value = "";
 
-            VaultSecretEntry vseA = new VaultSecretEntry();
+            VaultSecretEntry vseA = new ();
             vseA.Attributes[attrName] = value;
 
 
@@ -444,7 +444,7 @@ namespace VaultAgentTests
         public void ShortAttributeSet_Success(short value)
         {
             string attrName = "AttrA";
-            VaultSecretEntry vseA = new VaultSecretEntry();
+            VaultSecretEntry vseA = new ();
 
             // Save value
             vseA.SetShortAttribute(attrName, value);
@@ -462,7 +462,7 @@ namespace VaultAgentTests
         public void ShortAttributeGetNullable_Success (short value)
         {
             string attrName = "AttrA";
-            VaultSecretEntry vseA = new VaultSecretEntry();
+            VaultSecretEntry vseA = new ();
 
             // Save value
             vseA.SetIntAttribute(attrName, value);
@@ -482,7 +482,7 @@ namespace VaultAgentTests
             string attrName = "AttrA";
             string value = "";
 
-            VaultSecretEntry vseA = new VaultSecretEntry();
+            VaultSecretEntry vseA = new ();
             vseA.Attributes[attrName] = value;
 
 
@@ -497,7 +497,7 @@ namespace VaultAgentTests
         public void ShortAttributeGetNullable_ReturnsNull()
         {
             string attrName = "AttrA";
-            VaultSecretEntry vseA = new VaultSecretEntry();
+            VaultSecretEntry vseA = new ();
 
             // We do not save anything in the Attributes, to force a null
 
@@ -512,7 +512,7 @@ namespace VaultAgentTests
         public void StringAttributeGetNullable_ReturnsEmpty()
         {
             string attrName = "AttrA";
-            VaultSecretEntry vseA = new VaultSecretEntry();
+            VaultSecretEntry vseA = new ();
 
             // We do not save anything in the Attributes, to force a null
 
@@ -529,7 +529,7 @@ namespace VaultAgentTests
             string attrName = "AttrA";
             string value = "abcXYZ";
 
-            VaultSecretEntry vseA = new VaultSecretEntry();
+            VaultSecretEntry vseA = new ();
             vseA.Attributes [attrName] = value;
 
             // Get Value
@@ -554,7 +554,7 @@ namespace VaultAgentTests
 
 
             string attrName = "AttrA";
-            VaultSecretEntry vseA = new VaultSecretEntry();
+            VaultSecretEntry vseA = new ();
 
             // Save value
             vseA.SetDateTimeOffsetAttribute(attrName, _theDate);
@@ -571,7 +571,7 @@ namespace VaultAgentTests
             string attrName = "AttrA";
             string value = "";
 
-            VaultSecretEntry vseA = new VaultSecretEntry();
+            VaultSecretEntry vseA = new ();
             vseA.Attributes[attrName] = value;
 
 
@@ -588,7 +588,7 @@ namespace VaultAgentTests
         public void DateTimeOffsetAttributeGetNullable_ReturnsNull()
         {
             string attrName = "AttrA";
-            VaultSecretEntry vseA = new VaultSecretEntry();
+            VaultSecretEntry vseA = new ();
 
             // We do not save anything in the Attributes, to force a null
 
@@ -608,10 +608,9 @@ namespace VaultAgentTests
         public void DateTimeOffsetAttributeGetNullable_Success(long value)
         {
             string attrName = "AttrA";
-            VaultSecretEntry vseA = new VaultSecretEntry();
+            VaultSecretEntry vseA = new ();
 
-            DateTimeOffset aDate = new DateTimeOffset();
-            aDate = DateTimeOffset.FromUnixTimeSeconds(value);
+            DateTimeOffset aDate = DateTimeOffset.FromUnixTimeSeconds(value);
 
             // Save value
             vseA.SetDateTimeOffsetAttribute(attrName, aDate);
@@ -636,10 +635,10 @@ namespace VaultAgentTests
         public void DateTimeOffsetAttributeGetDefault_Success(long value)
         {
             string attrName = "AttrA";
-            VaultSecretEntry vseA = new VaultSecretEntry();
+            VaultSecretEntry vseA = new ();
 
-            DateTimeOffset aDate = new DateTimeOffset();
-            aDate = DateTimeOffset.FromUnixTimeSeconds(value);
+            
+            DateTimeOffset aDate = DateTimeOffset.FromUnixTimeSeconds(value);
 
             // Save value
             vseA.SetDateTimeOffsetAttribute(attrName, aDate);
@@ -666,7 +665,7 @@ namespace VaultAgentTests
             string secretName = _uniqueKey.GetKey("CWNSE");
             string path = "pathB";
 
-            VaultSecretEntry secretA = new VaultSecretEntry(secretName,path);
+            VaultSecretEntry secretA = new (secretName,path);
             Assert.AreEqual(secretName,secretA.Name,"A10:  Secret Name incorrect");
             Assert.AreEqual(path,secretA.Path, "A20: Secret Path incorrect ");
             secretA.SecretEngine = _noCASMount;

@@ -62,7 +62,8 @@ namespace VaultAgentTests
 			{
 				VaultAgentAPI vault = await VaultServerRef.ConnectVault("AppRoleVault");
 			}
-			catch (ApplicationException ex) {
+			catch (Exception e)
+			{
 				// Now startup the Vault instance if we need to.
 				if (UseNewVaultServerEachRun)
 				{
@@ -118,6 +119,7 @@ namespace VaultAgentTests
 		[OneTimeTearDown]
 		public void Dispose()
 		{
+			GC.SuppressFinalize(this);
 			Dispose(true);
 		}
 

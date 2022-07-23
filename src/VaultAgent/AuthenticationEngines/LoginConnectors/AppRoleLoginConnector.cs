@@ -31,8 +31,6 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors
         /// <param name="vaultAgent">The Vault the LDAP Backend is in</param>
         /// <param name="authenticatorMountPoint">The Vault Mount Point name for the LDAP Backend</param>
         /// <param name="description">Human Readable description of the Vault</param>
-        /// <param name="roleID">The RoleID to login with</param>
-        /// <param name="secretID">The SecretID to login with</param>
         public AppRoleLoginConnector(VaultAgentAPI vaultAgent, string authenticatorMountPoint, string description) : base(
             vaultAgent, authenticatorMountPoint, description)
         { }

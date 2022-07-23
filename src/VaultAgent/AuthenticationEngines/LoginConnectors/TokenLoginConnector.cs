@@ -10,7 +10,7 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors
     /// Provides for the ability to use a Token to connect to a Vault Instance
     /// </summary>
     public class TokenLoginConnector : LoginConnector {
-        private TokenAuthEngine _tokenAuthEngine;
+        private readonly TokenAuthEngine _tokenAuthEngine;
 
 
         /// <summary>
@@ -52,7 +52,8 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors
         /// </summary>
         /// <returns></returns>
         protected override async Task<bool> InternalConnection () {
-            try {
+            try
+            {
                 // We must replace the Vault Token if the value is currently empty, We need something to connect to Vault with.  
                 if ( _vaultAgent.TokenID == string.Empty ) _vaultAgent.TokenID = TokenId; //_vaultAgent._vaultAccessTokenID = TokenId;
 
@@ -86,7 +87,7 @@ namespace VaultAgent.AuthenticationEngines.LoginConnectors
 
                 throw;
             }
-            catch ( Exception e ) { throw; }
+            catch (Exception) { throw; }
         }
 
 
