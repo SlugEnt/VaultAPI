@@ -2,7 +2,7 @@
   "ConfigStructureVersion": "0.33.0",
   "UseCodeCoverage": true,
   "CodeCoverageThreshold": 30,
-  "DeployProdRoot": "c:\temp",
+  "DeployProdRoot": "_",
   "DeployAlphaRoot": "_",
   "DeployBetaRoot": "_",
   "DeployDevRoot": "_",
