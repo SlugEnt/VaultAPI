@@ -5,7 +5,7 @@ API methods and backends as well as robust error handling and plenty of document
 to the caller.  
 
 
-It has been Unit tested against Vault version 1.8.4 (Latest as of October 2021).
+It has been Unit tested against Vault version 1.11.1 (Latest as of July 2022).
 
 # Release Notes
 ## Version 1.2
