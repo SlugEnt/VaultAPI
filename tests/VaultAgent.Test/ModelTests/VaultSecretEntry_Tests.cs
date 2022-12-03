@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading;
@@ -181,17 +182,57 @@ namespace VaultAgentTests
         // Confirms that deleting a secret deletes it from the Vault.
         [Test]
         public async Task DeleteSuccess () {
+            // Setup
 	        string secretName = _uniqueKey.GetKey("Del");
 	        VaultSecretEntry secretA = new (_noCASMount, secretName, "");
 	        secretA.Attributes.Add("KeyA", "ValueA");
 	        bool success = await secretA.VSE_Save();
 	        Assert.IsTrue(success);
 
+	        // Try to read it
+	        Assert.IsTrue(await secretA.VSE_Read());
+
+
             // Now delete it 
             Assert.IsTrue(await secretA.VSE_Delete());
 
             // Try to read it
             Assert.IsFalse(await secretA.VSE_Read());
+        }
+
+
+        [Test]
+        public async Task DeleteChildSuccess () {
+	        // Setup
+	        string parentName = "Del";
+	        VaultSecretEntry secretP = new(_noCASMount, parentName, "");
+	        bool success = await secretP.VSE_Save();
+
+            string secretName = _uniqueKey.GetKey( parentName + "/delsub");
+	        VaultSecretEntry secretA = new(_noCASMount, secretName, "");
+	        secretA.Attributes.Add("KeyA", "ValueA");
+	        success = await secretA.VSE_Save();
+	        Assert.IsTrue(success);
+
+	        List<string> pathBefore = await _noCASMount.ListSecrets(parentName);
+
+            // Try to read it
+            Assert.IsTrue(await secretA.VSE_Read());
+
+            // Read the parent
+            VaultSecretEntry secretP2 = new(_noCASMount, parentName, "");
+            await secretP2.VSE_Read();
+
+            // Now delete it 
+            Assert.IsTrue(await secretA.VSE_Delete());
+
+	        // Try to read it
+	        Assert.IsFalse(await secretA.VSE_Read());
+
+	        VaultSecretEntry secretP3 = new(_noCASMount, parentName, "");
+	        await secretP3.VSE_Read();
+
+	        List<string> paths = await _noCASMount.ListSecrets(parentName);
         }
 
 
@@ -205,11 +246,41 @@ namespace VaultAgentTests
 	        bool success = await secretA.VSE_Save();
 	        Assert.IsTrue(success);
 
+
 	        // Now Destory All it 
 	        Assert.IsTrue(await secretA.VSE_DestroyAll());
 
 	        // Try to read it
 	        Assert.IsFalse(await secretA.VSE_Read());
+        }
+
+
+        // Confirms that DestroyAll permanently removes all evidence of the secret from the Vault
+        [Test]
+        public async Task DestroyAllWithChildSuccess()
+        {
+	        string parentName = "Del";
+	        VaultSecretEntry secretP = new(_noCASMount, parentName, "");
+	        bool success = await secretP.VSE_Save();
+
+	        string secretName = _uniqueKey.GetKey(parentName + "/delsub");
+	        VaultSecretEntry secretA = new(_noCASMount, secretName, "");
+	        secretA.Attributes.Add("KeyA", "ValueA");
+	        success = await secretA.VSE_Save();
+	        Assert.IsTrue(success,"A10:");
+
+	        List<string> pathBefore = await _noCASMount.ListSecrets(parentName);
+            Assert.AreEqual(1,pathBefore.Count,"A20:");
+
+            // Now Destory All it 
+            Assert.IsTrue(await secretA.VSE_DestroyAll(),"A30:");
+
+	        // Try to read it
+	        Assert.IsFalse(await secretA.VSE_Read(),"A40:");
+
+	        List<string> pathAfter = await _noCASMount.ListSecrets(parentName);
+	        Assert.AreEqual(1, pathAfter.Count, "A50:");
+
         }
 
 

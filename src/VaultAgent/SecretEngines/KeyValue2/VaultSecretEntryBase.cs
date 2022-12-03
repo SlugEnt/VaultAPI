@@ -402,6 +402,7 @@ namespace VaultAgent.SecretEngines
                 throw new ApplicationException(msg);
             }
 			bool success = await _kv2SecretEngine.DeleteSecretVersion(_secret);
+			//if ( success ) _secret = null;
 			return success;
 		}
 
