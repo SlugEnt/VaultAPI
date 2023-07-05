@@ -24,8 +24,7 @@ namespace MyBenchmarks
 	}
 
 
-
-	[CoreJob(baseline: true)]
+	[CoreJob()]
 	[RPlotExporter, RankColumn]
 	public class APICall_A {
 		private AppRoleAuthEngine _appRoleAuthEngine;

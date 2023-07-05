@@ -1,4 +1,4 @@
-﻿using System;
+﻿    using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
@@ -11,7 +11,7 @@ using VaultAgent.SecretEngines.KV2.SecretMetaDataInfo;
 using VaultAgent;
 using VaultAgent.SecretEngines.KV2;
 using SlugEnt;
-
+using VaultAgent.SecretEngines.KeyValue2;
 
 namespace VaultAgentTests {
     [TestFixture, Order (1)]
@@ -23,7 +23,7 @@ namespace VaultAgentTests {
         private KV2SecretEngine _defaultMount;
 
         private VaultAgentAPI _vaultAgentAPI;
-        private readonly UniqueKeys _uniqueKey = new UniqueKeys(); // Unique Key generator
+        private readonly UniqueKeys _uniqueKey = new (); // Unique Key generator
 
 
 
@@ -47,7 +47,7 @@ namespace VaultAgentTests {
 
 
             // Config settings for all the mounts.
-            VaultSysMountConfig config = new VaultSysMountConfig
+            VaultSysMountConfig config = new ()
             {
                 DefaultLeaseTTL = "30m",
                 MaxLeaseTTL = "90m",
@@ -119,8 +119,8 @@ namespace VaultAgentTests {
 
 	        // Generate a key.
 	        string secName = _uniqueKey.GetKey("KVRRODW");
-	        KV2Secret secretV2 = new KV2Secret(secName);
-	        KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("a", "1");
+	        KV2Secret secretV2 = new (secName);
+	        KeyValuePair<string, string> kv1 = new ("a", "1");
             secretV2.Attributes.Add(kv1.Key,kv1.Value);
 
             // Verify before values
@@ -157,9 +157,9 @@ namespace VaultAgentTests {
         [Test]
         public async Task JsonIgnoreAttr () {
             string secName = _uniqueKey.GetKey("JSONIGA");
-            KV2Secret secretV2 = new KV2Secret(secName, "/");
+            KV2Secret secretV2 = new (secName, "/");
 
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("test54", "44");
+            KeyValuePair<string, string> kv1 = new ("test54", "44");
 
             secretV2.Attributes.Add(kv1.Key, kv1.Value);
             DateTimeOffset d1 = secretV2.CreatedTime;
@@ -198,7 +198,7 @@ namespace VaultAgentTests {
             Assert.AreEqual (true, s.CASRequired, "A1: Expected the Backend to be mounted in CAS Mode, but it was not.  Cannot test further.");
 
             string secName = _uniqueKey.GetKey();
-            KV2Secret secretV2 = new KV2Secret (secName, "/");
+            KV2Secret secretV2 = new (secName, "/");
 
             secretV2.Attributes.Add ("Test54", "44");
 
@@ -222,10 +222,10 @@ namespace VaultAgentTests {
 
             // Generate a key.
             string secName = _uniqueKey.GetKey();
-            KV2Secret secretV2 = new KV2Secret (secName, "");
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("a", "1");
+            KV2Secret secretV2 = new  (secName, "");
+            KeyValuePair<string, string> kv1 = new ("a", "1");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
-            KeyValuePair<string, string> kv2 = new KeyValuePair<string, string> ("b", "2");
+            KeyValuePair<string, string> kv2 = new ("b", "2");
             secretV2.Attributes.Add (kv2.Key, kv2.Value);
 
 
@@ -263,8 +263,8 @@ namespace VaultAgentTests {
 
             // Generate a key.
             string secName = _uniqueKey.GetKey();
-            KV2Secret secretV2 = new KV2Secret (secName);
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("a", "1");
+            KV2Secret secretV2 = new (secName);
+            KeyValuePair<string, string> kv1 = new ("a", "1");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
 
 
@@ -285,7 +285,7 @@ namespace VaultAgentTests {
             Assert.AreEqual (1, s2.Version);
 
             // 3. Now attempt to save the secret back specifying the version.
-            KeyValuePair<string, string> kv2 = new KeyValuePair<string, string> ("b", "2");
+            KeyValuePair<string, string> kv2 = new ("b", "2");
             secretV2.Attributes.Add (kv2.Key, kv2.Value);
             Assert.True (await _casMount.SaveSecret (secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, s2.Version));
 
@@ -309,8 +309,8 @@ namespace VaultAgentTests {
 
             // Generate a key.
             string secName = _uniqueKey.GetKey();
-            KV2Secret secretV2 = new KV2Secret (secName);
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("a", "1");
+            KV2Secret secretV2 = new (secName);
+            KeyValuePair<string, string> kv1 = new ("a", "1");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
 
 
@@ -327,9 +327,9 @@ namespace VaultAgentTests {
             Assert.AreEqual (1, s2.Version);
 
             // 3. Now  Update the secret attributes.
-            KeyValuePair<string, string> kv2 = new KeyValuePair<string, string> ("b", "2");
+            KeyValuePair<string, string> kv2 = new  ("b", "2");
             secretV2.Attributes.Add (kv2.Key, kv2.Value);
-            KeyValuePair<string, string> kv3 = new KeyValuePair<string, string> ("c", "3");
+            KeyValuePair<string, string> kv3 = new  ("c", "3");
             secretV2.Attributes.Add (kv3.Key, kv3.Value);
 
             // 4. Save secret a second time.
@@ -338,7 +338,7 @@ namespace VaultAgentTests {
 
 
             // 5. Update secret attributes
-            KeyValuePair<string, string> kv4 = new KeyValuePair<string, string> ("d", "4");
+            KeyValuePair<string, string> kv4 = new ("d", "4");
             secretV2.Attributes.Add (kv4.Key, kv4.Value);
 
             // 6. Save Secret, but do not change the version number.  Should fail.
@@ -376,8 +376,8 @@ namespace VaultAgentTests {
             // 1. Create a new key with version 1.
             // Save Secret passing CAS option of 0 for new update.
             string secName = _uniqueKey.GetKey();
-            KV2Secret secretV2 = new KV2Secret (secName);
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("a", "1");
+            KV2Secret secretV2 = new (secName);
+            KeyValuePair<string, string> kv1 = new ("a", "1");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
             Assert.True (await _casMount.SaveSecret (secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist), "A10:  Saving of initial Secret Value failed.");
 
@@ -390,7 +390,7 @@ namespace VaultAgentTests {
 
 
             // 3. Now Update the secret attributes.
-            KeyValuePair<string, string> kv2 = new KeyValuePair<string, string> ("b", "2");
+            KeyValuePair<string, string> kv2 = new ("b", "2");
             secretV2.Attributes.Add (kv2.Key, kv2.Value);
 
 
@@ -446,9 +446,9 @@ namespace VaultAgentTests {
         [Test]
         public async Task BackendWithOUTCAS_SaveSecret_Success () {
             string secName = _uniqueKey.GetKey ("Sec");
-            KV2Secret secretV2 = new KV2Secret (secName, "/");
+            KV2Secret secretV2 = new (secName, "/");
 
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("test54", "44");
+            KeyValuePair<string, string> kv1 = new ("test54", "44");
 
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
             Assert.True (await _noCasMount.SaveSecret (secretV2, KV2EnumSecretSaveOptions.AlwaysAllow));
@@ -466,9 +466,9 @@ namespace VaultAgentTests {
         [Test]
         public async Task BackendWithOUTCAS_UpdateExistingSecret_Success () {
             string secName = _uniqueKey.GetKey ("SecNew");
-            KV2Secret secretV2 = new KV2Secret (secName, "/folder1/folder2/folder3/folder4/");
+            KV2Secret secretV2 = new (secName, "/folder1/folder2/folder3/folder4/");
 
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("test54", "44");
+            KeyValuePair<string, string> kv1 = new ("test54", "44");
 
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
             Assert.True (await _noCasMount.SaveSecret (secretV2, KV2EnumSecretSaveOptions.AlwaysAllow));
@@ -480,7 +480,7 @@ namespace VaultAgentTests {
             Assert.Contains (kv1, s2.Attributes);
 
             // Now update it.
-            KeyValuePair<string, string> kv2 = new KeyValuePair<string, string> ("b", "2");
+            KeyValuePair<string, string> kv2 = new ("b", "2");
             secretV2.Attributes.Add (kv2.Key, kv2.Value);
             Assert.True (await _noCasMount.SaveSecret (secretV2, KV2EnumSecretSaveOptions.AlwaysAllow));
         }
@@ -499,8 +499,8 @@ namespace VaultAgentTests {
 
             // Generate a key.
             string secName = _uniqueKey.GetKey();
-            KV2Secret secretV2 = new KV2Secret (secName, "/");
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("a", "1");
+            KV2Secret secretV2 = new (secName, "/");
+            KeyValuePair<string, string> kv1 = new ("a", "1");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
 
 
@@ -517,19 +517,19 @@ namespace VaultAgentTests {
             Assert.AreEqual (1, s2.Version, "A5: Version did not match 1.");
 
             // 3. Now attempt to save the secret back specifying the version.
-            KeyValuePair<string, string> kv2 = new KeyValuePair<string, string> ("b", "2");
+            KeyValuePair<string, string> kv2 = new ("b", "2");
             secretV2.Attributes.Add (kv2.Key, kv2.Value);
 
 
             // 4. Save secret a second time.
-            KeyValuePair<string, string> kv3 = new KeyValuePair<string, string> ("c", "3");
+            KeyValuePair<string, string> kv3 = new ("c", "3");
             secretV2.Attributes.Add (kv3.Key, kv3.Value);
 
             Assert.True (await _noCasMount.SaveSecret (secretV2, KV2EnumSecretSaveOptions.OnlyOnExistingVersionMatch, 1),
                          "A6: Save Secret was expected to be true. ");
 
             // 5. Now attempt to save the secret again but not with a valid version.
-            KeyValuePair<string, string> kv4 = new KeyValuePair<string, string> ("d", "4");
+            KeyValuePair<string, string> kv4 = new ("d", "4");
             secretV2.Attributes.Add (kv4.Key, kv4.Value);
 
 
@@ -551,8 +551,8 @@ namespace VaultAgentTests {
 
             // Generate a key.
             string secName = _uniqueKey.GetKey ("newSec");
-            KV2Secret secretV2 = new KV2Secret (secName, "/");
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("a", "1");
+            KV2Secret secretV2 = new (secName, "/");
+            KeyValuePair<string, string> kv1 = new ("a", "1");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
 
 
@@ -569,9 +569,9 @@ namespace VaultAgentTests {
             Assert.Contains (kv1, s2.Attributes, "A6: Secret did not contain the expected attributes.");
 
             // Now confirm we can replace the secret object with a new one.
-            KV2Secret sv3 = new KV2Secret();
+            KV2Secret sv3 = new ();
             sv3.Path = "valley";
-            KeyValuePair<string, string> kv3 = new KeyValuePair<string, string> ("c", "3");
+            KeyValuePair<string, string> kv3 = new ("c", "3");
             sv3.Attributes.Add (kv3.Key, kv3.Value);
 
             s2 = sv3;
@@ -590,8 +590,8 @@ namespace VaultAgentTests {
         [Test]
         public async Task KV2Secret_WasReadFromVault_Works () {
             string secName = _uniqueKey.GetKey ("secWAS");
-            KV2Secret secretV2 = new KV2Secret (secName);
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("A1", "aaaa1");
+            KV2Secret secretV2 = new  (secName);
+            KeyValuePair<string, string> kv1 = new  ("A1", "aaaa1");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
 
             Assert.True (await _defaultMount.SaveSecret (secretV2, KV2EnumSecretSaveOptions.AlwaysAllow));
@@ -612,10 +612,10 @@ namespace VaultAgentTests {
         [Test]
         public async Task SaveReadSecret_MultipleAttributes () {
             string secName = _uniqueKey.GetKey();
-            KV2Secret secretV2 = new KV2Secret (secName);
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("A1", "aaaa1");
-            KeyValuePair<string, string> kv2 = new KeyValuePair<string, string> ("B2", "bbbbb2");
-            KeyValuePair<string, string> kv3 = new KeyValuePair<string, string> ("C3", "cccccc3");
+            KV2Secret secretV2 = new (secName);
+            KeyValuePair<string, string> kv1 = new  ("A1", "aaaa1");
+            KeyValuePair<string, string> kv2 = new ("B2", "bbbbb2");
+            KeyValuePair<string, string> kv3 = new ("C3", "cccccc3");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
             secretV2.Attributes.Add (kv2.Key, kv2.Value);
             secretV2.Attributes.Add (kv3.Key, kv3.Value);
@@ -642,12 +642,12 @@ namespace VaultAgentTests {
             string secName = _uniqueKey.GetKey();
             KV2Secret secretV2;
 
-            if (parentPath != "/") secretV2 = new KV2Secret(secName, parentPath);
+            if (parentPath != "/") secretV2 = new (secName, parentPath);
             else secretV2 = new KV2Secret(secName);
 
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string>("A1", "AAA");
-            KeyValuePair<string, string> kv2 = new KeyValuePair<string, string>("B2", "bbb");
-            KeyValuePair<string, string> kv3 = new KeyValuePair<string, string>("C3", "123");
+            KeyValuePair<string, string> kv1 = new ("A1", "AAA");
+            KeyValuePair<string, string> kv2 = new ("B2", "bbb");
+            KeyValuePair<string, string> kv3 = new ("C3", "123");
             secretV2.Attributes.Add(kv1.Key, kv1.Value);
             secretV2.Attributes.Add(kv2.Key, kv2.Value);
             secretV2.Attributes.Add(kv3.Key, kv3.Value);
@@ -655,6 +655,231 @@ namespace VaultAgentTests {
             if (saveSecret) Assert.True(await _defaultMount.SaveSecret(secretV2, KV2EnumSecretSaveOptions.AlwaysAllow), "GenerateASecret:A10:  Failed to save a randomly generated secret.");
 
             return secretV2;
+        }
+
+
+        [Test]
+        public async Task ListSecretsParentsOnly ()
+        {
+            // Setup
+            // Create the Root Secret
+            KV2Secret rootSecret = await CreateTestSecret("LSPO_", "/", true);
+
+            // Create children secrets that are folders / parents
+            KV2Secret childSecretParentA = await CreateTestSecret("LSPO_A_", rootSecret.FullPath, true,true);
+            KV2Secret childSecretParentB = await CreateTestSecret("LSPO_B_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentC = await CreateTestSecret("LSPO_C_", rootSecret.FullPath, true, true);
+
+            // Create child secrets that are final secrets (Non Parents / FolderS)
+            KV2Secret finalSecretA = await CreateTestSecret("LSPO_FA", rootSecret.FullPath,true);
+            KV2Secret finalSecretB = await CreateTestSecret("LSPO_FB", rootSecret.FullPath, true);
+            KV2Secret finalSecretC = await CreateTestSecret("LSPO_FC", rootSecret.FullPath, true);
+            KV2Secret finalSecretD = await CreateTestSecret("LSPO_FD", rootSecret.FullPath, true);
+
+            KV2ListSecretSettings listSettings = new ()
+            {
+                ParentSecretsOnly = true,
+            };
+
+
+            // Test
+            List<string> secrets = await (_defaultMount.ListSecrets(rootSecret.FullPath,listSettings));
+            Assert.AreEqual(3, secrets.Count, "A10:  List secrets did not return the expected number of secret names.");
+            Assert.Contains(childSecretParentA.Name + "/", secrets, "A20: Incorrect Child Secret");
+            Assert.Contains(childSecretParentB.Name + "/", secrets, "A30: Incorrect Child Secret");
+            Assert.Contains(childSecretParentC.Name + "/", secrets, "A40: Incorrect Child Secret");
+        }
+
+
+
+        /// <summary>
+        /// Validates that List Secrets works by not Returning Secrets that have sub folders.  
+        /// VERY IMPORTANT:  Every Parent Secret (Folder) has a non folder version and a folder version.  The only difference is the trailing slash on the Folder Version
+        /// Thus:  EVERY Parent Folder will have its non-trailing slash version listed here.  This is correct.
+        /// </summary>
+        /// <returns></returns>
+        [Test]
+        public async Task ListSecretsNoParentsOnly()
+        {
+            // Setup
+            // Create the Root Secret
+            KV2Secret rootSecret = await CreateTestSecret("LSNPO_", "/", true);
+
+            // Create children secrets that are folders / parents
+            KV2Secret childSecretParentA = await CreateTestSecret("LSNPO_A_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentB = await CreateTestSecret("LSNPO_B_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentC = await CreateTestSecret("LSNPO_C_", rootSecret.FullPath, true, true);
+
+            // Create child secrets that are final secrets (Non Parents / FolderS)
+            KV2Secret finalSecretA = await CreateTestSecret("LSNPO_FA", rootSecret.FullPath, true);
+            KV2Secret finalSecretB = await CreateTestSecret("LSNPO_FB", rootSecret.FullPath, true);
+            KV2Secret finalSecretC = await CreateTestSecret("LSNPO_FC", rootSecret.FullPath, true);
+            KV2Secret finalSecretD = await CreateTestSecret("LSNPO_FD", rootSecret.FullPath, true);
+
+            KV2ListSecretSettings listSettings = new ()
+            {
+                FinalSecretsOnly = true,
+            };
+
+
+            // Test
+            List<string> secrets = await (_defaultMount.ListSecrets(rootSecret.FullPath, listSettings));
+            Assert.AreEqual(7, secrets.Count, "A10:  List secrets did not return the expected number of Final Secrets only secrets.");
+            Assert.Contains(childSecretParentA.Name, secrets, "A20: Incorrect Child Secret");
+            Assert.Contains(childSecretParentB.Name, secrets, "A30: Incorrect Child Secret");
+            Assert.Contains(childSecretParentC.Name, secrets, "A40: Incorrect Child Secret");
+
+            Assert.Contains(finalSecretA.Name, secrets, "A60: Final Secret non folder Secret");
+            Assert.Contains(finalSecretB.Name, secrets, "A70: Final Secret non folder Secret");
+            Assert.Contains(finalSecretC.Name, secrets, "A80: Final Secret non folder Secret");
+            Assert.Contains(finalSecretC.Name, secrets, "A90: Final Secret non folder Secret");
+        }
+
+
+
+
+
+
+        /// <summary>
+        /// Validates that List Secrets works by not Returning Secrets that have sub folders.  
+        /// VERY IMPORTANT:  Every Parent Secret (Folder) has a non folder version and a folder version.  The only difference is the trailing slash on the Folder Version
+        /// Thus:  Every parent folder will be listed twice, once as a folder and once as just a secret.  This is CORRECT!
+        /// </summary>
+        /// <returns></returns>
+        [Test]
+        public async Task ListSecretsAll()
+        {
+            // Setup
+            // Create the Root Secret
+            KV2Secret rootSecret = await CreateTestSecret("LSA_", "/", true);
+
+            // Create children secrets that are folders / parents
+            KV2Secret childSecretParentA = await CreateTestSecret("LSA_A_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentB = await CreateTestSecret("LSA_B_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentC = await CreateTestSecret("LSA_C_", rootSecret.FullPath, true, true);
+
+            // Create child secrets that are final secrets (Non Parents / FolderS)
+            KV2Secret finalSecretA = await CreateTestSecret("LSA_FA", rootSecret.FullPath, true);
+            KV2Secret finalSecretB = await CreateTestSecret("LSA_FB", rootSecret.FullPath, true);
+            KV2Secret finalSecretC = await CreateTestSecret("LSA_FC", rootSecret.FullPath, true);
+            KV2Secret finalSecretD = await CreateTestSecret("LSA_FD", rootSecret.FullPath, true);
+
+            KV2ListSecretSettings listSettings = new ()
+            {
+                
+            };
+
+
+            // Test
+            List<string> secrets = await (_defaultMount.ListSecrets(rootSecret.FullPath, listSettings));
+            Assert.AreEqual(10, secrets.Count, "A10:  List secrets did not return the expected number of Final Secrets only secrets.");
+            Assert.Contains(childSecretParentA.Name, secrets, "A20: Incorrect Child Secret");
+            Assert.Contains(childSecretParentB.Name, secrets, "A30: Incorrect Child Secret");
+            Assert.Contains(childSecretParentC.Name, secrets, "A40: Incorrect Child Secret");
+
+            Assert.Contains(finalSecretA.Name, secrets, "A60: Final Secret non folder Secret");
+            Assert.Contains(finalSecretB.Name, secrets, "A70: Final Secret non folder Secret");
+            Assert.Contains(finalSecretC.Name, secrets, "A80: Final Secret non folder Secret");
+            Assert.Contains(finalSecretC.Name, secrets, "A90: Final Secret non folder Secret");
+
+            // Folder Versions of child Secrets
+            Assert.Contains(childSecretParentA.Name + "/", secrets, "A20: Incorrect Child Secret");
+            Assert.Contains(childSecretParentB.Name + "/", secrets, "A30: Incorrect Child Secret");
+            Assert.Contains(childSecretParentC.Name + "/", secrets, "A40: Incorrect Child Secret");
+        }
+
+
+        /// <summary>
+        /// Validates the ListAsFullPaths List Settings value
+        /// </summary>
+        /// <returns></returns>
+        [Test]
+        public async Task ListSecretsFullPathsReturned()
+        {
+            // Setup
+            // Create the Root Secret
+            KV2Secret rootSecret = await CreateTestSecret("LSFPR_", "/", true);
+
+            // Create children secrets that are folders / parents
+            KV2Secret childSecretParentA = await CreateTestSecret("LSFPR_A_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentB = await CreateTestSecret("LSFPR_B_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentC = await CreateTestSecret("LSFPR_C_", rootSecret.FullPath, true, true);
+
+            // Create child secrets that are final secrets (Non Parents / FolderS)
+            KV2Secret finalSecretA = await CreateTestSecret("LSFPR_FA", rootSecret.FullPath, true);
+
+            KV2ListSecretSettings listSettings = new ()
+            {
+                ListAsFullPaths = true,
+            };
+
+
+            // Test
+            List<string> secrets = await (_defaultMount.ListSecrets(rootSecret.FullPath, listSettings));
+            Assert.AreEqual(7, secrets.Count, "A10:  List secrets did not return the expected number of Final Secrets only secrets.");
+            Assert.Contains(childSecretParentA.FullPath, secrets, "A20: Incorrect Child Secret");
+            Assert.Contains(childSecretParentB.FullPath, secrets, "A30: Incorrect Child Secret");
+            Assert.Contains(childSecretParentC.FullPath, secrets, "A40: Incorrect Child Secret");
+            Assert.Contains(finalSecretA.FullPath, secrets, "A50: Incorrect Final Secret");
+
+            Assert.Contains(childSecretParentA.FullPath + "/", secrets, "A70: Incorrect Child Secret");
+            Assert.Contains(childSecretParentB.FullPath + "/", secrets, "A80: Incorrect Child Secret");
+            Assert.Contains(childSecretParentC.FullPath + "/", secrets, "A90: Incorrect Child Secret");
+        }
+
+
+        [Test]
+        public async Task ListSecretsRecursive()
+        {
+            // Setup
+            // Create the Root Secret
+            KV2Secret rootSecret = await CreateTestSecret("LSFPR_", "/", true);
+
+            // Create children secrets that are folders / parents
+            KV2Secret childSecretParentA = await CreateTestSecret("LSFPR_A_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentB = await CreateTestSecret("LSFPR_B_", rootSecret.FullPath, true, true);
+            KV2Secret childSecretParentC = await CreateTestSecret("LSFPR_C_", rootSecret.FullPath, true, true);
+
+            // Create child secrets that are final secrets (Non Parents / FolderS)
+            KV2Secret finalSecretA = await CreateTestSecret("LSFPR_FA", rootSecret.FullPath, true);
+
+            KV2ListSecretSettings listSettings = new ()
+            {
+                ShouldRecurseFolders = true,
+            };
+
+
+            // Test
+            List<string> secrets = await (_defaultMount.ListSecrets(rootSecret.FullPath, listSettings));
+            //  10 = 3 direct children;  +3: each child folder is a parent;  +3: Each with one child;  +1 final secret
+            Assert.AreEqual(10, secrets.Count, "A10:  List secrets did not return the expected number of Final Secrets only secrets.");
+
+            Assert.Contains(childSecretParentA.FullPath, secrets, "A20: Incorrect Child Secret");
+            Assert.Contains(childSecretParentB.FullPath, secrets, "A30: Incorrect Child Secret");
+            Assert.Contains(childSecretParentC.FullPath, secrets, "A40: Incorrect Child Secret");
+            Assert.Contains(finalSecretA.FullPath, secrets, "A50: Incorrect Final Secret");
+
+            Assert.Contains(childSecretParentA.FullPath + "/", secrets, "A70: Incorrect Child Secret");
+            Assert.Contains(childSecretParentB.FullPath + "/", secrets, "A80: Incorrect Child Secret");
+            Assert.Contains(childSecretParentC.FullPath + "/", secrets, "A90: Incorrect Child Secret");
+
+            // Child of each Parent folder.
+            Assert.Contains(childSecretParentA.FullPath + "/child", secrets, "A110: Incorrect Final Secret");
+            Assert.Contains(childSecretParentB.FullPath + "/child", secrets, "A120: Incorrect Final Secret");
+            Assert.Contains(childSecretParentC.FullPath + "/child", secrets, "A130: Incorrect Final Secret");
+        }
+
+
+        [Test]
+        public async Task ListSecretsEmptyList ()
+        {
+            // Setup
+            // Create the Root Secret
+            KV2Secret rootSecret = await CreateTestSecret("LSFPR_", "/", true);
+
+            List<string> secrets = await (_defaultMount.ListSecrets(rootSecret.FullPath));
+            Assert.AreEqual(0, secrets.Count, "A10:  List secrets did not return the expected number of Final Secrets only secrets.");
+
         }
 
 
@@ -667,11 +892,11 @@ namespace VaultAgentTests {
         [TestCase(1,true,2, Description = "One root secret off root, but because it has children it will be listed twice")]
         [TestCase(4,false,4, Description = "Two children secrets")]
         [TestCase(4,true,8, Description = "Two children secrets, but because they have children they are listed twice")]
-        public async Task ListSecrets (int rootSecretCount, bool ListFolderSecrets, int expectedCount) {
+        public async Task ListSecretsOldMethod (int rootSecretCount, bool ListFolderSecrets, int expectedCount) {
             // Root secret
             KV2Secret secretA = await GenerateASecret();
 
-            List<string> childSecrets = new List<string>(30);
+            List<string> childSecrets = new (30);
 
             // Now generate children secrets.  Each with 3 grand children
             for (int i=0; i < rootSecretCount;i++)
@@ -698,6 +923,9 @@ namespace VaultAgentTests {
 
 
 
+
+
+
         /// <summary>
         /// List secrets at path with no secrets returns empty list.
         /// </summary>
@@ -705,8 +933,8 @@ namespace VaultAgentTests {
         [Test]
         public async Task ListSecretsWhereNoSecretsExistReturnsEmptyList () {
             string secName = _uniqueKey.GetKey();
-            KV2Secret secretV2 = new KV2Secret (secName, "/");
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("A1", "aaaa1");
+            KV2Secret secretV2 = new (secName, "/");
+            KeyValuePair<string, string> kv1 = new ("A1", "aaaa1");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
 
             Assert.True (await _defaultMount.SaveSecret (secretV2, KV2EnumSecretSaveOptions.AlwaysAllow));
@@ -730,8 +958,8 @@ namespace VaultAgentTests {
 
             // Generate a key.
             string secName = _uniqueKey.GetKey();
-            KV2Secret secretV2 = new KV2Secret (secName);
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("a", "1");
+            KV2Secret secretV2 = new (secName);
+            KeyValuePair<string, string> kv1 = new ("a", "1");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
 
 
@@ -765,8 +993,8 @@ namespace VaultAgentTests {
 
             // Generate a key.
             string secName = _uniqueKey.GetKey();
-            KV2Secret secretV2 = new KV2Secret (secName, "/");
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("a", "1");
+            KV2Secret secretV2 = new (secName, "/");
+            KeyValuePair<string, string> kv1 = new ("a", "1");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
 
             // Try to delete it - It Does not exist so should return null.
@@ -786,8 +1014,8 @@ namespace VaultAgentTests {
 
             // Generate a key.
             string secName = _uniqueKey.GetKey();
-            KV2Secret secretV2 = new KV2Secret (secName, "testapp/folder2/folder3");
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("a", "1");
+            KV2Secret secretV2 = new (secName, "testapp/folder2/folder3");
+            KeyValuePair<string, string> kv1 = new ("a", "1");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
 
 
@@ -829,6 +1057,104 @@ namespace VaultAgentTests {
         }
 
 
+
+        /// <summary>
+        /// Confirms that a secret with multiple levels of sub-secrets (Folders) can be deleted.
+        /// </summary>
+        /// <returns></returns>
+        [Test]
+        public async Task DeleteSecretWithSubKeys_Succeeds()
+        {
+            KV2SecretEngineSettings s = await _defaultMount.GetBackendConfiguration();
+            Assert.False(s.CASRequired, "A10: Backend settings are not what was expected.");
+
+            //  SECRET A
+            // Generate a secret and key.
+            string secretName_A = _uniqueKey.GetKey();
+            KV2Secret secretA = await CreateTestSecret(secretName_A, "/");
+
+            // Secret B's
+            // A/B/B1
+            // A/B/B2
+            // A/B/B2/B21
+            // A/B/B2/B21/B211
+            string secretName_B = "B_" + _uniqueKey.GetKey();
+            KV2Secret secretB = await CreateTestSecret(secretName_B,secretA.FullPath);
+            string secretName_B1 = "B1_" + _uniqueKey.GetKey();
+            KV2Secret secretB1 = await CreateTestSecret(secretName_B1, secretB.FullPath);
+            string secretName_B2 = "B2_" + _uniqueKey.GetKey();
+            KV2Secret secretB2 = await CreateTestSecret(secretName_B2, secretB.FullPath);
+            string secretName_B21 = "B21_" + _uniqueKey.GetKey();
+            KV2Secret secretB21 = await CreateTestSecret(secretName_B21, secretB2.FullPath);
+            string secretName_B211 = "B211_" + _uniqueKey.GetKey();
+            KV2Secret secretB211 = await CreateTestSecret(secretName_B211, secretB21.FullPath);
+
+            // Now delete it.
+            Assert.True(await _defaultMount.DeleteSecretVersion(secretA,0,true), "A20: Deletion of secret failed.");
+
+
+            // Try to read it to confirm it is gone.
+            Thread.Sleep(200);
+            await VerifySecretDoesNotExist(secretA);
+
+            // Attempt to read SubKeys
+            await VerifySecretDoesNotExist(secretB);
+            await VerifySecretDoesNotExist(secretB1);
+            await VerifySecretDoesNotExist(secretB2);
+            await VerifySecretDoesNotExist(secretB21);
+            await VerifySecretDoesNotExist(secretB211);
+        }
+
+
+        public async Task VerifySecretDoesNotExist (KV2Secret secret)
+        {
+            KV2Secret subkey = await _defaultMount.ReadSecret(secret);
+            string msg = "";
+            if (subkey != null) msg = subkey.FullPath;
+            Assert.IsNull(subkey, "A40: Expected ReadSecret to return null object.  Instead it returned an object - " + msg + " .  Seems deletion did not work.");
+
+        }
+
+
+        /// <summary>
+        /// Creates a secret.
+        /// </summary>
+        /// <param name="name">The name of the secret.  If GenerateName is true, then this will be the prefix part of the new name</param>
+        /// <param name="parent">Path of parent secret</param>
+        /// <param name="generateName">If true, then a name will be generated.  If name parameter is not empty, then this will be appended to the name.</param>
+        /// <param name="isParentSecret">If True, it will create a child secret automatically.  Only do this if you do not want explicit control of the child secrets</param>
+        /// <returns></returns>
+        public async Task<KV2Secret> CreateTestSecret (string name, string parentPath, bool generateName = false, bool isParentSecret = false)
+        {
+            if (generateName)
+            {
+                if (name == string.Empty)
+                    name = _uniqueKey.GetKey();
+                else 
+                    name += _uniqueKey.GetKey();
+            }
+
+            KV2Secret secret = new (name,parentPath);
+            KeyValuePair<string, string> kv1 = new ("a", "1");
+            secret.Attributes.Add(kv1.Key, kv1.Value);
+
+            // Save Secret
+            Assert.True(await _defaultMount.SaveSecret(secret, KV2EnumSecretSaveOptions.AlwaysAllow), "A200: SaveSecret failed to return True.");
+
+            // Confirm it exists:
+            KV2Secret s2 = await _defaultMount.ReadSecret(secret);
+            Assert.True(secret.Path == s2.Path, "A210: Secret saved and secret read were not the same.");
+
+
+            // Create a child if this is a parent.
+            if (isParentSecret)
+                await CreateTestSecret("child", secret.FullPath);
+
+            return secret;
+        }
+
+
+
         /// <summary>
         /// Deletes a specific version of a secret.
         /// </summary>
@@ -840,8 +1166,8 @@ namespace VaultAgentTests {
 
             // Generate a secret key.
             string secName = _uniqueKey.GetKey();
-            KV2Secret secretV2 = new KV2Secret (secName);
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("a", "1");
+            KV2Secret secretV2 = new (secName);
+            KeyValuePair<string, string> kv1 = new ("a", "1");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
 
 
@@ -884,8 +1210,8 @@ namespace VaultAgentTests {
 
             // Generate a key.
             string secName = _uniqueKey.GetKey ("DelSecA");
-            KV2Secret secretV2 = new KV2Secret (secName, "/");
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("a", "1");
+            KV2Secret secretV2 = new (secName, "/");
+            KeyValuePair<string, string> kv1 = new ("a", "1");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
 
 
@@ -928,7 +1254,8 @@ namespace VaultAgentTests {
             Assert.True (await _defaultMount.UndeleteSecretVersion (secretV2, s3.Version), "A10: Undeletion did not work.");
 
             // Confirm it exists:
-            KV2Secret s3B = await _defaultMount.ReadSecret (secretV2);
+            // TODO 10/20/21 Is this correct.  Seems it should be something else....
+            await _defaultMount.ReadSecret (secretV2);
             Assert.AreEqual (2, s3.Version, "A11: Expected Key version was not received.");
         }
 
@@ -945,8 +1272,8 @@ namespace VaultAgentTests {
 
             // Generate a key.
             string secName = _uniqueKey.GetKey();
-            KV2Secret secretV2 = new KV2Secret (secName, "/");
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("a", "1");
+            KV2Secret secretV2 = new (secName, "/");
+            KeyValuePair<string, string> kv1 = new ("a", "1");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
 
 
@@ -997,8 +1324,8 @@ namespace VaultAgentTests {
 
             // Generate a key.
             string secName = _uniqueKey.GetKey();
-            KV2Secret secretV2 = new KV2Secret (secName, "");
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("a", "1");
+            KV2Secret secretV2 = new (secName, "");
+            KeyValuePair<string, string> kv1 = new ("a", "1");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
 
 
@@ -1058,8 +1385,8 @@ namespace VaultAgentTests {
 
             // Generate a key.
             string secName = _uniqueKey.GetKey();
-            KV2Secret secretV2 = new KV2Secret (secName, "/");
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("a", "1");
+            KV2Secret secretV2 = new (secName, "/");
+            KeyValuePair<string, string> kv1 = new ("a", "1");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
 
 
@@ -1106,8 +1433,8 @@ namespace VaultAgentTests {
 
             // Create a secret.
             string secName = _uniqueKey.GetKey();
-            KV2Secret secretV2 = new KV2Secret (secName, "/");
-            KeyValuePair<string, string> kv1 = new KeyValuePair<string, string> ("A1", "aaaa1");
+            KV2Secret secretV2 = new (secName, "/");
+            KeyValuePair<string, string> kv1 = new ("A1", "aaaa1");
             secretV2.Attributes.Add (kv1.Key, kv1.Value);
 
             Assert.True (await _casMount.SaveSecret (secretV2, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist), "Unable to create secret");
@@ -1127,7 +1454,7 @@ namespace VaultAgentTests {
 
             // Generate a secret key.
             string secName = _uniqueKey.GetKey ("Try");
-            KV2Secret secretV2 = new KV2Secret (secName);
+            KV2Secret secretV2 = new (secName);
             secretV2.Attributes.Add ("a", "1");
 
             // Save Secret
@@ -1156,7 +1483,7 @@ namespace VaultAgentTests {
         [Test]
         public async Task SecretReadUsingVersionFromSecretObject_Success () {
             string secretName = _uniqueKey.GetKey ("sec");
-            KV2Secret secret = new KV2Secret (secretName);
+            KV2Secret secret = new (secretName);
             secret.Attributes.Add ("attrA", "valueA");
             secret.Attributes.Add ("attrB", "valueB");
 
@@ -1172,7 +1499,7 @@ namespace VaultAgentTests {
             KV2Secret secretC = await UpdateSecretRandom (secretB);
             KV2Secret secretD = await UpdateSecretRandom (secretC);
             KV2Secret secretE = await UpdateSecretRandom (secretD);
-            KV2Secret secretF = await UpdateSecretRandom (secretE);
+            await UpdateSecretRandom (secretE);
 
             // Now lets go read SecretE.  
             KV2Secret secretEE = await _casMount.ReadSecret (secretE, -1);

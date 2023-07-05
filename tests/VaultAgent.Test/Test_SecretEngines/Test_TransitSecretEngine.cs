@@ -363,7 +363,7 @@ namespace VaultAgentTests {
 
 			// Now decrypt it, but pass invalid context.
 			Assert.That(() => _transitSecretEngine.Decrypt(key, response.EncryptedValue, "zyxabc"),
-			            Throws.Exception.TypeOf<VaultInternalErrorException>()); //.With.Property("Message").Contains("unable to decrypt"));
+			            Throws.Exception.TypeOf<VaultInvalidDataException>()); //.With.Property("Message").Contains("unable to decrypt"));
 		}
 
 

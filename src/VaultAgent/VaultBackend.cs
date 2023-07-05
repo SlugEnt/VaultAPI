@@ -8,7 +8,6 @@ namespace VaultAgent {
     /// Represents the Abstract elements of a Vault Backend Object
     /// </summary>
     public abstract class VaultBackend {
-        //protected  VaultAPI_Http _vaultHTTP;
         private string _mountPrefix;
 
 

@@ -8,6 +8,7 @@ using VaultAgent.Backends;
 using VaultAgent.Backends.System;
 using VaultAgent.Models;
 using VaultAgent.SecretEngines;
+using VaultAgent.SecretEngines.KeyValue2;
 using VaultAgent.SecretEngines.KV2;
 
 
@@ -574,7 +575,15 @@ namespace VaultClient
 				}
 
 				// We have to list the "folders" or secrets on the AppData path as we only have create and List permissions.
-				List<string> appFolders = await secretEngine.ListSecretsAtPath(appData);
+
+				// TODO these next 2 lines have not been tested yet.
+				//List<string> appFolders = await secretEngine.ListSecretsAtPath(appData);
+				KV2ListSecretSettings listSettings = new KV2ListSecretSettings() { 
+					ParentSecretsOnly =true,
+					};
+				List<string> appFolders = await secretEngine.ListSecrets(appData.FullPath, listSettings);
+
+
 				if (!appFolders.Contains(Constants.appName_A)) { await secretEngine.SaveSecret(appDataAppA, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist); }
 				if (!appFolders.Contains(Constants.appName_B)) { await secretEngine.SaveSecret(appDataAppB, KV2EnumSecretSaveOptions.OnlyIfKeyDoesNotExist); }
 

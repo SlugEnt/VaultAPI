@@ -36,9 +36,6 @@ namespace VaultAgent {
         // An HTTP Connector object that is used for every connection to the Vault store.  Marked internal so that backends can access it.
         internal VaultAPI_Http _httpConnector;
 
-        // The connector to the Vault System Backend for manipulating and gathering information on the Vault Instance.  This is only populated if the 
-        // class was supplied with a token that has access to the System Backend AND the caller requested that we connect to the System Backend.  Otherwise it remains null.
-        private VaultSystemBackend _vault;
 
         // Connection to the Token Engine.
         private TokenAuthEngine _tokenEngine;
@@ -61,8 +58,7 @@ namespace VaultAgent {
         /// <para>Will Throw ApplicationException if unable to establish a connection to the backend vault server.</para>
         /// </summary>
         /// <param name="name">The name this Vault Instance should be known by.  This is purely cosmetic and serves no functional purpose other than being able to uniquely identify this Vault Instance from another.</param>
-        /// <param name="port">The network port the Vault instance is listening on.</param>
-        /// <param name="vaultIP">The IP address of the Vault instance you want to connect to.</param>
+        /// <param name="vaultUri">The full URI for accessing the Vault</param>
         public VaultAgentAPI (string name, Uri vaultUri) {
             Initialize(name,vaultUri);
         }
@@ -102,7 +98,7 @@ namespace VaultAgent {
                     {
                         throw new ApplicationException("Unable to establish connection to remote Vault Server.");
                     }
-                throw e;
+                throw;
             }
         }
 
@@ -179,18 +175,18 @@ namespace VaultAgent {
             switch (secretBackendType)
             {
                 case EnumSecretBackendTypes.KeyValueV2:
-                    KV2SecretEngine kv2Backend = new KV2SecretEngine(backendName, backendMountPath, this);
+                    KV2SecretEngine kv2Backend = new (backendName, backendMountPath, this);
                     return kv2Backend;
                 case EnumSecretBackendTypes.Secret:
-                    KeyValueSecretEngine secretBackend = new KeyValueSecretEngine(backendName, backendMountPath, this);
+                    KeyValueSecretEngine secretBackend = new (backendName, backendMountPath, this);
                     return secretBackend;
                 case EnumSecretBackendTypes.Transit:
-                    TransitSecretEngine transitSecretEngine = new TransitSecretEngine(backendName, backendMountPath, this);
+                    TransitSecretEngine transitSecretEngine = new (backendName, backendMountPath, this);
                     return transitSecretEngine;
                 case EnumSecretBackendTypes.Identity:
 
                     // There is only 1 backend of this type, so no need for backend mount path or name.
-                    IdentitySecretEngine identitySecretEngine = new IdentitySecretEngine(this);
+                    IdentitySecretEngine identitySecretEngine = new (this);
                     return identitySecretEngine;
             }
 
@@ -211,15 +207,15 @@ namespace VaultAgent {
         public VaultAuthenticationBackend ConnectAuthenticationBackend (EnumBackendTypes backendType, string backendName, string backendMountPath) {
             switch ( backendType ) {
                 case EnumBackendTypes.A_AppRole:
-                    AppRoleAuthEngine AppRoleAuthEngine = new AppRoleAuthEngine (backendName, backendMountPath, this);
+                    AppRoleAuthEngine AppRoleAuthEngine = new (backendName, backendMountPath, this);
                     return AppRoleAuthEngine;
                 case EnumBackendTypes.A_Token:
-                    TokenAuthEngine tokenAuthEngine = new TokenAuthEngine (this);
+                    TokenAuthEngine tokenAuthEngine = new (this);
                     return tokenAuthEngine;
                 case EnumBackendTypes.A_LDAP:
-                    LdapAuthEngine ldapAuthEngine = new LdapAuthEngine(backendName,backendMountPath,this);
+                    LdapAuthEngine ldapAuthEngine = new (backendName,backendMountPath,this);
                     return ldapAuthEngine;
-                default: throw new ArgumentOutOfRangeException ("Must supply a backendType that is derived from the VaultAuthenticationBackend class");
+                default: throw new ArgumentOutOfRangeException (nameof(backendType),"Must supply a backendType that is derived from the VaultAuthenticationBackend class");
             }
         }
 
@@ -233,12 +229,12 @@ namespace VaultAgent {
         public VaultAuthenticationBackend ConnectAuthenticationBackend (EnumBackendTypes backendType) {
             switch ( backendType ) {
                 case EnumBackendTypes.A_AppRole:
-                    AppRoleAuthEngine AppRoleAuthEngine = new AppRoleAuthEngine (this);
+                    AppRoleAuthEngine AppRoleAuthEngine = new (this);
                     return AppRoleAuthEngine;
                 case EnumBackendTypes.A_Token:
-                    TokenAuthEngine tokenAuthEngine = new TokenAuthEngine (this);
+                    TokenAuthEngine tokenAuthEngine = new (this);
                     return tokenAuthEngine;
-                default: throw new ArgumentOutOfRangeException ("Must supply a backendType that is derived from the VaultAuthenticationBackend class AND that supports a default backend mount.");
+                default: throw new ArgumentOutOfRangeException (nameof(backendType), "Must supply a backendType that is derived from the VaultAuthenticationBackend class AND that supports a default backend mount.");
             }
         }
 
@@ -254,7 +250,7 @@ namespace VaultAgent {
         public static string PathCombine(params string[] paths)
         {
             if (paths == null)
-                throw new ArgumentNullException("paths");
+                throw new ArgumentNullException(nameof(paths));
 
             // Compute how big a string builder cache to create.  For each found path we add path length + 1 for the new separator character
             int finalSize = 0;
@@ -266,7 +262,7 @@ namespace VaultAgent {
             }
 
 
-            StringBuilder newPath = new StringBuilder(finalSize + 2);
+            StringBuilder newPath = new (finalSize + 2);
             for (int i = 0; i < paths.Length; i++)
             {
                 // If Empty path, skip it
@@ -274,7 +270,7 @@ namespace VaultAgent {
                 if (paths[i].Length == 0) continue;
 
                 // If there are already paths in the new path, then append the separator
-                if (newPath.Length > 0) newPath.Append("/");
+                if (newPath.Length > 0) newPath.Append('/');
 
                 newPath.Append(paths[i]);
             }

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net7</TargetFramework>
     <AssemblyVersion>1.0.0.344</AssemblyVersion>
     <FileVersion>1.0.0.84</FileVersion>
     <LangVersion>latest</LangVersion>
@@ -14,9 +14,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="NUnit" Version="3.12.0" />
-    <PackageReference Include="SlugEnt.UniqueKeys" Version="1.0.5" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="NUnit" Version="3.13.3" />
+    <PackageReference Include="SlugEnt.UniqueKeys" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>

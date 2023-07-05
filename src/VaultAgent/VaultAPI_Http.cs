@@ -136,14 +136,14 @@ namespace VaultAgent {
             HttpContent contentBody = new StringContent (inputParamsJSON);
             contentBody.Headers.ContentType = new MediaTypeHeaderValue ("application/json");
 
-            string jsonResponse = "";
+            string jsonResponse;
 
             HttpResponseMessage response = await _httpClt.PutAsync (APIPath, contentBody);
             if ( response.IsSuccessStatusCode ) { jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait (false); }
             else { await HandleVaultErrors (response, APIPath, callingRoutineName); }
 
 
-            VaultDataResponseObjectB vdr = new VaultDataResponseObjectB (response);
+            VaultDataResponseObjectB vdr = new (response);
             return vdr;
         }
 
@@ -163,7 +163,7 @@ namespace VaultAgent {
 		    // Build the fullURI string.  If it has parameters those are a part of it, otherwise it's just the APIPath
 		    if (sendParameters != null) {
 				// Assume 30 characters per parameter item.
-				StringBuilder sendParams = new StringBuilder("?",sendParameters.Count * 30);
+				StringBuilder sendParams = new ("?",sendParameters.Count * 30);
 			    foreach (KeyValuePair<string, string> item in sendParameters) { sendParams.Append(item.Key + "=" + item.Value + "&"); }
 
 			    // Remove trailing &
@@ -176,7 +176,7 @@ namespace VaultAgent {
 
 		    HttpResponseMessage response = await _httpClt.GetAsync(fullURI);
 		    if ( response.IsSuccessStatusCode ) {
-				VaultDataResponseObjectB vdr = new VaultDataResponseObjectB(response);
+				VaultDataResponseObjectB vdr = new (response);
 			    return vdr;
 		    }
 		    else {
@@ -202,7 +202,7 @@ namespace VaultAgent {
 
 
             if ( response.IsSuccessStatusCode ) {
-                VaultDataResponseObjectB vdr = new VaultDataResponseObjectB(response);
+                VaultDataResponseObjectB vdr = new (response);
                 return vdr;
             }
 
@@ -223,14 +223,14 @@ namespace VaultAgent {
         protected async Task HandleVaultErrors (HttpResponseMessage response, string vaultHttpPath, string callingRoutineName) {
             // See if Response Body Contains an Errors object.
             string jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait (false);
-            List<string> errors = new List<string>();
+            List<string> errors = new ();
 
             try { errors = ConvertJSONArrayToList(jsonResponse, "errors"); }
             catch ( MissingFieldException ) {
                 // A few Vault Methods do not return the Errors Object, we swallow the error and move on.
                 // Swallow the error.  Latest updates to Vault V1.2.2 in KV2 do not necessarily populate the error object if object not found.
             }
-            catch ( JsonReaderException j ) {
+            catch ( JsonReaderException) {
                 // There are a few weird cases that do not generate proper json.  We handle those here.
                 errors.Add("JSONReaderException for - " + jsonResponse);
             }
@@ -272,7 +272,7 @@ namespace VaultAgent {
         /// <param name="fieldName">The specific field or subfield you want JSON for in dot notation.  field.subfield.subsubfield....</param>
         /// <returns>JSON representation of the specified field.</returns>
         public List<string> ConvertJSONArrayToList (string json, string fieldName) {
-            JToken token = null;
+            JToken token;
             List<string> data;
 
             try {
