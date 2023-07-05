@@ -212,6 +212,8 @@ namespace VaultAgentTests
 
 
         [Test]
+
+        // TODO -  This test is occassionally Failing
         public async Task DeleteChildSuccess()
         {
             // Setup
@@ -426,6 +428,24 @@ namespace VaultAgentTests
         [TestCase(true, "T")]
         [TestCase(false, "F")]
         public void BoolAttributeSet_Success(bool value, string expectedValue)
+        {
+            string           attrName = "boolA";
+            VaultSecretEntry vseA     = new();
+
+            // Save Value
+            vseA.SetBoolAttribute(attrName, value);
+
+            Assert.AreEqual(expectedValue, vseA.Attributes[attrName]);
+        }
+
+
+
+        [Test]
+        [TestCase("true", "T")]
+        [TestCase("false", "F")]
+        [TestCase("FALSE", "F")]
+        [TestCase("", "F")]
+        public void BoolAttributeSetFromString_Success(string value, string expectedValue)
         {
             string           attrName = "boolA";
             VaultSecretEntry vseA     = new();
