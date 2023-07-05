@@ -1,5 +1,7 @@
 {
-  "ConfigStructureVersion": "0.33.0",
+  "ConfigStructureVersion": "0.35.1",
+  "MainBranchSemVersion": "0.0.0",
+  "DevelopBranchSemVersion": "0.0.0",
   "UseCodeCoverage": true,
   "CodeCoverageThreshold": 30,
   "DeployProdRoot": "_",
@@ -8,6 +10,7 @@
   "DeployDevRoot": "_",
   "DeployToVersionedFolder": true,
   "DeployFolderUsesSemVer": true,
+  "UseYearMonthSemVersioning": false,
   "DeployToAssemblyFolders": false,
   "GitRemote": null,
   "AngularDeployRootName": null,
